@@ -150,24 +150,6 @@
             padding: 0.5rem 0;
         }
 
-        #hero-modal-content {
-            flex-direction: row;
-            height: 85%;
-            max-width: 56rem;
-        }
-
-        #modal-hero-elem {
-            width: 33.333%;
-            height: 100%;
-            border-right: 1px solid #5a4634;
-            border-bottom: none;
-        }
-
-        #modal-hero-info {
-            width: 66.666%;
-            height: 100%;
-        }
-
         @media screen and (orientation: portrait) {
             body {
                 flex-direction: column-reverse;
@@ -210,24 +192,6 @@
                 border-top: 3px solid #fcd34d;
                 background: linear-gradient(180deg, rgba(212, 175, 55, 0.18) 0%, transparent 100%);
                 text-shadow: 0 0 8px rgba(252, 211, 77, 0.6);
-            }
-
-            #hero-modal-content {
-                flex-direction: column;
-                height: 92%;
-                max-width: 100%;
-            }
-
-            #modal-hero-elem {
-                width: 100%;
-                height: 35%;
-                border-right: none;
-                border-bottom: 1px solid #5a4634;
-            }
-
-            #modal-hero-info {
-                width: 100%;
-                height: 65%;
             }
 
             #tab-formation {
@@ -1358,89 +1322,86 @@
         </main>
     </div>
 
-    <!-- 英雄詳細 Modal -->
+    <!-- 英雄詳細 Modal：改成跟圖鑑一樣「置中卡片、頭像置頂、內容單欄捲動」的樣式 -->
     <div id="hero-modal"
         class="fixed inset-0 bg-black/95 z-50 hidden flex-col p-4 sm:p-8 backdrop-blur-md opacity-0 transition-opacity duration-300 items-center justify-center">
-        <div class="glass-panel w-full mx-auto rounded-xl overflow-hidden shadow-2xl border border-[#5a4634] flex transform scale-95 transition-transform duration-300"
+        <div class="glass-panel w-full max-w-md rounded-2xl overflow-hidden shadow-2xl border border-[#5a4634] relative flex flex-col max-h-[90vh] transform scale-95 transition-transform duration-300"
             id="hero-modal-content">
+            <button onclick="closeHeroModal()"
+                class="absolute top-3 right-3 text-white/70 bg-black/40 hover:bg-black/80 w-8 h-8 rounded-full flex items-center justify-center z-20 transition border border-[#5a4634]"><i
+                    class="fa-solid fa-arrow-left"></i></button>
+
             <div id="modal-hero-elem"
-                class="relative p-4 flex flex-col items-center justify-center bg-gradient-to-b from-[#1f1610] to-[#0a0806]">
-                <button onclick="closeHeroModal()"
-                    class="absolute top-3 right-3 text-white/70 bg-black/40 hover:bg-black/80 w-8 h-8 rounded-full flex items-center justify-center z-20 transition border border-[#5a4634]"><i
-                        class="fa-solid fa-arrow-left"></i></button>
-                <div class="absolute inset-0 text-[150px] opacity-5 flex justify-center items-center pointer-events-none"
-                    id="modal-bg-icon"></div>
-                <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-black/50 border-2 border-stone-300 flex items-center justify-center text-5xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] relative z-10 mb-3 overflow-hidden"
+                class="relative p-6 pb-4 flex flex-col items-center border-b border-[#5a4634] bg-gradient-to-b from-[#1f1610] to-[#0a0806] shrink-0">
+                <div class="w-24 h-24 rounded-full bg-black/50 border-2 border-stone-300 flex items-center justify-center text-5xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] mb-3 overflow-hidden"
                     id="modal-hero-avatar"></div>
-                <div class="text-center relative z-10 w-full px-2">
-                    <div class="flex justify-center gap-1.5 mb-1.5"><span
-                            class="text-[9px] font-bold text-yellow-900 bg-fantasy-gold px-2 py-0.5 rounded shadow"
-                            id="modal-hero-rarity">SSR</span><span
-                            class="text-[9px] text-white bg-stone-700 px-2 py-0.5 rounded shadow"
-                            id="modal-hero-role">職業</span></div>
-                    <h3 class="text-lg sm:text-2xl font-bold text-white font-magic truncate mb-1" id="modal-hero-name">
-                        英雄名稱</h3>
-                    <div class="text-[10px] text-stone-200 font-bold bg-black/60 inline-block px-4 py-1 rounded-full border border-stone-600 shadow-inner-dark"
-                        id="modal-hero-level">Lv.1</div>
+                <div class="flex justify-center gap-1.5 mb-1.5"><span
+                        class="text-[9px] font-bold text-yellow-900 bg-fantasy-gold px-2 py-0.5 rounded shadow"
+                        id="modal-hero-rarity">SSR</span><span
+                        class="text-[9px] text-white bg-stone-700 px-2 py-0.5 rounded shadow"
+                        id="modal-hero-role">職業</span></div>
+                <h3 class="text-lg sm:text-2xl font-bold text-white font-magic tracking-wide truncate mb-1 max-w-full text-center"
+                    id="modal-hero-name">英雄名稱</h3>
+                <div class="text-[10px] text-stone-200 font-bold bg-black/60 inline-block px-4 py-1 rounded-full border border-stone-600 shadow-inner-dark"
+                    id="modal-hero-level">Lv.1</div>
+            </div>
+
+            <div id="modal-hero-info" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#140e0a]">
+                <div class="bg-[#1f1610] p-3 rounded-xl border border-[#3e3328] shadow-inner-dark">
+                    <div class="flex justify-between items-end mb-2 border-b border-[#3e3328] pb-1"><span
+                            class="text-stone-400 text-xs font-bold">綜合戰力</span><span id="modal-hero-power"
+                            class="text-fantasy-gold font-bold font-magic text-xl drop-shadow">0</span></div>
+                    <div class="grid grid-cols-4 gap-2 text-[10px] font-bold text-center">
+                        <div class="bg-black/40 p-1.5 rounded border border-[#2a2118]"><span
+                                class="block text-stone-500 mb-0.5">生命</span><span id="modal-stat-hp"
+                                class="text-emerald-400">0</span></div>
+                        <div class="bg-black/40 p-1.5 rounded border border-[#2a2118]"><span
+                                class="block text-stone-500 mb-0.5">攻擊</span><span id="modal-stat-atk"
+                                class="text-red-400">0</span></div>
+                        <div class="bg-black/40 p-1.5 rounded border border-[#2a2118]"><span
+                                class="block text-stone-500 mb-0.5">防禦</span><span id="modal-stat-def"
+                                class="text-sky-400">0</span></div>
+                        <div class="bg-black/40 p-1.5 rounded border border-[#2a2118]"><span
+                                class="block text-stone-500 mb-0.5">暴擊</span><span id="modal-stat-crit"
+                                class="text-yellow-400">0%</span></div>
+                    </div>
+                </div>
+                <div class="bg-[#1f1610] p-3 rounded-xl border border-[#3e3328] shadow-inner-dark">
+                    <h4
+                        class="font-bold text-stone-300 text-[10px] mb-2 border-b border-[#3e3328] pb-1 flex justify-between">
+                        <span>裝備鍛造</span><span class="text-stone-500 font-normal">最高 20 級</span>
+                    </h4>
+                    <div class="grid grid-cols-4 gap-2" id="modal-equip-slots"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div
+                        class="bg-[#1f1610] p-3 rounded-xl border border-[#3e3328] shadow-inner-dark flex flex-col">
+                        <h4 class="font-bold text-stone-200 text-[10px] mb-1.5 border-b border-[#3e3328] pb-1">專屬技能
+                        </h4>
+                        <p id="modal-skill-desc" class="text-[9px] text-stone-400 leading-relaxed mt-1">描述</p>
+                    </div>
+                    <div
+                        class="bg-[#1f1610] p-3 rounded-xl border border-yellow-700/30 flex flex-col shadow-inner-dark">
+                        <h4
+                            class="font-bold text-stone-200 text-[10px] mb-1.5 border-b border-yellow-700/30 pb-1 flex justify-between">
+                            <span>專屬聖物</span><span id="modal-artifact-level" class="text-yellow-400">Lv.0</span>
+                        </h4>
+                        <p id="modal-hero-artifact" class="text-[9px] text-stone-400 mb-2 leading-relaxed">大幅提升基礎屬性
+                        </p><button
+                            class="w-full py-1.5 mt-auto rounded bg-black/50 border border-[#3e3328] text-stone-600 text-[9px] font-bold opacity-50 cursor-not-allowed">尚未開放</button>
+                    </div>
                 </div>
             </div>
-            <div id="modal-hero-info" class="flex flex-col bg-[#140e0a]">
-                <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                    <div class="bg-[#1f1610] p-3 rounded-xl border border-[#3e3328] shadow-inner-dark">
-                        <div class="flex justify-between items-end mb-2 border-b border-[#3e3328] pb-1"><span
-                                class="text-stone-400 text-xs font-bold">綜合戰力</span><span id="modal-hero-power"
-                                class="text-fantasy-gold font-bold font-magic text-xl drop-shadow">0</span></div>
-                        <div class="grid grid-cols-4 gap-2 text-[10px] font-bold text-center">
-                            <div class="bg-black/40 p-1.5 rounded border border-[#2a2118]"><span
-                                    class="block text-stone-500 mb-0.5">生命</span><span id="modal-stat-hp"
-                                    class="text-emerald-400">0</span></div>
-                            <div class="bg-black/40 p-1.5 rounded border border-[#2a2118]"><span
-                                    class="block text-stone-500 mb-0.5">攻擊</span><span id="modal-stat-atk"
-                                    class="text-red-400">0</span></div>
-                            <div class="bg-black/40 p-1.5 rounded border border-[#2a2118]"><span
-                                    class="block text-stone-500 mb-0.5">防禦</span><span id="modal-stat-def"
-                                    class="text-sky-400">0</span></div>
-                            <div class="bg-black/40 p-1.5 rounded border border-[#2a2118]"><span
-                                    class="block text-stone-500 mb-0.5">暴擊</span><span id="modal-stat-crit"
-                                    class="text-yellow-400">0%</span></div>
-                        </div>
-                    </div>
-                    <div class="bg-[#1f1610] p-3 rounded-xl border border-[#3e3328] shadow-inner-dark">
-                        <h4
-                            class="font-bold text-stone-300 text-[10px] mb-2 border-b border-[#3e3328] pb-1 flex justify-between">
-                            <span>裝備鍛造</span><span class="text-stone-500 font-normal">最高 20 級</span>
-                        </h4>
-                        <div class="grid grid-cols-4 gap-2" id="modal-equip-slots"></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div
-                            class="bg-[#1f1610] p-3 rounded-xl border border-[#3e3328] shadow-inner-dark flex flex-col">
-                            <h4 class="font-bold text-stone-200 text-[10px] mb-1.5 border-b border-[#3e3328] pb-1">專屬技能
-                            </h4>
-                            <p id="modal-skill-desc" class="text-[9px] text-stone-400 leading-relaxed mt-1">描述</p>
-                        </div>
-                        <div
-                            class="bg-[#1f1610] p-3 rounded-xl border border-yellow-700/30 flex flex-col shadow-inner-dark">
-                            <h4
-                                class="font-bold text-stone-200 text-[10px] mb-1.5 border-b border-yellow-700/30 pb-1 flex justify-between">
-                                <span>專屬聖物</span><span id="modal-artifact-level" class="text-yellow-400">Lv.0</span>
-                            </h4>
-                            <p id="modal-hero-artifact" class="text-[9px] text-stone-400 mb-2 leading-relaxed">大幅提升基礎屬性
-                            </p><button
-                                class="w-full py-1.5 mt-auto rounded bg-black/50 border border-[#3e3328] text-stone-600 text-[9px] font-bold opacity-50 cursor-not-allowed">尚未開放</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-3 bg-[#0a0806] border-t border-[#5a4634] flex gap-3 shrink-0 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]"
-                    id="modal-hero-actions">
-                    <button onclick="upgradeSelectedHeroLevel()" id="btn-upgrade-lvl"
-                        class="flex-1 py-2 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs flex flex-col items-center justify-center transition active:scale-95 hover:border-fantasy-gold">升級</button>
-                    <button onclick="upgradeSelectedHeroStar()" id="btn-upgrade-star"
-                        class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">覺醒</button>
-                </div>
+            <div class="p-3 bg-[#0a0806] border-t border-[#5a4634] flex gap-3 shrink-0 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]"
+                id="modal-hero-actions">
+                <button onclick="upgradeSelectedHeroLevel()" id="btn-upgrade-lvl"
+                    class="flex-1 py-2 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs flex flex-col items-center justify-center transition active:scale-95 hover:border-fantasy-gold">升級</button>
+                <button onclick="upgradeSelectedHeroStar()" id="btn-upgrade-star"
+                    class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">覺醒</button>
             </div>
         </div>
     </div>
+
 
     <!-- 圖鑑專屬詳細 Modal -->
     <div id="codex-modal"
@@ -1876,7 +1837,7 @@
 
         /* === 2. 遊戲核心資料與狀態 === */
         const DEFAULT_STATE = {
-            gold: 1500, heroExp: 800, diamonds: 500, tickets: 10, forgeStones: 50,
+            gold: 1500, heroExp: 800, diamonds: 800, tickets: 10, forgeStones: 50,
             specialTickets: 0, battlesFought: 0,
             starCoins: 0,
             voidFragments: 0, riftFloor: 1, highestRiftFloor: 1,
@@ -1966,7 +1927,7 @@
         let selectedGridIndex = null;
         let selectedRosterHero = null;
         let isAutoBattle = false;
-        let battleSpeed = 1; // 戰鬥倍速：1 / 2 / 3，影響動畫速度與自動連戰間隔，不存檔（每次進來預設 1x）
+        let battleSpeed = 1; // 戰鬥倍速：1 / 2 / 3 / 5 / 10，影響動畫速度與自動連戰間隔，不存檔（每次進來預設 1x）
         let currentChapterView = 1;
         let autoSaveInterval;
         let seasonTimerInterval;
@@ -3395,6 +3356,20 @@
             return {...db, ...r, effectiveLevel: l, maxHp: hp, atk, def, crit, skill: effSkill, combatPower: Math.floor(hp * 0.5 + atk * 2 + def * 1.5 + crit * 10)};
         }
 
+        // ★ 把技能物件裡的機率/幅度/持續回合換算成一行文字，讓「升星後技能變強了」這件事看得到、不用自己猜
+        function formatSkillCurrentStats(skill) {
+            if (!skill) return '';
+            const parts = [];
+            if (typeof skill.chance === 'number') parts.push(`觸發機率 ${(skill.chance * 100).toFixed(1).replace(/\.0$/, '')}%`);
+            if (typeof skill.value === 'number') {
+                // 大部分技能的 value 是倍率(0~5)，少數(如金幣加成)是直接數字，用大小粗略判斷該顯示成百分比還是數字
+                if (skill.value <= 5) parts.push(`效果幅度 ${(skill.value * 100).toFixed(1).replace(/\.0$/, '')}%`);
+                else parts.push(`效果數值 ${Math.floor(skill.value)}`);
+            }
+            if (typeof skill.duration === 'number') parts.push(`持續 ${skill.duration} 回合`);
+            return parts.join('／');
+        }
+
         function updateHUD() {
             document.getElementById('hud-gold').innerText = GAME_STATE.gold.toLocaleString();
             document.getElementById('hud-exp').innerText = GAME_STATE.heroExp.toLocaleString();
@@ -3553,10 +3528,13 @@
             }
         }
 
-        // 戰鬥倍速：依序循環 1x -> 2x -> 3x -> 1x，影響動畫播放速度與自動連戰間隔
+        // 戰鬥倍速：依序循環 1x -> 2x -> 3x -> 5x -> 10x -> 1x，影響動畫播放速度與自動連戰間隔
+        // ★ 秘境／賽季這類需要重複刷的模式常常嫌動畫太慢，把上限從 x3 拉高到 x10
         function cycleBattleSpeed() {
             ToneAudioEngine.playClick();
-            battleSpeed = battleSpeed >= 3 ? 1 : battleSpeed + 1;
+            const SPEED_STEPS = [1, 2, 3, 5, 10];
+            const idx = SPEED_STEPS.indexOf(battleSpeed);
+            battleSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
             const btn = document.getElementById('btn-battle-speed');
             btn.innerHTML = `<i class="fa-solid fa-forward mr-1"></i>倍速: x${battleSpeed}`;
             if (battleSpeed > 1) {
@@ -4011,7 +3989,10 @@
             document.getElementById('modal-hero-power').innerText = h.combatPower.toLocaleString();
             document.getElementById('modal-stat-hp').innerText = h.maxHp; document.getElementById('modal-stat-atk').innerText = h.atk;
             document.getElementById('modal-stat-def').innerText = h.def; document.getElementById('modal-stat-crit').innerText = `${h.crit}%`;
-            document.getElementById('modal-skill-desc').innerText = h.skill.desc;
+            // ★ 修正：原本只顯示固定的技能敘述文字，升星後數值其實有變強，但文字裡的百分比是寫死的，
+            // 玩家完全看不出差異。額外拼出「目前數值」這行，直接把升星後算出來的即時數字秀出來。
+            const skillStatsLine = formatSkillCurrentStats(h.skill);
+            document.getElementById('modal-skill-desc').innerHTML = `${h.skill.desc}${skillStatsLine ? `<span class="block mt-1.5 text-fantasy-gold font-bold">目前數值：${skillStatsLine}</span>` : ''}`;
 
             const custom = GAME_STATE.customHeroes[h.id];
             document.getElementById('modal-hero-avatar').innerHTML = custom ? `<img src="${custom}" class="w-full h-full object-cover">` : `<i class="fa-solid ${h.avatarIcon}" style="color:${h.color}"></i>`;
@@ -4168,11 +4149,11 @@
 
         // ============ 英雄潛能覺醒 (升星) 邏輯 ============
         // ★ 改用英雄碎片升星，不再直接花寶石。碎片來源：召喚抽到重複英雄、賽季商店兌換。
-        // 最高 10 星，1→10 星總共需要 330 個碎片；升星除了原本的數值倍率加成，
+        // 最高 10 星，1→10 星總共需要 275 個碎片（原本 330，平衡調整降低約 17%）；升星除了原本的數值倍率加成，
         // 現在也會讓該英雄的專屬技能數值一起變強 (見 getEffectiveHero 內的 skillStarMult)。
         const MAX_STAR_LEVEL = 10;
         function getHeroStarUpCost(star) {
-            return 6 + star * 6;
+            return 5 + star * 5;
         }
 
         function upgradeSelectedHeroStar() {
@@ -4263,7 +4244,8 @@
         function closeProbModal() {ToneAudioEngine.playClick(); document.getElementById('prob-modal').classList.add('hidden');}
 
         function buyTickets(amount) {
-            ToneAudioEngine.playClick(); const cost = amount * 100;
+            // ★ 平衡調整：召喚卷軸的寶石兌換價從 100 降到 60，讓寶石換算成抽卡次數更划算一些
+            ToneAudioEngine.playClick(); const cost = amount * 60;
             if (GAME_STATE.diamonds >= cost) {GAME_STATE.diamonds -= cost; GAME_STATE.tickets += amount; saveGame(); updateHUD(); showToast(`成功購買 ${amount} 張召喚卷軸！`);}
             else showToast("寶石餘額不足！");
         }
@@ -4409,8 +4391,9 @@
                     GAME_STATE.roster[hero.id] = {level: 1, star: hero.star, artifactTier: 0, equips: [0, 0, 0, 0]};
                 } else {
                     // 重複英雄改成發放「英雄碎片」，用來在英雄詳情頁手動升星，不再抽到重複就直接自動升星
+                    // ★ 平衡調整：碎片產出全面調高，配合升星所需總量下修，讓潛能覺醒不用堆積如山的重複抽卡
                     if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
-                    const shardAmount = {UR: 20, SSR: 10, SR: 6, R: 4}[rarity] || 4;
+                    const shardAmount = {UR: 24, SSR: 14, SR: 9, R: 6}[rarity] || 6;
                     GAME_STATE.heroShards[hero.id] = (GAME_STATE.heroShards[hero.id] || 0) + shardAmount;
                     shardGainText = `<div class="absolute bottom-0 left-0 right-0 bg-black/80 text-purple-300 text-[7px] text-center py-0.5 border-t border-purple-800/50">碎片 +${shardAmount}</div>`;
                 }
@@ -4619,10 +4602,13 @@
                 const usableWidth = cx * 0.62; const startX = cx * 0.19; const gapX = usableWidth / 2; x = startX + row * gapX;
                 if (GAME_STATE.currentMode === 'season' && team === 'enemy') {y = cy * 0.24; x = cx * 0.5;}
                 else {
-                    // ★ 修正：原本我方(0.54~0.92，佔約 38%)跟敵方(0.20~0.42，佔約 22%)的可用縱深差距太大，
-                    // 視覺上兩邊佔位明顯不對等。改成兩邊各佔約 30% 的對稱佈局，中間留 6% 當作交戰的緩衝地帶。
-                    const pFrontY = cy * 0.53, pBackY = cy * 0.83, pGapY = (pBackY - pFrontY) / 2;
-                    const eFrontY = cy * 0.47, eBackY = cy * 0.17, eGapY = (eFrontY - eBackY) / 2;
+                    // ★ 再次修正：上次改成兩邊各佔 30% 對稱，數字雖然相等，但實測畫面還是敵方感覺比較大。
+                    // 原因是角色圖片是「腳底對齊錨點、身體往上長」(見 drawCanvas 的 yOffsetMult)，
+                    // 敵方錨點原本太靠近畫面頂端 (0.17)，圖片往上長沒有餘裕，會整坨頂到天花板、擠在一起，
+                    // 看起來反而更佔位；我方錨點在下方離底邊還有空間，同樣的圖片大小反而顯得從容不擠。
+                    // 這次改成：敵方錨點往下挪一點給頭頂留呼吸空間、深度也收窄一些；我方則明顯拉開更多縱深。
+                    const pFrontY = cy * 0.46, pBackY = cy * 0.88, pGapY = (pBackY - pFrontY) / 2;
+                    const eFrontY = cy * 0.40, eBackY = cy * 0.22, eGapY = (eFrontY - eBackY) / 2;
                     y = team === 'player' ? pFrontY + col * pGapY : eFrontY - col * eGapY;
                     // 錯位：非前排單位左右微微交錯，避免與同一路的前排單位直接疊在一起
                     if (col > 0) x += (row % 2 === 0 ? 1 : -1) * cx * 0.05;
@@ -4720,7 +4706,10 @@
                 const bossAtk = Math.floor(150 + pLevel * (GAME_STATE.season.id === 2 ? 35 : (GAME_STATE.season.id === 3 ? 45 : 25)));
                 const bossDef = Math.floor(40 + pLevel * (GAME_STATE.season.id === 2 ? 8 : (GAME_STATE.season.id === 3 ? 15 : 12)));
                 combatEntities.push({baseId: bossConfig.id, name: bossConfig.name, team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: bossAtk, def: bossDef, role: 'boss', color: bossConfig.color, icon: bossConfig.icon, row: 1, col: 1, skill: {type: 'aoe'}});
-                document.getElementById('btn-auto-battle').style.display = 'none';
+                // ★ 修正：原本賽季討伐把「自動戰鬥」按鈕整個藏起來，玩家完全不能自動連續挑戰。
+                // 其實賽季討伐跟其他模式一樣，每次挑戰結束（全軍覆沒）都可以直接開始下一次，
+                // 這裡改成跟秘境/試煉塔一樣顯示按鈕，並在 handleCombatEnd 裡接上自動繼續的邏輯。
+                document.getElementById('btn-auto-battle').style.display = 'block';
             } else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
                 document.getElementById('btn-auto-battle').style.display = 'block'; const dType = GAME_STATE.currentMode.split('_')[1]; const sm = getDungeonDifficultyMult(dType);
                 let mId, mName, mColor, mIcon, mSkill;
@@ -4850,10 +4839,12 @@
            GAME_STATE.dungeons[type] 代表「已解鎖到第幾階層」(前線)，
            GAME_STATE.dungeonRun[type] 追蹤「在目前這個階層裡，闖到第幾關、累積了多少層機制加成」。
            三種秘境的核心玩法規則完全不同：
-             - 黃金寶庫「寶藏連鎖」：連續過關疊加金幣加成，中斷或失敗歸零
+             - 黃金寶庫「寶藏連鎖」：每次挑戰疊加金幣加成
              - 幻影之森「見習加成」：依目前上陣佈陣的等級落差給經驗加成，鼓勵帶新人練等
-             - 熔爐深淵「熔煉試煉」：每過一關疊加熔煉層數，敵人變強、鍛造石獎勵也跟著提升
+             - 熔爐深淵「熔煉試煉」：每次挑戰疊加熔煉層數，敵人變強、鍛造石獎勵也跟著提升
            每個階層闖完 10 關會發放完成寶箱，並在前線階層時推進到下一階層，之後重新從第 1 關開始。
+           ★ 改版：秘境現在跟賽季討伐一樣「打多少傷害拿多少獎勵」（見 handleCombatEnd 與 resolveDungeonClear
+           的 ratio 參數），不再有「打輸就連鎖/熔煉歸零」的懲罰，每次挑戰不論輸贏都算完成一次、繼續往下推進。
            ============================================================ */
         const DUNGEON_LEVELS_PER_TIER = 10;
 
@@ -4867,14 +4858,11 @@
             return sm;
         }
 
-        // 秘境戰鬥失敗時：中斷本次階層挑戰，連鎖/熔煉層數歸零，退回本階層第 1 關（階層本身不會倒退）
-        function resetDungeonRunOnFail(type) {
-            ensureDungeonAutoFarmState();
-            GAME_STATE.dungeonRun[type] = type === 'gold' ? {level: 1, combo: 0} : (type === 'stone' ? {level: 1, heat: 0} : {level: 1});
-        }
-
         // 秘境戰鬥結算的核心邏輯：手動討伐勝利、背景刷本，都呼叫這個函式，確保三種秘境的規則只寫一次、行為一致
-        function resolveDungeonClear(type) {
+        // ★ 改版：新增 ratio 參數（0~1），代表這次戰鬥「造成的傷害 / 敵人總血量」的比例，跟賽季討伐一樣
+        // 「打多少傷害拿多少獎勵」；背景刷本沒有實際戰鬥可言，維持視為 100% 全額結算 (ratio 預設 1)。
+        function resolveDungeonClear(type, ratio) {
+            if (typeof ratio !== 'number' || isNaN(ratio)) ratio = 1;
             ensureDungeonAutoFarmState();
             const tier = getDungeonFarmLevel(type);
             const run = GAME_STATE.dungeonRun[type];
@@ -4884,9 +4872,9 @@
             let gain = 0, rewardText = '', bonusChestText = '';
 
             if (type === 'gold') {
-                run.combo = Math.min(10, run.combo + 1); // 寶藏連鎖：每關 +1 層，最高 10 層 (+80%)
+                run.combo = Math.min(10, run.combo + 1); // 寶藏連鎖：每次挑戰 +1 層，最高 10 層 (+80%)，不再因為沒打贏就歸零
                 const comboMult = 1 + run.combo * 0.08;
-                gain = Math.floor(baseReward * 2 * comboMult);
+                gain = Math.floor(baseReward * 2 * comboMult * ratio);
                 GAME_STATE.gold += gain;
                 rewardText = `獲得 ${gain} 金幣（寶藏連鎖 x${run.combo}，加成 +${run.combo * 8}%）`;
             } else if (type === 'exp') {
@@ -4897,18 +4885,18 @@
                     const maxLv = Math.max(...slots), minLv = Math.min(...slots);
                     apprenticeBonus = Math.min(0.5, (maxLv - minLv) * 0.01); // 每差 1 級 +1%，最高 +50%
                 }
-                gain = Math.floor(baseReward * 1.5 * (1 + apprenticeBonus));
+                gain = Math.floor(baseReward * 1.5 * (1 + apprenticeBonus) * ratio);
                 GAME_STATE.heroExp += gain;
                 rewardText = `獲得 ${gain} 英雄經驗${apprenticeBonus > 0 ? `（見習加成 +${Math.floor(apprenticeBonus * 100)}%）` : ''}`;
             } else { // stone
-                run.heat = (run.heat || 0) + 1; // 熔煉試煉：每關 +1 層熔煉，敵人變強但鍛造石獎勵也跟著提升
+                run.heat = (run.heat || 0) + 1; // 熔煉試煉：每次挑戰 +1 層熔煉，敵人變強但鍛造石獎勵也跟著提升，不再因為沒打贏就歸零
                 const heatMult = 1 + run.heat * 0.08;
-                gain = Math.floor((baseReward / 10) * heatMult);
+                gain = Math.floor((baseReward / 10) * heatMult * ratio);
                 GAME_STATE.forgeStones += gain;
                 rewardText = `獲得 ${gain} 鍛造石（熔煉層數 x${run.heat}，加成 +${run.heat * 8}%）`;
             }
 
-            run.level++;
+            run.level++; // ★ 不論這次是否全滅敵人，都算完成一次挑戰、往這個階層的下一關推進
             let completedTier = false;
             if (run.level > DUNGEON_LEVELS_PER_TIER) {
                 completedTier = true;
@@ -5172,9 +5160,10 @@
                 // 戰鬥數據統計
                 if (attacker.team === 'player') {
                     battleAnalytics.dps[attacker.name] += Math.floor(damage);
-                    if (GAME_STATE.currentMode === 'season') {
+                    // ★ 秘境改版後也要看「造成了多少傷害」來算獎勵，所以連同賽季討伐一起累計
+                    if (GAME_STATE.currentMode === 'season' || (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_'))) {
                         eventTotalDamage += Math.floor(damage);
-                        eventBossCurrentHp -= damage;
+                        if (GAME_STATE.currentMode === 'season') eventBossCurrentHp -= damage;
                     }
                 }
                 if (target.team === 'player') battleAnalytics.tank[target.name] += Math.floor(damage);
@@ -5473,8 +5462,8 @@
                 if (customImgCache[e.baseId]) {
                     const img = customImgCache[e.baseId];
 
-                    // 【智慧縮放】：手機直式螢幕角色偏小不易辨識，把倍率從 3.8 提高到 4.6，電腦版維持霸氣的 7 倍
-                    const scaleMult = isMobile ? 4.6 : 7;
+                    // 【智慧縮放】：角色還是偏小，手機直式倍率再拉高到 5.5（電腦版維持霸氣的 7 倍）
+                    const scaleMult = isMobile ? 5.5 : 7;
                     currentDrawSize = shapeSize * scaleMult;
 
                     // 【位置微調】：如果是 Boss 且在手機上，把圖稍微往下壓 (0.65)，避免頭被 UI 擋住
@@ -5679,19 +5668,26 @@
                 document.getElementById('overlay-icon').innerHTML = `<i class="fa-solid fa-medal ${config.colorClass.text} drop-shadow-[0_0_15px_rgba(99,102,241,0.8)]"></i>`; document.getElementById('overlay-title').innerText = '討伐結束';
                 document.getElementById('overlay-desc').innerHTML = `對巨獸造成了 <span class="${config.colorClass.text} font-bold">${eventTotalDamage}</span> 點傷害<br>獲得 <span class="${config.colorClass.text} font-bold">${earnedCoins}</span> 枚王國勳章！`;
                 btnNext.innerText = "返回賽季頁面"; btnNext.onclick = () => switchTab('season');
-            } else if (isWin && GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
+                // ★ 開啟自動戰鬥時，跟秘境/試煉塔一樣自動接著挑戰下一次，不用每次全軍覆沒後手動再點一次「進入討伐」
+                if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
+            } else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
+                // ★ 改版：秘境不再要求「打贏」才有收穫，改成跟賽季討伐一樣「造成多少傷害，就拿多少獎勵」。
+                // 全軍覆沒也照樣結算、連鎖／熔煉層數不會歸零，不用每次都得殺光敵人才有東西拿，
+                // 體感更輕鬆，也才能放心開自動戰鬥連續刷。
                 const dType = GAME_STATE.currentMode.split('_')[1];
                 const dNames = {gold: '黃金寶庫', exp: '幻影之森', stone: '熔爐深淵'};
                 const clearedLevel = GAME_STATE.dungeonRun[dType].level; // resolveDungeonClear 會改變它，先記下來
                 const clearedTier = getDungeonFarmLevel(dType);
-                const result = resolveDungeonClear(dType);
-                let descHtml = `${dNames[dType]} T${clearedTier} 第 ${clearedLevel}/${DUNGEON_LEVELS_PER_TIER} 關突破！<br>${result.rewardText}`;
+                const totalEnemyHp = combatEntities.filter(e => e.team === 'enemy').reduce((sum, e) => sum + e.maxHp, 0) || 1;
+                const dmgRatio = Math.max(0.15, Math.min(1, eventTotalDamage / totalEnemyHp)); // 保底 15%，不會完全空手而回
+                const result = resolveDungeonClear(dType, dmgRatio);
+                let descHtml = `${dNames[dType]} T${clearedTier} 第 ${clearedLevel}/${DUNGEON_LEVELS_PER_TIER} 關<br>造成 ${Math.floor(dmgRatio * 100)}% 傷害，${result.rewardText}`;
                 if (result.completedTier) {
-                    descHtml += `<div class="mt-2 text-[10px] font-bold text-amber-400 border-t border-amber-900/50 pt-1"><i class="fa-solid fa-box-open mr-1"></i>本階層 10 關全數通過！${result.bonusChestText}</div>`;
+                    descHtml += `<div class="mt-2 text-[10px] font-bold text-amber-400 border-t border-amber-900/50 pt-1"><i class="fa-solid fa-box-open mr-1"></i>本階層 10 關全數突破！${result.bonusChestText}</div>`;
                 }
                 document.getElementById('overlay-desc').innerHTML = descHtml;
-                document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-box-open text-amber-500 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]"></i>'; document.getElementById('overlay-title').innerText = result.completedTier ? '階層完成' : '秘境突破';
-                btnNext.innerHTML = `<i class="fa-solid fa-play mr-1"></i>挑戰下一層`; btnNext.onclick = () => startNextBattle();
+                document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-box-open text-amber-500 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]"></i>'; document.getElementById('overlay-title').innerText = result.completedTier ? '階層完成' : (isWin ? '秘境突破' : '討伐結束');
+                btnNext.innerHTML = `<i class="fa-solid fa-play mr-1"></i>${isWin ? '挑戰下一層' : '再次挑戰'}`; btnNext.onclick = () => startNextBattle();
                 if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
             } else if (isWin && GAME_STATE.currentMode === 'rift') {
                 const floor = GAME_STATE.riftFloor || 1;
@@ -5719,7 +5715,8 @@
                 if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
             } else if (isWin) {
                 if (GAME_STATE.currentMode === 'tower') {
-                    const nextD = 40 + (GAME_STATE.towerLevel * 8); const nextS = 5 + (GAME_STATE.towerLevel * 2); GAME_STATE.diamonds += nextD; GAME_STATE.forgeStones += nextS; GAME_STATE.towerLevel++; document.getElementById('overlay-desc').innerText = `塔 ${GAME_STATE.towerLevel - 1}F 通關！獲得 ${nextD} 寶石，${nextS} 鍛造石。`;
+                    // ★ 平衡調整：試煉塔是穩定寶石來源之一，獎勵基礎值與成長都調高一些
+                    const nextD = 55 + (GAME_STATE.towerLevel * 10); const nextS = 5 + (GAME_STATE.towerLevel * 2); GAME_STATE.diamonds += nextD; GAME_STATE.forgeStones += nextS; GAME_STATE.towerLevel++; document.getElementById('overlay-desc').innerText = `塔 ${GAME_STATE.towerLevel - 1}F 通關！獲得 ${nextD} 寶石，${nextS} 鍛造石。`;
                 } else {
                     // 遠征獎勵：改用「關卡倍率」讓越高關卡的獎勵成長更明顯（原本是純線性加法，高關卡感受不出差異）。
                     // ★ 平衡調整：成長率從 0.06 降到 0.035——現在英雄升級曲線拉長到 200 級、花費也改成二次成長，
@@ -5730,9 +5727,10 @@
                     const eReward = Math.floor((40 + GAME_STATE.stage.chapter * 20) * stageMult);
                     // 寶石掉落數量控制：原本「隨機基礎值 + 隨關卡無上限疊加」在高關卡會變得數字忽大忽小又不斷膨脹。
                     // 改成掉落機率維持隨機，但掉落「數量」固定依關卡計算、並設上限，數字可預期、不會亂跳。
-                    const diamondBonus = Math.min(6, Math.floor(totalStage / 12)); // 每 12 關 +1，最多 +6
+                    // ★ 平衡調整：寶石太稀缺會卡住碎片/抽卡的取得速度，把掉落機率跟數量都提高一截。
+                    const diamondBonus = Math.min(8, Math.floor(totalStage / 10)); // 每 10 關 +1，最多 +8
                     const stoneBonus = Math.min(4, Math.floor(totalStage / 18)); // 每 18 關 +1，最多 +4
-                    let extraDiamonds = Math.random() < 0.28 ? (2 + diamondBonus) : 0;
+                    let extraDiamonds = Math.random() < 0.45 ? (3 + diamondBonus) : 0;
                     let extraStones = Math.random() < 0.20 ? (1 + stoneBonus) : 0;
                     GAME_STATE.gold += gReward; GAME_STATE.heroExp += eReward; GAME_STATE.diamonds += extraDiamonds; GAME_STATE.forgeStones += extraStones;
 
@@ -5760,14 +5758,7 @@
                 btnNext.innerHTML = `<i class="fa-solid fa-play mr-1"></i>繼續挑戰`; btnNext.onclick = () => startNextBattle();
                 if (isAutoBattle && GAME_STATE.currentMode !== 'season') setTimeout(() => startNextBattle(), 2000 / battleSpeed);
             } else {
-                if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
-                    // 秘境挑戰失敗：中斷本次階層挑戰，寶藏連鎖/熔煉層數歸零，退回本階層第 1 關（不會倒退階層）
-                    const dType = GAME_STATE.currentMode.split('_')[1];
-                    resetDungeonRunOnFail(dType);
-                    document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-skull-crossbones text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]"></i>'; document.getElementById('overlay-title').innerText = '挑戰失敗'; document.getElementById('overlay-desc').innerText = '本次階層挑戰中斷，連鎖／熔煉加成歸零，已退回本階層第 1 關，已獲得的資源不會被扣除。';
-                } else {
-                    document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-skull-crossbones text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]"></i>'; document.getElementById('overlay-title').innerText = '全軍覆沒'; document.getElementById('overlay-desc').innerText = '陣型被擊潰，請提升等級或調整站位。';
-                }
+                document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-skull-crossbones text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]"></i>'; document.getElementById('overlay-title').innerText = '全軍覆沒'; document.getElementById('overlay-desc').innerText = '陣型被擊潰，請提升等級或調整站位。';
                 btnNext.innerHTML = `<i class="fa-solid fa-rotate-right mr-1"></i>重新挑戰`; btnNext.onclick = () => startNextBattle();
                 if (isAutoBattle) toggleAutoBattle();
             }
@@ -5777,6 +5768,7 @@
         function startNextBattle() {
             ToneAudioEngine.playClick();
             if (GAME_STATE.currentMode === 'tower') {document.getElementById('battle-stage-title').innerText = `塔 ${GAME_STATE.towerLevel}F`;}
+            else if (GAME_STATE.currentMode === 'season') {document.getElementById('battle-stage-title').innerText = `賽季討伐`;}
             else if (GAME_STATE.currentMode === 'rift') {document.getElementById('battle-stage-title').innerText = `迷宮 ${GAME_STATE.riftFloor || 1}層`;}
             else if (GAME_STATE.currentMode === 'festival') {document.getElementById('battle-stage-title').innerText = `迴廊 ${GAME_STATE.festivalFloor || 1}層`;}
             else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
