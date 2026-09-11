@@ -1682,31 +1682,37 @@
 
                 // --- S1 限定 ---
                 'h_uther': './images/h_uther.png',      // [UR] 聖光使者·烏瑟
+                'h_s1_lr': './images/h_s1_lr.png',      // [LR] 夜魘收割者·莫瑟斯
                 'h_s1_ssr1': './images/h_s1_ssr1.png',    // 亡靈督軍
                 'h_s1_ssr2': './images/h_s1_ssr2.png',    // 瘟疫使者
 
                 // --- S2 限定 ---
                 'h_siegfried': '',  // [UR] 屠龍勇士·齊格飛
+                'h_s2_lr': '',      // [LR] 深淵吞噬者·貝希摩斯
                 'h_s2_ssr1': '',    // 龍脈術士
                 'h_s2_ssr2': '',    // 龍鱗衛士
 
                 // --- S3 限定 ---
                 'h_jeanne': '',     // [UR] 裁決聖女·貞德
+                'h_s3_lr': '',      // [LR] 命運織者·諾恩
                 'h_s3_ssr1': '',    // 異端審判官
                 'h_s3_ssr2': '',    // 聖光狂熱者
 
                 // --- S4 限定 ---
                 'h_s4_ur': '',      // [UR] 巨龍之巔限定英雄
+                'h_s4_lr': '',      // [LR] 熔火霸主·瑟拉克斯
                 'h_s4_ssr1': '',    // S4 限定 SSR·1
                 'h_s4_ssr2': '',    // S4 限定 SSR·2
 
                 // --- S5 限定 ---
                 'h_s5_ur': '',      // [UR] 機械紀元限定英雄
+                'h_s5_lr': '',      // [LR] 奇點指揮官·諾娃
                 'h_s5_ssr1': '',    // S5 限定 SSR·1
                 'h_s5_ssr2': '',    // S5 限定 SSR·2
 
                 // --- S6 限定 ---
                 'h_s6_ur': '',      // [UR] 拂曉盛典限定英雄
+                'h_s6_lr': '',      // [LR] 永晝女王·奧蘿拉
                 'h_s6_ssr1': '',    // S6 限定 SSR·1
                 'h_s6_ssr2': '',    // S6 限定 SSR·2
 
@@ -4340,7 +4346,7 @@
             },
             special: {
                 icon: 'fa-gem', iconColor: '#fb7185', title: '特急招募 (極秘)',
-                desc: '專屬卡池！機率獲得賽季限定 LR 騎士。',
+                desc: '專屬卡池！機率獲得賽季限定 UR 騎士（LR 只能透過賽季通行證取得）。',
                 bannerGradient: 'from-rose-900/40', borderColor: 'border-rose-500',
                 btn1Class: 'bg-rose-950/50 border-rose-800 text-rose-300 hover:border-rose-500 shadow',
                 btn10Class: 'bg-gradient-to-b from-rose-600 to-rose-900 border-rose-400 text-white hover:from-rose-500 shadow-lg',
@@ -4409,9 +4415,8 @@
         const POOL_RATES = {
             standard: {lrRate: 0, urRate: 0, ssrRate: 0.05, srRate: 0.20, pityAt: 80, pityRarity: 'SSR'}, // 常駐：SSR 5%、SR 20%、R 75%，80抽保底 SSR
             limited: {lrRate: 0, urRate: 0, ssrRate: 0.06, srRate: 0.20, pityAt: 70, pityRarity: 'SSR'},  // 賽季限定：SSR 略高 6%，保底縮短到 70 抽
-            // ★ 特急卡池改成雙層最高稀有度：LR（新增、更稀有，0.4%，50 抽保底）比 UR（原本的角色，1%）更難抽到，
-            // 兩者互不影響彼此的保底計數，各自獨立累積
-            special: {lrRate: 0.004, urRate: 0.01, ssrRate: 0.08, srRate: 0.18, pityAt: 50, pityRarity: 'LR'}  // 特急：0.4% LR + 1% UR，SSR 安慰率提高到 8%，50 抽保底 LR
+            // ★ LR 改成只能透過賽季通行證取得，抽卡完全抽不到（lrRate 固定 0），特急池維持原本 UR 保底
+            special: {lrRate: 0, urRate: 0.01, ssrRate: 0.08, srRate: 0.18, pityAt: 50, pityRarity: 'UR'}  // 特急：1% UR，SSR 安慰率提高到 8%，50 抽保底 UR
         };
 
         // ★ 常駐／限定卡池：卷軸不夠時可以直接用寶石補（跟商店換卷軸同一個 60 寶石/抽的價格），
