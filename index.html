@@ -4534,9 +4534,9 @@
                 const usableWidth = cx * 0.76; const startX = cx * 0.12; const gapX = usableWidth / 2; x = startX + row * gapX;
                 if (GAME_STATE.currentMode === 'season' && team === 'enemy') {y = cy * 0.24; x = cx * 0.5;}
                 else {
-                    // ★ 第五次修正：我方縮小到只佔 20% 縱深（血條才不會被擠到畫面外面看不到），
-                    // 下面多出來的空間刻意留白，不硬把後排角色往下拉伸去填滿剩餘空間。
-                    const pFrontY = cy * 0.60, pBackY = cy * 0.80, pGapY = (pBackY - pFrontY) / 2;
+                    // ★ 誤會修正：留白應該留在「敵我交界處」（中間），不是留在我方下方。
+                    // 我方縮深維持 20%，但整塊往下貼齊靠近畫面底部，中間跟敵方之間空出來的距離才是留白區。
+                    const pFrontY = cy * 0.72, pBackY = cy * 0.92, pGapY = (pBackY - pFrontY) / 2;
                     const eFrontY = cy * 0.46, eBackY = cy * 0.17, eGapY = (eFrontY - eBackY) / 2;
                     y = team === 'player' ? pFrontY + col * pGapY : eFrontY - col * eGapY;
                     // 錯位：非前排單位左右微微交錯，避免與同一路的前排單位直接疊在一起
