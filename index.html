@@ -1264,7 +1264,7 @@
                 </div>
             </div>
 
-            <!-- 競技場／全服首領討伐：多人功能，需要先在程式碼裡貼上 Firebase 設定才會啟用 -->
+            <!-- 競技場：純玩家對戰，即時在線名單（不用手動上傳陣容，上線就自動廣播目前陣容），需要先在程式碼裡貼上 Firebase 設定才會啟用 -->
             <div id="tab-arena"
                 class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/80 backdrop-blur-md overflow-y-auto custom-scrollbar flex flex-col gap-3">
                 <h2 class="font-bold text-sky-400 font-magic text-lg flex items-center shrink-0 border-b border-[#3e3328] pb-2">
@@ -1294,44 +1294,43 @@
                             class="shrink-0 px-3 py-1.5 bg-sky-900/60 text-sky-300 text-[10px] font-bold rounded border border-sky-700 hover:bg-sky-800 transition">儲存</button>
                     </div>
 
+                    <!-- 戰力／戰績／榮譽點數總覽 -->
+                    <div class="glass-panel p-3 rounded-xl border border-[#3e3328] grid grid-cols-3 gap-2 text-center shrink-0">
+                        <div>
+                            <div class="text-[8px] text-stone-500">目前戰力</div>
+                            <div id="arena-my-power" class="text-fantasy-gold font-bold text-xs">0</div>
+                        </div>
+                        <div>
+                            <div class="text-[8px] text-stone-500">戰績</div>
+                            <div id="arena-my-record" class="text-stone-300 font-bold text-xs">0勝0敗</div>
+                        </div>
+                        <div>
+                            <div class="text-[8px] text-stone-500"><i class="fa-solid fa-medal text-amber-400 mr-0.5"></i>榮譽點數</div>
+                            <div id="arena-honor-points" class="text-amber-400 font-bold text-xs">0</div>
+                        </div>
+                    </div>
+                    <p class="text-[8px] text-stone-500 text-center shrink-0">停留在這個畫面時，會自動把你目前的陣容即時廣播給其他玩家看到，不用另外手動上傳；離開畫面幾分鐘後就會從別人的名單上消失。</p>
+
                     <!-- 子頁籤 -->
                     <div class="flex gap-2 shrink-0">
                         <button onclick="switchArenaSubTab('pvp')" id="btn-arena-pvp"
-                            class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-sky-900/60 text-sky-300 border border-sky-600">異步競技場</button>
-                        <button onclick="switchArenaSubTab('worldboss')" id="btn-arena-worldboss"
-                            class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">全服首領討伐</button>
+                            class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-sky-900/60 text-sky-300 border border-sky-600">即時挑戰</button>
+                        <button onclick="switchArenaSubTab('shop')" id="btn-arena-shop"
+                            class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">榮譽商店</button>
                     </div>
 
-                    <!-- 異步 PVP 子頁 -->
-                    <div id="arena-pvp-panel" class="flex flex-col gap-3">
-                        <div class="glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between">
-                            <div class="text-[10px] text-stone-400">目前戰力：<span id="arena-my-power" class="text-fantasy-gold font-bold">0</span>　戰績：<span id="arena-my-record" class="text-stone-300 font-bold">0勝0敗</span></div>
-                            <button onclick="uploadArenaSnapshot()"
-                                class="px-3 py-1.5 bg-emerald-900/60 text-emerald-300 text-[10px] font-bold rounded border border-emerald-700 hover:bg-emerald-800 transition">上傳目前陣容</button>
-                        </div>
+                    <!-- 即時挑戰子頁 -->
+                    <div id="arena-pvp-panel" class="flex flex-col gap-2">
                         <div class="flex items-center justify-between shrink-0">
-                            <span class="text-[10px] text-stone-500">挑戰名單（隨機抽取其他玩家）</span>
-                            <button onclick="refreshArenaOpponents()" class="text-[10px] text-sky-400"><i class="fa-solid fa-rotate mr-1"></i>重新整理</button>
+                            <span class="text-[10px] text-stone-500"><i class="fa-solid fa-circle text-emerald-500 text-[6px] mr-1"></i>目前在線玩家（即時更新，不用手動整理）</span>
                         </div>
                         <div id="arena-opponent-list" class="space-y-2"></div>
                     </div>
 
-                    <!-- 全服首領討伐子頁 -->
-                    <div id="arena-worldboss-panel" class="hidden flex-col gap-3">
-                        <div class="glass-panel p-4 rounded-xl border border-rose-700/50">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-rose-400 font-bold text-xs"><i class="fa-solid fa-dragon mr-1"></i>全服首領</span>
-                                <span class="text-[10px] text-stone-400">剩餘血量</span>
-                            </div>
-                            <div class="w-full bg-black/50 rounded-full h-3 border border-[#3e3328] overflow-hidden mb-2">
-                                <div id="worldboss-hp-bar" class="bg-gradient-to-r from-rose-600 to-rose-400 h-full transition-all duration-500" style="width: 100%"></div>
-                            </div>
-                            <div class="text-[10px] text-stone-400 text-center mb-3"><span id="worldboss-hp-text">-</span></div>
-                            <button onclick="startWorldBossBattle()"
-                                class="w-full py-2.5 rounded-lg bg-gradient-to-b from-rose-600 to-rose-900 border border-rose-400 text-white font-bold text-xs shadow-lg active:scale-95 transition">討伐</button>
-                        </div>
-                        <div class="text-[10px] text-stone-500">傷害排行榜</div>
-                        <div id="worldboss-leaderboard" class="space-y-2"></div>
+                    <!-- 榮譽商店子頁 -->
+                    <div id="arena-shop-panel" class="hidden flex-col gap-2">
+                        <p class="text-[9px] text-stone-500">打贏競技場對戰可以獲得榮譽點數，在這裡換成其他資源。</p>
+                        <div id="arena-shop-list" class="space-y-2"></div>
                     </div>
                 </div>
             </div>
@@ -1829,9 +1828,20 @@
            全服首領：所有玩家共用同一顆血條，各自在自己裝置上單獨討伐，傷害用 Firestore
            transaction 原子性地扣血，避免多人同時扣血互相蓋掉。
            ============================================================ */
-        let arenaOpponentSnapshot = null; // 目前準備挑戰的對手快照，戰鬥用完即丟
+        let arenaOpponentSnapshot = null; // 目前準備挑戰的對手資料，戰鬥用完即丟
+        let arenaPresenceInterval = null;
+        let arenaPresenceUnsub = null; // Firestore onSnapshot 的取消訂閱函式
 
-        // 切換總覽畫面：依連線狀態顯示「尚未設定／連線中／主內容」三種畫面之一
+        // 榮譽商店的兌換清單：打贏競技場拿到的「榮譽點數」可以換這些資源
+        const ARENA_SHOP_ITEMS = [
+            {id: 'gold', name: '金幣', icon: 'fa-coins', cost: 30, amount: 5000, apply: () => {GAME_STATE.gold += 5000;}},
+            {id: 'exp', name: '英雄經驗', icon: 'fa-flask', cost: 30, amount: 3000, apply: () => {GAME_STATE.heroExp += 3000;}},
+            {id: 'stone', name: '鍛造石', icon: 'fa-hammer', cost: 40, amount: 200, apply: () => {GAME_STATE.forgeStones += 200;}},
+            {id: 'diamond', name: '寶石', icon: 'fa-gem', cost: 80, amount: 50, apply: () => {GAME_STATE.diamonds += 50;}},
+            {id: 'ticket', name: '召喚卷軸', icon: 'fa-scroll', cost: 120, amount: 1, apply: () => {GAME_STATE.tickets += 1;}}
+        ];
+
+        // 切換到競技場分頁時呼叫：依連線狀態顯示「尚未設定／連線中／主內容」，連線成功的話開始廣播自己在線上
         function refreshArenaUI() {
             const notConfigured = document.getElementById('mp-not-configured');
             const connecting = document.getElementById('mp-connecting');
@@ -1845,22 +1855,24 @@
             if (!mpConnected) return;
 
             document.getElementById('mp-display-name-input').value = GAME_STATE.mpDisplayName || '';
-            const record = GAME_STATE.arenaRecord || {win: 0, loss: 0};
-            document.getElementById('arena-my-record').innerText = `${record.win}勝${record.loss}敗`;
+            if (!GAME_STATE.arenaRecord) GAME_STATE.arenaRecord = {win: 0, loss: 0};
+            document.getElementById('arena-my-record').innerText = `${GAME_STATE.arenaRecord.win}勝${GAME_STATE.arenaRecord.loss}敗`;
             document.getElementById('arena-my-power').innerText = getMyArenaPower().toLocaleString();
+            document.getElementById('arena-honor-points').innerText = (GAME_STATE.honorPoints || 0).toLocaleString();
 
-            refreshArenaOpponents();
-            refreshWorldBossUI();
+            renderArenaShop();
+            startArenaPresenceLoop();
         }
 
         function switchArenaSubTab(sub) {
             ToneAudioEngine.playClick();
             const isPvp = sub === 'pvp';
             document.getElementById('arena-pvp-panel').classList.toggle('hidden', !isPvp);
-            document.getElementById('arena-worldboss-panel').classList.toggle('hidden', isPvp);
-            document.getElementById('arena-worldboss-panel').classList.toggle('flex', !isPvp);
+            document.getElementById('arena-pvp-panel').classList.toggle('flex', isPvp);
+            document.getElementById('arena-shop-panel').classList.toggle('hidden', isPvp);
+            document.getElementById('arena-shop-panel').classList.toggle('flex', !isPvp);
             document.getElementById('btn-arena-pvp').className = `flex-1 py-2 rounded-lg text-[11px] font-bold ${isPvp ? 'bg-sky-900/60 text-sky-300 border border-sky-600' : 'bg-black/40 text-stone-400 border border-[#3e3328]'}`;
-            document.getElementById('btn-arena-worldboss').className = `flex-1 py-2 rounded-lg text-[11px] font-bold ${!isPvp ? 'bg-rose-900/60 text-rose-300 border border-rose-600' : 'bg-black/40 text-stone-400 border border-[#3e3328]'}`;
+            document.getElementById('btn-arena-shop').className = `flex-1 py-2 rounded-lg text-[11px] font-bold ${!isPvp ? 'bg-amber-900/60 text-amber-300 border border-amber-600' : 'bg-black/40 text-stone-400 border border-[#3e3328]'}`;
         }
 
         async function saveMpDisplayName() {
@@ -1872,148 +1884,131 @@
             saveGame();
             try {
                 await fbDb.collection('players').doc(fbUser.uid).set({displayName: name}, {merge: true});
+                broadcastArenaPresence(); // 暱稱也順便更新到目前的線上廣播資料裡，不用等下一次自動更新
                 showToast('暱稱已更新');
             } catch (err) {showToast('更新失敗，請檢查網路連線'); console.warn(err);}
         }
 
-        // 用現有的 combatPower 公式加總目前上陣英雄的戰力，當作競技場快照的參考數字（顯示用，不影響戰鬥計算）
+        // 用現有的 combatPower 公式加總目前上陣英雄的戰力，當作顯示用的參考數字（不影響戰鬥計算）
         function getMyArenaPower() {
             const heroes = (GAME_STATE.gridSlots || []).filter(Boolean).map(id => GAME_STATE.roster[id] ? getEffectiveHero(HERO_DATABASE.find(h => h.id === id)) : null).filter(Boolean);
             return heroes.reduce((s, h) => s + (h.combatPower || 0), 0);
         }
 
-        // 把目前上陣佈陣壓縮成一份「快照」上傳：只存 heroId + row/col 站位 + level/star/equips，
-        // 對手挑戰時會用這份資料在自己的裝置上，透過 getEffectiveHero() 重新算出完整戰鬥數值來模擬戰鬥，
-        // 不需要傳送完整的英雄資料庫內容（對方本來就有同一份 HERO_DATABASE）
-        async function uploadArenaSnapshot() {
-            ToneAudioEngine.playClick();
-            if (!mpConnected) {showToast('尚未連線'); return;}
+        // ★ 即時廣播：跟舊版「手動上傳陣容」不同，這裡是停留在競技場畫面時，每 20 秒自動把「目前上陣佈陣」
+        // 廣播成一份線上狀態（不用另外按上傳鈕，陣容永遠是最新的）。只存 heroId + 站位 + level/star/equips，
+        // 對手挑戰時會用同一份 HERO_DATABASE 在自己的裝置上重建出完整戰鬥數值來模擬戰鬥。
+        async function broadcastArenaPresence() {
+            if (!mpConnected) return;
             const team = (GAME_STATE.gridSlots || []).map((id, idx) => {
                 if (!id || !GAME_STATE.roster[id]) return null;
                 const r = GAME_STATE.roster[id];
                 return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0], row: Math.floor(idx / 2), col: (idx % 2) * 2};
             }).filter(Boolean);
-            if (team.length === 0) {showToast('請先到佈陣頁面上陣至少一位英雄'); return;}
-
-            const power = getMyArenaPower();
             try {
-                await fbDb.collection('arenaSnapshots').doc(fbUser.uid).set({
+                await fbDb.collection('arenaPresence').doc(fbUser.uid).set({
                     displayName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`,
-                    power, team,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    power: getMyArenaPower(),
+                    team,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                showToast('陣容已上傳，其他玩家可以挑戰你了！');
-                document.getElementById('arena-my-power').innerText = power.toLocaleString();
-            } catch (err) {showToast('上傳失敗，請檢查網路連線'); console.warn(err);}
+            } catch (err) {console.warn('廣播線上狀態失敗：', err);}
         }
 
-        // 抓最近更新的一批玩家快照，排除自己，隨機取 5 位顯示成挑戰名單
-        async function refreshArenaOpponents() {
+        // 開始「在線上」：立刻廣播一次，之後每 20 秒自動更新，同時開始即時監聽別人的線上名單
+        function startArenaPresenceLoop() {
+            stopArenaPresenceLoop();
+            broadcastArenaPresence();
+            arenaPresenceInterval = setInterval(broadcastArenaPresence, 20000);
+            listenArenaOnlinePlayers();
+        }
+
+        // 離開競技場畫面時呼叫：停止自動廣播，並主動把自己從線上名單刪掉，這樣立刻從別人畫面上消失，
+        // 不用等 5 分鐘逾時，比較符合「即時」的概念
+        function stopArenaPresenceLoop() {
+            const wasActive = !!arenaPresenceInterval;
+            if (arenaPresenceInterval) {clearInterval(arenaPresenceInterval); arenaPresenceInterval = null;}
+            if (arenaPresenceUnsub) {arenaPresenceUnsub(); arenaPresenceUnsub = null;}
+            if (wasActive && mpConnected && fbDb && fbUser) fbDb.collection('arenaPresence').doc(fbUser.uid).delete().catch(() => {});
+        }
+
+        // ★ 即時監聽線上玩家名單：用 Firestore 的 onSnapshot（不是單次讀取），只要有人上線/離線/更新陣容，
+        // 這份清單會自動即時刷新，不用手動按重新整理按鈕，這是跟舊版「異步上傳」最大的差異
+        function listenArenaOnlinePlayers() {
             if (!mpConnected) return;
-            const list = document.getElementById('arena-opponent-list');
-            list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-4">讀取中...</div>`;
-            try {
-                const snap = await fbDb.collection('arenaSnapshots').orderBy('updatedAt', 'desc').limit(25).get();
-                let opponents = [];
-                snap.forEach(doc => {if (doc.id !== fbUser.uid) opponents.push({uid: doc.id, ...doc.data()});});
-                opponents.sort(() => Math.random() - 0.5);
-                opponents = opponents.slice(0, 5);
-
-                if (opponents.length === 0) {
-                    list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-4">目前還沒有其他玩家上傳陣容，等朋友也上傳後就會出現在這裡。</div>`;
-                    return;
-                }
-                list.innerHTML = '';
-                opponents.forEach(op => {
-                    const card = document.createElement('div');
-                    card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
-                    card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200">${op.displayName || '???'}</div><div class="text-[9px] text-stone-500">戰力 ${(op.power || 0).toLocaleString()}</div></div><button class="px-3 py-1.5 bg-rose-900/60 text-rose-300 text-[10px] font-bold rounded border border-rose-700 hover:bg-rose-800 transition">挑戰</button>`;
-                    card.querySelector('button').onclick = () => startArenaBattle(op);
-                    list.appendChild(card);
-                });
-            } catch (err) {
-                list.innerHTML = `<div class="text-center text-[10px] text-rose-400 py-4">讀取失敗，請檢查網路連線</div>`;
-                console.warn(err);
-            }
+            if (arenaPresenceUnsub) arenaPresenceUnsub();
+            arenaPresenceUnsub = fbDb.collection('arenaPresence').orderBy('lastSeen', 'desc').limit(30)
+                .onSnapshot(snap => {
+                    const now = Date.now();
+                    const list = document.getElementById('arena-opponent-list');
+                    if (!list) return;
+                    let opponents = [];
+                    snap.forEach(doc => {
+                        if (doc.id === fbUser.uid) return;
+                        const d = doc.data();
+                        const lastSeenMs = d.lastSeen && d.lastSeen.toMillis ? d.lastSeen.toMillis() : 0;
+                        if (now - lastSeenMs > 5 * 60 * 1000) return; // 超過 5 分鐘沒更新視為離線，不顯示
+                        opponents.push({uid: doc.id, ...d});
+                    });
+                    if (opponents.length === 0) {
+                        list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-4">目前沒有其他玩家在線上，等朋友也打開競技場畫面就會出現在這裡。</div>`;
+                        return;
+                    }
+                    list.innerHTML = '';
+                    opponents.forEach(op => {
+                        const card = document.createElement('div');
+                        card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
+                        card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200"><i class="fa-solid fa-circle text-emerald-500 text-[6px] mr-1"></i>${op.displayName || '???'}</div><div class="text-[9px] text-stone-500">戰力 ${(op.power || 0).toLocaleString()}</div></div><button class="px-3 py-1.5 bg-rose-900/60 text-rose-300 text-[10px] font-bold rounded border border-rose-700 hover:bg-rose-800 transition">挑戰</button>`;
+                        card.querySelector('button').onclick = () => startArenaBattle(op);
+                        list.appendChild(card);
+                    });
+                }, err => console.warn('線上名單監聽失敗：', err));
         }
 
-        // 開始一場競技場戰鬥：把對手快照存到 arenaOpponentSnapshot，交給 initCombatUnits 的 'arena' 分支去組出敵方陣容
-        function startArenaBattle(opponentSnapshot) {
+        // 開始一場競技場戰鬥：把對手資料存到 arenaOpponentSnapshot，交給 initCombatUnits 的 'arena' 分支去組出敵方陣容
+        function startArenaBattle(opponent) {
             ToneAudioEngine.playClick();
-            arenaOpponentSnapshot = opponentSnapshot;
+            arenaOpponentSnapshot = opponent;
             snapshotCurrentBattleIfNeeded();
             switchTab('battle', {internal: true});
             GAME_STATE.currentMode = 'arena';
             combatEntities = [];
-            document.getElementById('battle-stage-title').innerText = `競技場：挑戰 ${opponentSnapshot.displayName || '???'}`;
+            document.getElementById('battle-stage-title').innerText = `競技場：挑戰 ${opponent.displayName || '???'}`;
             setTimeout(initCombatUnits, 100);
             refreshNavHighlightForMode();
             updateDynamicBackground();
         }
 
-        // 讀取全服首領目前血量並更新畫面；boss 資料不存在時（例如第一次使用）自動建立一份初始資料
-        async function refreshWorldBossUI() {
-            if (!mpConnected) return;
-            try {
-                const ref = fbDb.collection('worldBoss').doc('current');
-                let snap = await ref.get();
-                if (!snap.exists) {
-                    await ref.set({bossName: '深淵吞噬者', maxHp: 100000000, currentHp: 100000000, resetAt: firebase.firestore.FieldValue.serverTimestamp()});
-                    snap = await ref.get();
-                }
-                const data = snap.data();
-                const pct = Math.max(0, Math.min(100, (data.currentHp / data.maxHp) * 100));
-                document.getElementById('worldboss-hp-bar').style.width = `${pct}%`;
-                document.getElementById('worldboss-hp-text').innerText = `${Math.max(0, Math.floor(data.currentHp)).toLocaleString()} / ${data.maxHp.toLocaleString()}`;
-
-                const lbSnap = await fbDb.collection('worldBoss').doc('current').collection('contributions').orderBy('totalDamage', 'desc').limit(10).get();
-                const lbList = document.getElementById('worldboss-leaderboard');
-                lbList.innerHTML = '';
-                if (lbSnap.empty) {
-                    lbList.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-3">還沒有人對首領造成傷害</div>`;
-                } else {
-                    let rank = 0;
-                    lbSnap.forEach(doc => {
-                        rank++;
-                        const d = doc.data();
-                        lbList.innerHTML += `<div class="flex justify-between items-center bg-black/40 px-3 py-1.5 rounded border border-[#3e3328] text-[10px]"><span class="text-stone-300">${rank}. ${d.displayName || '???'}</span><span class="text-rose-400 font-bold">${(d.totalDamage || 0).toLocaleString()}</span></div>`;
-                    });
-                }
-            } catch (err) {console.warn('讀取世界首領資料失敗：', err);}
+        // 打完一場競技場戰鬥發放榮譽點數：贏比輸多，兩者都會給一點，避免打輸完全沒收穫、不想再打
+        function grantArenaHonorReward(isWin) {
+            const gain = isWin ? 15 : 4;
+            GAME_STATE.honorPoints = (GAME_STATE.honorPoints || 0) + gain;
+            return gain;
         }
 
-        function startWorldBossBattle() {
+        function renderArenaShop() {
+            const list = document.getElementById('arena-shop-list');
+            if (!list) return;
+            list.innerHTML = '';
+            ARENA_SHOP_ITEMS.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
+                card.innerHTML = `<div class="flex items-center gap-2"><i class="fa-solid ${item.icon} text-amber-400"></i><span class="text-[11px] text-stone-200">${item.name} x${item.amount}</span></div><button class="px-3 py-1.5 bg-amber-900/50 text-amber-300 text-[10px] font-bold rounded border border-amber-700 hover:bg-amber-800 transition"><i class="fa-solid fa-medal mr-1"></i>${item.cost}</button>`;
+                card.querySelector('button').onclick = () => buyArenaShopItem(item.id);
+                list.appendChild(card);
+            });
+        }
+
+        function buyArenaShopItem(itemId) {
             ToneAudioEngine.playClick();
-            if (!mpConnected) {showToast('尚未連線'); return;}
-            snapshotCurrentBattleIfNeeded();
-            switchTab('battle', {internal: true});
-            GAME_STATE.currentMode = 'worldboss';
-            combatEntities = [];
-            document.getElementById('battle-stage-title').innerText = `全服首領討伐`;
-            setTimeout(initCombatUnits, 100);
-            refreshNavHighlightForMode();
-            updateDynamicBackground();
-        }
-
-        // 戰鬥結束後用 transaction 把這次造成的傷害原子性地從共用血量扣掉，避免多人同時扣血互相蓋掉；
-        // 同時更新自己的貢獻紀錄，讓排行榜看得到
-        async function submitWorldBossDamage(damage) {
-            if (!mpConnected || damage <= 0) return;
-            try {
-                const bossRef = fbDb.collection('worldBoss').doc('current');
-                await fbDb.runTransaction(async (tx) => {
-                    const doc = await tx.get(bossRef);
-                    if (!doc.exists) return;
-                    const newHp = Math.max(0, doc.data().currentHp - damage);
-                    tx.update(bossRef, {currentHp: newHp});
-                });
-                const contribRef = bossRef.collection('contributions').doc(fbUser.uid);
-                await fbDb.runTransaction(async (tx) => {
-                    const doc = await tx.get(contribRef);
-                    const prev = doc.exists ? (doc.data().totalDamage || 0) : 0;
-                    tx.set(contribRef, {displayName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`, totalDamage: prev + damage}, {merge: true});
-                });
-            } catch (err) {console.warn('提交世界首領傷害失敗：', err);}
+            const item = ARENA_SHOP_ITEMS.find(i => i.id === itemId);
+            if (!item) return;
+            if ((GAME_STATE.honorPoints || 0) < item.cost) {showToast('榮譽點數不足'); return;}
+            GAME_STATE.honorPoints -= item.cost;
+            item.apply();
+            saveGame(); updateHUD();
+            document.getElementById('arena-honor-points').innerText = (GAME_STATE.honorPoints || 0).toLocaleString();
+            showToast(`兌換成功：${item.name} x${item.amount}`);
         }
 
 
@@ -3184,10 +3179,9 @@
                         showToast(`🎉 兌換獲得全新英雄：${dbHero.name}`);
                     } else {
                         // 改成發放英雄碎片，跟召喚重複抽到的規則一致，玩家自己決定何時拿碎片去升星
-                        if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
                         const shardAmount = 10;
-                        GAME_STATE.heroShards[pickId] = (GAME_STATE.heroShards[pickId] || 0) + shardAmount;
-                        showToast(`🎉 獲得 ${dbHero.name} 碎片 x${shardAmount}，可到英雄詳情頁升星`);
+                        const converted = grantHeroShards(pickId, shardAmount);
+                        if (!converted) showToast(`🎉 獲得 ${dbHero.name} 碎片 x${shardAmount}，可到英雄詳情頁升星`);
                     }
                 }
             }
@@ -3813,7 +3807,6 @@
                 else if (GAME_STATE.currentMode === 'dungeon') {
                     document.getElementById('battle-stage-title').innerText = `深淵秘境`;
                 } else if (GAME_STATE.currentMode === 'season') document.getElementById('battle-stage-title').innerText = `賽季討伐`;
-                else if (GAME_STATE.currentMode === 'worldboss') document.getElementById('battle-stage-title').innerText = `全服首領討伐`;
                 else if (GAME_STATE.currentMode === 'arena') document.getElementById('battle-stage-title').innerText = `競技場：挑戰 ${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}`;
                 else document.getElementById('battle-stage-title').innerText = `${GAME_STATE.stage.chapter}-${GAME_STATE.stage.level}`;
             }
@@ -3878,6 +3871,7 @@
         function switchTab(tabId, opts) {
             opts = opts || {};
             ToneAudioEngine.playClick();
+            if (tabId !== 'arena') stopArenaPresenceLoop(); // 離開競技場畫面就停止即時廣播/監聽，避免背景一直耗用連線資源
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
@@ -4466,7 +4460,10 @@
             const costStarShards = getHeroStarUpCost(h.star);
             const btnStar = document.getElementById('btn-upgrade-star');
             if (h.star >= MAX_STAR_LEVEL) {
-                btnStar.innerHTML = `<span><i class="fa-solid fa-star text-[#110c08] mr-1"></i>已達最高星級 ${MAX_STAR_LEVEL}★</span>`;
+                // ★ LR 英雄滿星後，再拿到的碎片會自動轉化成「超越結晶」，這裡順便顯示目前結晶庫存，
+                // 不然玩家滿星之後完全看不到碎片轉換去哪了，會以為東西憑空消失
+                const crystalNote = h.rarity === 'LR' ? `<span class="text-[8px] mt-1 text-amber-700 font-bold block">之後再拿到的碎片會自動轉化為超越結晶（目前持有 ${(GAME_STATE.transcendCrystals || 0).toLocaleString()}）</span>` : '';
+                btnStar.innerHTML = `<span><i class="fa-solid fa-star text-[#110c08] mr-1"></i>已達最高星級 ${MAX_STAR_LEVEL}★</span>${crystalNote}`;
                 btnStar.disabled = true; btnStar.classList.add('opacity-50');
             } else {
                 btnStar.innerHTML = `<span><i class="fa-solid fa-star text-[#110c08] mr-1"></i>潛能覺醒 (+${h.star})</span><span class="text-[9px] mt-1 text-[#110c08]/80 font-bold tracking-wide"><i class="fa-solid fa-gem text-purple-900"></i> ${shardsOwned}/${costStarShards} 碎片</span>`;
@@ -4647,6 +4644,23 @@
         const MAX_STAR_LEVEL = 10;
         function getHeroStarUpCost(star) {
             return 5 + star * 5;
+        }
+
+        // ★ 新增：英雄碎片統一由這個函式發放，處理「LR 英雄已經滿星 (10星) 還一直拿到碎片」的溢出問題——
+        // 滿星的 LR 英雄碎片已經沒有用途了（沒有更高星可以升），與其讓碎片白白浪費、憑空消失，
+        // 改成自動轉換成新代幣「超越結晶」，留著之後開放新用途時使用。其他稀有度/未滿星的英雄不受影響。
+        function grantHeroShards(heroId, amount) {
+            const dbHero = HERO_DATABASE.find(h => h.id === heroId);
+            const r = GAME_STATE.roster[heroId];
+            const isMaxedLR = dbHero && dbHero.rarity === 'LR' && r && (r.star || 1) >= MAX_STAR_LEVEL;
+            if (isMaxedLR) {
+                GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + amount;
+                showToast(`${dbHero.name} 已滿星，碎片自動轉化為 ${amount} 枚超越結晶`);
+                return true; // 代表這次是轉換成結晶，不是正常拿到碎片
+            }
+            if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
+            GAME_STATE.heroShards[heroId] = (GAME_STATE.heroShards[heroId] || 0) + amount;
+            return false;
         }
 
         function upgradeSelectedHeroStar() {
@@ -4911,10 +4925,11 @@
                 } else {
                     // 重複英雄改成發放「英雄碎片」，用來在英雄詳情頁手動升星，不再抽到重複就直接自動升星
                     // ★ 平衡調整：碎片產出全面調高，配合升星所需總量下修，讓潛能覺醒不用堆積如山的重複抽卡
-                    if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
                     const shardAmount = {LR: 30, UR: 24, SSR: 14, SR: 9, R: 6}[rarity] || 6;
-                    GAME_STATE.heroShards[hero.id] = (GAME_STATE.heroShards[hero.id] || 0) + shardAmount;
-                    shardGainText = `<div class="absolute bottom-0 left-0 right-0 bg-black/80 text-purple-300 text-[7px] text-center py-0.5 border-t border-purple-800/50">碎片 +${shardAmount}</div>`;
+                    const shardConverted = grantHeroShards(hero.id, shardAmount);
+                    shardGainText = shardConverted
+                        ? `<div class="absolute bottom-0 left-0 right-0 bg-black/80 text-amber-300 text-[7px] text-center py-0.5 border-t border-amber-700/50">已滿星，轉化結晶 +${shardAmount}</div>`
+                        : `<div class="absolute bottom-0 left-0 right-0 bg-black/80 text-purple-300 text-[7px] text-center py-0.5 border-t border-purple-800/50">碎片 +${shardAmount}</div>`;
                 }
 
                 const borderStyle = rarity === 'LR' ? 'border-amber-300 shadow-[0_0_20px_rgba(253,224,71,0.85)] bg-gradient-to-b from-amber-900/60 via-fuchsia-950/40 to-[#1a120c]' :
@@ -5301,7 +5316,7 @@
                     combatEntities.push({baseId: 'm_festival', name: '慶典守衛', team: 'enemy', x: 0, y: 0, hp: Math.floor(450 * sm), maxHp: Math.floor(450 * sm), atk: Math.floor(50 * sm), def: Math.floor(25 * sm), role: '戰士', color: '#fbbf24', icon: 'fa-champagne-glasses', row: i % 3, col: Math.floor(i / 3), skill: {type: 'burn', value: 0.25, duration: 3, desc: '手持慶典煙火，大招使目標沾染火花，每回合造成攻擊力 25% 的灼燒傷害，持續 3 回合。'}});
                 }
             } else if (GAME_STATE.currentMode === 'arena') {
-                // ★ 競技場：敵方陣容不是固定怪物，而是從 arenaOpponentSnapshot（對手上傳的快照）重建。
+                // ★ 競技場：敵方陣容不是固定怪物，而是從 arenaOpponentSnapshot（對手即時廣播的線上資料）重建。
                 // 用同一份 HERO_DATABASE + getEffectiveHero() 算出對手每個英雄實際的戰鬥數值，
                 // 站位也照搬對手原本的排法，公平地在本地端模擬這場戰鬥。
                 document.getElementById('btn-auto-battle').style.display = 'block';
@@ -5318,12 +5333,6 @@
                         combatEntities.push({...h, baseId: h.id, hp: h.maxHp, maxHp: h.maxHp, atk: h.atk, def: h.def, team: 'enemy', row: slot.row, col: slot.col, x: 0, y: 0, tx: 0, ty: 0, actionTimer: 0, stunned: false, shield: 0, damageText: []});
                     });
                 }
-            } else if (GAME_STATE.currentMode === 'worldboss') {
-                // ★ 全服首領：跟賽季討伐同一種「無限血量、打到全軍覆沒為止」設計，血量本身只是本地顯示用的假血條，
-                // 真正共用的血量存在 Firestore，戰鬥結束時才把這場造成的傷害一次性提交上去扣血（見 handleCombatEnd）
-                document.getElementById('btn-auto-battle').style.display = 'block';
-                eventBossTotalHp = 99999999; eventBossCurrentHp = eventBossTotalHp;
-                combatEntities.push({baseId: 'm_worldboss', name: '深淵吞噬者', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: 260, def: 90, role: 'boss', color: '#a21caf', icon: 'fa-dragon', row: 1, col: 1, skill: {type: 'aoe'}});
             } else if (GAME_STATE.currentMode === 'season') {
                 const bossConfig = SEASON_CONFIG[GAME_STATE.season.id] ? SEASON_CONFIG[GAME_STATE.season.id].boss : SEASON_CONFIG[1].boss;
                 const topHero = Object.values(GAME_STATE.roster).sort((a, b) => b.level - a.level)[0]; const pLevel = topHero ? topHero.level : 1;
@@ -5431,7 +5440,7 @@
             else if (mode === 'season') target = 'season';
             else if (mode === 'rift' || mode === 'festival') target = 'season-mode';
             else if (mode === 'dungeon') target = 'dungeon';
-            else if (mode === 'arena' || mode === 'worldboss') target = 'arena';
+            else if (mode === 'arena') target = 'arena';
 
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-target="${target}"]`);
@@ -5741,7 +5750,7 @@
                 if (attacker.team === 'player') {
                     battleAnalytics.dps[attacker.name] += Math.floor(damage);
                     // ★ 秘境改版後也要看「造成了多少傷害」來算獎勵，所以連同賽季討伐一起累計
-                    if (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon' || GAME_STATE.currentMode === 'worldboss') {
+                    if (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon') {
                         eventTotalDamage += Math.floor(damage);
                         if (GAME_STATE.currentMode === 'season') eventBossCurrentHp -= damage;
                     }
@@ -6482,23 +6491,16 @@
             const btnNext = document.getElementById('btn-next-battle');
 
             if (GAME_STATE.currentMode === 'arena') {
-                // ★ 競技場結果只在本地端算輸贏（跟對手快照模擬戰鬥），不會影響對手任何資料，
-                // 只更新自己的勝敗紀錄；上傳到雲端的只有「快照」本身，不是戰鬥結果
+                // ★ 競技場結果只在本地端算輸贏（跟對手即時廣播的資料模擬戰鬥），不會影響對手任何資料，
+                // 只更新自己的勝敗紀錄；雲端存的只有「目前在線的陣容資料」，不是戰鬥結果
                 if (!GAME_STATE.arenaRecord) GAME_STATE.arenaRecord = {win: 0, loss: 0};
                 if (isWin) GAME_STATE.arenaRecord.win++; else GAME_STATE.arenaRecord.loss++;
+                const honorGain = grantArenaHonorReward(isWin);
                 document.getElementById('overlay-icon').innerHTML = isWin ? '<i class="fa-solid fa-trophy text-fantasy-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.8)]"></i>' : '<i class="fa-solid fa-skull-crossbones text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]"></i>';
                 document.getElementById('overlay-title').innerText = isWin ? '挑戰勝利' : '挑戰失敗';
-                document.getElementById('overlay-desc').innerHTML = `對手：<span class="text-sky-400 font-bold">${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}</span><br>目前戰績：<span class="text-fantasy-gold font-bold">${GAME_STATE.arenaRecord.win}勝${GAME_STATE.arenaRecord.loss}敗</span>`;
+                document.getElementById('overlay-desc').innerHTML = `對手：<span class="text-sky-400 font-bold">${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}</span><br>獲得 <span class="text-amber-400 font-bold">${honorGain}</span> 榮譽點數<br>目前戰績：<span class="text-fantasy-gold font-bold">${GAME_STATE.arenaRecord.win}勝${GAME_STATE.arenaRecord.loss}敗</span>`;
                 btnNext.innerText = "返回競技場"; btnNext.onclick = () => switchTab('arena');
                 saveGame();
-            } else if (GAME_STATE.currentMode === 'worldboss') {
-                // ★ 全服首領：不管輸贏，這場造成的傷害都會提交上去扣共用血量（異步討伐，跟秘境/賽季同一套精神）
-                submitWorldBossDamage(eventTotalDamage);
-                document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-dragon text-rose-500 drop-shadow-[0_0_15px_rgba(244,63,94,0.8)]"></i>';
-                document.getElementById('overlay-title').innerText = '討伐結束';
-                document.getElementById('overlay-desc').innerHTML = `對全服首領造成了 <span class="text-rose-400 font-bold">${eventTotalDamage.toLocaleString()}</span> 點傷害<br>已提交到全服排行榜！`;
-                btnNext.innerText = "返回競技場"; btnNext.onclick = () => switchTab('arena');
-                if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
             } else if (GAME_STATE.currentMode === 'season') {
                 const earnedCoins = Math.max(10, Math.floor(eventTotalDamage / 100)); GAME_STATE.starCoins += earnedCoins; GAME_STATE.season.totalDamage += eventTotalDamage; if (eventTotalDamage > GAME_STATE.season.highScore) GAME_STATE.season.highScore = eventTotalDamage;
                 const config = SEASON_CONFIG[GAME_STATE.season.id] || SEASON_CONFIG[1];
@@ -6602,7 +6604,6 @@
             else if (GAME_STATE.currentMode === 'dungeon') {
                 document.getElementById('battle-stage-title').innerText = `深淵秘境`;
             }
-            else if (GAME_STATE.currentMode === 'worldboss') {document.getElementById('battle-stage-title').innerText = `全服首領討伐`;}
             else if (GAME_STATE.currentMode === 'arena') {document.getElementById('battle-stage-title').innerText = `競技場：挑戰 ${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}`;}
             else {document.getElementById('battle-stage-title').innerText = `${GAME_STATE.stage.chapter}-${GAME_STATE.stage.level}`;}
             initCombatUnits();
