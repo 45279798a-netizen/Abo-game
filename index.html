@@ -3688,7 +3688,7 @@
            避免跟舊版一樣線性疊加會炸到 +400%），消耗資源也大幅提高，變成真正的長期養成目標。
            ============================================================ */
         const ALTAR_MAX_ARTIFACT_TIER = 100;
-        const ALTAR_PRAYER_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小時可領一次
+        const ALTAR_PRAYER_COOLDOWN_MS = 1 * 60 * 60 * 1000; // 24 小時可領一次
         let selectedAltarHeroId = null;
 
         function getAltarArtifactCost(tier) {
@@ -3699,7 +3699,7 @@
             // 一樣是長期目標，但至少是「打得到終點」的長期目標。
             return {
                 gold: 2000 + tier * 300,
-                stones: 80 + tier * 8
+                stones: 100 + tier * 8
             };
         }
 
@@ -3712,10 +3712,10 @@
                 renderAltarPrayerStatus();
                 return;
             }
-            const gold = 800 + GAME_STATE.highestStage.chapter * 100;
-            const exp = 500 + GAME_STATE.highestStage.chapter * 60;
-            const stones = 30 + GAME_STATE.highestStage.chapter * 3;
-            const diamonds = 30 + Math.floor(GAME_STATE.highestStage.chapter * 1.5);
+            const gold = 100000 + GAME_STATE.highestStage.chapter * 100;
+            const exp = 100000 + GAME_STATE.highestStage.chapter * 60;
+            const stones = 300000 + GAME_STATE.highestStage.chapter * 3;
+            const diamonds = 10000 + Math.floor(GAME_STATE.highestStage.chapter * 1.5);
             GAME_STATE.gold += gold; GAME_STATE.heroExp += exp; GAME_STATE.forgeStones += stones; GAME_STATE.diamonds += diamonds;
             GAME_STATE.lastAltarPrayerTime = now;
             saveGame(); updateHUD(); renderAltarPrayerStatus();
@@ -4050,7 +4050,7 @@
         // ★ 秘境／賽季這類需要重複刷的模式常常嫌動畫太慢，把上限從 x3 拉高到 x10
         function cycleBattleSpeed() {
             ToneAudioEngine.playClick();
-            const SPEED_STEPS = [1, 2, 3, 5, 10];
+            const SPEED_STEPS = [1, 2, 3, 5, 10,15,20];
             const idx = SPEED_STEPS.indexOf(battleSpeed);
             battleSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
             const btn = document.getElementById('btn-battle-speed');
@@ -5077,8 +5077,8 @@
                     showToast("戰鬥次數不足，請繼續遠征或討伐！");
                 }
             } else if (type === 'gold') {
-                if (GAME_STATE.gold >= 8000) {
-                    GAME_STATE.gold -= 8000;
+                if (GAME_STATE.gold >= 80000) {
+                    GAME_STATE.gold -= 80000;
                     GAME_STATE.specialTickets += 2;
                     showToast("🎉 成功花費金幣兌換 2 張 特急招募卷！");
                 } else {
@@ -5095,8 +5095,8 @@
                 }
             } else if (type === 'stone') {
                 // ★ 新增任務：消耗鍛造石直接兌換，裝備都點滿、鍛造石用不完的玩家可以拿來換卷軸
-                if (GAME_STATE.forgeStones >= 800) {
-                    GAME_STATE.forgeStones -= 800;
+                if (GAME_STATE.forgeStones >= 80000) {
+                    GAME_STATE.forgeStones -= 80000;
                     GAME_STATE.specialTickets += 2;
                     showToast("🎉 成功花費鍛造石兌換 2 張 特急招募卷！");
                 } else {
@@ -5104,8 +5104,8 @@
                 }
             } else if (type === 'exp') {
                 // ★ 新增任務：消耗英雄經驗直接兌換，英雄都練滿等、經驗堆積用不完時可以拿來換卷軸
-                if (GAME_STATE.heroExp >= 5000) {
-                    GAME_STATE.heroExp -= 5000;
+                if (GAME_STATE.heroExp >= 500000) {
+                    GAME_STATE.heroExp -= 500000;
                     GAME_STATE.specialTickets += 1;
                     showToast("🎉 成功花費英雄經驗兌換 1 張 特急招募卷！");
                 } else {
@@ -6367,7 +6367,7 @@
                     const img = customImgCache[e.baseId];
 
                     // 【智慧縮放】：手機直式倍率拉高到 6.5（電腦版維持霸氣的 7 倍）
-                    const scaleMult = isMobile ? 6.5 : 7;
+                    const scaleMult = isMobile ? 7 : 7;
                     currentDrawSize = shapeSize * scaleMult;
 
                     // 【位置微調】：如果是 Boss 且在手機上，把圖稍微往下壓 (0.65)，避免頭被 UI 擋住
@@ -6645,7 +6645,7 @@
             } else if (isWin) {
                 if (GAME_STATE.currentMode === 'tower') {
                     // ★ 平衡調整：試煉塔是穩定寶石來源之一，獎勵基礎值與成長都調高一些
-                    const nextD = 55 + (GAME_STATE.towerLevel * 10); const nextS = 5 + (GAME_STATE.towerLevel * 2); GAME_STATE.diamonds += nextD; GAME_STATE.forgeStones += nextS; GAME_STATE.towerLevel++; document.getElementById('overlay-desc').innerText = `塔 ${GAME_STATE.towerLevel - 1}F 通關！獲得 ${nextD} 寶石，${nextS} 鍛造石。`;
+                    const nextD = 100 + (GAME_STATE.towerLevel * 50); const nextS = 5 + (GAME_STATE.towerLevel * 2); GAME_STATE.diamonds += nextD; GAME_STATE.forgeStones += nextS; GAME_STATE.towerLevel++; document.getElementById('overlay-desc').innerText = `塔 ${GAME_STATE.towerLevel - 1}F 通關！獲得 ${nextD} 寶石，${nextS} 鍛造石。`;
                 } else {
                     // 遠征獎勵：改用「關卡倍率」讓越高關卡的獎勵成長更明顯（原本是純線性加法，高關卡感受不出差異）。
                     // ★ 平衡調整：成長率從 0.06 降到 0.035——現在英雄升級曲線拉長到 200 級、花費也改成二次成長，
