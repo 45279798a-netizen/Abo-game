@@ -1284,9 +1284,10 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div
                         class="bg-[#1f1610] p-3 rounded-xl border border-[#3e3328] shadow-inner-dark flex flex-col">
-                        <h4 class="font-bold text-stone-200 text-[10px] mb-1.5 border-b border-[#3e3328] pb-1">專屬技能
+                        <h4 class="font-bold text-stone-200 text-[10px] mb-1.5 border-b border-[#3e3328] pb-1">專屬技能（小技能／大招）
                         </h4>
                         <p id="modal-skill-desc" class="text-[9px] text-stone-400 leading-relaxed mt-1">描述</p>
+                        <p class="text-[8px] text-sky-400 mt-1.5"><i class="fa-solid fa-bolt mr-1"></i>每回合三選一：普攻／小技能（機率觸發，威力較小）／大招（能量滿時保證觸發，威力全開）</p>
                     </div>
                     <div
                         class="bg-[#1f1610] p-3 rounded-xl border border-yellow-700/30 flex flex-col shadow-inner-dark">
@@ -3342,16 +3343,26 @@
         }
 
         // ★ 把技能物件裡的機率/幅度/持續回合換算成一行文字，讓「升星後技能變強了」這件事看得到、不用自己猜
-        function formatSkillCurrentStats(skill) {
+        // ★ 小技能跟大招用的是同一個專屬技能，星級加成也是同一份 skill.value（見 getEffectiveHero 的 skillStarMult），
+        // 所以升星時小技能／大招的數值會一起變強；這裡額外加一個 scale 參數，算出小技能（縮水版）實際會是多少數值，
+        // 讓介面上能分開顯示兩者目前各是多少，而不是只看得到大招那一份。
+        function getMinorSkillScale(skill) {
+            if (!skill) return 1;
+            if (skill.type === 'heal_all' || skill.type === 'holy_shield' || skill.type === 'buff_atk') return 0.5;
+            return 0.55;
+        }
+        function formatSkillCurrentStats(skill, scale) {
             if (!skill) return '';
+            scale = typeof scale === 'number' ? scale : 1;
             const parts = [];
             if (typeof skill.chance === 'number') parts.push(`觸發機率 ${(skill.chance * 100).toFixed(1).replace(/\.0$/, '')}%`);
             if (typeof skill.value === 'number') {
+                const v = skill.value * scale;
                 // 大部分技能的 value 是倍率(0~5)，少數(如金幣加成)是直接數字，用大小粗略判斷該顯示成百分比還是數字
-                if (skill.value <= 5) parts.push(`效果幅度 ${(skill.value * 100).toFixed(1).replace(/\.0$/, '')}%`);
-                else parts.push(`效果數值 ${Math.floor(skill.value)}`);
+                if (v <= 5) parts.push(`效果幅度 ${(v * 100).toFixed(1).replace(/\.0$/, '')}%`);
+                else parts.push(`效果數值 ${Math.floor(v)}`);
             }
-            if (typeof skill.duration === 'number') parts.push(`持續 ${skill.duration} 回合`);
+            if (typeof skill.duration === 'number') parts.push(`持續 ${scale < 1 ? Math.max(1, skill.duration - 1) : skill.duration} 回合`);
             return parts.join('／');
         }
 
@@ -3769,9 +3780,18 @@
             <div class="bg-[#140e0a] p-3.5 rounded-lg border border-[#2a221b] shadow-inner text-left">
                 <div class="flex items-center gap-2 mb-2">
                     <i class="fa-solid fa-fire text-sky-500"></i>
-                    <span class="text-sky-400 font-bold text-xs tracking-widest">專屬技能</span>
+                    <span class="text-sky-400 font-bold text-xs tracking-widest">專屬技能（小技能／大招）</span>
                 </div>
                 <div class="text-stone-400 text-[11px] leading-relaxed">${h.skill.desc}</div>
+                ${(() => {
+                    const ultLine = formatSkillCurrentStats(h.skill, 1);
+                    const minorLine = formatSkillCurrentStats(h.skill, getMinorSkillScale(h.skill));
+                    let html = '';
+                    if (ultLine) html += `<div class="text-fantasy-gold text-[10px] mt-2">大招（1星基礎值）：${ultLine}</div>`;
+                    if (minorLine) html += `<div class="text-sky-400 text-[10px] mt-1">小技能（1星基礎值）：${minorLine}</div>`;
+                    return html;
+                })()}
+                <div class="text-sky-400 text-[10px] mt-2 pt-2 border-t border-[#2a221b]"><i class="fa-solid fa-bolt mr-1"></i>每回合三選一：普攻／小技能（機率觸發，同一招式的縮小版）／大招（能量滿時保證觸發，威力全開）；升星後兩者數值會一起提升</div>
             </div>
             `;
 
@@ -3986,9 +4006,14 @@
             document.getElementById('modal-stat-hp').innerText = h.maxHp; document.getElementById('modal-stat-atk').innerText = h.atk;
             document.getElementById('modal-stat-def').innerText = h.def; document.getElementById('modal-stat-crit').innerText = `${h.crit}%`;
             // ★ 修正：原本只顯示固定的技能敘述文字，升星後數值其實有變強，但文字裡的百分比是寫死的，
-            // 玩家完全看不出差異。額外拼出「目前數值」這行，直接把升星後算出來的即時數字秀出來。
-            const skillStatsLine = formatSkillCurrentStats(h.skill);
-            document.getElementById('modal-skill-desc').innerHTML = `${h.skill.desc}${skillStatsLine ? `<span class="block mt-1.5 text-fantasy-gold font-bold">目前數值：${skillStatsLine}</span>` : ''}`;
+            // ★ 修正：原本只顯示固定的技能敘述文字，升星後數值其實有變強，但文字裡的百分比是寫死的，
+            // 玩家完全看不出差異。額外拼出「目前數值」這兩行，大招／小技能分開列，升星後兩邊都會一起變強。
+            const ultStatsLine = formatSkillCurrentStats(h.skill, 1);
+            const minorStatsLine = formatSkillCurrentStats(h.skill, getMinorSkillScale(h.skill));
+            let statsHtml = '';
+            if (ultStatsLine) statsHtml += `<span class="block mt-1.5 text-fantasy-gold font-bold">大招數值：${ultStatsLine}</span>`;
+            if (minorStatsLine) statsHtml += `<span class="block mt-1 text-sky-400 font-bold">小技能數值：${minorStatsLine}</span>`;
+            document.getElementById('modal-skill-desc').innerHTML = `${h.skill.desc}${statsHtml}`;
 
             const custom = GAME_STATE.customHeroes[h.id];
             document.getElementById('modal-hero-avatar').innerHTML = custom ? `<img src="${custom}" class="w-full h-full object-cover">` : `<i class="fa-solid ${h.avatarIcon}" style="color:${h.color}"></i>`;
@@ -4717,6 +4742,9 @@
                         team: 'player',
                         row: Math.floor(idx / 2),
                         col: (idx % 2) * 2,
+                        // ★ 大招改用累積能量啟動：每個玩家英雄從 0 能量開始，滿了 (maxEnergy) 就會在自己的回合
+                        // 保證施放大招（見 updateCombatLogic 裡 isUlt 的判定），不再是每回合固定機率隨機觸發
+                        energy: 0, maxEnergy: 100,
                         x: 0, y: 0, tx: 0, ty: 0, actionTimer: 0, stunned: false, shield: 0, damageText: []
                     });
                 }
@@ -5033,6 +5061,10 @@
 
                 // 扣血
                 target.hp -= damage;
+                // ★ 大招能量：玩家英雄被攻擊時也會回一點能量（受擊蓄力），讓常被鎖定的英雄大招來得更快一些
+                if (target.team === 'player' && typeof target.energy === 'number') {
+                    target.energy = Math.min(target.maxEnergy || 100, target.energy + 10);
+                }
                 floatingTexts.push({x: target.x + (Math.random() * 20 - 10), y: target.y - 60 + (Math.random() * 10 - 5), text: Math.floor(damage), isCrit: isCrit, color: isCrit ? '#ffd54f' : '#fff', life: 45});
 
                 // 視覺特效
@@ -5174,6 +5206,12 @@
 
                 currentActor = turnQueue.shift(); if (currentActor.hp <= 0) return;
 
+                // ★ 大招能量：玩家英雄每次輪到自己的回合就會回一些能量，滿了之後這回合就會直接發動大招
+                // （見下方 isUlt 判定），取代原本「每回合固定 20% 機率」的隨機觸發方式
+                if (currentActor.team === 'player' && typeof currentActor.energy === 'number') {
+                    currentActor.energy = Math.min(currentActor.maxEnergy || 100, currentActor.energy + 25);
+                }
+
                 // 持續傷害結算：灼燒/中毒在該單位自己回合開始時觸發，攻擊力增益倒數也在此結算
                 applyTurnStartEffects(currentActor);
                 if (currentActor.hp <= 0) return; // 被持續傷害擊殺，直接跳過此回合行動
@@ -5265,10 +5303,16 @@
             else if (currentState === CSTATE.ACTION) {
                 currentActor.opacity = 1;
 
-                // 大招觸發判定 (Boss 25% 機率，玩家英雄 20% 機率)
-                let isUlt = false;
+                // 三種攻擊模式判定：Boss 維持 25% 機率大招；玩家英雄改成「普攻／小技能／大招」三段式——
+                // 大招看能量條（滿了保證觸發），沒滿的話有一定機率改放「小技能」(同一個技能的縮小版，
+                // 單體、威力打折，不需要看能量)，兩者都沒觸發才是普通攻擊。
+                let isUlt = false, isMinor = false;
                 if (currentActor.role === 'boss' && Math.random() < 0.25) isUlt = true;
-                else if (currentActor.team === 'player' && Math.random() < 0.20) isUlt = true;
+                else if (currentActor.team === 'player' && currentActor.energy >= (currentActor.maxEnergy || 100)) {
+                    isUlt = true; currentActor.energy = 0; // 發動後能量歸零，重新累積
+                } else if (currentActor.team === 'player' && currentActor.skill && Math.random() < 0.35) {
+                    isMinor = true;
+                }
 
                 if (isUlt && currentActor.skill) {
                     screenShake = 12; ToneAudioEngine.playMagic();
@@ -5353,6 +5397,40 @@
 
                             executeHit(currentActor, t, dmg, isCrit, sType, fxColor);
                         });
+                    }
+                }
+                else if (isMinor && currentActor.skill) {
+                    // ★ 小技能：跟大招用同一個專屬技能類型，但效果縮小、範圍收斂成單體/自己，
+                    // 不需要看能量條、機率觸發即可放，介於普攻跟大招之間的第三種行動模式
+                    ToneAudioEngine.playMagic();
+                    let fxColor = currentActor.color;
+                    const sType = currentActor.skill.type;
+                    floatingTexts.push({x: currentActor.x, y: currentActor.y - 80, text: `小技能`, isCrit: false, color: '#7dd3fc', life: 40});
+
+                    if (sType === 'heal_all' || sType === 'holy_shield') {
+                        // 治療類小技能：只治療血量比例最低的一位友軍，效果減半
+                        const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
+                        const t = allies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0] || currentActor;
+                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * 0.5;
+                        t.hp = Math.min(t.maxHp, t.hp + healAmt);
+                        floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
+                        visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#4ade80', life: 30, maxLife: 30});
+                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(healAmt);
+                    } else if (sType === 'buff_atk') {
+                        // 增益類小技能：只強化自己，效果減半、持續縮短
+                        const buffValue = (currentActor.skill.value || 0.3) * 0.5;
+                        const buffTurns = Math.max(1, (currentActor.skill.duration || 3) - 1);
+                        currentActor.atkBuffValue = buffValue; currentActor.atkBuffTurns = buffTurns;
+                        visualEffects.push({type: 'buff', x: currentActor.x, y: currentActor.y, color: '#fde047', life: 30, maxLife: 30});
+                        floatingTexts.push({x: currentActor.x, y: currentActor.y - 100, text: `強化 +${Math.floor(buffValue * 100)}%`, isCrit: false, color: '#fde047', life: 45});
+                    } else {
+                        // 攻擊類小技能：固定打單體（不吃大招的 AOE/連鎖/濺射/斬殺加成），威力打對折
+                        ToneAudioEngine.playHit();
+                        const minorMult = Math.max(1.05, (currentActor.skill.value || 1.5) * 0.55);
+                        let dmg = Math.max(5, currentActor.activeAtk * minorMult - (currentTarget.def * 0.35));
+                        let isCrit = false;
+                        if (Math.random() * 100 < currentActor.crit) {dmg *= 1.5; isCrit = true; screenShake = 4;}
+                        executeHit(currentActor, currentTarget, dmg, isCrit, sType, fxColor);
                     }
                 }
                 else {
@@ -5542,6 +5620,29 @@
                 // 細邊框收邊
                 roundRectPath(ctx, barX, hpY, hw, barH, barR);
                 ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 1; ctx.stroke();
+
+                // ★ 大招能量條：只有玩家英雄才畫，疊在血條正下方，滿了會發光提示大招即將發動
+                if (e.team === 'player' && typeof e.energy === 'number') {
+                    const enBarH = 4, enBarY = hpY + barH + 2;
+                    roundRectPath(ctx, barX - 1, enBarY - 1, hw + 2, enBarH + 2, enBarH / 2 + 1);
+                    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fill();
+                    roundRectPath(ctx, barX, enBarY, hw, enBarH, enBarH / 2);
+                    ctx.fillStyle = 'rgba(15,10,6,0.9)'; ctx.fill();
+                    const enPct = Math.max(0, Math.min(1, e.energy / (e.maxEnergy || 100)));
+                    if (enPct > 0) {
+                        ctx.save();
+                        roundRectPath(ctx, barX, enBarY, hw, enBarH, enBarH / 2); ctx.clip();
+                        ctx.fillStyle = enPct >= 1 ? '#60a5fa' : '#38bdf8';
+                        ctx.fillRect(barX, enBarY, hw * enPct, enBarH);
+                        ctx.restore();
+                        if (enPct >= 1) {
+                            ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(Date.now() / 120) * 0.3;
+                            roundRectPath(ctx, barX, enBarY, hw, enBarH, enBarH / 2);
+                            ctx.strokeStyle = '#bfdbfe'; ctx.lineWidth = 1.5; ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+                }
 
                 ctx.globalAlpha = 1;
             });
