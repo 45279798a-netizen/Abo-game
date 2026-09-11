@@ -4517,10 +4517,11 @@
                 const usableWidth = cx * 0.62; const startX = cx * 0.19; const gapX = usableWidth / 2; x = startX + row * gapX;
                 if (GAME_STATE.currentMode === 'season' && team === 'enemy') {y = cy * 0.24; x = cx * 0.5;}
                 else {
-                    // ★ 第三次修正：直接照玩家畫的分隔線來抓比例——量測附圖，紅線大約落在畫布高度的 60% 處，
-                    // 敵方吃上面約 60%、我方吃下面約 40%，中間一條窄窄的交戰帶。不再靠猜的，直接照著畫面刻度調。
-                    const pFrontY = cy * 0.62, pBackY = cy * 0.90, pGapY = (pBackY - pFrontY) / 2;
-                    const eFrontY = cy * 0.58, eBackY = cy * 0.17, eGapY = (eFrontY - eBackY) / 2;
+                    // ★ 第四次修正：這次附圖多畫了一條線，中間特別留了一塊「空白」交戰帶——
+                    // 量測兩條線的位置，敵方跟我方縱深其實接近對稱（各約 29~30%），中間留一段更寬的空白，
+                    // 不再是敵方吃六成這種不對稱比例，是我看錯了上一張圖的間距。
+                    const pFrontY = cy * 0.60, pBackY = cy * 0.90, pGapY = (pBackY - pFrontY) / 2;
+                    const eFrontY = cy * 0.46, eBackY = cy * 0.17, eGapY = (eFrontY - eBackY) / 2;
                     y = team === 'player' ? pFrontY + col * pGapY : eFrontY - col * eGapY;
                     // 錯位：非前排單位左右微微交錯，避免與同一路的前排單位直接疊在一起
                     if (col > 0) x += (row % 2 === 0 ? 1 : -1) * cx * 0.05;
@@ -5292,8 +5293,8 @@
                 if (customImgCache[e.baseId]) {
                     const img = customImgCache[e.baseId];
 
-                    // 【智慧縮放】：角色還是偏小，手機直式倍率再拉高到 6.0（電腦版維持霸氣的 7 倍）
-                    const scaleMult = isMobile ? 6.0 : 7;
+                    // 【智慧縮放】：手機直式倍率拉高到 6.5（電腦版維持霸氣的 7 倍）
+                    const scaleMult = isMobile ? 6.5 : 7;
                     currentDrawSize = shapeSize * scaleMult;
 
                     // 【位置微調】：如果是 Boss 且在手機上，把圖稍微往下壓 (0.65)，避免頭被 UI 擋住
