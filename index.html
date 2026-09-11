@@ -324,7 +324,7 @@
         /* ★ 新增：讓全局背景「動起來」——緩慢的縮放＋平移（Ken Burns 效果），
            不需要換成影片或 GIF，純 CSS 動畫就能讓靜態背景圖有呼吸感，效能成本很低。
            預設全部背景套用，開關在設定頁的「背景動態效果」。 */
-        #global-bg-container.bg-motion-on {
+        #global-bg-container.bg-motion-on:not(.video-active) {
             background-size: 108% auto;
             animation: bgKenBurns 26s ease-in-out infinite alternate;
             will-change: background-position, background-size;
@@ -483,6 +483,12 @@
 
     <div class="flex-1 flex flex-col relative h-full bg-[url('https://placehold.co/1920x1080/1a120c/1a120c')] bg-cover bg-center overflow-hidden transition-all duration-500 bg-motion-on"
         id="global-bg-container">
+
+        <!-- ★ 新增：會動的背景影片。跟底下的靜態背景圖共用同一個容器，哪個章節/模式有設定影片就優先播放影片，
+             蓋在靜態背景圖上面；沒有設定影片的章節就自動隱藏，繼續用原本的靜態圖（可能搭配 Ken Burns 動畫）。
+             muted+playsinline+autoplay 是手機瀏覽器允許背景影片自動播放的必要條件。 -->
+        <video id="global-bg-video" class="absolute inset-0 w-full h-full object-cover z-0 hidden" autoplay muted
+            loop playsinline></video>
 
         <header
             class="absolute top-0 left-0 right-0 h-14 z-40 flex justify-between items-center px-3 bg-gradient-to-b from-black/90 to-transparent pointer-events-none"
@@ -1699,10 +1705,16 @@
                 'festival': '', // S6光輝迴廊專屬背景
                 'season': './images/season.jpg'   // 賽季首領討伐專屬背景
             },
-            chapterBGVideos: {                
-                1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '',                
-            'tower': '', 'dungeon': '', 'rift': '', 'festival': '', 'season': './video/season.mp4'            
-             },
+
+            // ★ 新增：會動的背景「影片」版本，跟 chapterBGs 用同一組 key。
+            // 貼 mp4/webm 的路徑或 Base64 (data:video/mp4;base64,....) 進去，哪個章節/模式有填影片，
+            // 畫面就會自動優先播放影片、蓋掉底下的靜態圖；沒填的維持原本的靜態圖（+ Ken Burns 動畫）。
+            // 建議影片盡量小（幾秒鐘的無縫循環片段即可），檔案太大會拖慢載入速度。
+            chapterBGVideos: {
+                1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '',
+                'tower': '', 'dungeon': '', 'rift': '', 'festival': '', 'season': './video/season.mp4'
+            },
+
             // ★ 各個英雄的 Base64 去背圖 (完整版)
             heroes: {
                 // --- 常駐 SSR ---
@@ -1855,30 +1867,53 @@
         /* === 動態切換背景邏輯 === */
         function updateDynamicBackground() {
             const bgContainer = document.getElementById('global-bg-container');
+            const bgVideo = document.getElementById('global-bg-video');
 
-            // 1. 如果玩家在設定裡上傳了自訂全局背景，優先使用
+            // 1. 如果玩家在設定裡上傳了自訂全局背景，優先使用（自訂背景目前只支援靜態圖，影片維持隱藏）
             if (GAME_STATE.customBG) {
+                if (bgVideo) {bgVideo.classList.add('hidden'); bgVideo.pause();}
+                bgContainer.classList.remove('video-active');
                 bgContainer.style.backgroundImage = `url(${GAME_STATE.customBG})`;
                 return;
             }
 
-            let targetBg = '';
+            let bgKey = 1;
             const isCombatTab = document.getElementById('tab-battle') && !document.getElementById('tab-battle').classList.contains('hidden');
 
-            // 2. 根據當前的模式與章節來決定背景
+            // 2. 根據當前的模式與章節來決定背景要用哪一組 key（章節數字或模式代稱）
             if (isCombatTab) {
-                if (GAME_STATE.currentMode === 'tower') targetBg = BUILT_IN_ASSETS.chapterBGs['tower'];
-                else if (GAME_STATE.currentMode === 'rift') targetBg = BUILT_IN_ASSETS.chapterBGs['rift'];
-                else if (GAME_STATE.currentMode === 'festival') targetBg = BUILT_IN_ASSETS.chapterBGs['festival'];
-                else if (GAME_STATE.currentMode === 'season') targetBg = BUILT_IN_ASSETS.chapterBGs['season'];
-                else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon')) targetBg = BUILT_IN_ASSETS.chapterBGs['dungeon'];
-                else targetBg = BUILT_IN_ASSETS.chapterBGs[GAME_STATE.stage.chapter]; // 主線對應章節
+                if (GAME_STATE.currentMode === 'tower') bgKey = 'tower';
+                else if (GAME_STATE.currentMode === 'rift') bgKey = 'rift';
+                else if (GAME_STATE.currentMode === 'festival') bgKey = 'festival';
+                else if (GAME_STATE.currentMode === 'season') bgKey = 'season';
+                else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon')) bgKey = 'dungeon';
+                else bgKey = GAME_STATE.stage.chapter; // 主線對應章節
             } else {
                 // 如果不在戰鬥畫面 (例如在抽卡、編隊)，預設顯示玩家目前最高進度的章節背景
-                targetBg = BUILT_IN_ASSETS.chapterBGs[GAME_STATE.highestStage.chapter] || BUILT_IN_ASSETS.chapterBGs[1];
+                bgKey = GAME_STATE.highestStage.chapter || 1;
             }
 
-            // 3. 套用背景 (如果該章節你還沒貼上 Base64 代碼，就用預設的黑色漸層)
+            const targetBg = BUILT_IN_ASSETS.chapterBGs[bgKey];
+            const targetVideo = BUILT_IN_ASSETS.chapterBGVideos && BUILT_IN_ASSETS.chapterBGVideos[bgKey];
+
+            // 3. ★ 會動的背景影片：這個 key 有填影片的話優先播放，蓋掉底下的靜態圖，
+            // 靜態圖仍然照樣設定好放在底層當作影片載入前/載入失敗時的備援畫面
+            if (targetVideo && targetVideo.trim() !== '') {
+                if (bgVideo.getAttribute('data-src') !== targetVideo) {
+                    bgVideo.setAttribute('data-src', targetVideo);
+                    bgVideo.src = targetVideo;
+                    bgVideo.load();
+                    bgVideo.play().catch(() => {}); // 部分瀏覽器要等使用者互動過一次才能自動播放，失敗就靜默略過
+                }
+                bgVideo.classList.remove('hidden');
+                bgContainer.classList.add('video-active'); // 影片本身就會動，不需要再疊加 Ken Burns
+            } else {
+                if (bgVideo) {bgVideo.classList.add('hidden'); bgVideo.removeAttribute('data-src'); bgVideo.pause();}
+                bgContainer.classList.remove('video-active');
+            }
+
+            // 4. 套用靜態背景圖 (如果該章節你還沒貼上 Base64 代碼，就用預設的黑色漸層)；
+            // 影片播放中的話這張圖會被蓋在底下，看不到，但還是設定好，影片緩衝/失敗時就看得到它
             if (targetBg && targetBg.trim() !== '') {
                 bgContainer.style.backgroundImage = `url(${targetBg})`;
             } else {
