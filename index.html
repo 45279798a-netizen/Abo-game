@@ -1682,7 +1682,7 @@
 
                 // --- S1 限定 ---
                 'h_uther': './images/h_uther.png',      // [UR] 聖光使者·烏瑟
-                'h_s1_lr': './images/h_s1_lr.png',      // [LR] 夜魘收割者·莫瑟斯
+                'h_s1_lr': '',      // [LR] 夜魘收割者·莫瑟斯
                 'h_s1_ssr1': './images/h_s1_ssr1.png',    // 亡靈督軍
                 'h_s1_ssr2': './images/h_s1_ssr2.png',    // 瘟疫使者
 
@@ -3192,10 +3192,14 @@
         let selectedAltarHeroId = null;
 
         function getAltarArtifactCost(tier) {
-            // 從 0 階升到 1 階、1 階升到 2 階... 費用隨階級提高，帶二次項讓後期階級的花費明顯拉開
+            // ★ 平衡調整：原本帶二次項的公式算到 100 階終點，總共要吃掉約 77 萬鍛造石、1500 萬金幣，
+            // 光鍛造石就是裝備滿配 4 部位（1680 石）的 460 倍，遠遠超過鍛造石實際的取得速度，
+            // 等於系統上雖然開放到 100 階，實際上玩家幾乎不可能點滿，變成看得到打不到。
+            // 改成單純線性成長：100 階總消耗降到約 4.76 萬鍛造石、168 萬金幣，跟英雄練滿等的花費量級接近，
+            // 一樣是長期目標，但至少是「打得到終點」的長期目標。
             return {
-                gold: 3000 + tier * 2000 + Math.floor(tier * tier * 15),
-                stones: 150 + tier * 100 + Math.floor(tier * tier * 0.8)
+                gold: 2000 + tier * 300,
+                stones: 80 + tier * 8
             };
         }
 
