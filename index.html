@@ -4517,13 +4517,10 @@
                 const usableWidth = cx * 0.62; const startX = cx * 0.19; const gapX = usableWidth / 2; x = startX + row * gapX;
                 if (GAME_STATE.currentMode === 'season' && team === 'enemy') {y = cy * 0.24; x = cx * 0.5;}
                 else {
-                    // ★ 再次修正：上次改成兩邊各佔 30% 對稱，數字雖然相等，但實測畫面還是敵方感覺比較大。
-                    // 原因是角色圖片是「腳底對齊錨點、身體往上長」(見 drawCanvas 的 yOffsetMult)，
-                    // 敵方錨點原本太靠近畫面頂端 (0.17)，圖片往上長沒有餘裕，會整坨頂到天花板、擠在一起，
-                    // 看起來反而更佔位；我方錨點在下方離底邊還有空間，同樣的圖片大小反而顯得從容不擠。
-                    // 這次改成：敵方錨點往下挪一點給頭頂留呼吸空間、深度也收窄一些；我方則明顯拉開更多縱深。
-                    const pFrontY = cy * 0.46, pBackY = cy * 0.88, pGapY = (pBackY - pFrontY) / 2;
-                    const eFrontY = cy * 0.40, eBackY = cy * 0.22, eGapY = (eFrontY - eBackY) / 2;
+                    // ★ 第三次修正：直接照玩家畫的分隔線來抓比例——量測附圖，紅線大約落在畫布高度的 60% 處，
+                    // 敵方吃上面約 60%、我方吃下面約 40%，中間一條窄窄的交戰帶。不再靠猜的，直接照著畫面刻度調。
+                    const pFrontY = cy * 0.62, pBackY = cy * 0.90, pGapY = (pBackY - pFrontY) / 2;
+                    const eFrontY = cy * 0.58, eBackY = cy * 0.17, eGapY = (eFrontY - eBackY) / 2;
                     y = team === 'player' ? pFrontY + col * pGapY : eFrontY - col * eGapY;
                     // 錯位：非前排單位左右微微交錯，避免與同一路的前排單位直接疊在一起
                     if (col > 0) x += (row % 2 === 0 ? 1 : -1) * cx * 0.05;
@@ -5295,8 +5292,8 @@
                 if (customImgCache[e.baseId]) {
                     const img = customImgCache[e.baseId];
 
-                    // 【智慧縮放】：角色還是偏小，手機直式倍率再拉高到 5.5（電腦版維持霸氣的 7 倍）
-                    const scaleMult = isMobile ? 5.5 : 7;
+                    // 【智慧縮放】：角色還是偏小，手機直式倍率再拉高到 6.0（電腦版維持霸氣的 7 倍）
+                    const scaleMult = isMobile ? 6.0 : 7;
                     currentDrawSize = shapeSize * scaleMult;
 
                     // 【位置微調】：如果是 Boss 且在手機上，把圖稍微往下壓 (0.65)，避免頭被 UI 擋住
