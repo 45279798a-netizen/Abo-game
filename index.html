@@ -321,6 +321,27 @@
             animation: splashBarFill 1.1s ease-in-out infinite;
         }
 
+        /* ★ 新增：讓全局背景「動起來」——緩慢的縮放＋平移（Ken Burns 效果），
+           不需要換成影片或 GIF，純 CSS 動畫就能讓靜態背景圖有呼吸感，效能成本很低。
+           預設全部背景套用，開關在設定頁的「背景動態效果」。 */
+        #global-bg-container.bg-motion-on {
+            background-size: 108% auto;
+            animation: bgKenBurns 26s ease-in-out infinite alternate;
+            will-change: background-position, background-size;
+        }
+
+        @keyframes bgKenBurns {
+            0% {
+                background-position: 48% 45%;
+                background-size: 106% auto;
+            }
+
+            100% {
+                background-position: 54% 55%;
+                background-size: 118% auto;
+            }
+        }
+
         @keyframes splashBarFill {
             0% {
                 width: 10%;
@@ -460,7 +481,7 @@
         </div>
     </nav>
 
-    <div class="flex-1 flex flex-col relative h-full bg-[url('https://placehold.co/1920x1080/1a120c/1a120c')] bg-cover bg-center overflow-hidden transition-all duration-500"
+    <div class="flex-1 flex flex-col relative h-full bg-[url('https://placehold.co/1920x1080/1a120c/1a120c')] bg-cover bg-center overflow-hidden transition-all duration-500 bg-motion-on"
         id="global-bg-container">
 
         <header
@@ -1449,6 +1470,18 @@
             <h2 class="text-lg font-bold text-fantasy-gold mb-4 border-b border-[#3e3328] pb-2 shrink-0">遊戲設定與備份</h2>
 
             <div class="overflow-y-auto custom-scrollbar space-y-4 pr-1">
+                <div class="bg-[#1a120c] p-4 rounded-lg border border-[#3e3328] shadow-inner-dark">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-stone-300 text-xs font-bold mb-1"><i
+                                    class="fa-solid fa-water mr-1"></i>背景動態效果</label>
+                            <p class="text-[8px] text-stone-400">讓背景圖緩慢縮放平移，有呼吸感；如果覺得畫面一直在動會分心，或想省電，可以關掉。</p>
+                        </div>
+                        <button id="bg-motion-toggle-btn" onclick="toggleBgMotion()"
+                            class="shrink-0 ml-3 w-12 h-7 rounded-full border transition relative"></button>
+                    </div>
+                </div>
+
                 <div class="bg-[#1a120c] p-4 rounded-lg border border-emerald-900/50 shadow-inner-dark">
                     <label class="block text-emerald-400 text-xs font-bold mb-2"><i
                             class="fa-solid fa-arrows-rotate mr-1"></i>重新載入</label>
@@ -2342,6 +2375,7 @@
 
             // 載入動態背景
             if (typeof updateDynamicBackground === 'function') updateDynamicBackground();
+            if (typeof updateBgMotionUI === 'function') updateBgMotionUI();
 
             // === 新增：自動將程式碼裡的新圖片同步進舊存檔中 ===
             if (BUILT_IN_ASSETS.heroes) {
@@ -4651,6 +4685,7 @@
 
         function openSettingsModal() {
             ToneAudioEngine.playClick();
+            updateBgMotionUI();
             document.getElementById('settings-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('settings-modal').classList.remove('opacity-0'), 10);
         }
 
@@ -4660,6 +4695,23 @@
             ToneAudioEngine.playClick();
             showToast("正在重新載入...");
             setTimeout(() => location.reload(), 300);
+        }
+
+        // ★ 新增：背景動態效果開關——控制 #global-bg-container 要不要套用 CSS 的 Ken Burns 緩慢縮放平移動畫，
+        // 存在 GAME_STATE.bgMotionEnabled，預設開啟；只是切換 class，不影響背景圖本身怎麼載入/切換
+        function updateBgMotionUI() {
+            const enabled = GAME_STATE.bgMotionEnabled !== false;
+            document.getElementById('global-bg-container').classList.toggle('bg-motion-on', enabled);
+            const btn = document.getElementById('bg-motion-toggle-btn');
+            if (!btn) return;
+            btn.className = `shrink-0 ml-3 w-12 h-7 rounded-full border transition relative ${enabled ? 'bg-emerald-600 border-emerald-400' : 'bg-black/50 border-[#3e3328]'}`;
+            btn.innerHTML = `<span class="absolute top-0.5 ${enabled ? 'right-0.5' : 'left-0.5'} w-6 h-6 rounded-full bg-white shadow transition-all"></span>`;
+        }
+        function toggleBgMotion() {
+            ToneAudioEngine.playClick();
+            GAME_STATE.bgMotionEnabled = !(GAME_STATE.bgMotionEnabled !== false);
+            updateBgMotionUI();
+            saveGame();
         }
 
         function closeSettingsModal() {ToneAudioEngine.playClick(); document.getElementById('settings-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('settings-modal').classList.add('hidden'), 300);}
