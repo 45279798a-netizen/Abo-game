@@ -1077,17 +1077,6 @@
                     <i class="fa-solid fa-monument mr-2"></i>聖城祭壇
                 </h2>
 
-                <!-- 庇護等級 (原有功能，保留為簡要資訊) -->
-                <div
-                    class="glass-panel p-3 rounded-xl flex items-center justify-between border border-[#5a4634] shrink-0">
-                    <div>
-                        <span class="text-stone-300 font-bold text-[10px]">庇護等級</span>
-                        <p class="text-[8px] text-stone-500 mt-0.5">等級最高 5 名騎士為守護者，其他騎士自動共享其最低等級。</p>
-                    </div>
-                    <div class="text-2xl font-bold text-white font-magic drop-shadow shrink-0 ml-3"
-                        id="sync-level-display">Lv. 1</div>
-                </div>
-
                 <!-- 每日祈禱 -->
                 <div class="glass-panel p-4 rounded-xl border border-sky-700/50 shrink-0">
                     <h3 class="font-bold text-sky-400 text-sm mb-1 flex items-center"><i
@@ -1103,7 +1092,7 @@
                     class="glass-panel p-4 rounded-xl border border-fantasy-gold/40 flex-1 flex flex-col min-h-[280px]">
                     <h3 class="font-bold text-fantasy-gold text-sm mb-1 flex items-center shrink-0"><i
                             class="fa-solid fa-gem mr-2"></i>聖物強化</h3>
-                    <p class="text-[9px] text-stone-400 mb-3 shrink-0">消耗金幣與鍛造石為騎士的聖物升階，每階提升 4% 全屬性，最高 5 階。</p>
+                    <p class="text-[9px] text-stone-400 mb-3 shrink-0">消耗金幣與鍛造石為騎士的聖物升階，每階提升 1% 全屬性，最高 100 階，是長期養成目標。</p>
 
                     <div class="grid grid-cols-5 sm:grid-cols-6 gap-2 mb-3 overflow-y-auto custom-scrollbar shrink-0"
                         style="max-height:140px" id="altar-hero-picker"></div>
@@ -2024,7 +2013,7 @@
             {id: 'h_noah', name: '冰霜法師·諾亞', role: '法師', rarity: 'SSR', star: 1, baseHp: 650, baseAtk: 140, baseDef: 30, crit: 20, avatarIcon: 'fa-snowflake', color: '#3b82f6', skill: {type: 'aoe', value: 1.6, desc: '大招施放暴風雪，對敵方全體造成 160% 攻擊力的魔法傷害。'}, lore: '極北冰原的天才法師，能瞬間凍結範圍內的一切生命。'},
             {id: 'h_valkyrie', name: '聖殿衛士·瓦爾基里', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1200, baseAtk: 75, baseDef: 70, crit: 5, avatarIcon: 'fa-shield-halved', color: '#eab308', skill: {type: 'shield', chance: 0.3, value: 0.12, desc: '受擊時有 30% 機率為自己與全體友軍施加等同自身最大生命值 12% 的護盾。'}, lore: '守護聖都的最高階神官騎士，是戰場上最堅不可摧的壁壘。'},
             {id: 'h_lilith', name: '暗影牧師·莉莉絲', role: '輔助', rarity: 'SSR', star: 1, baseHp: 750, baseAtk: 85, baseDef: 35, crit: 10, avatarIcon: 'fa-moon', color: '#8b5cf6', skill: {type: 'heal_all', value: 2.0, desc: '大招施放群體治癒，為所有友軍恢復等同自身攻擊力 200% 的生命值。'}, lore: '掌握生與死邊界的異端牧師，以暗影魔力修復友軍的傷勢。'},
-            {id: 'h_claude', name: '疾風遊俠·克勞德', role: '刺客', rarity: 'SSR', star: 1, baseHp: 700, baseAtk: 155, baseDef: 28, crit: 30, avatarIcon: 'fa-leaf', color: '#22c55e', skill: {type: 'execute', threshold: 0.3, value: 1.5, desc: '大招對生命值低於 30% 的敵人造成必殺一擊，其餘情況造成 150% 攻擊力傷害。'}, lore: '森林精靈中的異類，捨棄了長弓，以驚人的速度使用雙刃進行暗殺。'},
+            {id: 'h_claude', name: '疾風遊俠·克勞德', role: '刺客', rarity: 'SSR', star: 1, baseHp: 700, baseAtk: 155, baseDef: 28, crit: 30, avatarIcon: 'fa-leaf', color: '#22c55e', skill: {type: 'first_strike', firstStrikeMult: 1.8, desc: '大招專門獵殺還沒受過傷的目標，命中「全新目標」時造成 180% 加成傷害，是名副其實的奇襲高手。'}, lore: '森林精靈中的異類，捨棄了長弓，以驚人的速度使用雙刃進行暗殺。'},
 
             {id: 'h_arthur', name: '重裝鐵衛·亞瑟', role: '坦克', rarity: 'SR', star: 1, baseHp: 1000, baseAtk: 60, baseDef: 60, crit: 5, avatarIcon: 'fa-shield', color: '#a0aec0', skill: {type: 'reflect', chance: 0.3, value: 0.3, desc: '受到攻擊時有 30% 機率反彈 30% 的傷害給攻擊者。'}, lore: '穿戴厚重板甲的王國老兵。'},
             {id: 'h_faye', name: '精靈射手·菲', role: '刺客', rarity: 'SR', star: 1, baseHp: 550, baseAtk: 125, baseDef: 20, crit: 25, avatarIcon: 'fa-bullseye', color: '#4ade80', skill: {type: 'multi_shot', chance: 0.4, value: 0.8, desc: '普通攻擊後有 40% 機率立即追加一次 80% 傷害的射擊。'}, lore: '百步穿楊的精靈神射手。'},
@@ -2063,19 +2052,19 @@
             {id: 'h_s3_ssr2', name: '聖光狂熱者', role: '戰士', rarity: 'SSR', star: 1, baseHp: 1000, baseAtk: 130, baseDef: 55, crit: 15, avatarIcon: 'fa-bolt', color: '#9333ea', skill: {type: 'smite', chance: 0.3, desc: '普通攻擊有 30% 機率附帶暈眩，使目標下回合無法行動。'}, lore: '為了信仰不顧一切。', isExclusive: true, seasonId: 3},
 
             // S4 限定 (1 UR, 2 SSR) —「巨龍之巔」通行證最終獎勵與召喚限定
-            {id: 'h_s4_ur', name: '龍裔王者·灼', role: '戰士', rarity: 'UR', star: 1, baseHp: 1800, baseAtk: 240, baseDef: 90, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316', skill: {type: 'burn', value: 0.35, duration: 4, desc: '大招使目標持續燃燒，每回合造成自身攻擊力 35% 的灼燒傷害，持續 4 回合。'}, lore: '與滅世魔龍同源的半龍血脈，渾身燃燒著不滅的龍炎。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_ur', name: '龍裔王者·灼', role: '戰士', rarity: 'UR', star: 1, baseHp: 1800, baseAtk: 240, baseDef: 90, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316', skill: {type: 'burn_stack', value: 0.12, duration: 4, maxStacks: 6, desc: '大招附加龍焰詛咒，每命中一次就疊加一層（最多 6 層），燒傷程度隨層數持續攀升，直到戰鬥結束都不會消退。'}, lore: '與滅世魔龍同源的半龍血脈，渾身燃燒著不滅的龍炎。', isExclusive: true, seasonId: 4},
             {id: 'h_s4_ssr1', name: '熔岩巨匠', role: '法師', rarity: 'SSR', star: 1, baseHp: 800, baseAtk: 175, baseDef: 40, crit: 15, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn_aoe', value: 0.28, duration: 3, desc: '大招施放熔岩噴發，對敵方全體造成傷害並使其燃燒，每回合造成攻擊力 28% 的灼燒傷害，持續 3 回合。'}, lore: '巨龍巢穴深處鍛造兵器的異能鐵匠。', isExclusive: true, seasonId: 4},
-            {id: 'h_s4_ssr2', name: '龍鱗盾衛', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1400, baseAtk: 85, baseDef: 95, crit: 5, avatarIcon: 'fa-shield-cat', color: '#c2410c', skill: {type: 'shield', chance: 0.35, value: 0.15, desc: '受擊時有 35% 機率為自己與全體友軍施加等同自身最大生命值 15% 的龍鱗護盾。'}, lore: '以巨龍蛻下的鱗片鍛造出堅不可摧的戰甲。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_ssr2', name: '龍鱗盾衛', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1400, baseAtk: 85, baseDef: 95, crit: 5, avatarIcon: 'fa-shield-cat', color: '#c2410c', skill: {type: 'harden', value: 4, desc: '龍鱗會越挨打越堅硬：每次受到攻擊，永久提升 4 點防禦力，戰鬥越久越難被打穿。'}, lore: '以巨龍蛻下的鱗片鍛造出堅不可摧的戰甲。', isExclusive: true, seasonId: 4},
 
             // S5 限定 (1 UR, 2 SSR) —「機械紀元」通行證最終獎勵與召喚限定
-            {id: 'h_s5_ur', name: '虛空破陣者', role: '法師', rarity: 'UR', star: 1, baseHp: 1300, baseAtk: 260, baseDef: 60, crit: 25, avatarIcon: 'fa-robot', color: '#38bdf8', skill: {type: 'def_ignore', value: 2.3, desc: '大招無視目標大部分護甲，造成 230% 攻擊力的真實傷害，專門用於擊穿機械系敵人。'}, lore: '掌握破解核心機甲護甲頻率的虛空系戰術大師。', isExclusive: true, seasonId: 5},
-            {id: 'h_s5_ssr1', name: '電磁工兵', role: '刺客', rarity: 'SSR', star: 1, baseHp: 750, baseAtk: 165, baseDef: 30, crit: 25, avatarIcon: 'fa-bolt', color: '#0ea5e9', skill: {type: 'chain', value: 1.6, jumps: 2, desc: '大招造成 160% 攻擊力傷害，電磁鏈會額外彈跳 2 次攻擊其他機械敵人。'}, lore: '專門拆解古代機械遺跡的實戰工程師。', isExclusive: true, seasonId: 5},
-            {id: 'h_s5_ssr2', name: '護盾核心·艾克', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1350, baseAtk: 80, baseDef: 90, crit: 5, avatarIcon: 'fa-shield-halved', color: '#0284c7', skill: {type: 'reflect', chance: 0.35, value: 0.35, desc: '受到攻擊時有 35% 機率反彈 35% 的傷害，能量護盾持續充能。'}, lore: '搭載古代能源核心的自主防禦單位。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ur', name: '虛空破陣者', role: '法師', rarity: 'UR', star: 1, baseHp: 1300, baseAtk: 260, baseDef: 60, crit: 25, avatarIcon: 'fa-robot', color: '#38bdf8', skill: {type: 'armor_break', value: 0.15, desc: '大招直接打碎目標的護甲，永久降低其防禦力 15%（可疊加），越打對方越脆，專門用於瓦解重甲機械系敵人。'}, lore: '掌握破解核心機甲護甲頻率的虛空系戰術大師。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ssr1', name: '電磁工兵', role: '刺客', rarity: 'SSR', star: 1, baseHp: 750, baseAtk: 165, baseDef: 30, crit: 25, avatarIcon: 'fa-bolt', color: '#0ea5e9', skill: {type: 'emp_stun', value: 1.6, chance: 0.5, empCount: 2, desc: '大招造成 160% 攻擊力傷害，同時向另外 2 個隨機敵人施放電磁脈衝，各有 50% 機率使其當機暈眩。'}, lore: '專門拆解古代機械遺跡的實戰工程師。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ssr2', name: '護盾核心·艾克', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1350, baseAtk: 80, baseDef: 90, crit: 5, avatarIcon: 'fa-shield-halved', color: '#0284c7', skill: {type: 'overload', value: 0.8, chargeMax: 4, desc: '每次受到攻擊都會默默蓄能，累積滿 4 次充能後，會在自己的回合一次性向全體敵人釋放能量爆發。'}, lore: '搭載古代能源核心的自主防禦單位。', isExclusive: true, seasonId: 5},
 
             // S6 限定 (1 UR, 2 SSR) —「拂曉盛典」通行證最終獎勵與召喚限定角色
-            {id: 'h_s6_ur', name: '曙光禮讚者·賽琳', role: '輔助', rarity: 'UR', star: 1, baseHp: 1400, baseAtk: 150, baseDef: 65, crit: 10, avatarIcon: 'fa-champagne-glasses', color: '#fbbf24', skill: {type: 'buff_atk', value: 0.45, duration: 4, desc: '大招領唱慶典禮讚，提升全體友軍攻擊力 45%，持續 4 回合。'}, lore: '在拂曉盛典上高歌禮讚的聖詠者，歌聲能點燃全軍的士氣。', isExclusive: true, seasonId: 6},
-            {id: 'h_s6_ssr1', name: '煙火使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 850, baseAtk: 185, baseDef: 42, crit: 20, avatarIcon: 'fa-fire-flame-curved', color: '#f97316', skill: {type: 'burn_aoe', value: 0.26, duration: 3, desc: '大招施放絢爛煙火轟炸敵方全體，並使其沾染火花，每回合造成攻擊力 26% 的灼燒傷害，持續 3 回合。'}, lore: '負責點燃慶典夜空煙火的法師，火花底下藏著真正的殺傷力。', isExclusive: true, seasonId: 6},
-            {id: 'h_s6_ssr2', name: '慶典衛兵長', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1450, baseAtk: 88, baseDef: 98, crit: 5, avatarIcon: 'fa-shield-cat', color: '#d97706', skill: {type: 'shield', chance: 0.36, value: 0.16, desc: '負責維安的衛兵長，受擊時有 36% 機率為自身與全體友軍凝結等同最大生命值 16% 的護盾。'}, lore: '拂曉盛典期間負責維安的王國精銳衛兵統領。', isExclusive: true, seasonId: 6}
+            {id: 'h_s6_ur', name: '曙光禮讚者·賽琳', role: '輔助', rarity: 'UR', star: 1, baseHp: 1400, baseAtk: 150, baseDef: 65, crit: 10, avatarIcon: 'fa-champagne-glasses', color: '#fbbf24', skill: {type: 'cleanse', value: 1.0, desc: '大招吟唱淨化聖歌，清除全體友軍的暈眩／灼燒／中毒等異常狀態，並為全隊回復生命值。'}, lore: '在拂曉盛典上高歌禮讚的聖詠者，歌聲能滌淨全軍的傷痛。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_ssr1', name: '煙火使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 850, baseAtk: 185, baseDef: 42, crit: 20, avatarIcon: 'fa-fire-flame-curved', color: '#f97316', skill: {type: 'dazzle_aoe', value: 1.4, dazzleChance: 0.35, desc: '大招施放絢爛煙火轟炸敵方全體，刺眼的閃光讓每個命中的敵人都有 35% 機率當場目眩暈眩。'}, lore: '負責點燃慶典夜空煙火的法師，燦爛的火花底下藏著真正的殺傷力。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_ssr2', name: '慶典衛兵長', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1450, baseAtk: 88, baseDef: 98, crit: 5, avatarIcon: 'fa-shield-cat', color: '#d97706', skill: {type: 'dodge_ward', chance: 0.3, desc: '負責維安的衛兵長，每回合開始時有 30% 機率為全體友軍賦予一次性的守護祝福，直接迴避下一次受到的攻擊。'}, lore: '拂曉盛典期間負責維安的王國精銳衛兵統領。', isExclusive: true, seasonId: 6}
         ];
 
         // 魔物資料庫 (擴充至 7 章節)
@@ -3161,23 +3150,23 @@
             seasonTimerInterval = setInterval(updateTimer, 60000);
         }
 
-        function getSyncLevel() {
-            const lvls = Object.values(GAME_STATE.roster).map(h => h.level).sort((a, b) => b - a);
-            return lvls[4] || lvls[0] || 1;
-        }
-
         /* ============================================================
            聖城祭壇 (Altar) —— 每日祈禱 + 聖物強化 (artifactTier)
-           artifactTier 原本是資料結構裡就存在、卻從未被讀寫使用的欄位，這裡正式接上：
-           每階 +4% 全屬性 (在 getEffectiveHero 裡生效)，最高 5 階，消耗金幣+鍛造石強化。
+           ★ 移除「庇護等級」系統：原本低等級英雄的有效等級會被拉到「第 5 高等級英雄」的等級，
+           等於變相免費同步戰力。拿掉後每個英雄就是老老實實看自己的等級，不再互相同步。
+           ★ 聖物強化擴充到 100 階（原本只有 5 階），每階加成從 4% 調降到 1%（100 階滿階 +100%，
+           避免跟舊版一樣線性疊加會炸到 +400%），消耗資源也大幅提高，變成真正的長期養成目標。
            ============================================================ */
-        const ALTAR_MAX_ARTIFACT_TIER = 5;
+        const ALTAR_MAX_ARTIFACT_TIER = 100;
         const ALTAR_PRAYER_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小時可領一次
         let selectedAltarHeroId = null;
 
         function getAltarArtifactCost(tier) {
-            // 從 0 階升到 1 階、1 階升到 2 階... 費用隨階級提高
-            return {gold: 2000 + tier * 3000, stones: 100 + tier * 150};
+            // 從 0 階升到 1 階、1 階升到 2 階... 費用隨階級提高，帶二次項讓後期階級的花費明顯拉開
+            return {
+                gold: 3000 + tier * 2000 + Math.floor(tier * tier * 15),
+                stones: 150 + tier * 100 + Math.floor(tier * tier * 0.8)
+            };
         }
 
         function claimAltarPrayer() {
@@ -3217,7 +3206,6 @@
         }
 
         function renderAltarView() {
-            document.getElementById('sync-level-display').innerText = `Lv. ${getSyncLevel()}`;
             renderAltarPrayerStatus();
 
             const picker = document.getElementById('altar-hero-picker');
@@ -3315,12 +3303,12 @@
         function getEffectiveHero(db) {
             if (!db) return null;
             const r = GAME_STATE.roster[db.id] || {level: 1, star: db.star || 1, artifactTier: 0, equips: [0, 0, 0, 0]};
-            const l = Math.max(r.level, getSyncLevel());
+            const l = r.level; // ★ 庇護等級移除：不再跟最高等級英雄同步，就是自己實際的等級
             const star = r.star || 1;
 
             const eq = r.equips || [0, 0, 0, 0];
-            // 聖物強化 (artifactTier, 祭壇強化)：每階 +4% 全屬性，最高 5 階 (+20%)
-            const artifactMult = 1 + ((r.artifactTier || 0) * 0.04);
+            // 聖物強化 (artifactTier, 祭壇強化)：每階 +1% 全屬性，最高 100 階 (+100%)
+            const artifactMult = 1 + ((r.artifactTier || 0) * 0.01);
             const hp = Math.floor((db.baseHp * (1 + (l - 1) * 0.12) * (1 + (r.star - 1) * 0.15) + eq[2] * 80) * artifactMult);
             const atk = Math.floor((db.baseAtk * (1 + (l - 1) * 0.12) * (1 + (r.star - 1) * 0.15) + eq[0] * 15) * artifactMult);
             const def = Math.floor((db.baseDef * (1 + (l - 1) * 0.12) + eq[1] * 8) * artifactMult);
@@ -3348,7 +3336,7 @@
         // 讓介面上能分開顯示兩者目前各是多少，而不是只看得到大招那一份。
         function getMinorSkillScale(skill) {
             if (!skill) return 1;
-            if (skill.type === 'heal_all' || skill.type === 'holy_shield' || skill.type === 'buff_atk') return 0.5;
+            if (skill.type === 'heal_all' || skill.type === 'holy_shield' || skill.type === 'buff_atk' || skill.type === 'cleanse') return 0.5;
             return 0.55;
         }
         function formatSkillCurrentStats(skill, scale) {
@@ -3358,9 +3346,10 @@
             if (typeof skill.chance === 'number') parts.push(`觸發機率 ${(skill.chance * 100).toFixed(1).replace(/\.0$/, '')}%`);
             if (typeof skill.value === 'number') {
                 const v = skill.value * scale;
-                // 大部分技能的 value 是倍率(0~5)，少數(如金幣加成)是直接數字，用大小粗略判斷該顯示成百分比還是數字
-                if (v <= 5) parts.push(`效果幅度 ${(v * 100).toFixed(1).replace(/\.0$/, '')}%`);
-                else parts.push(`效果數值 ${Math.floor(v)}`);
+                // 大部分技能的 value 是倍率(0~5)，少數(如金幣加成、硬化防禦)是直接數字，這幾種類型固定顯示成數字，其餘用大小粗略判斷
+                const flatValueTypes = ['gold_bonus', 'harden'];
+                if (!flatValueTypes.includes(skill.type) && v <= 5) parts.push(`效果幅度 ${(v * 100).toFixed(1).replace(/\.0$/, '')}%`);
+                else parts.push(`效果數值 ${Math.floor(v) || v.toFixed(1)}`);
             }
             if (typeof skill.duration === 'number') parts.push(`持續 ${scale < 1 ? Math.max(1, skill.duration - 1) : skill.duration} 回合`);
             return parts.join('／');
@@ -4724,6 +4713,11 @@
 
         function initCombatUnits() {
             cancelAnimationFrame(animationFrameId); resizeCanvas(); combatEntities = []; floatingTexts = []; visualEffects = []; screenShake = 0; eventTotalDamage = 0;
+            // ★ 修正重大 bug：battleAnalytics（傷害/承受/治療排行）從來沒有在開戰時重置過，
+            // 也沒有幫每個英雄的欄位初始化成 0。第一次 += 的時候是 undefined + 數字 = NaN，
+            // 從那之後這個英雄的數據就永遠是 NaN，連帶讓整個排行榜的百分比計算、數字顯示全部壞掉
+            // （Math.max 只要陣列裡有一個 NaN，結果就是 NaN）。現在每次開戰都重新歸零。
+            battleAnalytics = {dps: {}, tank: {}, heal: {}};
 
             // 1. 生成玩家角色
             // 【修復】：原本直接使用 roster 原始存檔資料 (只有 level/star/equips 等欄位)，
@@ -4734,6 +4728,8 @@
                 if (id && GAME_STATE.roster[id]) {
                     const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === id));
                     if (!h) return;
+                    // ★ 每個上陣英雄的統計欄位先歸零，確保 += 一定是「數字 + 數字」，不會變成 NaN
+                    battleAnalytics.dps[h.name] = 0; battleAnalytics.tank[h.name] = 0; battleAnalytics.heal[h.name] = 0;
                     combatEntities.push({
                         ...h,
                         baseId: h.id,
@@ -5061,6 +5057,8 @@
 
                 // 扣血
                 target.hp -= damage;
+                // ★ 先制痛擊判定用：記錄這個目標是否已經被打過，first_strike 類技能專用
+                target.hasBeenHit = true;
                 // ★ 大招能量：玩家英雄被攻擊時也會回一點能量（受擊蓄力），讓常被鎖定的英雄大招來得更快一些
                 if (target.team === 'player' && typeof target.energy === 'number') {
                     target.energy = Math.min(target.maxEnergy || 100, target.energy + 10);
@@ -5125,6 +5123,16 @@
                     floatingTexts.push({x: target.x, y: target.y - 90, text: `灼燒`, isCrit: false, color: '#f97316', life: 45});
                     visualEffects.push({type: 'burn', x: target.x, y: target.y, color: '#f97316', life: 40, maxLife: 40});
                 }
+                // ★ 新增：龍裔詛咒疊加灼燒 (burn_stack，龍裔王者·灼專屬)——跟一般灼燒不同，
+                // 每次命中都會疊加一層詛咒層數，燒傷程度隨層數持續攀升，一直疊到戰鬥結束都不會消退
+                if (skillType === 'burn_stack') {
+                    const sk = attacker.skill;
+                    const stacks = Math.min(sk.maxStacks || 6, (target.burnStackCount || 0) + 1);
+                    target.burnStackCount = stacks;
+                    target.burnStacks = {dmgPerTurn: attacker.activeAtk * (sk.value || 0.12) * stacks, turnsLeft: sk.duration || 4};
+                    floatingTexts.push({x: target.x, y: target.y - 90, text: `龍焰詛咒 x${stacks}`, isCrit: false, color: '#f97316', life: 45});
+                    visualEffects.push({type: 'burn', x: target.x, y: target.y, color: '#f97316', life: 40, maxLife: 40});
+                }
                 if (skillType === 'poison' || skillType === 'poison_nova') {
                     const sk = attacker.skill;
                     target.poisonStacks = {dmgPerTurn: attacker.activeAtk * (sk.value || 0.18), turnsLeft: sk.duration || 4};
@@ -5157,6 +5165,23 @@
                         visualEffects.push({type: 'shield', x: a.x, y: a.y, color: '#fde047', life: 35, maxLife: 35});
                     });
                     floatingTexts.push({x: target.x, y: target.y - 80, text: `護盾展開`, isCrit: false, color: '#fde047', life: 45});
+                }
+
+                // ★ 新增判定：硬化 (harden，受擊者觸發，100% 必定觸發，永久疊加防禦)——龍鱗盾衛專屬，
+                // 跟「護盾」不同：護盾是消耗品、擋完就沒了，硬化是每挨一下就「永久」變得更硬，
+                // 讓這隻英雄的定位從「隨機擋傷害」變成「越打越肉」，跟其他護盾類英雄明確區隔開來。
+                if (target.skill && target.skill.type === 'harden' && target.hp > 0) {
+                    const defGain = target.skill.value || 3;
+                    target.def += defGain;
+                    floatingTexts.push({x: target.x, y: target.y - 80, text: `硬化 +${Math.floor(defGain)}`, isCrit: false, color: '#93c5fd', life: 40});
+                }
+
+                // ★ 新增判定：能量核心蓄能 (overload，受擊者觸發，100% 必定觸發，累積充能次數)——護盾核心·艾克專屬，
+                // 挨打不會馬上有反應，而是默默蓄能，充能滿了會在自己回合一次性爆發全體傷害（見 NEXT_TURN 判定），
+                // 跟單純機率反彈的「反彈」類英雄是完全不同的節奏——前期看起來很弱，後期一次大爆發。
+                if (target.skill && target.skill.type === 'overload' && target.hp > 0) {
+                    target.overloadCharge = (target.overloadCharge || 0) + 1;
+                    floatingTexts.push({x: target.x, y: target.y - 80, text: `蓄能 ${target.overloadCharge}/${target.skill.chargeMax || 4}`, isCrit: false, color: '#a5f3fc', life: 40});
                 }
 
                 // 戰鬥數據統計
@@ -5210,6 +5235,31 @@
                 // （見下方 isUlt 判定），取代原本「每回合固定 20% 機率」的隨機觸發方式
                 if (currentActor.team === 'player' && typeof currentActor.energy === 'number') {
                     currentActor.energy = Math.min(currentActor.maxEnergy || 100, currentActor.energy + 25);
+                }
+
+                // ★ 新增機制：能量核心蓄能滿了，這回合直接爆發放電，取代原本這回合的普通行動——
+                // 護盾核心·艾克專屬，充能次數看的是「累積挨了幾次打」，不是能量條，兩者互相獨立
+                if (currentActor.skill && currentActor.skill.type === 'overload' && (currentActor.overloadCharge || 0) >= (currentActor.skill.chargeMax || 4)) {
+                    const enemies = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0);
+                    const chargeUsed = currentActor.overloadCharge;
+                    currentActor.overloadCharge = 0;
+                    screenShake = 14; ToneAudioEngine.playMagic();
+                    floatingTexts.push({x: currentActor.x, y: currentActor.y - 90, text: `能量爆發！`, isCrit: true, color: '#a5f3fc', life: 50});
+                    enemies.forEach(en => {
+                        const dmg = Math.max(5, currentActor.atk * (currentActor.skill.value || 0.8) * chargeUsed - en.def * 0.3);
+                        executeHit(currentActor, en, dmg, true, 'overload', '#a5f3fc');
+                    });
+                    currentState = CSTATE.ACTION_DELAY; animProgress = 0;
+                    return;
+                }
+
+                // ★ 新增機制：守護祝福，慶典衛兵長專屬，每回合開始時有機率為全隊施加一次性閃避（重用既有的
+                // stealth 閃避旗標），跟「護盾」是不同的防禦手段——護盾是扛傷害，這個是直接完全避開，
+                // 而且是主動幫全隊上，不是被動等自己被打才觸發，不影響這回合正常行動
+                if (currentActor.team === 'player' && currentActor.skill && currentActor.skill.type === 'dodge_ward' && Math.random() < (currentActor.skill.chance || 0.3)) {
+                    const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
+                    allies.forEach(a => {a.stealth = true; visualEffects.push({type: 'shield', x: a.x, y: a.y, color: '#38bdf8', life: 30, maxLife: 30});});
+                    floatingTexts.push({x: currentActor.x, y: currentActor.y - 90, text: `守護祝福`, isCrit: false, color: '#38bdf8', life: 45});
                 }
 
                 // 持續傷害結算：灼燒/中毒在該單位自己回合開始時觸發，攻擊力增益倒數也在此結算
@@ -5350,12 +5400,25 @@
                         floatingTexts.push({x: currentActor.x, y: currentActor.y - 80, text: `全體強化 +${Math.floor(buffValue * 100)}%`, isCrit: false, color: '#fde047', life: 50});
                         visualEffects.push({type: 'heal', x: currentActor.x, y: currentActor.y, color: '#fde047', life: 30, maxLife: 30});
                     }
+                    // --- ★ 新增：淨化類大招 (曙光禮讚者·賽琳專屬)，清除全體友軍異常狀態並補一點血，
+                    // 跟「增益攻擊力」的光之祭司·艾拉區隔開來，走的是解場/續航路線而不是輸出增幅 ---
+                    else if (sType === 'cleanse') {
+                        const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
+                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 1.0);
+                        allies.forEach(t => {
+                            t.burnStacks = null; t.poisonStacks = null; t.stunned = false; t.burnStackCount = 0;
+                            t.hp = Math.min(t.maxHp, t.hp + healAmt);
+                            floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
+                            visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#67e8f9', life: 30, maxLife: 30});
+                        });
+                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(healAmt * allies.length);
+                    }
                     // --- 攻擊類大招 ---
                     else {
                         ToneAudioEngine.playHit();
                         let targets = [currentTarget];
                         // 判定是否為全體 AOE 技能
-                        if (['aoe', 'divine_judgment', 'dragon_slayer', 'poison_nova', 'meteor', 'burn_aoe'].includes(sType) || currentActor.role === 'boss') {
+                        if (['aoe', 'divine_judgment', 'dragon_slayer', 'poison_nova', 'meteor', 'burn_aoe', 'dazzle_aoe'].includes(sType) || currentActor.role === 'boss') {
                             targets = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0);
                         } else if (sType === 'chain') {
                             // 閃電鏈：依技能 jumps 數值彈跳到其他敵人身上
@@ -5389,6 +5452,23 @@
                             else if (sType === 'splash' && tIdx > 0) dmg = Math.max(5, currentActor.activeAtk * ultMult * (currentActor.skill.splashValue || 0.5) - (t.def * 0.3));
                             else dmg = Math.max(5, dmg - (t.def * 0.3));
 
+                            // ★ 新增：先制痛擊 (first_strike，疾風遊俠·克勞德專屬)——對還沒受過傷的目標造成額外加成傷害，
+                            // 打的是「第一擊」的奇襲效果，跟純粹拚機率斬殺低血量的「異端審判官」走不同路線
+                            if (sType === 'first_strike' && !t.hasBeenHit) {
+                                dmg *= (currentActor.skill.firstStrikeMult || 1.8);
+                                floatingTexts.push({x: t.x, y: t.y - 90, text: `奇襲!`, isCrit: true, color: '#7dd3fc', life: 45});
+                            }
+
+                            // ★ 新增：破陣 (armor_break，虛空破陣者專屬)——不是單次無視防禦，而是直接打碎目標的防禦力，
+                            // 永久降低、可疊加，跟「虛空術士·瓦伊德」單純無視防禦一次性效果的走向不同
+                            if (sType === 'armor_break') {
+                                const breakPct = currentActor.skill.value || 0.15;
+                                const defReduced = Math.floor(t.def * breakPct);
+                                t.def = Math.max(0, t.def - defReduced);
+                                dmg = Math.max(5, currentActor.activeAtk * ultMult - (t.def * 0.3));
+                                floatingTexts.push({x: t.x, y: t.y - 90, text: `破甲 -${defReduced}`, isCrit: false, color: '#fb923c', life: 45});
+                            }
+
                             // 斬殺判定
                             if (['execute', 'divine_judgment'].includes(sType) && (t.hp / t.maxHp) <= (currentActor.skill.threshold || 0.3)) {
                                 dmg = t.hp + (t.shield || 0); // 確保一擊必殺
@@ -5396,7 +5476,31 @@
                             }
 
                             executeHit(currentActor, t, dmg, isCrit, sType, fxColor);
+
+                            // ★ 新增：眩目煙火 (dazzle_aoe，煙火使者專屬)——AOE 命中的敵人都有機率被閃光暈眩，
+                            // 跟「熔岩巨匠」純粹全體灼燒 DOT 的路線不同，走的是範圍控場
+                            if (sType === 'dazzle_aoe' && t.hp > 0 && Math.random() < (currentActor.skill.dazzleChance || 0.35)) {
+                                t.stunned = true;
+                                floatingTexts.push({x: t.x, y: t.y - 100, text: `目眩`, isCrit: false, color: '#f0abfc', life: 45});
+                                visualEffects.push({type: 'stun', x: t.x, y: t.y, color: '#f0abfc', life: 40, maxLife: 40});
+                            }
                         });
+
+                        // ★ 新增：電磁脈衝 (emp_stun，電磁工兵專屬)——命中主目標後，額外對 1~2 個隨機敵人施放 EMP，
+                        // 使其暈眩，跟「雷霆法師·吉克」單純追加傷害的閃電鏈路線不同，走的是干擾控場
+                        if (sType === 'emp_stun') {
+                            let others = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0 && e.id !== currentTarget.id);
+                            const empCount = currentActor.skill.empCount || 2;
+                            for (let j = 0; j < empCount && others.length > 0; j++) {
+                                const idx = Math.floor(Math.random() * others.length);
+                                const victim = others[idx]; others.splice(idx, 1);
+                                if (Math.random() < (currentActor.skill.chance || 0.5)) {
+                                    victim.stunned = true;
+                                    floatingTexts.push({x: victim.x, y: victim.y - 90, text: `EMP 干擾`, isCrit: false, color: '#38bdf8', life: 45});
+                                    visualEffects.push({type: 'stun', x: victim.x, y: victim.y, color: '#38bdf8', life: 40, maxLife: 40});
+                                }
+                            }
+                        }
                     }
                 }
                 else if (isMinor && currentActor.skill) {
@@ -5423,14 +5527,43 @@
                         currentActor.atkBuffValue = buffValue; currentActor.atkBuffTurns = buffTurns;
                         visualEffects.push({type: 'buff', x: currentActor.x, y: currentActor.y, color: '#fde047', life: 30, maxLife: 30});
                         floatingTexts.push({x: currentActor.x, y: currentActor.y - 100, text: `強化 +${Math.floor(buffValue * 100)}%`, isCrit: false, color: '#fde047', life: 45});
+                    } else if (sType === 'cleanse') {
+                        // 淨化類小技能：只淨化並治療血量比例最低的一位友軍，效果減半
+                        const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
+                        const t = allies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0] || currentActor;
+                        t.burnStacks = null; t.poisonStacks = null; t.stunned = false;
+                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 1.0) * 0.5;
+                        t.hp = Math.min(t.maxHp, t.hp + healAmt);
+                        floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
+                        visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#67e8f9', life: 30, maxLife: 30});
+                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(healAmt);
                     } else {
-                        // 攻擊類小技能：固定打單體（不吃大招的 AOE/連鎖/濺射/斬殺加成），威力打對折
+                        // ★ 攻擊類小技能：改成保留大招的目標模式（AOE/連鎖/濺射/斬殺），只是範圍跟威力都縮小，
+                        // 不再通通變成「單體打一下」——AOE/連鎖/濺射流派的小技能會多打一個目標，
+                        // 斬殺流派的小技能也保留斬殺判定（門檻砍半，比大招更難觸發），這樣不同流派的英雄
+                        // 小技能才看得出差異，不會全部長得都一樣。
                         ToneAudioEngine.playHit();
                         const minorMult = Math.max(1.05, (currentActor.skill.value || 1.5) * 0.55);
-                        let dmg = Math.max(5, currentActor.activeAtk * minorMult - (currentTarget.def * 0.35));
-                        let isCrit = false;
-                        if (Math.random() * 100 < currentActor.crit) {dmg *= 1.5; isCrit = true; screenShake = 4;}
-                        executeHit(currentActor, currentTarget, dmg, isCrit, sType, fxColor);
+                        let targets = [currentTarget];
+                        if (['aoe', 'divine_judgment', 'dragon_slayer', 'poison_nova', 'meteor', 'burn_aoe', 'chain', 'splash', 'dazzle_aoe'].includes(sType)) {
+                            let others = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0 && e.id !== currentTarget.id);
+                            if (others.length > 0) targets.push(others[Math.floor(Math.random() * others.length)]);
+                        }
+
+                        targets.forEach((t, tIdx) => {
+                            let dmg = Math.max(5, currentActor.activeAtk * minorMult - (t.def * 0.35));
+                            if (sType === 'splash' && tIdx > 0) dmg = Math.max(5, currentActor.activeAtk * minorMult * (currentActor.skill.splashValue || 0.5) - (t.def * 0.3));
+                            let isCrit = false;
+                            if (Math.random() * 100 < currentActor.crit) {dmg *= 1.5; isCrit = true; if (tIdx === 0) screenShake = 4;}
+
+                            // 斬殺類小技能：保留斬殺判定，但門檻砍半，比大招更難觸發，仍保有這個流派的特色
+                            if (['execute', 'divine_judgment'].includes(sType) && (t.hp / t.maxHp) <= (currentActor.skill.threshold || 0.3) * 0.5) {
+                                dmg = t.hp + (t.shield || 0);
+                                floatingTexts.push({x: t.x, y: t.y - 80, text: `斬殺!`, isCrit: true, color: '#ef4444', life: 45});
+                            }
+
+                            executeHit(currentActor, t, dmg, isCrit, sType, fxColor);
+                        });
                     }
                 }
                 else {
