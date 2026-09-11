@@ -1282,6 +1282,9 @@
 
                 <!-- 已連線的主內容 -->
                 <div id="mp-connected-content" class="hidden flex-col gap-3 flex-1">
+                    <!-- 帳號系統：訪客可以升級成正式帳號，登入後可以換裝置沿用同一個身分 -->
+                    <div class="glass-panel p-3 rounded-xl border border-sky-700/40" id="arena-account-box"></div>
+
                     <!-- 玩家名稱設定 -->
                     <div class="glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2 flex-1 min-w-0">
@@ -1822,11 +1825,107 @@
         }
 
         /* ============================================================
-           競技場 (異步PVP) + 全服首領討伐
-           全部都是「異步」設計：不需要跟朋友同時在線、不需要即時連線同步。
-           競技場：把自己的陣容快照存到雲端，別人抓你的快照回自己裝置本地模擬一場戰鬥；
-           全服首領：所有玩家共用同一顆血條，各自在自己裝置上單獨討伐，傷害用 Firestore
-           transaction 原子性地扣血，避免多人同時扣血互相蓋掉。
+           帳號系統：預設用匿名登入讓多人功能「不用註冊就能用」，但匿名身分換裝置/清瀏覽器資料就會不見。
+           想要「換裝置也能用同一個身分」的話，可以升級成 Email/密碼帳號：
+           - 訪客升級：用 linkWithCredential() 把 Email/密碼綁定到目前這個匿名帳號上，UID 完全不變，
+             之前的競技場戰績/榮譽點數都不會不見，只是多了一組可以登入的帳密。
+           - 登入既有帳號：在新裝置上用同一組 Email/密碼登入，會換成那個帳號原本的 UID，
+             之前那台裝置累積的競技場資料就會接回來。
+           要在 Firebase 主控台的 Authentication → Sign-in method 額外開啟「Email/密碼」才能用。
+           ============================================================ */
+        async function registerArenaAccount(email, password) {
+            ToneAudioEngine.playClick();
+            if (!mpConnected || !fbUser) {showToast('尚未連線'); return;}
+            if (!email || !password) {showToast('請輸入 Email 和密碼'); return;}
+            if (password.length < 6) {showToast('密碼至少要 6 個字元'); return;}
+            try {
+                if (fbUser.isAnonymous) {
+                    const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+                    const result = await fbUser.linkWithCredential(credential);
+                    fbUser = result.user;
+                } else {
+                    const result = await fbAuth.createUserWithEmailAndPassword(email, password);
+                    fbUser = result.user;
+                }
+                showToast('註冊成功！這個身分之後可以在任何裝置登入');
+                updateArenaAccountUI();
+                broadcastArenaPresence();
+            } catch (err) {
+                console.warn(err);
+                const msg = err.code === 'auth/email-already-in-use' ? '這個 Email 已經被註冊過了，請改用登入' : (err.message || '請稍後再試');
+                showToast('註冊失敗：' + msg);
+            }
+        }
+
+        async function loginArenaAccount(email, password) {
+            ToneAudioEngine.playClick();
+            if (!FIREBASE_ENABLED) return;
+            if (!email || !password) {showToast('請輸入 Email 和密碼'); return;}
+            try {
+                stopArenaPresenceLoop(); // 先把舊身分（通常是訪客）從線上名單移除，再切換帳號
+                const result = await fbAuth.signInWithEmailAndPassword(email, password);
+                fbUser = result.user;
+                mpConnected = true;
+                const playerRef = fbDb.collection('players').doc(fbUser.uid);
+                const snap = await playerRef.get();
+                if (!snap.exists) {
+                    await playerRef.set({displayName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`, power: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+                } else if (snap.data().displayName) {
+                    GAME_STATE.mpDisplayName = snap.data().displayName; // 帶回這個帳號原本設定的暱稱
+                    saveGame();
+                }
+                showToast('登入成功！');
+                updateArenaAccountUI();
+                refreshArenaUI();
+            } catch (err) {
+                console.warn(err);
+                showToast('登入失敗：帳號或密碼錯誤');
+            }
+        }
+
+        async function logoutArenaAccount() {
+            ToneAudioEngine.playClick();
+            if (!mpConnected) return;
+            stopArenaPresenceLoop();
+            try {
+                await fbAuth.signOut();
+                const cred = await fbAuth.signInAnonymously(); // 登出後改回訪客身分，維持多人功能可以繼續用
+                fbUser = cred.user;
+                showToast('已登出，目前為訪客身分');
+                updateArenaAccountUI();
+                refreshArenaUI();
+            } catch (err) {console.warn(err);}
+        }
+
+        // 依目前是「訪客」還是「已登入帳號」畫出不同的帳號區塊內容
+        function updateArenaAccountUI() {
+            const box = document.getElementById('arena-account-box');
+            if (!box || !fbUser) return;
+            if (fbUser.isAnonymous) {
+                box.innerHTML = `
+                    <p class="text-[9px] text-stone-400 mb-2"><i class="fa-solid fa-user-clock text-amber-400 mr-1"></i>目前是訪客身分，換裝置或清瀏覽器資料會失去這個身分。註冊帳號後可以在任何裝置登入同一個身分。</p>
+                    <div class="flex gap-2 mb-2">
+                        <input id="arena-auth-email" type="email" placeholder="Email" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[11px] px-2 py-1.5 rounded border border-[#3e3328] outline-none focus:border-sky-500">
+                        <input id="arena-auth-password" type="password" placeholder="密碼(至少6碼)" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[11px] px-2 py-1.5 rounded border border-[#3e3328] outline-none focus:border-sky-500">
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="registerArenaAccount(document.getElementById('arena-auth-email').value.trim(), document.getElementById('arena-auth-password').value)" class="flex-1 py-1.5 bg-emerald-900/60 text-emerald-300 text-[10px] font-bold rounded border border-emerald-700 hover:bg-emerald-800 transition">註冊新帳號</button>
+                        <button onclick="loginArenaAccount(document.getElementById('arena-auth-email').value.trim(), document.getElementById('arena-auth-password').value)" class="flex-1 py-1.5 bg-sky-900/60 text-sky-300 text-[10px] font-bold rounded border border-sky-700 hover:bg-sky-800 transition">登入既有帳號</button>
+                    </div>`;
+            } else {
+                box.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] text-emerald-400 truncate"><i class="fa-solid fa-circle-check mr-1"></i>已登入：${fbUser.email}</span>
+                        <button onclick="logoutArenaAccount()" class="shrink-0 ml-2 px-3 py-1.5 bg-red-900/50 text-red-300 text-[10px] font-bold rounded border border-red-800 hover:bg-red-800 transition">登出</button>
+                    </div>`;
+            }
+        }
+
+        /* ============================================================
+           競技場（純玩家對戰）
+           即時設計：停留在競技場畫面時會自動廣播目前陣容，不用手動上傳；線上名單用 Firestore
+           的即時監聽 (onSnapshot) 更新，看到誰在線上就能直接挑戰，挑戰時在自己裝置上用對方
+           廣播的陣容資料模擬一場戰鬥。
            ============================================================ */
         let arenaOpponentSnapshot = null; // 目前準備挑戰的對手資料，戰鬥用完即丟
         let arenaPresenceInterval = null;
@@ -1860,6 +1959,7 @@
             document.getElementById('arena-my-power').innerText = getMyArenaPower().toLocaleString();
             document.getElementById('arena-honor-points').innerText = (GAME_STATE.honorPoints || 0).toLocaleString();
 
+            updateArenaAccountUI();
             renderArenaShop();
             startArenaPresenceLoop();
         }
