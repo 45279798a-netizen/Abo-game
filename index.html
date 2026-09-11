@@ -1181,7 +1181,7 @@
                                 class="h-full bg-gradient-to-r from-fantasy-gold to-yellow-300" style="width:0%"></div>
                         </div>
                         <p id="altar-selected-cost" class="text-[9px] text-stone-400 mb-2"></p>
-                        <button id="altar-ascend-btn" onclick="ascendAltarArtifact()"
+                        <button id="altar-ascend-btn" onmousedown="artifactLongPresser.start()" onmouseup="artifactLongPresser.stop()" onmouseleave="artifactLongPresser.cancel()" ontouchstart="artifactLongPresser.start()" ontouchend="artifactLongPresser.stop()" ontouchcancel="artifactLongPresser.cancel()"
                             class="w-full py-2 rounded-lg bg-gradient-to-b from-fantasy-gold to-amber-700 text-black font-bold text-xs active:scale-95 transition">強化聖物</button>
                     </div>
                     <p id="altar-no-hero-text" class="text-[9px] text-stone-500 text-center mt-4">請先點選上方要強化的騎士</p>
@@ -1353,6 +1353,19 @@
 
                     <!-- 即時挑戰子頁 -->
                     <div id="arena-pvp-panel" class="flex flex-col gap-2">
+                        <!-- 收到別人邀請時顯示：接受後雙方會一起進入同一場戰鬥畫面 -->
+                        <div id="arena-incoming-invite" class="hidden glass-panel p-3 rounded-xl border border-amber-500 bg-amber-950/30">
+                            <p class="text-[10px] text-amber-300 mb-2"><i class="fa-solid fa-bell mr-1"></i><span id="arena-invite-from-name">???</span> 邀請你進行競技場對戰！</p>
+                            <div class="flex gap-2">
+                                <button onclick="acceptArenaInvite()" class="flex-1 py-1.5 bg-emerald-800/70 text-emerald-200 text-[10px] font-bold rounded border border-emerald-600 hover:bg-emerald-700 transition">接受</button>
+                                <button onclick="declineArenaInvite()" class="flex-1 py-1.5 bg-black/50 text-stone-400 text-[10px] font-bold rounded border border-[#3e3328] hover:bg-black/70 transition">拒絕</button>
+                            </div>
+                        </div>
+                        <!-- 自己發出邀請、等待對方回應時顯示 -->
+                        <div id="arena-outgoing-invite" class="hidden glass-panel p-3 rounded-xl border border-sky-600 bg-sky-950/30">
+                            <p class="text-[10px] text-sky-300 mb-2"><i class="fa-solid fa-hourglass-half mr-1"></i>已送出邀請給 <span id="arena-invite-to-name">???</span>，等待對方回應中...</p>
+                            <button onclick="cancelArenaInvite()" class="w-full py-1.5 bg-black/50 text-stone-400 text-[10px] font-bold rounded border border-[#3e3328] hover:bg-black/70 transition">取消邀請</button>
+                        </div>
                         <div class="flex items-center justify-between shrink-0">
                             <span class="text-[10px] text-stone-500"><i class="fa-solid fa-circle text-emerald-500 text-[6px] mr-1"></i>目前在線玩家（即時更新，不用手動整理）</span>
                         </div>
@@ -1424,6 +1437,32 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- ★ 新增：競技場即時觀戰畫面。點兩邊「接受」邀請後，雙方會一起進到這個畫面。
+         發出挑戰的那方是「主控端」，實際用現有的完整戰鬥引擎跑一場正常戰鬥（跟以前邏輯一樣，沒有改動）；
+         接受邀請的那方是「觀戰端」，畫面改成簡化版的血條 + 戰鬥紀錄文字直播，跟著主控端即時同步結果。
+         這樣設計是因為要讓兩邊畫面「逐幀動畫完全同步」需要大改整個戰鬥引擎，風險太高（會影響到所有單機模式），
+         改成這種「文字/血條直播」的簡化版本，雖然沒有主控端那麼華麗，但至少能做到雙方看到一致、即時的結果。 -->
+    <div id="arena-live-viewer" class="fixed inset-0 bg-black z-[95] hidden flex-col p-4">
+        <h2 class="text-center text-fantasy-gold font-magic text-base mb-1 shrink-0">競技場對戰直播</h2>
+        <p class="text-center text-[9px] text-stone-500 mb-3 shrink-0">固定 5 倍速．觀戰模式</p>
+        <div class="flex justify-between items-start gap-3 mb-3 shrink-0">
+            <div class="flex-1 min-w-0">
+                <div id="arena-live-my-name" class="text-xs font-bold text-sky-300 mb-1.5 truncate">我方</div>
+                <div id="arena-live-my-team" class="space-y-1.5"></div>
+            </div>
+            <div class="text-lg text-stone-600 font-magic pt-4 shrink-0">VS</div>
+            <div class="flex-1 min-w-0 text-right">
+                <div id="arena-live-opp-name" class="text-xs font-bold text-rose-300 mb-1.5 truncate">對方</div>
+                <div id="arena-live-opp-team" class="space-y-1.5"></div>
+            </div>
+        </div>
+        <div id="arena-live-log" class="flex-1 overflow-y-auto bg-black/50 rounded-lg border border-[#3e3328] p-3 space-y-1 text-[10px] text-stone-300 custom-scrollbar"></div>
+        <div id="arena-live-result" class="hidden flex-col items-center py-4 shrink-0">
+            <div id="arena-live-result-text" class="text-lg font-bold mb-3"></div>
+            <button onclick="closeArenaLiveViewer()" class="px-6 py-2 btn-gold rounded-lg font-bold text-sm">返回競技場</button>
+        </div>
     </div>
 
     <!-- 英雄詳細 Modal：改成跟圖鑑一樣「置中卡片、頭像置頂、內容單欄捲動」的樣式 -->
@@ -1613,6 +1652,13 @@
                 <button onclick="switchAnalytics('heal')" id="btn-ana-heal"
                     class="flex-1 py-1.5 text-stone-400 text-[10px] rounded transition hover:bg-[#2a2118]">治療</button>
             </div>
+            <div class="flex gap-1 mb-2 bg-black/30 p-1 rounded-lg border border-[#3e3328]">
+                <button onclick="switchAnalyticsSide('player')" id="btn-ana-side-player"
+                    class="flex-1 py-1 text-[9px] font-bold rounded transition">我方</button>
+                <button onclick="switchAnalyticsSide('enemy')" id="btn-ana-side-enemy"
+                    class="flex-1 py-1 text-[9px] font-bold rounded transition">對方</button>
+            </div>
+            <div id="analytics-total" class="text-[10px] text-center text-stone-400 mb-2"></div>
             <div id="analytics-list"
                 class="space-y-2.5 max-h-[40vh] overflow-y-auto custom-scrollbar relative min-h-[150px] pr-1"></div>
         </div>
@@ -1676,19 +1722,6 @@
                         class="w-full py-2 bg-emerald-900/50 text-emerald-300 text-[10px] font-bold rounded border border-emerald-800/50 hover:bg-emerald-900/80 transition">重新載入遊戲</button>
                 </div>
 
-                <div class="bg-[#1a120c] p-4 rounded-lg border border-sky-900/50 shadow-inner-dark">
-                    <label class="block text-sky-400 text-xs font-bold mb-2"><i
-                            class="fa-solid fa-floppy-disk mr-1"></i>存檔匯出與匯入</label>
-                    <p class="text-[8px] text-stone-400 mb-3">可以將進度備份或轉移至其他裝置 (不包含自訂圖片)。</p>
-                    <button onclick="exportSaveData()"
-                        class="w-full py-2 bg-sky-900 text-sky-200 text-[10px] font-bold rounded mb-2 hover:bg-sky-800 transition shadow">生成並複製進度碼</button>
-                    <div class="flex gap-2">
-                        <input type="text" id="import-code-input" placeholder="在此貼上進度碼..."
-                            class="flex-1 bg-black text-stone-300 text-[10px] px-2 rounded border border-[#3e3328] outline-none focus:border-sky-500">
-                        <button onclick="importSaveData()"
-                            class="px-3 py-2 bg-emerald-900 text-emerald-200 text-[10px] font-bold rounded hover:bg-emerald-800 transition shadow">匯入</button>
-                    </div>
-                </div>
                 <div class="bg-[#1a120c] p-4 rounded-lg border border-red-900/40 shadow-inner-dark">
                     <label class="block text-red-400 text-xs font-bold mb-2"><i
                             class="fa-solid fa-user-shield mr-1"></i>開發者模式</label>
@@ -2197,6 +2230,7 @@
             renderArenaShop();
             startArenaPresenceLoop();
             listenPlayerMail();
+            listenIncomingArenaInvites();
             document.getElementById('btn-arena-admin').classList.toggle('hidden', !isCurrentUserAdmin());
         }
 
@@ -2306,6 +2340,7 @@
             if (arenaPresenceInterval) {clearInterval(arenaPresenceInterval); arenaPresenceInterval = null;}
             if (arenaPresenceUnsub) {arenaPresenceUnsub(); arenaPresenceUnsub = null;}
             if (arenaMailUnsub) {arenaMailUnsub(); arenaMailUnsub = null;}
+            if (arenaIncomingInviteUnsub) {arenaIncomingInviteUnsub(); arenaIncomingInviteUnsub = null;}
             if (wasActive && mpConnected && fbDb && fbUser) fbDb.collection('arenaPresence').doc(fbUser.uid).delete().catch(() => {});
         }
 
@@ -2336,13 +2371,15 @@
                         const card = document.createElement('div');
                         card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
                         card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200"><i class="fa-solid fa-circle text-emerald-500 text-[6px] mr-1"></i>${op.displayName || '???'}</div><div class="text-[9px] text-stone-500">戰力 ${(op.power || 0).toLocaleString()}</div></div><button class="px-3 py-1.5 bg-rose-900/60 text-rose-300 text-[10px] font-bold rounded border border-rose-700 hover:bg-rose-800 transition">挑戰</button>`;
-                        card.querySelector('button').onclick = () => startArenaBattle(op);
+                        card.querySelector('button').onclick = () => sendArenaInvite(op);
                         list.appendChild(card);
                     });
                 }, err => console.warn('線上名單監聽失敗：', err));
         }
 
         // 開始一場競技場戰鬥：把對手資料存到 arenaOpponentSnapshot，交給 initCombatUnits 的 'arena' 分支去組出敵方陣容
+        // ★ 舊版「即時挑戰＝直接打」改成「發送邀請→對方接受→雙方一起進入戰鬥」，見下面 sendArenaInvite 那一大段。
+        // 這個函式現在只有「主控端」自己實際跑戰鬥時會呼叫，不再是玩家直接點擊觸發的入口。
         function startArenaBattle(opponent) {
             ToneAudioEngine.playClick();
             arenaOpponentSnapshot = opponent;
@@ -2354,6 +2391,231 @@
             setTimeout(initCombatUnits, 100);
             refreshNavHighlightForMode();
             updateDynamicBackground();
+        }
+
+        /* ============================================================
+           競技場邀請制對戰
+           發起方邀請 → 對方接受 → 雙方一起「進場」。發起方（主控端 / host）實際用現有的完整戰鬥引擎
+           跑一場正常戰鬥（邏輯完全沒變，額外多做的事只有把每次命中的結果廣播出去）；接受方（觀戰端 / guest）
+           改成看簡化版的血條＋戰鬥紀錄直播，即時同步主控端算出來的結果。
+           ★ 老實說明設計取捨：要讓雙方畫面「每一幀動畫都完全一致」，等於要把整個戰鬥引擎改成可以被兩台裝置
+           同時驅動，這會動到所有模式共用的核心邏輯，風險太高。這裡改成「文字/血條直播」的簡化版，
+           保證雙方看到的「結果」一定一致（因為都是主控端算出來的同一份），只是觀戰端沒有主控端那麼多動畫特效。
+           ============================================================ */
+        let arenaInviteUnsub = null; // 監聽自己發出的邀請狀態變化
+        let arenaIncomingInviteUnsub = null; // 監聽有沒有人邀請自己
+        let currentArenaInviteId = null;
+        let currentIncomingInvite = null;
+        let arenaMatchId = null;
+        let isArenaHost = false;
+        let arenaMatchUnsub = null;
+        let arenaLastEventIndex = 0;
+        let arenaLiveTeams = {my: [], opp: []}; // 觀戰端專用：雙方隊伍目前血量，畫面顯示用
+
+        // 開始監聽有沒有人邀請自己對戰（在競技場畫面時持續監聽，離開畫面就取消）
+        function listenIncomingArenaInvites() {
+            if (!mpConnected) return;
+            if (arenaIncomingInviteUnsub) arenaIncomingInviteUnsub();
+            arenaIncomingInviteUnsub = fbDb.collection('arenaInvites')
+                .where('toUid', '==', fbUser.uid).where('status', '==', 'pending')
+                .onSnapshot(snap => {
+                    if (snap.empty) {
+                        document.getElementById('arena-incoming-invite').classList.add('hidden');
+                        currentIncomingInvite = null;
+                        return;
+                    }
+                    const doc = snap.docs[0]; // 一次只處理一個邀請，避免介面太複雜
+                    currentIncomingInvite = {id: doc.id, ...doc.data()};
+                    document.getElementById('arena-invite-from-name').innerText = currentIncomingInvite.fromName || '???';
+                    document.getElementById('arena-incoming-invite').classList.remove('hidden');
+                }, err => console.warn('監聽邀請失敗：', err));
+        }
+
+        async function sendArenaInvite(opponent) {
+            ToneAudioEngine.playClick();
+            if (!mpConnected) {showToast('尚未連線'); return;}
+            const myTeam = (GAME_STATE.gridSlots || []).map((id, idx) => {
+                if (!id || !GAME_STATE.roster[id]) return null;
+                const r = GAME_STATE.roster[id];
+                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0], row: Math.floor(idx / 2), col: (idx % 2) * 2};
+            }).filter(Boolean);
+            if (myTeam.length === 0) {showToast('請先到佈陣頁面上陣至少一位英雄'); return;}
+            try {
+                const inviteRef = await fbDb.collection('arenaInvites').add({
+                    fromUid: fbUser.uid, fromName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`, fromTeam: myTeam,
+                    toUid: opponent.uid, toName: opponent.displayName || '???',
+                    status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                currentArenaInviteId = inviteRef.id;
+                document.getElementById('arena-invite-to-name').innerText = opponent.displayName || '???';
+                document.getElementById('arena-outgoing-invite').classList.remove('hidden');
+
+                if (arenaInviteUnsub) arenaInviteUnsub();
+                arenaInviteUnsub = inviteRef.onSnapshot(async (doc) => {
+                    if (!doc.exists) return;
+                    const data = doc.data();
+                    if (data.status === 'accepted' && data.matchId) {
+                        arenaInviteUnsub(); arenaInviteUnsub = null;
+                        document.getElementById('arena-outgoing-invite').classList.add('hidden');
+                        // 對方接受了！自己是主控端，開始真正的戰鬥
+                        isArenaHost = true;
+                        arenaMatchId = data.matchId;
+                        startArenaLiveMatchAsHost(opponent, data.matchId);
+                    } else if (data.status === 'declined') {
+                        arenaInviteUnsub(); arenaInviteUnsub = null;
+                        document.getElementById('arena-outgoing-invite').classList.add('hidden');
+                        showToast('對方拒絕了你的邀請');
+                    }
+                });
+            } catch (err) {console.warn('發送邀請失敗：', err); showToast('發送邀請失敗，請檢查網路連線');}
+        }
+
+        async function cancelArenaInvite() {
+            ToneAudioEngine.playClick();
+            if (!currentArenaInviteId) return;
+            try {await fbDb.collection('arenaInvites').doc(currentArenaInviteId).update({status: 'cancelled'});} catch (err) {console.warn(err);}
+            if (arenaInviteUnsub) {arenaInviteUnsub(); arenaInviteUnsub = null;}
+            document.getElementById('arena-outgoing-invite').classList.add('hidden');
+            currentArenaInviteId = null;
+        }
+
+        async function declineArenaInvite() {
+            ToneAudioEngine.playClick();
+            if (!currentIncomingInvite) return;
+            try {await fbDb.collection('arenaInvites').doc(currentIncomingInvite.id).update({status: 'declined'});} catch (err) {console.warn(err);}
+            document.getElementById('arena-incoming-invite').classList.add('hidden');
+            currentIncomingInvite = null;
+        }
+
+        // 接受邀請：建立雙方共用的對戰紀錄 (arenaMatches)，自己是「觀戰端」，進入簡化版直播畫面等主控端開打
+        async function acceptArenaInvite() {
+            ToneAudioEngine.playClick();
+            if (!currentIncomingInvite) return;
+            const myTeam = (GAME_STATE.gridSlots || []).map((id, idx) => {
+                if (!id || !GAME_STATE.roster[id]) return null;
+                const r = GAME_STATE.roster[id];
+                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0], row: Math.floor(idx / 2), col: (idx % 2) * 2};
+            }).filter(Boolean);
+            if (myTeam.length === 0) {showToast('請先到佈陣頁面上陣至少一位英雄'); return;}
+            try {
+                const matchRef = await fbDb.collection('arenaMatches').add({
+                    hostUid: currentIncomingInvite.fromUid, hostName: currentIncomingInvite.fromName, hostTeam: currentIncomingInvite.fromTeam,
+                    guestUid: fbUser.uid, guestName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`, guestTeam: myTeam,
+                    status: 'active', events: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await fbDb.collection('arenaInvites').doc(currentIncomingInvite.id).update({status: 'accepted', matchId: matchRef.id});
+                document.getElementById('arena-incoming-invite').classList.add('hidden');
+                isArenaHost = false;
+                arenaMatchId = matchRef.id;
+                startArenaLiveMatchAsGuest(matchRef.id, currentIncomingInvite);
+                currentIncomingInvite = null;
+            } catch (err) {console.warn('接受邀請失敗：', err); showToast('接受邀請失敗，請檢查網路連線');}
+        }
+
+        // ★ 主控端：跟以前的「即時挑戰」完全同一套戰鬥流程，只是額外記住 arenaMatchId，
+        // 讓 executeHit 命中時可以順便把結果廣播出去（見 pushArenaLiveEvent 呼叫點）。
+        // 速度固定 5 倍，戰鬥結束後會還原成玩家原本選的速度。
+        let arenaPrevBattleSpeed = null;
+        function startArenaLiveMatchAsHost(opponent, matchId) {
+            arenaPrevBattleSpeed = battleSpeed; battleSpeed = 5; // ★ 固定 5 倍速
+            arenaMatchId = matchId;
+            startArenaBattle(opponent);
+        }
+
+        // 把一次命中結果廣播給觀戰端；用 arrayUnion 附加，不需要先讀取，減少一來一回
+        function pushArenaLiveEvent(ev) {
+            if (!arenaMatchId || !mpConnected) return;
+            fbDb.collection('arenaMatches').doc(arenaMatchId).update({
+                events: firebase.firestore.FieldValue.arrayUnion(ev)
+            }).catch(err => console.warn('廣播對戰事件失敗：', err));
+        }
+
+        // ★ 觀戰端：不使用主要的戰鬥引擎/canvas，改成簡化的「血條＋文字戰報」直播畫面，即時監聽主控端的戰鬥結果
+        function startArenaLiveMatchAsGuest(matchId, invite) {
+            const viewer = document.getElementById('arena-live-viewer');
+            viewer.classList.remove('hidden'); viewer.classList.add('flex');
+            document.getElementById('arena-live-result').classList.add('hidden');
+            document.getElementById('arena-live-result').classList.remove('flex');
+            document.getElementById('arena-live-log').innerHTML = '';
+            document.getElementById('arena-live-my-name').innerText = (GAME_STATE.mpDisplayName || '我方') + '（我方）';
+            document.getElementById('arena-live-opp-name').innerText = (invite.fromName || '對方') + '（對方）';
+            arenaLastEventIndex = 0;
+
+            const buildTeamDisplay = (team) => team.map(slot => {
+                const db = HERO_DATABASE.find(h => h.id === slot.heroId);
+                const originalRoster = GAME_STATE.roster[slot.heroId];
+                GAME_STATE.roster[slot.heroId] = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equips: slot.equips};
+                const h = getEffectiveHero(db);
+                if (originalRoster === undefined) delete GAME_STATE.roster[slot.heroId]; else GAME_STATE.roster[slot.heroId] = originalRoster;
+                return {heroId: slot.heroId, name: db ? db.name : '???', maxHp: h ? h.maxHp : 1, hp: h ? h.maxHp : 1};
+            });
+            const myTeamData = (GAME_STATE.gridSlots || []).map((id, idx) => {
+                if (!id || !GAME_STATE.roster[id]) return null;
+                const r = GAME_STATE.roster[id];
+                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0]};
+            }).filter(Boolean);
+            arenaLiveTeams.my = buildTeamDisplay(myTeamData);
+            arenaLiveTeams.opp = buildTeamDisplay(invite.fromTeam);
+            renderArenaLiveTeams();
+
+            if (arenaMatchUnsub) arenaMatchUnsub();
+            arenaMatchUnsub = fbDb.collection('arenaMatches').doc(matchId).onSnapshot(doc => {
+                if (!doc.exists) return;
+                const data = doc.data();
+                const events = data.events || [];
+                for (; arenaLastEventIndex < events.length; arenaLastEventIndex++) {
+                    applyArenaLiveEvent(events[arenaLastEventIndex]);
+                }
+                if (data.status === 'done') {
+                    const iWon = data.winnerUid === fbUser.uid;
+                    if (!GAME_STATE.arenaRecord) GAME_STATE.arenaRecord = {win: 0, loss: 0};
+                    if (iWon) GAME_STATE.arenaRecord.win++; else GAME_STATE.arenaRecord.loss++;
+                    const honorGain = grantArenaHonorReward(iWon);
+                    saveGame(); updateHUD();
+                    document.getElementById('arena-live-result-text').innerHTML = iWon
+                        ? `<i class="fa-solid fa-trophy text-fantasy-gold mr-1"></i>對戰勝利！獲得 ${honorGain} 榮譽點數`
+                        : `<i class="fa-solid fa-skull-crossbones text-red-500 mr-1"></i>對戰落敗，獲得 ${honorGain} 榮譽點數`;
+                    document.getElementById('arena-live-result').classList.remove('hidden');
+                    document.getElementById('arena-live-result').classList.add('flex');
+                    if (arenaMatchUnsub) {arenaMatchUnsub(); arenaMatchUnsub = null;}
+                }
+            }, err => console.warn('監聽對戰結果失敗：', err));
+        }
+
+        function renderArenaLiveTeams() {
+            const renderSide = (containerId, team) => {
+                document.getElementById(containerId).innerHTML = team.map(h => {
+                    const pct = Math.max(0, Math.min(100, (h.hp / h.maxHp) * 100));
+                    return `<div class="text-[9px]"><div class="flex justify-between text-stone-400 mb-0.5"><span class="truncate">${h.name}</span></div><div class="w-full bg-black/60 rounded-full h-1.5 border border-[#3e3328] overflow-hidden"><div class="h-full transition-all duration-300 ${pct > 0 ? 'bg-emerald-600' : 'bg-red-900'}" style="width:${pct}%"></div></div></div>`;
+                }).join('');
+            };
+            renderSide('arena-live-my-team', arenaLiveTeams.my);
+            renderSide('arena-live-opp-team', arenaLiveTeams.opp);
+        }
+
+        function applyArenaLiveEvent(ev) {
+            // ev: {attackerSide, attackerName, targetSide, targetName, targetHeroId, damage, isCrit, targetHpAfter}
+            const log = document.getElementById('arena-live-log');
+            const line = document.createElement('div');
+            line.innerHTML = `<span class="${ev.attackerSide === 'my' ? 'text-sky-400' : 'text-rose-400'}">${ev.attackerName}</span> 對 <span class="${ev.targetSide === 'my' ? 'text-sky-400' : 'text-rose-400'}">${ev.targetName}</span> 造成 <span class="${ev.isCrit ? 'text-yellow-400 font-bold' : 'text-stone-300'}">${ev.damage}</span> 點傷害${ev.isCrit ? '（暴擊！）' : ''}`;
+            log.appendChild(line);
+            log.scrollTop = log.scrollHeight;
+
+            // ★ 這裡的血條是「觀戰端自己粗略估算」，用受擊方陣營的所有隊員平均扣血（因為完整命中對象追蹤
+            // 需要更複雜的資料結構），數字上不見得跟主控端逐一角色的真實血量分毫不差，但趨勢/勝負結果一致，
+            // 純粹顯示用，不影響任何獎勵或勝負判定（那些都是主控端算出來、寫進 events/status 的結果）。
+            const targetTeam = ev.targetSide === 'my' ? arenaLiveTeams.my : arenaLiveTeams.opp;
+            const targetHero = targetTeam.find(h => h.heroId === ev.targetHeroId) || targetTeam.find(h => h.hp > 0);
+            if (targetHero) {targetHero.hp = Math.max(0, targetHero.hp - ev.damage); renderArenaLiveTeams();}
+        }
+
+        function closeArenaLiveViewer() {
+            ToneAudioEngine.playClick();
+            document.getElementById('arena-live-viewer').classList.add('hidden');
+            document.getElementById('arena-live-viewer').classList.remove('flex');
+            if (arenaMatchUnsub) {arenaMatchUnsub(); arenaMatchUnsub = null;}
+            arenaMatchId = null;
+            switchTab('arena');
         }
 
         // 打完一場競技場戰鬥發放榮譽點數：贏比輸多，兩者都會給一點，避免打輸完全沒收穫、不想再打
@@ -2837,8 +3099,16 @@
         }
 
         let GAME_STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
-        let battleAnalytics = {dps: {}, tank: {}, heal: {}};
+        let battleAnalytics = {dps: {player: {}, enemy: {}}, tank: {player: {}, enemy: {}}, heal: {player: {}, enemy: {}}};
+        // ★ 新增：通用的統計加總小工具，兩邊陣營都用同一個函式記錄，不用再各自寫一份、也不用擔心 NaN
+        // （沒紀錄過的名字用 || 0 兜底，不需要事先幫每個怪物都手動歸零）
+        function bumpAnalytics(stat, team, name, amount) {
+            if (!amount) return;
+            if (!battleAnalytics[stat][team]) battleAnalytics[stat][team] = {};
+            battleAnalytics[stat][team][name] = (battleAnalytics[stat][team][name] || 0) + Math.floor(amount);
+        }
         let currentAnalyticsTab = 'dps';
+        let currentAnalyticsSide = 'player'; // ★ 新增：我方/對方切換，競技場現在也能看到對手的輸出/承傷/治療
         let selectedGridIndex = null;
         let selectedRosterHero = null;
         let isAutoBattle = false;
@@ -3371,62 +3641,6 @@
                 GAME_STATE.gridSlots = GAME_STATE.gridSlots.slice(0, 6);
             }
             updateHUD();
-        }
-
-        // --- 匯出與匯入功能 ---
-        function exportSaveData() {
-            ToneAudioEngine.playClick();
-            try {
-                const exportState = JSON.parse(JSON.stringify(GAME_STATE));
-                exportState.customBG = null;
-                exportState.customHeroes = {};
-
-                const rawJson = JSON.stringify(exportState);
-                const base64Code = btoa(unescape(encodeURIComponent(rawJson)));
-
-                const tempInput = document.createElement('textarea');
-                tempInput.value = base64Code;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-
-                showToast("✅ 進度碼已複製到剪貼簿！(不包含自訂圖片)");
-            } catch (e) {
-                console.error(e);
-                showToast("匯出失敗，請稍後再試。");
-            }
-        }
-
-        function importSaveData() {
-            ToneAudioEngine.playClick();
-            const inputCode = document.getElementById('import-code-input').value.trim();
-            if (!inputCode) {showToast("請先貼上進度碼！"); return;}
-
-            try {
-                const decodedJson = decodeURIComponent(escape(atob(inputCode)));
-                const importState = JSON.parse(decodedJson);
-
-                if (importState.gold !== undefined && importState.roster) {
-                    const currentCustomBG = GAME_STATE.customBG;
-                    const currentCustomHeroes = GAME_STATE.customHeroes;
-
-                    GAME_STATE = {...DEFAULT_STATE, ...importState};
-                    GAME_STATE.customBG = currentCustomBG;
-                    GAME_STATE.customHeroes = currentCustomHeroes;
-
-                    saveGame();
-                    updateHUD();
-                    closeSettingsModal();
-                    showToast("🎉 進度匯入成功！歡迎回來。");
-                    setTimeout(() => window.location.reload(), 1500);
-                } else {
-                    showToast("❌ 進度碼格式錯誤或損毀。");
-                }
-            } catch (e) {
-                console.error(e);
-                showToast("❌ 進度碼解析失敗，請確認是否複製完整。");
-            }
         }
 
         // 賽季 DLC 切換邏輯 (解除切換冷卻限制)
@@ -4298,18 +4512,18 @@
             }
         }
 
-        function ascendAltarArtifact() {
-            if (!selectedAltarHeroId || !GAME_STATE.roster[selectedAltarHeroId]) return;
+        function ascendAltarArtifact(silent) {
+            if (!selectedAltarHeroId || !GAME_STATE.roster[selectedAltarHeroId]) return false;
             const r = GAME_STATE.roster[selectedAltarHeroId];
             const tier = r.artifactTier || 0;
-            if (tier >= ALTAR_MAX_ARTIFACT_TIER) {showToast('已達最高階級！'); return;}
+            if (tier >= ALTAR_MAX_ARTIFACT_TIER) {if (!silent) showToast('已達最高階級！'); return false;}
 
             const cost = getAltarArtifactCost(tier);
             if (GAME_STATE.gold < cost.gold || GAME_STATE.forgeStones < cost.stones) {
-                showToast('資源不足！需要更多金幣與鍛造石。');
-                return;
+                if (!silent) showToast('資源不足！需要更多金幣與鍛造石。');
+                return false;
             }
-            ToneAudioEngine.playClick();
+            if (!silent) ToneAudioEngine.playClick();
             GAME_STATE.gold -= cost.gold;
             GAME_STATE.forgeStones -= cost.stones;
             r.artifactTier = tier + 1;
@@ -4317,8 +4531,10 @@
             saveGame(); updateHUD(); renderAltarView();
             if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
             if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
-            showToast(`✨ 聖物強化成功！當前 Tier ${r.artifactTier}`);
+            if (!silent) showToast(`✨ 聖物強化成功！當前 Tier ${r.artifactTier}`);
+            return true;
         }
+        const artifactLongPresser = createLongPressUpgrader((silent) => ascendAltarArtifact(silent));
 
         // ★ 營地掛機系統已移除：遠征現在有自動戰鬥＋倍速可以掛著持續刷關卡與資源，
         // 加上關卡越高獎勵越好的曲線調整，功能上已經取代了原本純被動、需要手動領取的營地掛機。
@@ -4539,7 +4755,7 @@
         // ★ 秘境／賽季這類需要重複刷的模式常常嫌動畫太慢，把上限從 x3 拉高到 x10
         function cycleBattleSpeed() {
             ToneAudioEngine.playClick();
-            const SPEED_STEPS = [1, 2, 3, 5, 10];
+            const SPEED_STEPS = [1, 2, 3, 5, 10, 15, 20];
             const idx = SPEED_STEPS.indexOf(battleSpeed);
             battleSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
             const btn = document.getElementById('btn-battle-speed');
@@ -5010,7 +5226,7 @@
                     <div class="absolute top-0 right-0 bg-black/60 px-1.5 py-0.5 rounded-bl-lg text-[8px] font-bold border-b border-l border-[#3e3328] ${rarityTextClass}">${h.rarity}</div>
                     ${custom ? `<img src="${custom}" class="w-12 h-12 rounded-full object-cover shadow-lg group-hover:scale-110 transition">` : `<i class="fa-solid ${h.avatarIcon} text-4xl drop-shadow-md group-hover:scale-110 transition" style="color:${h.color}"></i>`}
                     <span class="text-[10px] font-bold text-stone-200 mt-2 truncate w-full text-center">${dName}</span>
-                    <span class="text-[9px] text-yellow-500 font-bold mt-0.5 flex items-center gap-1"><i class="fa-solid fa-bolt text-[8px]"></i>${h.combatPower}</span>
+                    <span class="text-[9px] text-yellow-500 font-bold mt-0.5 flex items-center gap-1.5"><i class="fa-solid fa-bolt text-[8px]"></i>${h.combatPower}<span class="text-amber-300"><i class="fa-solid fa-star text-[8px]"></i>${h.star || 1}</span></span>
                 </div>`;
                 fragment.appendChild(card.firstElementChild);
             });
@@ -5100,7 +5316,7 @@
                     <div class="text-[10px] font-bold text-stone-300 mb-1">${eq.name} <span class="text-white">Lv.${lv}</span></div>
                     <i class="fa-solid ${eq.icon} ${eq.color} text-xl my-1.5 drop-shadow-md"></i>
                     <div class="text-[9px] text-stone-500 mb-2 font-bold">${eq.stat}/級</div>
-                    <button onclick="upgradeEquipment(${idx})" class="w-full py-1.5 rounded text-[9px] font-bold transition-all ${isMax ? 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50' : (canUpgrade ? 'bg-[#2a2118] text-stone-200 border border-[#5a4634] hover:border-fantasy-gold active:scale-95' : 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50')}" ${isMax || !canUpgrade ? 'disabled' : ''}>
+                    <button onmousedown="equipmentLongPressers[${idx}].start()" onmouseup="equipmentLongPressers[${idx}].stop()" onmouseleave="equipmentLongPressers[${idx}].cancel()" ontouchstart="equipmentLongPressers[${idx}].start()" ontouchend="equipmentLongPressers[${idx}].stop()" ontouchcancel="equipmentLongPressers[${idx}].cancel()" class="w-full py-1.5 rounded text-[9px] font-bold transition-all ${isMax ? 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50' : (canUpgrade ? 'bg-[#2a2118] text-stone-200 border border-[#5a4634] hover:border-fantasy-gold active:scale-95' : 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50')}" ${isMax || !canUpgrade ? 'disabled' : ''}>
                         ${isMax ? limitReason : `<div class="flex justify-center gap-1.5"><i class="fa-solid fa-coins text-yellow-500 mt-0.5"></i> ${costGold}</div><div class="flex justify-center gap-1.5 mt-0.5"><i class="fa-solid fa-hammer text-stone-400 mt-0.5"></i> ${costStone}</div>`}
                     </button>
                 </div>`;
@@ -5110,10 +5326,10 @@
         // ============ 裝備強化邏輯 ============
         // 【修復】：UI 按鈕原本呼叫 upgradeEquipment()，但這個函式從未被定義過，
         // 導致玩家點擊「強化裝備」按鈕完全沒有反應 (Console 會丟出 ReferenceError)。
-        function upgradeEquipment(idx) {
-            ToneAudioEngine.playClick();
+        function upgradeEquipment(idx, silent) {
+            if (!silent) ToneAudioEngine.playClick();
             const heroId = GAME_STATE.selectedHeroId;
-            if (!heroId) return;
+            if (!heroId) return false;
 
             const hero = GAME_STATE.roster[heroId];
             if (!hero.equips) hero.equips = [0, 0, 0, 0];
@@ -5123,8 +5339,8 @@
             const MAX_LVL = 20;
             const isMax = lv >= MAX_LVL || lv >= effectiveHero.effectiveLevel;
             if (isMax) {
-                showToast(lv >= MAX_LVL ? "此裝備已達強化上限 (Lv.20)！" : "裝備等級不可超過英雄等級，請先提升英雄等級！");
-                return;
+                if (!silent) showToast(lv >= MAX_LVL ? "此裝備已達強化上限 (Lv.20)！" : "裝備等級不可超過英雄等級，請先提升英雄等級！");
+                return false;
             }
 
             const costGold = 50 + (lv * 40);
@@ -5142,11 +5358,47 @@
                 if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
                 if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
 
-                showToast(`裝備強化成功！當前等級 Lv.${hero.equips[idx]}`);
+                if (!silent) showToast(`裝備強化成功！當前等級 Lv.${hero.equips[idx]}`);
+                return true;
             } else {
-                showToast("資源不足！需要更多金幣與鍛造石。");
+                if (!silent) showToast("資源不足！需要更多金幣與鍛造石。");
+                return false;
             }
         }
+
+        // ★ 通用長按升級小工具：包一層 mousedown/touchstart 事件，讓任何「升級」按鈕都能長按連續觸發，
+        // 不用每個升級系統各自寫一份幾乎一樣的長按邏輯（裝備強化、聖物強化都共用這個）。
+        // upgradeFn(silent) 要回傳 true/false（有沒有真的升級成功），失敗（例如資源不夠/已封頂）就自動停止連按。
+        function createLongPressUpgrader(upgradeFn) {
+            let holdTimer = null, holdCount = 0, holdFired = false;
+            function clearHoldTimer() {if (holdTimer) {clearTimeout(holdTimer); holdTimer = null;}}
+            function start() {
+                clearHoldTimer();
+                holdCount = 0; holdFired = false;
+                holdTimer = setTimeout(function tick() {
+                    holdFired = true;
+                    if (upgradeFn(true)) {
+                        holdCount++;
+                        holdTimer = setTimeout(tick, 90);
+                    } else {
+                        clearHoldTimer();
+                    }
+                }, 350);
+            }
+            function stop() {
+                clearHoldTimer();
+                if (holdFired) {
+                    if (holdCount > 0) {ToneAudioEngine.playClick(); showToast(`連續升級 ${holdCount} 次！`);}
+                } else {
+                    upgradeFn(false); // 放得夠快，當一般單次點擊
+                }
+                holdFired = false; holdCount = 0;
+            }
+            function cancel() {clearHoldTimer(); holdFired = false; holdCount = 0;}
+            return {start, stop, cancel};
+        }
+        // 每個裝備欄位各自要有自己的長按狀態，不然同時按兩個欄位的計次會互相干擾，用陣列各自存一份
+        const equipmentLongPressers = [0, 1, 2, 3].map(idx => createLongPressUpgrader((silent) => upgradeEquipment(idx, silent)));
 
         // ============ 英雄升級邏輯 ============
         // ★ 英雄等級上限 200，升級花費改成二次曲線成長 (原本是線性 +50/+30，高等級時費用幾乎跟不上收入，
@@ -5651,6 +5903,7 @@
         function showAnalyticsModal() {ToneAudioEngine.playClick(); document.getElementById('analytics-modal').classList.remove('hidden'); updateAnalyticsUI();}
         function closeAnalyticsModal() {ToneAudioEngine.playClick(); document.getElementById('analytics-modal').classList.add('hidden');}
         function switchAnalytics(type) {ToneAudioEngine.playClick(); currentAnalyticsTab = type; updateAnalyticsUI();}
+        function switchAnalyticsSide(side) {ToneAudioEngine.playClick(); currentAnalyticsSide = side; updateAnalyticsUI();}
 
         function updateAnalyticsUI() {
             if (document.getElementById('analytics-modal').classList.contains('hidden')) return;
@@ -5659,7 +5912,22 @@
                 if (t === currentAnalyticsTab) btn.className = 'flex-1 py-1.5 rounded-md text-[10px] font-bold bg-[#3e3328] text-white shadow-inner border border-[#5a4634]';
                 else btn.className = 'flex-1 py-1.5 rounded-md text-[10px] text-stone-400 hover:bg-[#2a2118] transition border border-transparent';
             });
-            const list = document.getElementById('analytics-list'); list.innerHTML = ''; const data = battleAnalytics[currentAnalyticsTab]; if (!data) return;
+            // ★ 新增：我方／對方切換鈕的樣式（例如在競技場，「對方」現在也能看得到對手輸出多少傷害）
+            ['player', 'enemy'].forEach(s => {
+                const btn = document.getElementById(`btn-ana-side-${s}`);
+                if (!btn) return;
+                if (s === currentAnalyticsSide) btn.className = 'flex-1 py-1 text-[9px] font-bold rounded transition bg-[#5a4634] text-white';
+                else btn.className = 'flex-1 py-1 text-[9px] font-bold rounded transition text-stone-500 hover:bg-[#2a2118]';
+            });
+            const list = document.getElementById('analytics-list'); list.innerHTML = '';
+            const dataAll = battleAnalytics[currentAnalyticsTab]; if (!dataAll) return;
+            const data = dataAll[currentAnalyticsSide] || {};
+
+            // ★ 新增：總計——不管哪個模式，都能一眼看到這個陣營的總傷害/總承傷/總治療量，不用自己心算加總
+            const totalVal = Object.values(data).reduce((s, v) => s + v, 0);
+            const totalLabel = currentAnalyticsTab === 'dps' ? '總傷害' : (currentAnalyticsTab === 'tank' ? '總承傷' : '總治療量');
+            document.getElementById('analytics-total').innerHTML = `${totalLabel}：<span class="text-fantasy-gold font-bold font-mono">${totalVal.toLocaleString()}</span>`;
+
             let maxVal = Math.max(...Object.values(data), 1); let color = currentAnalyticsTab === 'dps' ? 'bg-red-700' : (currentAnalyticsTab === 'tank' ? 'bg-blue-700' : 'bg-green-700');
             const sorted = Object.keys(data).sort((a, b) => data[b] - data[a]);
             if (sorted.length === 0 || data[sorted[0]] === 0) {list.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-xs text-stone-500">尚無戰鬥數據</div>'; return;}
@@ -5848,7 +6116,7 @@
             // 也沒有幫每個英雄的欄位初始化成 0。第一次 += 的時候是 undefined + 數字 = NaN，
             // 從那之後這個英雄的數據就永遠是 NaN，連帶讓整個排行榜的百分比計算、數字顯示全部壞掉
             // （Math.max 只要陣列裡有一個 NaN，結果就是 NaN）。現在每次開戰都重新歸零。
-            battleAnalytics = {dps: {}, tank: {}, heal: {}};
+            battleAnalytics = {dps: {player: {}, enemy: {}}, tank: {player: {}, enemy: {}}, heal: {player: {}, enemy: {}}};
 
             // 1. 生成玩家角色
             // 【修復】：原本直接使用 roster 原始存檔資料 (只有 level/star/equips 等欄位)，
@@ -5860,7 +6128,7 @@
                     const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === id));
                     if (!h) return;
                     // ★ 每個上陣英雄的統計欄位先歸零，確保 += 一定是「數字 + 數字」，不會變成 NaN
-                    battleAnalytics.dps[h.name] = 0; battleAnalytics.tank[h.name] = 0; battleAnalytics.heal[h.name] = 0;
+                    battleAnalytics.dps.player[h.name] = 0; battleAnalytics.tank.player[h.name] = 0; battleAnalytics.heal.player[h.name] = 0;
                     combatEntities.push({
                         ...h,
                         baseId: h.id,
@@ -5888,6 +6156,9 @@
                     const m = allMonsters[(GAME_STATE.towerLevel + i) % allMonsters.length];
                     combatEntities.push({
                         ...m,
+                        baseId: m.id, // ★ 修正：試煉塔的怪物本來就跟遠征共用同一份 MONSTER_DB 資料，不用另外準備圖片，
+                        // 但這裡少了這一行，繪圖時是用 e.baseId 去查圖片快取，只有展開 ...m 只有 m.id，
+                        // 沒有 baseId，圖片永遠查不到，只能一直顯示成預設圖示，這行補上就會跟遠征共用同一張圖。
                         hp: Math.floor(m.maxHp * sm), maxHp: Math.floor(m.maxHp * sm),
                         atk: Math.floor(m.atk * sm), def: Math.floor(m.def * sm),
                         team: 'enemy',
@@ -6343,17 +6614,28 @@
                     floatingTexts.push({x: target.x, y: target.y - 80, text: `蓄能 ${target.overloadCharge}/${target.skill.chargeMax || 4}`, isCrit: false, color: '#a5f3fc', life: 40});
                 }
 
-                // 戰鬥數據統計
-                if (attacker.team === 'player') {
-                    battleAnalytics.dps[attacker.name] += Math.floor(damage);
-                    // ★ 秘境改版後也要看「造成了多少傷害」來算獎勵，所以連同賽季討伐一起累計
-                    if (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon') {
-                        eventTotalDamage += Math.floor(damage);
-                        if (GAME_STATE.currentMode === 'season') eventBossCurrentHp -= damage;
-                    }
+                // 戰鬥數據統計：現在兩邊陣營都會記錄（不再只記玩家這邊），競技場等模式才能看得到對方的數據
+                bumpAnalytics('dps', attacker.team, attacker.name, damage);
+                // ★ 秘境改版後也要看「造成了多少傷害」來算獎勵，所以連同賽季討伐一起累計（只看玩家造成的部分）
+                if (attacker.team === 'player' && (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon')) {
+                    eventTotalDamage += Math.floor(damage);
+                    if (GAME_STATE.currentMode === 'season') eventBossCurrentHp -= damage;
                 }
-                if (target.team === 'player') battleAnalytics.tank[target.name] += Math.floor(damage);
+                bumpAnalytics('tank', target.team, target.name, damage);
                 updateAnalyticsUI();
+
+                // ★ 邀請制競技場：主控端每次命中都順便把結果廣播出去，讓觀戰端能同步顯示（見 pushArenaLiveEvent）
+                if (GAME_STATE.currentMode === 'arena' && isArenaHost && arenaMatchId) {
+                    pushArenaLiveEvent({
+                        attackerSide: attacker.team === 'player' ? 'my' : 'opp',
+                        attackerName: attacker.name,
+                        targetSide: target.team === 'player' ? 'my' : 'opp',
+                        targetName: target.name,
+                        targetHeroId: target.baseId,
+                        damage: Math.floor(damage),
+                        isCrit: !!isCrit
+                    });
+                }
 
                 // ★ 秘境重做：怪物死亡立刻在同一個站位補上新的一隻，戰鬥不會因為殺光敵人而提早結束，
                 // 只有玩家全軍覆沒才會結束；此時 eventTotalDamage 已經算入這次的傷害，補位的怪物強度會反映最新倍率。
@@ -6548,7 +6830,7 @@
                                 visualEffects.push({type: 'shield', x: t.x, y: t.y, color: '#fde047', life: 35, maxLife: 35});
                             }
                         });
-                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(currentActor.activeAtk * (currentActor.skill.value || 2.0) * allies.length);
+                        bumpAnalytics('heal', currentActor.team, currentActor.name, currentActor.activeAtk * (currentActor.skill.value || 2.0) * allies.length);
                     }
                     // --- 增益類大招 (提升全體友軍攻擊力，不造成傷害) ---
                     else if (sType === 'buff_atk') {
@@ -6570,7 +6852,7 @@
                             floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
                             visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#67e8f9', life: 30, maxLife: 30});
                         });
-                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(healAmt * allies.length);
+                        bumpAnalytics('heal', currentActor.team, currentActor.name, healAmt * allies.length);
                     }
                     // --- ★ 新增：群體復甦大招 (LR 天啟聖裁·加百列專屬)——不是單體被動復活，
                     // 而是主動一次把「所有」已陣亡的友軍都拉回戰場，同時幫存活的友軍補血，是貨真價實的翻盤技 ---
@@ -6588,7 +6870,7 @@
                             t.hp = Math.min(t.maxHp, t.hp + healAmt);
                             floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
                         });
-                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(currentActor.activeAtk * 1.2 * alive.length);
+                        bumpAnalytics('heal', currentActor.team, currentActor.name, currentActor.activeAtk * 1.2 * alive.length);
                     }
                     // --- 攻擊類大招 ---
                     else {
@@ -6733,7 +7015,7 @@
                         t.hp = Math.min(t.maxHp, t.hp + healAmt);
                         floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
                         visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#4ade80', life: 30, maxLife: 30});
-                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(healAmt);
+                        bumpAnalytics('heal', currentActor.team, currentActor.name, healAmt);
                     } else if (sType === 'buff_atk') {
                         // 增益類小技能：只強化自己，效果減半、持續縮短
                         const buffValue = (currentActor.skill.value || 0.3) * 0.5;
@@ -6750,7 +7032,7 @@
                         t.hp = Math.min(t.maxHp, t.hp + healAmt);
                         floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
                         visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#67e8f9', life: 30, maxLife: 30});
-                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(healAmt);
+                        bumpAnalytics('heal', currentActor.team, currentActor.name, healAmt);
                     } else {
                         // ★ 攻擊類小技能：改成保留大招的目標模式（AOE/連鎖/濺射/斬殺），只是範圍跟威力都縮小，
                         // 不再通通變成「單體打一下」——AOE/連鎖/濺射流派的小技能會多打一個目標，
@@ -6786,7 +7068,7 @@
                         let healAmount = Math.max(10, currentActor.activeAtk * 1.5); currentTarget.hp = Math.min(currentTarget.maxHp, currentTarget.hp + healAmount);
                         floatingTexts.push({x: currentTarget.x, y: currentTarget.y - 60, text: `+${Math.floor(healAmount)}`, isCrit: false, color: '#4ade80', life: 45}); ToneAudioEngine.playMagic();
                         visualEffects.push({type: 'heal', x: currentTarget.x, y: currentTarget.y, color: '#4ade80', life: 30, maxLife: 30});
-                        if (currentActor.team === 'player') {battleAnalytics.heal[currentActor.name] += Math.floor(healAmount); updateAnalyticsUI();}
+                        bumpAnalytics('heal', currentActor.team, currentActor.name, healAmount); updateAnalyticsUI();
                     } else {
                         ToneAudioEngine.playHit();
                         let dmg = Math.max(5, currentActor.activeAtk - (currentTarget.def * 0.4));
@@ -7088,6 +7370,17 @@
             const btnNext = document.getElementById('btn-next-battle');
 
             if (GAME_STATE.currentMode === 'arena') {
+                // ★ 邀請制競技場：如果這是主控端跑的一場「邀請對戰」，把最終結果寫回共用的對戰紀錄，
+                // 觀戰端會透過監聽同步看到一樣的結果；同時把速度還原成玩家原本選的（進場時被強制設成 5 倍）
+                if (isArenaHost && arenaMatchId) {
+                    fbDb.collection('arenaMatches').doc(arenaMatchId).update({
+                        status: 'done',
+                        winnerUid: isWin ? fbUser.uid : (arenaOpponentSnapshot ? arenaOpponentSnapshot.uid : null)
+                    }).catch(err => console.warn('提交對戰結果失敗：', err));
+                    isArenaHost = false; arenaMatchId = null;
+                }
+                if (arenaPrevBattleSpeed !== null) {battleSpeed = arenaPrevBattleSpeed; arenaPrevBattleSpeed = null;}
+
                 // ★ 競技場結果只在本地端算輸贏（跟對手即時廣播的資料模擬戰鬥），不會影響對手任何資料，
                 // 只更新自己的勝敗紀錄；雲端存的只有「目前在線的陣容資料」，不是戰鬥結果
                 if (!GAME_STATE.arenaRecord) GAME_STATE.arenaRecord = {win: 0, loss: 0};
