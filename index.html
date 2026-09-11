@@ -441,6 +441,30 @@
         </div>
     </div>
 
+    <!-- ★ 新增：登入門檻畫面。只有在 FIREBASE_ENABLED 的時候才會出現（多人功能沒設定的話遊戲維持單機直接玩）。
+         登入/註冊成功之前，整個遊戲不會開始載入，逼玩家一定要先有帳號才能進來，行為比照一般有伺服器的遊戲。 -->
+    <div id="login-gate" class="fixed inset-0 bg-[#0a0806] z-[90] hidden flex-col items-center justify-center p-6">
+        <div
+            class="w-20 h-20 rounded-full border-2 border-fantasy-gold flex items-center justify-center shadow-gold-glow mb-4">
+            <i class="fa-solid fa-chess-knight text-fantasy-gold text-3xl"></i>
+        </div>
+        <h1 class="font-magic text-fantasy-gold text-lg tracking-widest mb-1">Project Resonance</h1>
+        <p class="text-[10px] text-stone-500 mb-6">請登入或註冊帳號才能開始遊戲</p>
+        <div class="w-full max-w-xs flex flex-col gap-3">
+            <input id="gate-email" type="email" placeholder="Email"
+                class="bg-black/50 text-stone-200 text-xs px-3 py-2.5 rounded-lg border border-[#3e3328] outline-none focus:border-fantasy-gold">
+            <input id="gate-password" type="password" placeholder="密碼（至少 6 碼）"
+                class="bg-black/50 text-stone-200 text-xs px-3 py-2.5 rounded-lg border border-[#3e3328] outline-none focus:border-fantasy-gold">
+            <div class="flex gap-2">
+                <button onclick="gateLogin()"
+                    class="flex-1 py-2.5 rounded-lg bg-gradient-to-b from-sky-600 to-sky-900 border border-sky-400 text-white font-bold text-xs shadow-lg active:scale-95 transition">登入</button>
+                <button onclick="gateRegister()"
+                    class="flex-1 py-2.5 rounded-lg btn-gold font-bold text-xs active:scale-95 transition">註冊新帳號</button>
+            </div>
+            <p id="gate-status" class="text-[10px] text-center text-rose-400 min-h-[1em]"></p>
+        </div>
+    </div>
+
     <nav class="app-nav bg-[#0a0806] flex items-center shrink-0 shadow-[5px_0_15px_rgba(0,0,0,0.8)] z-50"
         style="padding-left: var(--safe-left); padding-right: var(--safe-right);">
         <div
@@ -1366,7 +1390,23 @@
                                 <input id="admin-mail-diamond" type="number" placeholder="寶石" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 <input id="admin-mail-stone" type="number" placeholder="鍛造石" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 <input id="admin-mail-ticket" type="number" placeholder="召喚卷軸" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-sptickets" type="number" placeholder="特急招募卷" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 <input id="admin-mail-honor" type="number" placeholder="榮譽點數" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-starcoins" type="number" placeholder="賽季勳章" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-crystal" type="number" placeholder="超越結晶" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                            </div>
+                            <div class="border-t border-[#3e3328] pt-2 mt-1">
+                                <p class="text-[9px] text-stone-500 mb-1.5">額外附贈英雄／碎片（選填）</p>
+                                <div class="flex gap-2">
+                                    <select id="admin-mail-hero" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                        <option value="">不附贈英雄</option>
+                                    </select>
+                                    <select id="admin-mail-hero-mode" onchange="document.getElementById('admin-mail-hero-amount').classList.toggle('hidden', this.value !== 'shards')" class="shrink-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                        <option value="hero">直接贈送角色</option>
+                                        <option value="shards">贈送碎片</option>
+                                    </select>
+                                    <input id="admin-mail-hero-amount" type="number" placeholder="碎片數" class="hidden shrink-0 w-20 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
                             </div>
                             <button onclick="sendAdminMail()" class="w-full py-2 bg-amber-800/70 text-amber-200 text-[11px] font-bold rounded border border-amber-600 hover:bg-amber-700 transition">發送信件</button>
                         </div>
@@ -1843,40 +1883,159 @@
 
         // 初始化 Firebase：用匿名登入 (不用玩家自己註冊帳號)，每個瀏覽器/裝置會拿到一組固定的 uid，
         // 遊戲進度本身還是存在 localStorage，Firebase 只負責「多人才需要」的那部分資料 (競技場快照、世界王血量等)
-        async function initMultiplayer() {
-            if (!FIREBASE_ENABLED) return;
+        /* ============================================================
+           登入門檻 (Login Gate)：有設定 FIREBASE_CONFIG 的話，遊戲一開始就會卡在這個畫面，
+           一定要登入或註冊帳號才能進到遊戲本體，取代原本「背景默默用訪客身分連線」的做法。
+           ============================================================ */
+        async function showLoginGate() {
             try {
                 fbApp = firebase.initializeApp(FIREBASE_CONFIG);
                 fbAuth = firebase.auth();
                 fbDb = firebase.firestore();
-                const cred = await fbAuth.signInAnonymously();
-                fbUser = cred.user;
-                mpConnected = true;
-                // 確保這個 uid 在 players 集合裡有一筆自己的資料 (第一次連線會建立，之後只更新)
-                const playerRef = fbDb.collection('players').doc(fbUser.uid);
-                const snap = await playerRef.get();
-                if (!snap.exists) {
-                    await playerRef.set({
-                        displayName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`,
-                        power: 0,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
-                if (typeof refreshArenaUI === 'function') refreshArenaUI();
             } catch (err) {
-                console.warn('多人連線失敗：', err);
-                mpConnected = false;
+                console.warn('Firebase 初始化失敗，改為單機模式：', err);
+                startGameAfterAuth();
+                return;
+            }
+            hideAppSplash();
+            const gate = document.getElementById('login-gate');
+            gate.classList.remove('hidden'); gate.classList.add('flex');
+        }
+
+        async function gateRegister() {
+            ToneAudioEngine.playClick();
+            const email = document.getElementById('gate-email').value.trim();
+            const password = document.getElementById('gate-password').value;
+            const statusEl = document.getElementById('gate-status');
+            statusEl.innerText = '';
+            if (!email || !password) {statusEl.innerText = '請輸入 Email 和密碼'; return;}
+            if (password.length < 6) {statusEl.innerText = '密碼至少要 6 個字元'; return;}
+            try {
+                const result = await fbAuth.createUserWithEmailAndPassword(email, password);
+                fbUser = result.user;
+                await onGateAuthSuccess();
+            } catch (err) {
+                console.warn(err);
+                statusEl.innerText = err.code === 'auth/email-already-in-use' ? '這個 Email 已經註冊過了，請改用登入' : '註冊失敗：' + (err.message || '請稍後再試');
             }
         }
 
+        async function gateLogin() {
+            ToneAudioEngine.playClick();
+            const email = document.getElementById('gate-email').value.trim();
+            const password = document.getElementById('gate-password').value;
+            const statusEl = document.getElementById('gate-status');
+            statusEl.innerText = '';
+            if (!email || !password) {statusEl.innerText = '請輸入 Email 和密碼'; return;}
+            try {
+                const result = await fbAuth.signInWithEmailAndPassword(email, password);
+                fbUser = result.user;
+                await onGateAuthSuccess();
+            } catch (err) {
+                console.warn(err);
+                statusEl.innerText = '登入失敗：帳號或密碼錯誤';
+            }
+        }
+
+        async function onGateAuthSuccess() {
+            mpConnected = true;
+            await fbUser.getIdToken(true);
+            const playerRef = fbDb.collection('players').doc(fbUser.uid);
+            const snap = await playerRef.get();
+            if (!snap.exists) {
+                await playerRef.set({displayName: `玩家${fbUser.uid.slice(0, 5)}`, power: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+            }
+            const gate = document.getElementById('login-gate');
+            gate.classList.add('hidden'); gate.classList.remove('flex');
+            startGameAfterAuth();
+            await tryRestoreCloudSave(); // 登入成功後檢查這個帳號雲端有沒有存檔，決定要不要載入
+        }
+
         /* ============================================================
-           帳號系統：預設用匿名登入讓多人功能「不用註冊就能用」，但匿名身分換裝置/清瀏覽器資料就會不見。
-           想要「換裝置也能用同一個身分」的話，可以升級成 Email/密碼帳號：
-           - 訪客升級：用 linkWithCredential() 把 Email/密碼綁定到目前這個匿名帳號上，UID 完全不變，
-             之前的競技場戰績/榮譽點數都不會不見，只是多了一組可以登入的帳密。
-           - 登入既有帳號：在新裝置上用同一組 Email/密碼登入，會換成那個帳號原本的 UID，
-             之前那台裝置累積的競技場資料就會接回來。
-           要在 Firebase 主控台的 Authentication → Sign-in method 額外開啟「Email/密碼」才能用。
+           雲端存檔同步：這是對「資源改由伺服器控制」這個需求的務實折衷方案，老實說明一下能做到什麼、
+           做不到什麼——
+           【做得到】：登入帳號後，本地存檔會定期（節流，不是每次操作都同步）備份一份到 Firestore，
+           換裝置用同一組帳密登入時可以把雲端那份接回來，不會因為換手機、清瀏覽器資料就整個歸零。
+           【做不到】：這不是「伺服器驗證/計算每一筆資源異動」，存檔內容全部是這台裝置本地算出來的，
+           雲端只是原封不動存一份備份。如果本地端被竄改（改 localStorage 或匯入假造的進度碼），
+           一樣會被原封不動同步上去——因為 Firestore 的客戶端 SDK 沒辦法「重新計算驗證」一份存檔合不合理，
+           那需要 Cloud Functions 之類的後端運算服務，等於要把整個遊戲邏輯在伺服器端重寫一份，
+           這已經超出「改網頁程式碼」能做到的範圍。唯一做的是下面 checkSavePlausible() 這個粗略檢查，
+           只是在雲端多存一個「疑似異常」的標記讓你自己在 Firebase 主控台肉眼複查，並不會真的擋下存檔。
+           ============================================================ */
+        let cloudSyncTimer = null;
+        let lastCloudSyncTime = 0;
+        const CLOUD_SYNC_INTERVAL_MS = 60000; // 最多每 60 秒真的打一次 Firestore，避免存檔太頻繁狂打用量
+
+        function scheduleCloudSync() {
+            if (!mpConnected || !fbUser || !fbDb) return;
+            const now = Date.now();
+            if (now - lastCloudSyncTime > CLOUD_SYNC_INTERVAL_MS) {
+                pushCloudSave();
+            } else if (!cloudSyncTimer) {
+                cloudSyncTimer = setTimeout(() => {cloudSyncTimer = null; pushCloudSave();}, CLOUD_SYNC_INTERVAL_MS - (now - lastCloudSyncTime));
+            }
+        }
+
+        // 粗略檢查存檔數值有沒有超出遊戲本身數值系統理論上能達到的範圍（等級/星級/聖物階級封頂、
+        // 資源多到不合理等），抓得到明顯離譜的竄改，抓不到精心計算過、卡在上限邊緣的造假
+        function checkSavePlausible(state) {
+            for (const heroId in (state.roster || {})) {
+                const r = state.roster[heroId];
+                if (!r) continue;
+                if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > MAX_STAR_LEVEL || (r.artifactTier || 0) > 100) return false;
+            }
+            if ((state.gold || 0) > 999999999999 || (state.diamonds || 0) > 999999999 || (state.forgeStones || 0) > 999999999) return false;
+            return true;
+        }
+
+        async function pushCloudSave() {
+            if (!mpConnected || !fbUser || !fbDb) return;
+            lastCloudSyncTime = Date.now();
+            try {
+                const exportState = JSON.parse(JSON.stringify(GAME_STATE));
+                exportState.customBG = null; exportState.customHeroes = {}; // 跟匯出進度碼一樣，圖片不同步，避免存檔太大
+                await fbDb.collection('saves').doc(fbUser.uid).set({
+                    data: JSON.stringify(exportState),
+                    plausible: checkSavePlausible(exportState),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (err) {console.warn('雲端存檔同步失敗：', err);}
+        }
+
+        // 登入成功後呼叫：如果雲端有這個帳號的存檔紀錄，而且跟本機現有進度不一樣，詢問要用哪一份，
+        // 避免不小心互相覆蓋掉（例如原本用手機玩，這次在電腦上第一次登入，電腦端本來是全新存檔）
+        async function tryRestoreCloudSave() {
+            if (!mpConnected || !fbUser || !fbDb) return;
+            try {
+                const snap = await fbDb.collection('saves').doc(fbUser.uid).get();
+                if (!snap.exists || !snap.data().data) return;
+                const cloudState = JSON.parse(snap.data().data);
+                const localHasProgress = GAME_STATE.roster && Object.keys(GAME_STATE.roster).length > 1;
+                if (localHasProgress) {
+                    if (confirm('偵測到這個帳號在雲端有存檔紀錄，要改用雲端進度嗎？\n(選「取消」會繼續用這台裝置目前的進度，之後存檔會覆蓋掉雲端那份)')) {
+                        applyCloudState(cloudState);
+                    }
+                } else {
+                    applyCloudState(cloudState);
+                }
+            } catch (err) {console.warn('讀取雲端存檔失敗：', err);}
+        }
+
+        function applyCloudState(cloudState) {
+            const currentCustomBG = GAME_STATE.customBG;
+            const currentCustomHeroes = GAME_STATE.customHeroes;
+            GAME_STATE = {...DEFAULT_STATE, ...cloudState};
+            GAME_STATE.customBG = currentCustomBG;
+            GAME_STATE.customHeroes = currentCustomHeroes;
+            saveGame(); updateHUD();
+            showToast('已載入雲端進度！');
+            setTimeout(() => window.location.reload(), 1000);
+        }
+
+        /* ============================================================
+           帳號系統：現在是強制登入制（見 login-gate），一進遊戲就已經是真正的 Email/密碼帳號，
+           不會再有「訪客身分」。下面這幾個函式主要用在「已登入後，在競技場畫面裡換帳號/登出」的場景。
            ============================================================ */
         async function registerArenaAccount(email, password) {
             ToneAudioEngine.playClick();
@@ -1936,11 +2095,10 @@
             stopArenaPresenceLoop();
             try {
                 await fbAuth.signOut();
-                const cred = await fbAuth.signInAnonymously(); // 登出後改回訪客身分，維持多人功能可以繼續用
-                fbUser = cred.user;
-                showToast('已登出，目前為訪客身分');
-                updateArenaAccountUI();
-                refreshArenaUI();
+                // ★ 修正：現在遊戲是強制登入制，登出後不會再有「訪客身分」可以退回去，
+                // 直接重整頁面讓使用者回到登入門檻，重新登入或換帳號
+                showToast('已登出');
+                setTimeout(() => window.location.reload(), 800);
             } catch (err) {console.warn(err);}
         }
 
@@ -2028,7 +2186,7 @@
                 }
             });
             if (sub === 'mail') document.getElementById('arena-mail-dot').classList.add('hidden'); // 打開信件分頁就當作已讀，把小紅點關掉
-            if (sub === 'admin') loadAdminPlayerList();
+            if (sub === 'admin') {loadAdminPlayerList(); populateAdminMailHeroSelect();}
         }
 
         async function saveMpDisplayName() {
@@ -2238,8 +2396,16 @@
                 }
                 list.innerHTML = '';
                 [...messages].reverse().forEach(msg => {
-                    const rewardText = Object.entries(msg.rewards || {}).filter(([, v]) => v > 0)
-                        .map(([k, v]) => `${{gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', honorPoints: '榮譽點數'}[k] || k} +${v}`).join('／');
+                    const rewardLabels = {gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', specialTickets: '特急招募卷', honorPoints: '榮譽點數', starCoins: '賽季勳章', transcendCrystals: '超越結晶'};
+                    let rewardText = Object.entries(msg.rewards || {}).filter(([k, v]) => v > 0 && rewardLabels[k])
+                        .map(([k, v]) => `${rewardLabels[k]} +${v}`).join('／');
+                    if (msg.rewards && msg.rewards.heroId) {
+                        const dbHero = HERO_DATABASE.find(h => h.id === msg.rewards.heroId);
+                        if (dbHero) {
+                            const heroText = msg.rewards.heroGrantType === 'hero' ? `${dbHero.name}（角色）` : `${dbHero.name} 碎片 x${msg.rewards.heroShardAmount || 10}`;
+                            rewardText = rewardText ? `${rewardText}／${heroText}` : heroText;
+                        }
+                    }
                     const card = document.createElement('div');
                     card.className = `glass-panel p-3 rounded-xl border ${msg.claimed ? 'border-[#3e3328] opacity-60' : 'border-emerald-600/50'}`;
                     card.innerHTML = `
@@ -2273,7 +2439,24 @@
                 if (r.diamonds) GAME_STATE.diamonds += r.diamonds;
                 if (r.forgeStones) GAME_STATE.forgeStones += r.forgeStones;
                 if (r.tickets) GAME_STATE.tickets += r.tickets;
+                if (r.specialTickets) GAME_STATE.specialTickets = (GAME_STATE.specialTickets || 0) + r.specialTickets;
                 if (r.honorPoints) GAME_STATE.honorPoints = (GAME_STATE.honorPoints || 0) + r.honorPoints;
+                if (r.starCoins) GAME_STATE.starCoins = (GAME_STATE.starCoins || 0) + r.starCoins;
+                if (r.transcendCrystals) GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + r.transcendCrystals;
+                // ★ 新增：信件附贈的英雄／碎片。已經擁有的角色再收到「直接贈送角色」，會改成用 grantHeroShards
+                // 走碎片路線（避免把等級/星級蓋掉），滿星的話會自動轉化超越結晶，邏輯跟其他碎片來源一致。
+                if (r.heroId) {
+                    const dbHero = HERO_DATABASE.find(h => h.id === r.heroId);
+                    if (dbHero) {
+                        if (r.heroGrantType === 'hero' && !GAME_STATE.roster[r.heroId]) {
+                            GAME_STATE.roster[r.heroId] = {level: 1, star: dbHero.star || 1, artifactTier: 0, equips: [0, 0, 0, 0]};
+                            showToast(`🎉 獲得英雄：${dbHero.name}！`);
+                        } else {
+                            const shardAmt = r.heroGrantType === 'hero' ? 30 : (r.heroShardAmount || 10);
+                            grantHeroShards(r.heroId, shardAmt);
+                        }
+                    }
+                }
                 saveGame(); updateHUD();
 
                 msg.claimed = true;
@@ -2283,6 +2466,19 @@
         }
 
         // 管理員發信：可以指定單一玩家 UID，或廣播給 players collection 裡的所有人
+        // 填滿信件附贈英雄的下拉選單，依稀有度排序，順便標註稀有度方便管理員辨識
+        function populateAdminMailHeroSelect() {
+            const sel = document.getElementById('admin-mail-hero');
+            if (!sel || sel.options.length > 1) return; // 已經填過就不重複填
+            const order = {LR: 0, UR: 1, SSR: 2, SR: 3, R: 4};
+            const sorted = [...HERO_DATABASE].sort((a, b) => (order[a.rarity] ?? 9) - (order[b.rarity] ?? 9));
+            sorted.forEach(h => {
+                const opt = document.createElement('option');
+                opt.value = h.id; opt.innerText = `[${h.rarity}] ${h.name}`;
+                sel.appendChild(opt);
+            });
+        }
+
         async function sendAdminMail() {
             ToneAudioEngine.playClick();
             if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); return;}
@@ -2295,8 +2491,18 @@
                 diamonds: parseInt(document.getElementById('admin-mail-diamond').value) || 0,
                 forgeStones: parseInt(document.getElementById('admin-mail-stone').value) || 0,
                 tickets: parseInt(document.getElementById('admin-mail-ticket').value) || 0,
-                honorPoints: parseInt(document.getElementById('admin-mail-honor').value) || 0
+                specialTickets: parseInt(document.getElementById('admin-mail-sptickets').value) || 0,
+                honorPoints: parseInt(document.getElementById('admin-mail-honor').value) || 0,
+                starCoins: parseInt(document.getElementById('admin-mail-starcoins').value) || 0,
+                transcendCrystals: parseInt(document.getElementById('admin-mail-crystal').value) || 0
             };
+            // ★ 新增：信件附贈英雄／碎片
+            const heroId = document.getElementById('admin-mail-hero').value;
+            if (heroId) {
+                rewards.heroId = heroId;
+                rewards.heroGrantType = document.getElementById('admin-mail-hero-mode').value;
+                if (rewards.heroGrantType === 'shards') rewards.heroShardAmount = parseInt(document.getElementById('admin-mail-hero-amount').value) || 10;
+            }
             const targetType = document.getElementById('admin-mail-target-type').value;
             const msg = {id: `m_${Date.now()}_${Math.floor(Math.random() * 1000)}`, title, body, rewards, sentAt: Date.now(), claimed: false};
 
@@ -2317,7 +2523,8 @@
                 }
                 document.getElementById('admin-mail-title').value = '';
                 document.getElementById('admin-mail-body').value = '';
-                ['gold', 'exp', 'diamond', 'stone', 'ticket', 'honor'].forEach(k => document.getElementById('admin-mail-' + k).value = '');
+                ['gold', 'exp', 'diamond', 'stone', 'ticket', 'sptickets', 'honor', 'starcoins', 'crystal'].forEach(k => document.getElementById('admin-mail-' + k).value = '');
+                document.getElementById('admin-mail-hero').value = '';
             } catch (err) {console.warn('發信失敗：', err); showToast('發信失敗，請檢查網路連線或安全規則設定');}
         }
 
@@ -3027,6 +3234,9 @@
 
                 // 3. 將瘦身後、體積超小的資料存入瀏覽器
                 localStorage.setItem('resonance_save_v19', JSON.stringify(stateToSave));
+
+                // 4. ★ 新增：同時排程一次雲端同步（節流，不是每次存檔都真的打 Firestore，見 scheduleCloudSync）
+                if (typeof scheduleCloudSync === 'function') scheduleCloudSync();
             } catch (e) {
                 console.error("Save failed:", e);
                 if (e.name === 'QuotaExceededError' || e.code === 22) showToast("⚠️ 儲存空間不足！請嘗試清理自訂圖片。");
@@ -6976,14 +7186,24 @@
         window.onload = () => {
             canvas = document.getElementById('battle-canvas'); ctx = canvas.getContext('2d');
             cacheDomRefs();
+            // ★ 有設定多人功能的話，先強制卡在登入門檻，登入/註冊成功後才會真的開始載入遊戲；
+            // 沒設定 FIREBASE_CONFIG 的話維持原本單機直接玩，不會被卡住
+            if (FIREBASE_ENABLED) {
+                showLoginGate();
+            } else {
+                startGameAfterAuth();
+            }
+        };
+
+        // 真正開始載入遊戲（原本 window.onload 的內容整段搬到這裡），統一由「單機」或「登入成功」兩條路徑呼叫
+        function startGameAfterAuth() {
             loadGame(); initAutoSave(); initSeasonTimer(); initDungeonAutoFarm();
             applySeasonTheme();
             refreshSeasonModeNavButton();
             switchTab('battle');
             document.body.addEventListener('click', () => {ToneAudioEngine.init();}, {once: true});
             hideAppSplash();
-            initMultiplayer();
-        };
+        }
 
         // 啟動畫面淡出；用 requestAnimationFrame 讓畫面先完成至少一次繪製再淡出，避免看到底層還沒排好版就露餡
         function hideAppSplash() {
