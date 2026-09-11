@@ -1370,6 +1370,15 @@
                             </div>
                             <button onclick="sendAdminMail()" class="w-full py-2 bg-amber-800/70 text-amber-200 text-[11px] font-bold rounded border border-amber-600 hover:bg-amber-700 transition">發送信件</button>
                         </div>
+
+                        <!-- 玩家清單：點一下可以直接把 UID 帶入上面的「指定玩家」欄位，不用自己手動複製貼上 -->
+                        <div class="glass-panel p-3 rounded-xl border border-[#3e3328] flex flex-col gap-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] text-stone-400"><i class="fa-solid fa-users mr-1"></i>玩家清單（<span id="admin-player-count">0</span> 人）</span>
+                                <button onclick="loadAdminPlayerList()" class="text-[10px] text-sky-400"><i class="fa-solid fa-rotate mr-1"></i>重新整理</button>
+                            </div>
+                            <div id="admin-player-list" class="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1884,6 +1893,7 @@
                     fbUser = result.user;
                 }
                 showToast('註冊成功！這個身分之後可以在任何裝置登入');
+                await fbUser.getIdToken(true); // ★ 強制刷新驗證權杖，確保 email 這個claim 立刻生效，不然安全規則短時間內可能還讀不到新綁定的 email，管理員權限判斷會失敗
                 updateArenaAccountUI();
                 broadcastArenaPresence();
             } catch (err) {
@@ -1911,6 +1921,7 @@
                     saveGame();
                 }
                 showToast('登入成功！');
+                await fbUser.getIdToken(true); // ★ 同上，強制刷新權杖確保 email claim 是最新的
                 updateArenaAccountUI();
                 refreshArenaUI();
             } catch (err) {
@@ -2017,6 +2028,7 @@
                 }
             });
             if (sub === 'mail') document.getElementById('arena-mail-dot').classList.add('hidden'); // 打開信件分頁就當作已讀，把小紅點關掉
+            if (sub === 'admin') loadAdminPlayerList();
         }
 
         async function saveMpDisplayName() {
@@ -2086,6 +2098,9 @@
                     team,
                     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                // ★ 修正：players collection 裡的 power 欄位原本只有帳號剛建立時寫死 0，之後從來沒更新過，
+                // 導致管理員玩家清單排序完全沒意義（大家都是 0）。這裡跟著線上廣播一起同步更新。
+                await fbDb.collection('players').doc(fbUser.uid).set({power: getMyArenaPower()}, {merge: true});
             } catch (err) {console.warn('廣播線上狀態失敗：', err);}
         }
 
@@ -2306,12 +2321,43 @@
             } catch (err) {console.warn('發信失敗：', err); showToast('發信失敗，請檢查網路連線或安全規則設定');}
         }
 
+        // ★ 修正：原本是「先讀取對方現有的信件陣列，push 新信件，再整份寫回去」，
+        // 但管理員發信給「別人」時，安全規則只允許本人讀自己的信箱，管理員讀不到，導致整個流程卡在第一步的
+        // .get() 就被拒絕，跳出「發信失敗」。改用 Firestore 的 arrayUnion，直接原子性地「附加」一封信到陣列裡，
+        // 完全不需要先讀取，只要有寫入權限就能用，安全規則也單純很多。
         async function sendMailToUid(uid, msg) {
             const ref = fbDb.collection('mail').doc(uid);
-            const snap = await ref.get();
-            const messages = (snap.exists && snap.data().messages) || [];
-            messages.push(msg);
-            await ref.set({messages});
+            await ref.set({messages: firebase.firestore.FieldValue.arrayUnion(msg)}, {merge: true});
+        }
+
+        // 管理員專用：列出 players collection 裡所有註冊過的玩家，點一下直接把 UID 帶入指定目標欄位，
+        // 不用再自己手動去 Firebase 主控台查、複製貼上
+        async function loadAdminPlayerList() {
+            if (!isCurrentUserAdmin()) return;
+            const list = document.getElementById('admin-player-list');
+            list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-3">讀取中...</div>`;
+            try {
+                const snap = await fbDb.collection('players').orderBy('power', 'desc').limit(100).get();
+                document.getElementById('admin-player-count').innerText = snap.size;
+                if (snap.empty) {list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-3">還沒有玩家資料</div>`; return;}
+                list.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between bg-black/40 px-2 py-1.5 rounded border border-[#3e3328] text-[10px] cursor-pointer hover:border-amber-600 transition';
+                    row.innerHTML = `<div class="truncate mr-2"><span class="text-stone-200 font-bold">${d.displayName || '???'}</span><span class="text-stone-600 ml-1">${doc.id.slice(0, 8)}...</span></div><span class="text-fantasy-gold shrink-0">${(d.power || 0).toLocaleString()}</span>`;
+                    row.onclick = () => {
+                        document.getElementById('admin-mail-target-type').value = 'uid';
+                        document.getElementById('admin-mail-target-uid').value = doc.id;
+                        document.getElementById('admin-mail-target-uid').classList.remove('hidden');
+                        showToast(`已選擇：${d.displayName || doc.id}`);
+                    };
+                    list.appendChild(row);
+                });
+            } catch (err) {
+                list.innerHTML = `<div class="text-center text-[10px] text-rose-400 py-3">讀取失敗，請檢查網路連線</div>`;
+                console.warn(err);
+            }
         }
 
 
@@ -4340,6 +4386,14 @@
                 if (!GAME_STATE.roster[hId]) {
                     GAME_STATE.roster[hId] = {level: 1, star: dbH.star, artifactTier: 0, equips: [0, 0, 0, 0]};
                     showToast(`🎉 獲得賽季限定英雄：${dbH.name}！`);
+                } else if ((GAME_STATE.roster[hId].star || 1) >= MAX_STAR_LEVEL) {
+                    // ★ 修正：這裡原本不管星級多高都直接 .star++，完全沒檢查上限，
+                    // 導致已經滿星 (10星) 的 LR 英雄再拿到這個獎勵時，星級會被推過封頂值，
+                    // 也完全繞過了「滿星轉化超越結晶」那套邏輯（那套只接在 grantHeroShards 裡，這裡沒呼叫到）。
+                    // 現在滿星時改成跟碎片溢出同一套規則：轉化成超越結晶，不會再讓星級超過 10 星。
+                    const crystalGain = 50;
+                    GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + crystalGain;
+                    showToast(`🎉 ${dbH.name} 已滿星，轉化為 ${crystalGain} 枚超越結晶！`);
                 } else {
                     GAME_STATE.roster[hId].star++; showToast(`🎉 獲得 ${dbH.name} 碎片，角色星級已突破！`);
                 }
