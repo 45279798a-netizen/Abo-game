@@ -366,6 +366,13 @@
             background: linear-gradient(160deg, rgba(76, 15, 30, 0.55) 0%, rgba(20, 14, 10, 0.9) 65%) !important;
         }
 
+        /* ★ 新增最高稀有度 LR（比 UR 高一階），用金＋紫的疊加光暈做出「比 UR 更高階」的視覺層次 */
+        .hero-card.rarity-LR {
+            border-color: #fde047 !important;
+            box-shadow: 0 0 18px rgba(253, 224, 71, 0.55), 0 0 30px rgba(232, 121, 249, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            background: linear-gradient(160deg, rgba(120, 53, 15, 0.55) 0%, rgba(20, 14, 10, 0.9) 65%) !important;
+        }
+
         .hero-card.rarity-SSR {
             border-color: #d4af37 !important;
             box-shadow: 0 0 12px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -1043,6 +1050,8 @@
                     id="heroes-filter-bar">
                     <button onclick="setHeroesFilter('all')" data-filter="all"
                         class="heroes-filter-btn shrink-0 px-3 py-1.5 rounded-full text-[9px] font-bold border transition">全部</button>
+                    <button onclick="setHeroesFilter('LR')" data-filter="LR"
+                        class="heroes-filter-btn shrink-0 px-3 py-1.5 rounded-full text-[9px] font-bold border transition">LR</button>
                     <button onclick="setHeroesFilter('UR')" data-filter="UR"
                         class="heroes-filter-btn shrink-0 px-3 py-1.5 rounded-full text-[9px] font-bold border transition">UR</button>
                     <button onclick="setHeroesFilter('SSR')" data-filter="SSR"
@@ -1193,6 +1202,9 @@
                 <div id="codex-filters" class="flex gap-2 mb-3 shrink-0 overflow-x-auto custom-scrollbar pb-1">
                     <button onclick="filterCodex('all', this)"
                         class="codex-filter-btn px-3 py-1 bg-yellow-900/40 text-fantasy-gold border border-fantasy-gold rounded text-[9px] font-bold whitespace-nowrap">全部</button>
+                    <button onclick="filterCodex('LR', this)"
+                        class="codex-filter-btn px-3 py-1 bg-black/50 text-stone-400 border border-[#3e3328] rounded text-[9px] font-bold whitespace-nowrap">LR
+                        史詩</button>
                     <button onclick="filterCodex('UR', this)"
                         class="codex-filter-btn px-3 py-1 bg-black/50 text-stone-400 border border-[#3e3328] rounded text-[9px] font-bold whitespace-nowrap">UR
                         主宰</button>
@@ -1909,8 +1921,9 @@
                 name: "S1: 亡靈的甦醒",
                 boss: {id: 'boss_lich', name: '巫妖王', color: '#10b981', icon: 'fa-skull-crossbones'},
                 colorClass: {text: 'text-emerald-400', border: 'border-emerald-900', bg: 'bg-emerald-900', gradient: 'from-emerald-900/40', shadow: 'shadow-[0_0_30px_rgba(16,185,129,0.3)]'},
-                exclusiveHero: 'h_uther', // 通行證最終獎勵保持 UR
+                exclusiveHero: 'h_s1_lr', // ★ 通行證最終獎勵改成 LR 新角色（比 UR 高一階），原本的 UR 烏瑟還在，改由 limitedUR 負責
                 limitedUR: 'h_uther',
+                limitedLR: 'h_s1_lr',
                 limitedSSRs: ['h_s1_ssr1', 'h_s1_ssr2'],
                 passMultiplier: 1.0
             },
@@ -1918,8 +1931,9 @@
                 name: "S2: 巨龍的怒火",
                 boss: {id: 'boss_dragon', name: '災厄紅龍', color: '#ef4444', icon: 'fa-dragon'},
                 colorClass: {text: 'text-red-400', border: 'border-red-900', bg: 'bg-red-900', gradient: 'from-red-900/40', shadow: 'shadow-[0_0_30px_rgba(239,68,68,0.3)]'},
-                exclusiveHero: 'h_siegfried',
+                exclusiveHero: 'h_s2_lr',
                 limitedUR: 'h_siegfried',
+                limitedLR: 'h_s2_lr',
                 limitedSSRs: ['h_s2_ssr1', 'h_s2_ssr2'],
                 passMultiplier: 1.5
             },
@@ -1927,8 +1941,9 @@
                 name: "S3: 聖戰的終焉",
                 boss: {id: 'boss_lucifer', name: '墮落聖王', color: '#a855f7', icon: 'fa-crown'},
                 colorClass: {text: 'text-purple-400', border: 'border-purple-900', bg: 'bg-purple-900', gradient: 'from-purple-900/40', shadow: 'shadow-[0_0_30px_rgba(168,85,247,0.3)]'},
-                exclusiveHero: 'h_jeanne',
+                exclusiveHero: 'h_s3_lr',
                 limitedUR: 'h_jeanne',
+                limitedLR: 'h_s3_lr',
                 limitedSSRs: ['h_s3_ssr1', 'h_s3_ssr2'],
                 passMultiplier: 2.0,
                 // ★ 資料驅動化：把原本寫死的「深淵迷宮」登記成本季的專屬模式
@@ -1944,8 +1959,9 @@
                 name: "S4: 巨龍之巔",
                 boss: {id: 'boss_worldender', name: '滅世魔龍', color: '#f97316', icon: 'fa-dragon'},
                 colorClass: {text: 'text-orange-400', border: 'border-orange-900', bg: 'bg-orange-900', gradient: 'from-orange-900/40', shadow: 'shadow-[0_0_30px_rgba(249,115,22,0.3)]'},
-                exclusiveHero: 'h_s4_ur',
+                exclusiveHero: 'h_s4_lr',
                 limitedUR: 'h_s4_ur',
+                limitedLR: 'h_s4_lr',
                 limitedSSRs: ['h_s4_ssr1', 'h_s4_ssr2'],
                 passMultiplier: 2.5,
                 exclusiveMode: {
@@ -1960,8 +1976,9 @@
                 name: "S5: 機械紀元",
                 boss: {id: 'boss_core', name: '核心機甲', color: '#38bdf8', icon: 'fa-robot'},
                 colorClass: {text: 'text-sky-400', border: 'border-sky-900', bg: 'bg-sky-900', gradient: 'from-sky-900/40', shadow: 'shadow-[0_0_30px_rgba(56,189,248,0.3)]'},
-                exclusiveHero: 'h_s5_ur',
+                exclusiveHero: 'h_s5_lr',
                 limitedUR: 'h_s5_ur',
+                limitedLR: 'h_s5_lr',
                 limitedSSRs: ['h_s5_ssr1', 'h_s5_ssr2'],
                 passMultiplier: 3.0,
                 exclusiveMode: {
@@ -1977,8 +1994,9 @@
                 name: "S6: 拂曉盛典",
                 boss: {id: 'boss_dawn', name: '曙光女皇', color: '#fbbf24', icon: 'fa-crown'},
                 colorClass: {text: 'text-amber-400', border: 'border-amber-800', bg: 'bg-amber-800', gradient: 'from-amber-800/40', shadow: 'shadow-[0_0_30px_rgba(251,191,36,0.35)]'},
-                exclusiveHero: 'h_s6_ur',
+                exclusiveHero: 'h_s6_lr',
                 limitedUR: 'h_s6_ur',
+                limitedLR: 'h_s6_lr',
                 limitedSSRs: ['h_s6_ssr1', 'h_s6_ssr2'],
                 passMultiplier: 3.5,
                 exclusiveMode: {
@@ -2036,33 +2054,39 @@
             {id: 'h_iron', name: '鐵傀儡', role: '坦克', rarity: 'SR', star: 1, baseHp: 1100, baseAtk: 50, baseDef: 65, crit: 0, avatarIcon: 'fa-robot', color: '#9ca3af', skill: {type: 'taunt', desc: '嘲諷敵人，只要自己存活，敵方必定優先攻擊自己。'}, lore: '古代遺跡的守護者。'},
             {id: 'h_dart', name: '毒鏢客', role: '刺客', rarity: 'R', star: 1, baseHp: 450, baseAtk: 90, baseDef: 15, crit: 15, avatarIcon: 'fa-syringe', color: '#166534', skill: {type: 'poison', value: 0.18, duration: 4, desc: '大招使目標中毒，每回合造成自身攻擊力 18% 的毒傷害，持續 4 回合。'}, lore: '塗滿劇毒的暗殺者。'},
             {id: 'h_monk', name: '苦行僧', role: '戰士', rarity: 'R', star: 1, baseHp: 600, baseAtk: 65, baseDef: 35, crit: 5, avatarIcon: 'fa-hands-praying', color: '#ca8a04', skill: {type: 'counter', chance: 0.35, value: 0.6, desc: '受擊時有 35% 機率立即反擊，造成自身攻擊力 60% 的傷害。'}, lore: '修練肉體的武者。'},
-            // S1 限定 (1 UR, 2 SSR)
+            // S1 限定 (1 LR, 2 SSR)
             {id: 'h_uther', name: '聖光使者·烏瑟', role: '坦克', rarity: 'UR', star: 1, baseHp: 2000, baseAtk: 120, baseDef: 120, crit: 5, avatarIcon: 'fa-shield-heart', color: '#f43f5e', skill: {type: 'holy_shield', value: 2.0, shieldValue: 5.0, desc: '大招為全體友軍恢復自身攻擊力 200% 的生命值，並施加等同攻擊力 500% 的護盾。'}, lore: '王國最偉大的聖騎士，擁有超越凡人的神聖力量。', isExclusive: true, seasonId: 1},
+            {id: 'h_s1_lr', name: '夜魘收割者·莫瑟斯', role: '刺客', rarity: 'LR', star: 1, baseHp: 1100, baseAtk: 320, baseDef: 55, crit: 40, avatarIcon: 'fa-user-ninja', color: '#fde047', skill: {type: 'execute_chain', value: 2.4, chainMult: 1.3, desc: '大招對目標造成 240% 攻擊力傷害；若成功擊殺，立刻對另一名隨機敵人發動追擊，追擊傷害為攻擊力的 130%，可連續獵殺。'}, lore: '亡靈甦醒之夜潛入戰場的收割者，鐮刀所指之處，一命換一命，絕不留活口。', isExclusive: true, seasonId: 1},
             {id: 'h_s1_ssr1', name: '亡靈督軍', role: '戰士', rarity: 'SSR', star: 1, baseHp: 1100, baseAtk: 140, baseDef: 60, crit: 10, avatarIcon: 'fa-ghost', color: '#10b981', skill: {type: 'slash', value: 1.5, desc: '大招造成 150% 攻擊力的真實傷害，無視目標防禦。'}, lore: '被巫妖王喚醒的古代將軍。', isExclusive: true, seasonId: 1},
             {id: 'h_s1_ssr2', name: '瘟疫使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 700, baseAtk: 160, baseDef: 30, crit: 15, avatarIcon: 'fa-disease', color: '#047857', skill: {type: 'poison_nova', value: 0.22, duration: 4, desc: '大招施放劇毒新星，對敵方全體造成傷害並使其中毒，每回合額外損失攻擊力 22% 的生命值，持續 4 回合。'}, lore: '散佈疫病的狂熱者。', isExclusive: true, seasonId: 1},
 
-            // S2 限定 (1 UR, 2 SSR)
+            // S2 限定 (1 LR, 2 SSR)
             {id: 'h_siegfried', name: '屠龍勇士·齊格飛', role: '戰士', rarity: 'UR', star: 1, baseHp: 1600, baseAtk: 220, baseDef: 70, crit: 25, avatarIcon: 'fa-gavel', color: '#f43f5e', skill: {type: 'dragon_slayer', value: 2.5, desc: '大招對敵方全體造成攻擊力 250% 的巨額真實傷害。'}, lore: '沐浴過龍血的傳奇勇士，天下無雙。', isExclusive: true, seasonId: 2},
+            {id: 'h_s2_lr', name: '深淵吞噬者·貝希摩斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 1888, baseAtk: 260, baseDef: 83, crit: 28, avatarIcon: 'fa-water', color: '#fde047', skill: {type: 'lifesteal_aoe', value: 1.3, lifestealRatio: 0.4, desc: '大招對敵方全體造成 130% 攻擊力傷害，並將造成的總傷害 40% 轉化為自身生命值，越打越不會死。'}, lore: '比災厄紅龍更古老的深淵巨獸，吞噬一切、也從中汲取無盡的生命力。', isExclusive: true, seasonId: 2},
             {id: 'h_s2_ssr1', name: '龍脈術士', role: '法師', rarity: 'SSR', star: 1, baseHp: 750, baseAtk: 170, baseDef: 35, crit: 20, avatarIcon: 'fa-fire', color: '#ef4444', skill: {type: 'meteor', value: 1.8, desc: '大招召喚隕石轟炸敵方全體，造成 180% 攻擊力的範圍傷害。'}, lore: '體內流淌著龍血的魔法師。', isExclusive: true, seasonId: 2},
             {id: 'h_s2_ssr2', name: '龍鱗衛士', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1300, baseAtk: 80, baseDef: 85, crit: 5, avatarIcon: 'fa-shield', color: '#b91c1c', skill: {type: 'dragon_scale', chance: 0.5, value: 0.4, desc: '受到攻擊時有 50% 機率反彈 40% 的傷害給攻擊者。'}, lore: '裝備龍鱗鎧甲的鐵衛。', isExclusive: true, seasonId: 2},
 
-            // S3 限定 (1 UR, 2 SSR)
+            // S3 限定 (1 LR, 2 SSR)
             {id: 'h_jeanne', name: '裁決聖女·貞德', role: '法師', rarity: 'UR', star: 1, baseHp: 1200, baseAtk: 280, baseDef: 50, crit: 30, avatarIcon: 'fa-cross', color: '#f43f5e', skill: {type: 'divine_judgment', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成秒殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '受到神明啟示的絕對聖女。', isExclusive: true, seasonId: 3},
+            {id: 'h_s3_lr', name: '命運織者·諾恩', role: '法師', rarity: 'LR', star: 1, baseHp: 1416, baseAtk: 330, baseDef: 59, crit: 33, avatarIcon: 'fa-clock', color: '#fde047', skill: {type: 'extra_turn', value: 1.6, desc: '大招造成 160% 攻擊力傷害，命中後會直接扭轉時間絲線，讓自己立刻再獲得一次行動機會。'}, lore: '掌管命運絲線的古老存在，連時間的流動都能為她所用，比聖女更接近神諭的本源。', isExclusive: true, seasonId: 3},
             {id: 'h_s3_ssr1', name: '異端審判官', role: '刺客', rarity: 'SSR', star: 1, baseHp: 800, baseAtk: 180, baseDef: 30, crit: 40, avatarIcon: 'fa-mask', color: '#c084fc', skill: {type: 'execute', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成必殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '冷酷無情的異端處刑人。', isExclusive: true, seasonId: 3},
             {id: 'h_s3_ssr2', name: '聖光狂熱者', role: '戰士', rarity: 'SSR', star: 1, baseHp: 1000, baseAtk: 130, baseDef: 55, crit: 15, avatarIcon: 'fa-bolt', color: '#9333ea', skill: {type: 'smite', chance: 0.3, desc: '普通攻擊有 30% 機率附帶暈眩，使目標下回合無法行動。'}, lore: '為了信仰不顧一切。', isExclusive: true, seasonId: 3},
 
-            // S4 限定 (1 UR, 2 SSR) —「巨龍之巔」通行證最終獎勵與召喚限定
+            // S4 限定 (1 LR, 2 SSR) —「巨龍之巔」通行證最終獎勵與召喚限定
             {id: 'h_s4_ur', name: '龍裔王者·灼', role: '戰士', rarity: 'UR', star: 1, baseHp: 1800, baseAtk: 240, baseDef: 90, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316', skill: {type: 'burn_stack', value: 0.12, duration: 4, maxStacks: 6, desc: '大招附加龍焰詛咒，每命中一次就疊加一層（最多 6 層），燒傷程度隨層數持續攀升，直到戰鬥結束都不會消退。'}, lore: '與滅世魔龍同源的半龍血脈，渾身燃燒著不滅的龍炎。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_lr', name: '熔火霸主·瑟拉克斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 2124, baseAtk: 283, baseDef: 106, crit: 22, avatarIcon: 'fa-volcano', color: '#fde047', skill: {type: 'wrath_nuke', value: 0.9, desc: '大招造成等同自身攻擊力、再加上「已損失生命值 90%」轉化的真實傷害，血越少打得越痛，是滅世魔龍本尊都忌憚的狂怒化身。'}, lore: '滅世魔龍甦醒前留下的分身，比半龍血脈的灼更接近純粹的毀滅意志。', isExclusive: true, seasonId: 4},
             {id: 'h_s4_ssr1', name: '熔岩巨匠', role: '法師', rarity: 'SSR', star: 1, baseHp: 800, baseAtk: 175, baseDef: 40, crit: 15, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn_aoe', value: 0.28, duration: 3, desc: '大招施放熔岩噴發，對敵方全體造成傷害並使其燃燒，每回合造成攻擊力 28% 的灼燒傷害，持續 3 回合。'}, lore: '巨龍巢穴深處鍛造兵器的異能鐵匠。', isExclusive: true, seasonId: 4},
             {id: 'h_s4_ssr2', name: '龍鱗盾衛', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1400, baseAtk: 85, baseDef: 95, crit: 5, avatarIcon: 'fa-shield-cat', color: '#c2410c', skill: {type: 'harden', value: 4, desc: '龍鱗會越挨打越堅硬：每次受到攻擊，永久提升 4 點防禦力，戰鬥越久越難被打穿。'}, lore: '以巨龍蛻下的鱗片鍛造出堅不可摧的戰甲。', isExclusive: true, seasonId: 4},
 
-            // S5 限定 (1 UR, 2 SSR) —「機械紀元」通行證最終獎勵與召喚限定
+            // S5 限定 (1 LR, 2 SSR) —「機械紀元」通行證最終獎勵與召喚限定
             {id: 'h_s5_ur', name: '虛空破陣者', role: '法師', rarity: 'UR', star: 1, baseHp: 1300, baseAtk: 260, baseDef: 60, crit: 25, avatarIcon: 'fa-robot', color: '#38bdf8', skill: {type: 'armor_break', value: 0.15, desc: '大招直接打碎目標的護甲，永久降低其防禦力 15%（可疊加），越打對方越脆，專門用於瓦解重甲機械系敵人。'}, lore: '掌握破解核心機甲護甲頻率的虛空系戰術大師。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_lr', name: '奇點指揮官·諾娃', role: '法師', rarity: 'LR', star: 1, baseHp: 1534, baseAtk: 307, baseDef: 71, crit: 28, avatarIcon: 'fa-satellite', color: '#fde047', skill: {type: 'dispel_aoe', value: 1.4, desc: '大招對敵方全體造成 140% 攻擊力傷害，並清除其護盾與攻擊力增益效果，是核心機甲軍團最忌憚的反支援指揮官。'}, lore: '統籌整個星盤矩陣作戰網路的最高指揮官，連核心機甲的防禦協定都能瞬間瓦解。', isExclusive: true, seasonId: 5},
             {id: 'h_s5_ssr1', name: '電磁工兵', role: '刺客', rarity: 'SSR', star: 1, baseHp: 750, baseAtk: 165, baseDef: 30, crit: 25, avatarIcon: 'fa-bolt', color: '#0ea5e9', skill: {type: 'emp_stun', value: 1.6, chance: 0.5, empCount: 2, desc: '大招造成 160% 攻擊力傷害，同時向另外 2 個隨機敵人施放電磁脈衝，各有 50% 機率使其當機暈眩。'}, lore: '專門拆解古代機械遺跡的實戰工程師。', isExclusive: true, seasonId: 5},
             {id: 'h_s5_ssr2', name: '護盾核心·艾克', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1350, baseAtk: 80, baseDef: 90, crit: 5, avatarIcon: 'fa-shield-halved', color: '#0284c7', skill: {type: 'overload', value: 0.8, chargeMax: 4, desc: '每次受到攻擊都會默默蓄能，累積滿 4 次充能後，會在自己的回合一次性向全體敵人釋放能量爆發。'}, lore: '搭載古代能源核心的自主防禦單位。', isExclusive: true, seasonId: 5},
 
-            // S6 限定 (1 UR, 2 SSR) —「拂曉盛典」通行證最終獎勵與召喚限定角色
+            // S6 限定 (1 LR, 2 SSR) —「拂曉盛典」通行證最終獎勵與召喚限定角色
             {id: 'h_s6_ur', name: '曙光禮讚者·賽琳', role: '輔助', rarity: 'UR', star: 1, baseHp: 1400, baseAtk: 150, baseDef: 65, crit: 10, avatarIcon: 'fa-champagne-glasses', color: '#fbbf24', skill: {type: 'cleanse', value: 1.0, desc: '大招吟唱淨化聖歌，清除全體友軍的暈眩／灼燒／中毒等異常狀態，並為全隊回復生命值。'}, lore: '在拂曉盛典上高歌禮讚的聖詠者，歌聲能滌淨全軍的傷痛。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_lr', name: '永晝女王·奧蘿拉', role: '輔助', rarity: 'LR', star: 1, baseHp: 1652, baseAtk: 177, baseDef: 77, crit: 12, avatarIcon: 'fa-sun', color: '#fde047', skill: {type: 'phoenix', value: 0.4, desc: '戰鬥中首次陣亡時，會以 40% 生命值原地重生一次（整場戰鬥限一次），象徵拂曉永不熄滅的女王意志。'}, lore: '統治著永不落幕的拂曉盛典的女王，就連死亡也無法讓她的光輝真正熄滅。', isExclusive: true, seasonId: 6},
             {id: 'h_s6_ssr1', name: '煙火使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 850, baseAtk: 185, baseDef: 42, crit: 20, avatarIcon: 'fa-fire-flame-curved', color: '#f97316', skill: {type: 'dazzle_aoe', value: 1.4, dazzleChance: 0.35, desc: '大招施放絢爛煙火轟炸敵方全體，刺眼的閃光讓每個命中的敵人都有 35% 機率當場目眩暈眩。'}, lore: '負責點燃慶典夜空煙火的法師，燦爛的火花底下藏著真正的殺傷力。', isExclusive: true, seasonId: 6},
             {id: 'h_s6_ssr2', name: '慶典衛兵長', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1450, baseAtk: 88, baseDef: 98, crit: 5, avatarIcon: 'fa-shield-cat', color: '#d97706', skill: {type: 'dodge_ward', chance: 0.3, desc: '負責維安的衛兵長，每回合開始時有 30% 機率為全體友軍賦予一次性的守護祝福，直接迴避下一次受到的攻擊。'}, lore: '拂曉盛典期間負責維安的王國精銳衛兵統領。', isExclusive: true, seasonId: 6}
         ];
@@ -3640,6 +3664,7 @@
             if (codexCurrentTab === 'hero') {
                 let list = HERO_DATABASE;
 
+                if (codexCurrentFilter === 'LR') list = list.filter(h => h.rarity === 'LR');
                 if (codexCurrentFilter === 'UR') list = list.filter(h => h.rarity === 'UR');
                 if (codexCurrentFilter === 'SSR') list = list.filter(h => h.rarity === 'SSR');
                 if (codexCurrentFilter === 'SR') list = list.filter(h => h.rarity === 'SR');
@@ -3651,7 +3676,7 @@
 
                 list.forEach(h => {
                     const isHas = !!GAME_STATE.roster[h.id]; const dName = h.name.includes('·') ? h.name.split('·')[1] : h.name;
-                    const rColor = h.rarity === 'UR' ? 'text-rose-500' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400'));
+                    const rColor = h.rarity === 'LR' ? 'text-amber-300' : (h.rarity === 'UR' ? 'text-rose-500' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400')));
                     const exclusiveBadge = h.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1.5 py-0.5 rounded-br-lg text-[8px] font-bold border-b border-r border-rose-500 text-rose-200 z-10 shadow">S${h.seasonId} 限定</div>` : '';
 
                     // 【重點修復】：判斷是否有自訂圖片
@@ -3723,7 +3748,8 @@
 
             // 1. 動態設定稀有度專屬顏色與背景光暈
             let rarityColor = ''; let rarityBg = '';
-            if (h.rarity === 'UR') {rarityColor = 'text-rose-500'; rarityBg = 'from-rose-950/60';}
+            if (h.rarity === 'LR') {rarityColor = 'text-amber-300'; rarityBg = 'from-amber-950/60';}
+            else if (h.rarity === 'UR') {rarityColor = 'text-rose-500'; rarityBg = 'from-rose-950/60';}
             else if (h.rarity === 'SSR') {rarityColor = 'text-yellow-400'; rarityBg = 'from-yellow-950/60';}
             else if (h.rarity === 'SR') {rarityColor = 'text-purple-400'; rarityBg = 'from-purple-950/60';}
             else {rarityColor = 'text-stone-300'; rarityBg = 'from-stone-800/40';}
@@ -3749,7 +3775,7 @@
             badgesContainer.className = "flex justify-center gap-2 mb-5";
 
             let badgesHtml = `<span class="bg-[#140e0a] text-[10px] px-3 py-1 rounded shadow-sm border border-[#3e3328] text-stone-300">${h.role}</span>`;
-            badgesHtml += `<span class="text-[10px] font-bold px-3 py-1 rounded shadow-sm ${h.rarity === 'UR' ? 'bg-gradient-to-r from-rose-800 to-rose-500 text-white' : (h.rarity === 'SSR' ? 'bg-gradient-to-r from-yellow-700 to-yellow-500 text-white' : (h.rarity === 'SR' ? 'bg-gradient-to-r from-purple-700 to-purple-500 text-white' : 'bg-stone-600 text-white'))}">${h.rarity}</span>`;
+            badgesHtml += `<span class="text-[10px] font-bold px-3 py-1 rounded shadow-sm ${h.rarity === 'LR' ? 'bg-gradient-to-r from-amber-400 via-fuchsia-500 to-amber-400 text-black' : (h.rarity === 'UR' ? 'bg-gradient-to-r from-rose-800 to-rose-500 text-white' : (h.rarity === 'SSR' ? 'bg-gradient-to-r from-yellow-700 to-yellow-500 text-white' : (h.rarity === 'SR' ? 'bg-gradient-to-r from-purple-700 to-purple-500 text-white' : 'bg-stone-600 text-white')))}">${h.rarity}</span>`;
             if (h.isExclusive) badgesHtml += `<span class="bg-rose-950/80 text-[10px] px-3 py-1 rounded border border-rose-500/50 text-rose-300 shadow-sm">S${h.seasonId} 限定</span>`;
             badgesContainer.innerHTML = badgesHtml;
 
@@ -3859,7 +3885,7 @@
                 const hid = GAME_STATE.gridSlots[i];
                 if (hid) {
                     const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === hid)); const custom = GAME_STATE.customHeroes[h.id];
-                    const rRing = h.rarity === 'SSR' ? 'border-fantasy-gold/80 shadow-[inset_0_0_10px_rgba(212,175,55,0.4)]' : (h.rarity === 'SR' ? 'border-purple-500/70' : 'border-stone-500/50');
+                    const rRing = h.rarity === 'LR' ? 'border-amber-300 shadow-[inset_0_0_14px_rgba(253,224,71,0.6)]' : (h.rarity === 'UR' ? 'border-rose-500/90 shadow-[inset_0_0_10px_rgba(244,63,94,0.4)]' : (h.rarity === 'SSR' ? 'border-fantasy-gold/80 shadow-[inset_0_0_10px_rgba(212,175,55,0.4)]' : (h.rarity === 'SR' ? 'border-purple-500/70' : 'border-stone-500/50')));
                     cell.classList.add('bg-gradient-to-b', 'from-[#241b12]', 'to-[#120d08]');
                     cell.innerHTML = `
                         <div class="absolute inset-0 border-2 rounded-xl pointer-events-none z-10 ${rRing}"></div>
@@ -3965,8 +3991,8 @@
                 const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === id));
                 const custom = GAME_STATE.customHeroes[h.id]; const dName = h.name.includes('·') ? h.name.split('·')[1] : h.name;
                 const exclusiveBadge = h.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1.5 py-0.5 rounded-br-lg text-[8px] font-bold border-b border-r border-rose-500 text-rose-200 z-10 shadow">S${h.seasonId} 限定</div>` : '';
-                const rarityClass = ['UR', 'SSR', 'SR'].includes(h.rarity) ? `rarity-${h.rarity}` : '';
-                const rarityTextClass = h.rarity === 'UR' ? 'text-rose-400' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400'));
+                const rarityClass = ['LR', 'UR', 'SSR', 'SR'].includes(h.rarity) ? `rarity-${h.rarity}` : '';
+                const rarityTextClass = h.rarity === 'LR' ? 'text-amber-300' : (h.rarity === 'UR' ? 'text-rose-400' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400')));
                 const card = document.createElement('div');
                 card.innerHTML = `
                 <div onclick="openHeroModal('${h.id}')" class="hero-card ${rarityClass} bg-[#140e0a] border border-[#3e3328] rounded-xl p-3 flex flex-col items-center cursor-pointer h-[110px] justify-center hover:border-[#8b6f4e] transition shadow-inner-dark relative overflow-hidden group">
@@ -3985,7 +4011,7 @@
             ToneAudioEngine.playClick(); GAME_STATE.selectedHeroId = id; const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === id));
             document.getElementById('modal-hero-name').innerText = h.name; document.getElementById('modal-hero-level').innerText = `Lv.${h.effectiveLevel}`;
 
-            const rStyle = h.rarity === 'SSR' ? 'bg-fantasy-gold text-yellow-900' : (h.rarity === 'SR' ? 'bg-purple-600 text-white' : 'bg-stone-500 text-white');
+            const rStyle = h.rarity === 'LR' ? 'bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black' : (h.rarity === 'UR' ? 'bg-rose-600 text-white' : (h.rarity === 'SSR' ? 'bg-fantasy-gold text-yellow-900' : (h.rarity === 'SR' ? 'bg-purple-600 text-white' : 'bg-stone-500 text-white')));
             const rarityEl = document.getElementById('modal-hero-rarity'); rarityEl.className = `text-[9px] font-bold px-2 py-0.5 rounded shadow ${rStyle}`; rarityEl.innerText = h.rarity;
 
             const roleEl = document.getElementById('modal-hero-role'); roleEl.innerText = h.role + (h.isExclusive ? ` (S${h.seasonId}限定)` : '');
@@ -4251,6 +4277,7 @@
 
             // 直接對應 performSummon() 實際使用的機率門檻與英雄池組成，確保顯示數字跟真實抽取結果一致
             const rarityBlocks = [];
+            if (rates.lrRate > 0) rarityBlocks.push({key: 'LR', pct: rates.lrRate * 100, color: 'text-amber-300'});
             if (rates.urRate > 0) rarityBlocks.push({key: 'UR', pct: rates.urRate * 100, color: 'text-rose-400'});
             rarityBlocks.push({key: 'SSR', pct: rates.ssrRate * 100, color: 'text-yellow-400'});
             rarityBlocks.push({key: 'SR', pct: rates.srRate * 100, color: 'text-purple-400'});
@@ -4259,7 +4286,9 @@
 
             rarityBlocks.forEach(block => {
                 let heroPool = [];
-                if (block.key === 'UR') {
+                if (block.key === 'LR') {
+                    heroPool = HERO_DATABASE.filter(h => h.id === currentSeasonConfig.limitedLR).map(h => ({hero: h, weight: 1}));
+                } else if (block.key === 'UR') {
                     heroPool = HERO_DATABASE.filter(h => h.id === currentSeasonConfig.limitedUR).map(h => ({hero: h, weight: 1}));
                 } else if (block.key === 'SSR') {
                     if (poolType === 'standard') {
@@ -4311,7 +4340,7 @@
             },
             special: {
                 icon: 'fa-gem', iconColor: '#fb7185', title: '特急招募 (極秘)',
-                desc: '專屬卡池！機率獲得賽季限定 UR 騎士。',
+                desc: '專屬卡池！機率獲得賽季限定 LR 騎士。',
                 bannerGradient: 'from-rose-900/40', borderColor: 'border-rose-500',
                 btn1Class: 'bg-rose-950/50 border-rose-800 text-rose-300 hover:border-rose-500 shadow',
                 btn10Class: 'bg-gradient-to-b from-rose-600 to-rose-900 border-rose-400 text-white hover:from-rose-500 shadow-lg',
@@ -4378,9 +4407,11 @@
         // ★ 各卡池機率與保底完全獨立設定，不再共用同一套數字
         // ssrRate / urRate 是「該稀有度以上」的機率門檻設計 (累加式判定，寫在 performSummon 裡)
         const POOL_RATES = {
-            standard: {urRate: 0, ssrRate: 0.05, srRate: 0.20, pityAt: 80, pityRarity: 'SSR'}, // 常駐：SSR 5%、SR 20%、R 75%，80抽保底 SSR
-            limited: {urRate: 0, ssrRate: 0.06, srRate: 0.20, pityAt: 70, pityRarity: 'SSR'},  // 賽季限定：SSR 略高 6%，保底縮短到 70 抽
-            special: {urRate: 0.01, ssrRate: 0.08, srRate: 0.18, pityAt: 50, pityRarity: 'UR'}  // 特急：多了 1% UR，SSR 安慰率提高到 8%，50 抽保底 UR
+            standard: {lrRate: 0, urRate: 0, ssrRate: 0.05, srRate: 0.20, pityAt: 80, pityRarity: 'SSR'}, // 常駐：SSR 5%、SR 20%、R 75%，80抽保底 SSR
+            limited: {lrRate: 0, urRate: 0, ssrRate: 0.06, srRate: 0.20, pityAt: 70, pityRarity: 'SSR'},  // 賽季限定：SSR 略高 6%，保底縮短到 70 抽
+            // ★ 特急卡池改成雙層最高稀有度：LR（新增、更稀有，0.4%，50 抽保底）比 UR（原本的角色，1%）更難抽到，
+            // 兩者互不影響彼此的保底計數，各自獨立累積
+            special: {lrRate: 0.004, urRate: 0.01, ssrRate: 0.08, srRate: 0.18, pityAt: 50, pityRarity: 'LR'}  // 特急：0.4% LR + 1% UR，SSR 安慰率提高到 8%，50 抽保底 LR
         };
 
         // ★ 常駐／限定卡池：卷軸不夠時可以直接用寶石補（跟商店換卷軸同一個 60 寶石/抽的價格），
@@ -4416,24 +4447,28 @@
                 GAME_STATE.gachaPity[poolType]++; let rarity = 'R'; let roll = Math.random();
                 const pity = GAME_STATE.gachaPity[poolType];
 
-                // 保底判定：達到該卡池的保底次數，直接給保底稀有度（特急是 UR，其餘是 SSR）
+                // 保底判定：達到該卡池的保底次數，直接給保底稀有度（特急是 LR，其餘是 SSR）
                 if (pity >= rates.pityAt) {
                     rarity = rates.pityRarity;
                 }
-                else if (rates.urRate > 0 && roll < rates.urRate) {rarity = 'UR';}
-                else if (roll < rates.urRate + rates.ssrRate) {rarity = 'SSR';}
-                else if (roll < rates.urRate + rates.ssrRate + rates.srRate) {rarity = 'SR';}
+                else if (rates.lrRate > 0 && roll < rates.lrRate) {rarity = 'LR';}
+                else if (rates.urRate > 0 && roll < rates.lrRate + rates.urRate) {rarity = 'UR';}
+                else if (roll < rates.lrRate + rates.urRate + rates.ssrRate) {rarity = 'SSR';}
+                else if (roll < rates.lrRate + rates.urRate + rates.ssrRate + rates.srRate) {rarity = 'SR';}
 
                 // ★ 修正：保底計數器只有在抽到「該卡池保底目標的稀有度」時才會歸零。
-                // 原本 SSR 分支也會把計數器歸零，導致特急池的 UR 保底進度一直被機率更高的 SSR「安慰獎」洗掉，
-                // 玩家幾乎不可能靠保底真的拿到 UR。現在特急池只有抽到 UR 本身才會重置，SSR 不會影響 UR 保底進度。
+                // 原本 SSR 分支也會把計數器歸零，導致特急池的 LR 保底進度一直被機率更高的 SSR「安慰獎」洗掉，
+                // 玩家幾乎不可能靠保底真的拿到 LR。現在特急池只有抽到 LR 本身才會重置，SSR/UR 不會影響 LR 保底進度。
                 if (rarity === rates.pityRarity) {GAME_STATE.gachaPity[poolType] = 0;}
-                else if (roll < rates.urRate + rates.ssrRate + rates.srRate) {rarity = 'SR';}
+                else if (roll < rates.lrRate + rates.urRate + rates.ssrRate + rates.srRate) {rarity = 'SR';}
 
                 // 準備該稀有度的池子
                 let pool = [];
-                if (rarity === 'UR') {
-                    // UR 只在特急招募出，且為當前賽季 UR
+                if (rarity === 'LR') {
+                    // LR 只在特急招募出，且為當前賽季 LR，是全新的最高稀有度角色（通行證最終獎勵同一批）
+                    pool = HERO_DATABASE.filter(h => h.id === currentSeasonConfig.limitedLR);
+                } else if (rarity === 'UR') {
+                    // UR 維持原本的賽季限定角色，機率比 LR 稍高
                     pool = HERO_DATABASE.filter(h => h.id === currentSeasonConfig.limitedUR);
                 } else if (rarity === 'SSR') {
                     if (poolType === 'standard') {
@@ -4459,24 +4494,25 @@
                     // 重複英雄改成發放「英雄碎片」，用來在英雄詳情頁手動升星，不再抽到重複就直接自動升星
                     // ★ 平衡調整：碎片產出全面調高，配合升星所需總量下修，讓潛能覺醒不用堆積如山的重複抽卡
                     if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
-                    const shardAmount = {UR: 24, SSR: 14, SR: 9, R: 6}[rarity] || 6;
+                    const shardAmount = {LR: 30, UR: 24, SSR: 14, SR: 9, R: 6}[rarity] || 6;
                     GAME_STATE.heroShards[hero.id] = (GAME_STATE.heroShards[hero.id] || 0) + shardAmount;
                     shardGainText = `<div class="absolute bottom-0 left-0 right-0 bg-black/80 text-purple-300 text-[7px] text-center py-0.5 border-t border-purple-800/50">碎片 +${shardAmount}</div>`;
                 }
 
-                const borderStyle = rarity === 'UR' ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.8)] bg-gradient-to-b from-rose-900/60 to-[#1a120c]' :
-                    (rarity === 'SSR' ? 'border-[#ffd54f] shadow-gold-glow bg-gradient-to-b from-yellow-900/60 to-[#1a120c]' :
-                        (rarity === 'SR' ? 'border-purple-500 bg-[#1a120c] shadow-[0_0_10px_rgba(168,85,247,0.3)]' : 'border-[#3e3328] bg-[#1a120c]'));
+                const borderStyle = rarity === 'LR' ? 'border-amber-300 shadow-[0_0_20px_rgba(253,224,71,0.85)] bg-gradient-to-b from-amber-900/60 via-fuchsia-950/40 to-[#1a120c]' :
+                    (rarity === 'UR' ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.8)] bg-gradient-to-b from-rose-900/60 to-[#1a120c]' :
+                        (rarity === 'SSR' ? 'border-[#ffd54f] shadow-gold-glow bg-gradient-to-b from-yellow-900/60 to-[#1a120c]' :
+                            (rarity === 'SR' ? 'border-purple-500 bg-[#1a120c] shadow-[0_0_10px_rgba(168,85,247,0.3)]' : 'border-[#3e3328] bg-[#1a120c]')));
 
-                const badgeColor = rarity === 'UR' ? 'bg-rose-500 text-white' : (rarity === 'SSR' ? 'bg-yellow-500 text-black' : 'bg-stone-700 text-stone-300');
+                const badgeColor = rarity === 'LR' ? 'bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black' : (rarity === 'UR' ? 'bg-rose-500 text-white' : (rarity === 'SSR' ? 'bg-yellow-500 text-black' : 'bg-stone-700 text-stone-300'));
 
                 const dName = hero.name.includes('·') ? hero.name.split('·')[1] : hero.name;
                 const el = document.createElement('div'); el.className = `p-3 rounded-xl border-2 flex flex-col items-center justify-center aspect-square w-full ${borderStyle} transform transition hover:scale-105 relative`;
 
-                // 如果是限定或UR加上標籤
+                // 如果是限定或LR/UR加上標籤
                 let exBadge = hero.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1 py-0.5 rounded-br text-[7px] border-b border-r border-rose-500 text-rose-200">限定</div>` : '';
 
-                el.innerHTML = `${exBadge}${shardGainText}<div class="text-4xl mb-2 drop-shadow-md" style="color:${(rarity === 'SSR' || rarity === 'UR') ? hero.color : '#78716c'}"><i class="fa-solid ${hero.avatarIcon}"></i></div><div class="text-[10px] font-bold text-white mb-1.5 truncate w-full text-center">${dName}</div><div class="text-[9px] font-bold px-2 py-0.5 rounded shadow ${badgeColor}">${rarity}</div>`;
+                el.innerHTML = `${exBadge}${shardGainText}<div class="text-4xl mb-2 drop-shadow-md" style="color:${(rarity === 'SSR' || rarity === 'UR' || rarity === 'LR') ? hero.color : '#78716c'}"><i class="fa-solid ${hero.avatarIcon}"></i></div><div class="text-[10px] font-bold text-white mb-1.5 truncate w-full text-center">${dName}</div><div class="text-[9px] font-bold px-2 py-0.5 rounded shadow ${badgeColor}">${rarity}</div>`;
                 el.style.opacity = '0'; el.style.transform = 'scale(0.8)'; box.appendChild(el);
                 setTimeout(() => {el.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; el.style.opacity = '1'; el.style.transform = 'scale(1)';}, i * 100 + 50);
             }
@@ -5088,6 +5124,15 @@
                     }
                 }
 
+                // ★ 新增判定：不死鳥 (phoenix，LR 永晝女王·奧蘿拉專屬)——跟「revive」不同，
+                // 這是自己陣亡時的被動重生，不需要隊友幫忙，整場戰鬥限一次
+                if (target.hp <= 0 && target.skill && target.skill.type === 'phoenix' && !target.hasRevivedUsed) {
+                    target.hasRevivedUsed = true;
+                    target.hp = Math.floor(target.maxHp * (target.skill.value || 0.4));
+                    floatingTexts.push({x: target.x, y: target.y - 100, text: `不死鳥重生！`, isCrit: true, color: '#fb923c', life: 60});
+                    visualEffects.push({type: 'heal', x: target.x, y: target.y, color: '#fb923c', life: 30, maxLife: 30});
+                }
+
                 // 判定：擊殺獎勵金幣 (gold_bonus)——只要造成擊殺就會觸發，不限大招
                 if (target.hp <= 0 && target.team === 'enemy' && attacker.skill && attacker.skill.type === 'gold_bonus') {
                     const bonus = (attacker.skill.value || 20) + Math.floor(Math.random() * ((attacker.skill.variance || 10) + 1));
@@ -5096,8 +5141,8 @@
                 }
 
                 // 判定：吸血 (僅大招觸發)
-                if (skillType === 'lifesteal') {
-                    let heal = damage * (attacker.skill.value || 0.5);
+                if (skillType === 'lifesteal' || skillType === 'lifesteal_aoe') {
+                    let heal = damage * (attacker.skill.lifestealRatio || attacker.skill.value || 0.5);
                     attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
                     floatingTexts.push({x: attacker.x, y: attacker.y - 60, text: `+${Math.floor(heal)}`, isCrit: false, color: '#4ade80', life: 45});
                 }
@@ -5413,12 +5458,30 @@
                         });
                         if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(healAmt * allies.length);
                     }
+                    // --- ★ 新增：群體復甦大招 (LR 天啟聖裁·加百列專屬)——不是單體被動復活，
+                    // 而是主動一次把「所有」已陣亡的友軍都拉回戰場，同時幫存活的友軍補血，是貨真價實的翻盤技 ---
+                    else if (sType === 'mass_revive') {
+                        const fallen = combatEntities.filter(e => e.team === currentActor.team && e.hp <= 0);
+                        const alive = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
+                        const reviveRatio = currentActor.skill.value || 0.4;
+                        fallen.forEach(t => {
+                            t.hp = Math.floor(t.maxHp * reviveRatio);
+                            floatingTexts.push({x: t.x, y: t.y - 100, text: `復甦！`, isCrit: true, color: '#fef08a', life: 60});
+                            visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#fef08a', life: 35, maxLife: 35});
+                        });
+                        alive.forEach(t => {
+                            const healAmt = currentActor.activeAtk * 1.2;
+                            t.hp = Math.min(t.maxHp, t.hp + healAmt);
+                            floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
+                        });
+                        if (currentActor.team === 'player') battleAnalytics.heal[currentActor.name] += Math.floor(currentActor.activeAtk * 1.2 * alive.length);
+                    }
                     // --- 攻擊類大招 ---
                     else {
                         ToneAudioEngine.playHit();
                         let targets = [currentTarget];
                         // 判定是否為全體 AOE 技能
-                        if (['aoe', 'divine_judgment', 'dragon_slayer', 'poison_nova', 'meteor', 'burn_aoe', 'dazzle_aoe'].includes(sType) || currentActor.role === 'boss') {
+                        if (['aoe', 'divine_judgment', 'dragon_slayer', 'poison_nova', 'meteor', 'burn_aoe', 'dazzle_aoe', 'lifesteal_aoe', 'dispel_aoe'].includes(sType) || currentActor.role === 'boss') {
                             targets = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0);
                         } else if (sType === 'chain') {
                             // 閃電鏈：依技能 jumps 數值彈跳到其他敵人身上
@@ -5438,6 +5501,11 @@
                             }
                         }
 
+                        // ★ 新增：狂怒爆發 (wrath_nuke，LR 熔火霸主·瑟拉克斯專屬)——傷害看的是「自己已經損失了多少生命」，
+                        // 血越少打得越痛，是高風險高回報的另一種狂暴設計，跟「frenzy」單純血量越低攻擊力越高不同，
+                        // 這裡是直接把損失的生命值轉換成這一擊的額外真實傷害
+                        const missingHpBonus = sType === 'wrath_nuke' ? (currentActor.maxHp - currentActor.hp) * (currentActor.skill.value || 0.8) : 0;
+
                         // 結算所有目標的傷害
                         targets.forEach((t, tIdx) => {
                             const ultMult = currentActor.skill.value || 1.5;
@@ -5448,6 +5516,7 @@
                             if (sType === 'def_ignore') dmg = currentActor.activeAtk * (currentActor.skill.value || 2); // 無視防禦，不扣減目標 def
                             else if (sType === 'hp_dmg') dmg = currentActor.activeAtk * 1.5 + (currentActor.maxHp * (currentActor.skill.value || 0.1)); // 基礎傷害 + 生命加成，不扣減目標 def
                             else if (sType === 'dragon_slayer') dmg = currentActor.activeAtk * (currentActor.skill.value || 2.5); // 屠龍真實傷害，不扣減目標 def
+                            else if (sType === 'wrath_nuke') dmg = currentActor.activeAtk + missingHpBonus; // 基礎傷害 + 已損生命轉換的真實傷害，不扣減目標 def
                             else if (currentActor.role === 'boss') dmg = (currentActor.activeAtk * (1 + eventTotalDamage / 20000)) - (t.def * 0.4);
                             else if (sType === 'splash' && tIdx > 0) dmg = Math.max(5, currentActor.activeAtk * ultMult * (currentActor.skill.splashValue || 0.5) - (t.def * 0.3));
                             else dmg = Math.max(5, dmg - (t.def * 0.3));
@@ -5469,6 +5538,13 @@
                                 floatingTexts.push({x: t.x, y: t.y - 90, text: `破甲 -${defReduced}`, isCrit: false, color: '#fb923c', life: 45});
                             }
 
+                            // ★ 新增：驅散 (dispel_aoe，LR 奇點指揮官·諾娃專屬)——攻擊前先把目標的護盾／攻擊力增益全部清空，
+                            // 專門用來拆解對方的護盾/增益體系，走的是「反支援」的科技系路線
+                            if (sType === 'dispel_aoe') {
+                                if (t.shield) {t.shield = 0; floatingTexts.push({x: t.x, y: t.y - 100, text: `驅散`, isCrit: false, color: '#a78bfa', life: 40});}
+                                t.atkBuffValue = 0; t.atkBuffTurns = 0;
+                            }
+
                             // 斬殺判定
                             if (['execute', 'divine_judgment'].includes(sType) && (t.hp / t.maxHp) <= (currentActor.skill.threshold || 0.3)) {
                                 dmg = t.hp + (t.shield || 0); // 確保一擊必殺
@@ -5476,6 +5552,23 @@
                             }
 
                             executeHit(currentActor, t, dmg, isCrit, sType, fxColor);
+
+                            // ★ 新增：處決連鎖 (execute_chain，LR 夜魘收割者·莫瑟斯專屬)——擊殺目標後立刻追擊另一名隨機敵人，
+                            // 只要一路都能擊殺就能一路連斬下去，是純粹的刺客「收割」幻想，跟其他斬殺類技能看血量比例不同，
+                            // 這裡看的是「有沒有真的打死」
+                            if (sType === 'execute_chain' && t.hp <= 0) {
+                                const others = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0 && e.id !== t.id);
+                                if (others.length > 0) {
+                                    const nextTarget = others[Math.floor(Math.random() * others.length)];
+                                    setTimeout(() => {
+                                        if (nextTarget.hp > 0) {
+                                            const chainDmg = Math.max(5, currentActor.activeAtk * (currentActor.skill.chainMult || 1.3) - (nextTarget.def * 0.3));
+                                            floatingTexts.push({x: nextTarget.x, y: nextTarget.y - 90, text: `連鎖獵殺!`, isCrit: true, color: '#fde047', life: 45});
+                                            executeHit(currentActor, nextTarget, chainDmg, true, sType, fxColor);
+                                        }
+                                    }, 220 / battleSpeed);
+                                }
+                            }
 
                             // ★ 新增：眩目煙火 (dazzle_aoe，煙火使者專屬)——AOE 命中的敵人都有機率被閃光暈眩，
                             // 跟「熔岩巨匠」純粹全體灼燒 DOT 的路線不同，走的是範圍控場
@@ -5501,6 +5594,13 @@
                                 }
                             }
                         }
+
+                        // ★ 新增：時間加速 (extra_turn，LR 命運織者·諾恩專屬)——攻擊完之後直接把自己塞回行動佇列最前面，
+                        // 立刻再行動一次；能量剛歸零，這次追加的行動不會又觸發大招，不會無限連鎖
+                        if (sType === 'extra_turn') {
+                            turnQueue.unshift(currentActor);
+                            floatingTexts.push({x: currentActor.x, y: currentActor.y - 100, text: `時間加速！`, isCrit: true, color: '#c4b5fd', life: 50});
+                        }
                     }
                 }
                 else if (isMinor && currentActor.skill) {
@@ -5511,8 +5611,8 @@
                     const sType = currentActor.skill.type;
                     floatingTexts.push({x: currentActor.x, y: currentActor.y - 80, text: `小技能`, isCrit: false, color: '#7dd3fc', life: 40});
 
-                    if (sType === 'heal_all' || sType === 'holy_shield') {
-                        // 治療類小技能：只治療血量比例最低的一位友軍，效果減半
+                    if (sType === 'heal_all' || sType === 'holy_shield' || sType === 'mass_revive') {
+                        // 治療類小技能：只治療血量比例最低的一位友軍，效果減半（復甦類小技能不會真的復活人，留給大招）
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                         const t = allies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0] || currentActor;
                         const healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * 0.5;
@@ -5545,7 +5645,7 @@
                         ToneAudioEngine.playHit();
                         const minorMult = Math.max(1.05, (currentActor.skill.value || 1.5) * 0.55);
                         let targets = [currentTarget];
-                        if (['aoe', 'divine_judgment', 'dragon_slayer', 'poison_nova', 'meteor', 'burn_aoe', 'chain', 'splash', 'dazzle_aoe'].includes(sType)) {
+                        if (['aoe', 'divine_judgment', 'dragon_slayer', 'poison_nova', 'meteor', 'burn_aoe', 'chain', 'splash', 'dazzle_aoe', 'lifesteal_aoe', 'dispel_aoe'].includes(sType)) {
                             let others = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0 && e.id !== currentTarget.id);
                             if (others.length > 0) targets.push(others[Math.floor(Math.random() * others.length)]);
                         }
