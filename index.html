@@ -1897,9 +1897,33 @@
                 startGameAfterAuth();
                 return;
             }
-            hideAppSplash();
-            const gate = document.getElementById('login-gate');
-            gate.classList.remove('hidden'); gate.classList.add('flex');
+
+            // ★ Firebase 預設會把登入狀態記在瀏覽器裡，不用每次重新整理頁面都重新輸入帳密——
+            // 跟現在大部分遊戲一樣，登入一次之後除非自己登出，不然重開瀏覽器也會自動記得身分。
+            // onAuthStateChanged 第一次觸發時會告訴我們「瀏覽器本來就已經是登入狀態」還是「全新訪客」。
+            let resolved = false;
+            fbAuth.onAuthStateChanged(async (user) => {
+                if (resolved) return; // 只處理第一次觸發，之後的登入/登出狀態變化交給各個功能自己的流程處理
+                resolved = true;
+                if (user) {
+                    // 已經是登入狀態（重新整理頁面前就登入過），直接以雲端資料為準載入，不用再讓玩家輸入一次帳密
+                    fbUser = user;
+                    mpConnected = true;
+                    await fbUser.getIdToken(true);
+                    hideAppSplash();
+                    const gotCloudData = await loadFromCloudAuthoritative();
+                    if (!gotCloudData) {
+                        GAME_STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
+                        saveGame();
+                        startGameAfterAuth();
+                    }
+                } else {
+                    // 真的還沒登入過，顯示登入/註冊畫面
+                    hideAppSplash();
+                    const gate = document.getElementById('login-gate');
+                    gate.classList.remove('hidden'); gate.classList.add('flex');
+                }
+            });
         }
 
         async function gateRegister() {
@@ -1913,7 +1937,7 @@
             try {
                 const result = await fbAuth.createUserWithEmailAndPassword(email, password);
                 fbUser = result.user;
-                await onGateAuthSuccess();
+                await onGateAuthSuccess(true); // true = 新註冊帳號，強制從全新進度開始
             } catch (err) {
                 console.warn(err);
                 statusEl.innerText = err.code === 'auth/email-already-in-use' ? '這個 Email 已經註冊過了，請改用登入' : '註冊失敗：' + (err.message || '請稍後再試');
@@ -1930,14 +1954,18 @@
             try {
                 const result = await fbAuth.signInWithEmailAndPassword(email, password);
                 fbUser = result.user;
-                await onGateAuthSuccess();
+                await onGateAuthSuccess(false); // false = 登入既有帳號，一律以雲端進度為準
             } catch (err) {
                 console.warn(err);
                 statusEl.innerText = '登入失敗：帳號或密碼錯誤';
             }
         }
 
-        async function onGateAuthSuccess() {
+        // ★ 改版：資料一律以「伺服器 (Firestore)」為準，跟一般有帳號系統的遊戲一樣——
+        // 新註冊帳號 = 全新進度（不理會這台裝置瀏覽器裡可能殘留的其他帳號本地資料）；
+        // 登入既有帳號 = 直接抓雲端那份蓋過本地，不會再跳「要用哪一份」的選擇視窗（雲端永遠是對的那份）。
+        // 本地 localStorage 這時候的角色，變成單純是雲端資料的「快取」，不再是資料的來源。
+        async function onGateAuthSuccess(isNewRegistration) {
             mpConnected = true;
             await fbUser.getIdToken(true);
             const playerRef = fbDb.collection('players').doc(fbUser.uid);
@@ -1947,8 +1975,39 @@
             }
             const gate = document.getElementById('login-gate');
             gate.classList.add('hidden'); gate.classList.remove('flex');
-            startGameAfterAuth();
-            await tryRestoreCloudSave(); // 登入成功後檢查這個帳號雲端有沒有存檔，決定要不要載入
+
+            if (isNewRegistration) {
+                GAME_STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
+                saveGame(); // 寫回本地當快取，startGameAfterAuth() 裡的 loadGame() 才會讀到這份乾淨的新進度
+                startGameAfterAuth();
+                pushCloudSave(); // 立刻建立這個帳號在雲端的存檔，不用等節流的自動同步
+            } else {
+                const gotCloudData = await loadFromCloudAuthoritative();
+                if (!gotCloudData) {
+                    // 理論上不該發生（帳號一註冊就會立刻建立雲端存檔），這裡只是防呆：
+                    // 萬一雲端真的找不到資料，退回全新進度，避免直接沿用這台裝置上其他帳號殘留的本地資料
+                    GAME_STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
+                    saveGame();
+                    startGameAfterAuth();
+                }
+            }
+        }
+
+        // 從雲端讀取這個帳號的存檔並直接套用（覆蓋本地），回傳有沒有真的讀到資料
+        async function loadFromCloudAuthoritative() {
+            try {
+                const snap = await fbDb.collection('saves').doc(fbUser.uid).get();
+                if (!snap.exists || !snap.data().data) return false;
+                const cloudState = JSON.parse(snap.data().data);
+                GAME_STATE = {...DEFAULT_STATE, ...cloudState};
+                saveGame(); // 寫回本地當快取
+                startGameAfterAuth();
+                showToast('已從雲端載入進度！');
+                return true;
+            } catch (err) {
+                console.warn('讀取雲端存檔失敗：', err);
+                return false;
+            }
         }
 
         /* ============================================================
@@ -2001,36 +2060,6 @@
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } catch (err) {console.warn('雲端存檔同步失敗：', err);}
-        }
-
-        // 登入成功後呼叫：如果雲端有這個帳號的存檔紀錄，而且跟本機現有進度不一樣，詢問要用哪一份，
-        // 避免不小心互相覆蓋掉（例如原本用手機玩，這次在電腦上第一次登入，電腦端本來是全新存檔）
-        async function tryRestoreCloudSave() {
-            if (!mpConnected || !fbUser || !fbDb) return;
-            try {
-                const snap = await fbDb.collection('saves').doc(fbUser.uid).get();
-                if (!snap.exists || !snap.data().data) return;
-                const cloudState = JSON.parse(snap.data().data);
-                const localHasProgress = GAME_STATE.roster && Object.keys(GAME_STATE.roster).length > 1;
-                if (localHasProgress) {
-                    if (confirm('偵測到這個帳號在雲端有存檔紀錄，要改用雲端進度嗎？\n(選「取消」會繼續用這台裝置目前的進度，之後存檔會覆蓋掉雲端那份)')) {
-                        applyCloudState(cloudState);
-                    }
-                } else {
-                    applyCloudState(cloudState);
-                }
-            } catch (err) {console.warn('讀取雲端存檔失敗：', err);}
-        }
-
-        function applyCloudState(cloudState) {
-            const currentCustomBG = GAME_STATE.customBG;
-            const currentCustomHeroes = GAME_STATE.customHeroes;
-            GAME_STATE = {...DEFAULT_STATE, ...cloudState};
-            GAME_STATE.customBG = currentCustomBG;
-            GAME_STATE.customHeroes = currentCustomHeroes;
-            saveGame(); updateHUD();
-            showToast('已載入雲端進度！');
-            setTimeout(() => window.location.reload(), 1000);
         }
 
         /* ============================================================
