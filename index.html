@@ -599,129 +599,52 @@
                 class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/80 backdrop-blur-md overflow-y-auto custom-scrollbar flex flex-col gap-4 z-10">
                 <h2
                     class="font-bold text-amber-500 font-magic text-xl mb-1 flex items-center shrink-0 border-b border-[#3e3328] pb-2 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]">
-                    <i class="fa-solid fa-dungeon mr-2"></i>物資秘境
+                    <i class="fa-solid fa-dungeon mr-2"></i>深淵秘境
                 </h2>
-                <p class="text-[10px] text-stone-400 mb-2">三種秘境各有獨立玩法機制，每階層固定 10 關，闖完發放完成寶箱並解鎖下一階層。</p>
+                <p class="text-[10px] text-stone-400 mb-2">討伐秘境守衛小隊，一開始 9 隻，每殺死一隻立刻補上新的一隻頂替，怪物血量與攻擊會隨累積傷害越打越強（防禦不變），直到全軍覆沒為止；這次造成多少傷害，就拿多少金幣、經驗、鍛造石。</p>
 
                 <div
-                    class="glass-panel p-4 rounded-xl flex flex-col gap-2 border border-yellow-700/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
+                    class="glass-panel p-4 rounded-xl flex flex-col gap-2 border border-amber-700/50 shadow-[0_0_15px_rgba(217,119,6,0.15)]">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <div
-                                class="w-12 h-12 bg-yellow-900/40 rounded-lg flex items-center justify-center border border-yellow-500 text-yellow-500 text-2xl shadow-inner-dark">
-                                <i class="fa-solid fa-coins"></i>
+                                class="w-12 h-12 bg-amber-900/40 rounded-lg flex items-center justify-center border border-amber-500 text-amber-500 text-2xl shadow-inner-dark">
+                                <i class="fa-solid fa-vault"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-yellow-500 text-sm">黃金寶庫 <span
-                                        class="text-[8px] text-stone-500 font-normal">寶藏連鎖</span></h3>
-                                <p class="text-[10px] text-stone-400 mt-1">已解鎖階層：<span class="text-white font-bold"
-                                        id="dungeon-lvl-gold">T1</span></p>
+                                <h3 class="font-bold text-amber-500 text-sm">深淵秘境 <span
+                                        class="text-[8px] text-stone-500 font-normal">無盡討伐</span></h3>
+                                <p class="text-[10px] text-stone-400 mt-1">單場最高傷害：<span class="text-white font-bold"
+                                        id="dungeon-highscore">0</span></p>
                             </div>
                         </div>
-                        <button onclick="startDungeonBattle('gold')"
-                            class="px-5 py-2 bg-yellow-700 hover:bg-yellow-600 text-white font-bold rounded-lg text-xs transition shadow-lg active:scale-95">討伐</button>
+                        <button onclick="startDungeonBattle()"
+                            class="px-5 py-2 bg-amber-700 hover:bg-amber-600 text-white font-bold rounded-lg text-xs transition shadow-lg active:scale-95">討伐</button>
                     </div>
-                    <div class="bg-black/30 rounded-lg px-2 py-1.5 text-[8px] text-yellow-500/80"
-                        id="dungeon-mechanic-gold"></div>
-                    <div class="bg-black/30 rounded-lg px-2 py-1.5 text-[8px] text-stone-400"
-                        id="dungeon-runprogress-gold"></div>
-                    <div class="flex items-center justify-between bg-black/30 rounded-lg px-2 py-1.5">
-                        <span class="text-[8px] text-stone-500">刷本階層（打不過可選較低階層）</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="adjustDungeonFarmLevel('gold', -1)"
-                                class="w-6 h-6 rounded bg-black/50 border border-yellow-700/40 text-yellow-500 text-[10px] active:scale-95">-</button>
-                            <span class="text-[10px] font-bold text-yellow-400 w-10 text-center"
-                                id="dungeon-farmlvl-gold">T1</span>
-                            <button onclick="adjustDungeonFarmLevel('gold', 1)"
-                                class="w-6 h-6 rounded bg-black/50 border border-yellow-700/40 text-yellow-500 text-[10px] active:scale-95">+</button>
-                            <span class="text-[8px] text-stone-600" id="dungeon-maxlvl-gold">最高 Lv.1</span>
-                        </div>
+                    <div class="grid grid-cols-3 gap-2 text-[8px] text-center font-bold">
+                        <div class="bg-black/30 rounded-lg px-2 py-1.5 text-yellow-400"><i
+                                class="fa-solid fa-coins mr-1"></i>金幣</div>
+                        <div class="bg-black/30 rounded-lg px-2 py-1.5 text-emerald-400"><i
+                                class="fa-solid fa-flask mr-1"></i>經驗</div>
+                        <div class="bg-black/30 rounded-lg px-2 py-1.5 text-stone-300"><i
+                                class="fa-solid fa-hammer mr-1"></i>鍛造石</div>
                     </div>
-                    <button id="dungeon-autofarm-btn-gold" onclick="toggleDungeonAutoFarm('gold')"
-                        class="text-[9px] font-bold px-3 py-1.5 rounded-lg border border-yellow-700/40 text-yellow-600 bg-black/30 hover:bg-yellow-900/20 transition self-end">
+                    <div class="bg-black/30 rounded-lg px-2 py-1.5 text-[8px] text-amber-400/80" id="dungeon-mechanic">
+                    </div>
+                    <button id="dungeon-autofarm-btn" onclick="toggleDungeonAutoFarm()"
+                        class="text-[9px] font-bold px-3 py-1.5 rounded-lg border border-amber-700/40 text-amber-500 bg-black/30 hover:bg-amber-900/20 transition self-end">
                         <i class="fa-solid fa-clock-rotate-left mr-1"></i>背景刷本：關
                     </button>
                 </div>
 
-
-                <div
-                    class="glass-panel p-4 rounded-xl flex flex-col gap-2 border border-emerald-700/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-12 h-12 bg-emerald-900/40 rounded-lg flex items-center justify-center border border-emerald-500 text-emerald-500 text-2xl shadow-inner-dark">
-                                <i class="fa-solid fa-flask"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-emerald-500 text-sm">幻影之森 <span
-                                        class="text-[8px] text-stone-500 font-normal">見習加成</span></h3>
-                                <p class="text-[10px] text-stone-400 mt-1">已解鎖階層：<span class="text-white font-bold"
-                                        id="dungeon-lvl-exp">T1</span></p>
-                            </div>
-                        </div>
-                        <button onclick="startDungeonBattle('exp')"
-                            class="px-5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition shadow-lg active:scale-95">討伐</button>
+                <div class="glass-panel p-3 rounded-xl border border-[#3e3328] text-[9px] text-stone-400 leading-relaxed">
+                    <div class="font-bold text-stone-300 mb-1.5"><i class="fa-solid fa-users mr-1"></i>秘境守衛陣容</div>
+                    <div class="grid grid-cols-1 gap-1">
+                        <div><span class="text-yellow-500 font-bold">黃金守衛</span>：受擊時機率為全隊凝結護盾</div>
+                        <div><span class="text-emerald-400 font-bold">幻影之靈</span>：回合開始時機率隱匿，迴避下一次攻擊</div>
+                        <div><span class="text-orange-400 font-bold">熔岩巨像</span>：大招灼燒目標，每回合持續造成傷害</div>
                     </div>
-                    <div class="bg-black/30 rounded-lg px-2 py-1.5 text-[8px] text-emerald-500/80"
-                        id="dungeon-mechanic-exp"></div>
-                    <div class="bg-black/30 rounded-lg px-2 py-1.5 text-[8px] text-stone-400"
-                        id="dungeon-runprogress-exp"></div>
-                    <div class="flex items-center justify-between bg-black/30 rounded-lg px-2 py-1.5">
-                        <span class="text-[8px] text-stone-500">刷本階層（打不過可選較低階層）</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="adjustDungeonFarmLevel('exp', -1)"
-                                class="w-6 h-6 rounded bg-black/50 border border-emerald-700/40 text-emerald-400 text-[10px] active:scale-95">-</button>
-                            <span class="text-[10px] font-bold text-emerald-400 w-10 text-center"
-                                id="dungeon-farmlvl-exp">T1</span>
-                            <button onclick="adjustDungeonFarmLevel('exp', 1)"
-                                class="w-6 h-6 rounded bg-black/50 border border-emerald-700/40 text-emerald-400 text-[10px] active:scale-95">+</button>
-                            <span class="text-[8px] text-stone-600" id="dungeon-maxlvl-exp">最高 T1</span>
-                        </div>
-                    </div>
-                    <button id="dungeon-autofarm-btn-exp" onclick="toggleDungeonAutoFarm('exp')"
-                        class="text-[9px] font-bold px-3 py-1.5 rounded-lg border border-emerald-700/40 text-emerald-500 bg-black/30 hover:bg-emerald-900/20 transition self-end">
-                        <i class="fa-solid fa-clock-rotate-left mr-1"></i>背景刷本：關
-                    </button>
-                </div>
-
-                <div
-                    class="glass-panel p-4 rounded-xl flex flex-col gap-2 border border-stone-600/50 shadow-[0_0_15px_rgba(120,113,108,0.1)]">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-12 h-12 bg-stone-800 rounded-lg flex items-center justify-center border border-stone-500 text-stone-400 text-2xl shadow-inner-dark">
-                                <i class="fa-solid fa-hammer"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-stone-400 text-sm">熔爐深淵 <span
-                                        class="text-[8px] text-stone-500 font-normal">熔煉試煉</span></h3>
-                                <p class="text-[10px] text-stone-500 mt-1">已解鎖階層：<span class="text-white font-bold"
-                                        id="dungeon-lvl-stone">T1</span></p>
-                            </div>
-                        </div>
-                        <button onclick="startDungeonBattle('stone')"
-                            class="px-5 py-2 bg-stone-700 hover:bg-stone-600 text-white font-bold rounded-lg text-xs transition shadow-lg active:scale-95">討伐</button>
-                    </div>
-                    <div class="bg-black/30 rounded-lg px-2 py-1.5 text-[8px] text-orange-400/80"
-                        id="dungeon-mechanic-stone"></div>
-                    <div class="bg-black/30 rounded-lg px-2 py-1.5 text-[8px] text-stone-400"
-                        id="dungeon-runprogress-stone"></div>
-                    <div class="flex items-center justify-between bg-black/30 rounded-lg px-2 py-1.5">
-                        <span class="text-[8px] text-stone-500">刷本階層（打不過可選較低階層）</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="adjustDungeonFarmLevel('stone', -1)"
-                                class="w-6 h-6 rounded bg-black/50 border border-stone-600/40 text-stone-300 text-[10px] active:scale-95">-</button>
-                            <span class="text-[10px] font-bold text-stone-300 w-10 text-center"
-                                id="dungeon-farmlvl-stone">T1</span>
-                            <button onclick="adjustDungeonFarmLevel('stone', 1)"
-                                class="w-6 h-6 rounded bg-black/50 border border-stone-600/40 text-stone-300 text-[10px] active:scale-95">+</button>
-                            <span class="text-[8px] text-stone-600" id="dungeon-maxlvl-stone">最高 T1</span>
-                        </div>
-                    </div>
-                    <button id="dungeon-autofarm-btn-stone" onclick="toggleDungeonAutoFarm('stone')"
-                        class="text-[9px] font-bold px-3 py-1.5 rounded-lg border border-stone-600/40 text-stone-400 bg-black/30 hover:bg-stone-800/40 transition self-end">
-                        <i class="fa-solid fa-clock-rotate-left mr-1"></i>背景刷本：關
-                    </button>
+                    <div class="mt-2 pt-2 border-t border-[#3e3328] text-stone-500">怪物死一隻補一隻、無限持續，血量與攻擊會隨累積傷害越打越強（防禦固定不變），一直打到全軍覆沒為止；造成的總傷害就是這次獎勵的依據。</div>
                 </div>
             </div>
 
@@ -1870,20 +1793,14 @@
             passRewardsClaimed: [],
             lastIdleClaim: Date.now(),
             lastAltarPrayerTime: 0, // 祭壇每日祈禱：0 表示從未領過，一律可以領一次
-            dungeons: {gold: 1, exp: 1, stone: 1},
-            // ★ 打不過目前最高等級時，可以選擇較低的等級持續刷資源；預設等於最高等級（前線），
-            // 只有在前線等級獲勝才會推進解鎖進度，選較低等級刷只拿獎勵不會卡進度也不會誤推進
-            dungeonFarmLevel: {gold: 1, exp: 1, stone: 1}, // 這裡現在代表「選擇要挑戰的階層 (Tier)」
-            // ★ 秘境改版：每個階層內固定 10 關，各秘境有自己的機制 (黃金寶藏連鎖／經驗見習加成／鍛造熔煉層數)
-            dungeonRun: {
-                gold: {level: 1, combo: 0},
-                exp: {level: 1},
-                stone: {level: 1, heat: 0}
-            },
-            // ★ 秘境背景刷本：三種資源各自獨立的背景計時器，開啟後即使切去其他分頁（例如遠征）也會持續累積，
-            // 概念上跟現有的「營地掛機」離線收益系統相同（依經過的真實時間結算），差別是這裡是分別綁定到各秘境等級與獎勵公式，且應用開著時每隔幾秒就會即時結算一次，不用手動領取
-            dungeonAutoFarm: {gold: false, exp: false, stone: false},
-            dungeonAutoFarmLastTick: {gold: 0, exp: 0, stone: 0},
+            // ★ 秘境再次重做：取消刷本階層選擇，改成單一關卡的無盡討伐——
+            // 一開始 9 隻秘境守衛，死一隻立刻補位一隻，直到全軍覆沒為止；不再有階層/解鎖/深淵祝福這些概念，
+            // 純粹「這場造成多少傷害，就拿多少三合一獎勵」，只留一個「單場最高傷害」做為紀錄與成就感。
+            dungeonHighScore: 0,
+            // ★ 秘境背景刷本：開啟後即使切去其他分頁（例如遠征）也會持續累積，
+            // 概念上跟現有的「營地掛機」離線收益系統相同（依經過的真實時間結算），差別是這裡每隔幾秒就會即時結算一次，不用手動領取
+            dungeonAutoFarm: false,
+            dungeonAutoFarmLastTick: 0,
             codex: {heroes: {}, monsters: {}}
         };
 
@@ -2112,7 +2029,7 @@
 
             {id: 'h_thorin', name: '矮人鐵匠·索林', role: '戰士', rarity: 'R', star: 1, baseHp: 650, baseAtk: 75, baseDef: 40, crit: 10, avatarIcon: 'fa-hammer', color: '#78716c', skill: {type: 'stun', chance: 0.4, desc: '大招攻擊有 40% 機率擊暈目標，使其下回合無法行動。'}, lore: '力氣很大的矮人。'},
             {id: 'h_lyra', name: '吟游詩人·萊拉', role: '輔助', rarity: 'R', star: 1, baseHp: 550, baseAtk: 50, baseDef: 25, crit: 5, avatarIcon: 'fa-music', color: '#ec4899', skill: {type: 'heal_single', value: 1.5, desc: '每回合為生命值最低的友軍恢復自身攻擊力 150% 的生命值。'}, lore: '用音樂治癒人心的旅人。'},
-            {id: 'h_draven', name: '賞金獵人·達文', role: '刺客', rarity: 'R', star: 1, baseHp: 500, baseAtk: 95, baseDef: 20, crit: 20, avatarIcon: 'fa-crosshairs', color: '#64748b', skill: {type: 'gold_bonus', value: 20, variance: 10, desc: '擊殺敵人時額外獲得 10~30 枚金幣。'}, lore: '見錢眼開的傭兵。'},
+            {id: 'h_draven', name: '賞金獵人·達文', role: '刺客', rarity: 'R', star: 1, baseHp: 500, baseAtk: 85, baseDef: 20, crit: 15, avatarIcon: 'fa-crosshairs', color: '#64748b', skill: {type: 'gold_bonus', value: 20, variance: 10, desc: '擊殺敵人時額外獲得 10~30 枚金幣。'}, lore: '見錢眼開的傭兵。'},
             {id: 'h_ignis', name: '火徒·伊格尼斯', role: '法師', rarity: 'R', star: 1, baseHp: 450, baseAtk: 100, baseDef: 15, crit: 10, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn', value: 0.2, duration: 3, desc: '大招使目標燃燒，每回合造成自身攻擊力 20% 的灼燒傷害，持續 3 回合。'}, lore: '玩火自焚的學徒。'},
             {id: 'h_militia', name: '王國步兵', role: '戰士', rarity: 'R', star: 1, baseHp: 500, baseAtk: 60, baseDef: 35, crit: 5, avatarIcon: 'fa-user-shield', color: '#a1887f', skill: {type: 'basic', value: 1.5, desc: '樸實無華的攻擊，大招僅造成 150% 攻擊力傷害，沒有額外效果。'}, lore: '隨處可見的王國基層士兵。'},
 
@@ -2318,11 +2235,13 @@
             if (!GAME_STATE.lastIdleClaim) GAME_STATE.lastIdleClaim = Date.now();
             if (GAME_STATE.lastAltarPrayerTime === undefined) GAME_STATE.lastAltarPrayerTime = 0;
             if (!GAME_STATE.accountCreateTime) GAME_STATE.accountCreateTime = Date.now();
-            if (!GAME_STATE.dungeons) GAME_STATE.dungeons = {gold: 1, exp: 1, stone: 1};
-            if (!GAME_STATE.dungeonFarmLevel) GAME_STATE.dungeonFarmLevel = {gold: GAME_STATE.dungeons.gold, exp: GAME_STATE.dungeons.exp, stone: GAME_STATE.dungeons.stone};
-            if (!GAME_STATE.dungeonRun) GAME_STATE.dungeonRun = {gold: {level: 1, combo: 0}, exp: {level: 1}, stone: {level: 1, heat: 0}};
-            if (!GAME_STATE.dungeonAutoFarm) GAME_STATE.dungeonAutoFarm = {gold: false, exp: false, stone: false};
-            if (!GAME_STATE.dungeonAutoFarmLastTick) GAME_STATE.dungeonAutoFarmLastTick = {gold: Date.now(), exp: Date.now(), stone: Date.now()};
+            // ★ 秘境再次重做：取消刷本階層，改成單一關卡無盡討伐，舊存檔的 dungeons/dungeonFarmLevel/dungeonRun
+            // 這些階層相關欄位都不再需要，只留一個「單場最高傷害」記錄；殘留的舊欄位直接清掉即可，不影響其他資源。
+            delete GAME_STATE.dungeons; delete GAME_STATE.dungeonFarmLevel; delete GAME_STATE.dungeonRun;
+            if (typeof GAME_STATE.dungeonHighScore !== 'number') GAME_STATE.dungeonHighScore = 0;
+            if (typeof GAME_STATE.dungeonAutoFarm !== 'boolean') GAME_STATE.dungeonAutoFarm = false;
+            if (typeof GAME_STATE.dungeonAutoFarmLastTick !== 'number') GAME_STATE.dungeonAutoFarmLastTick = Date.now();
+
 
             if (GAME_STATE.voidFragments === undefined) GAME_STATE.voidFragments = 0;
             if (GAME_STATE.riftFloor === undefined) GAME_STATE.riftFloor = 1;
@@ -3385,10 +3304,8 @@
                 if (GAME_STATE.currentMode === 'tower') document.getElementById('battle-stage-title').innerText = `塔 ${GAME_STATE.towerLevel}F`;
                 else if (GAME_STATE.currentMode === 'rift') document.getElementById('battle-stage-title').innerText = `迷宮 ${GAME_STATE.riftFloor || 1}層`;
                 else if (GAME_STATE.currentMode === 'festival') document.getElementById('battle-stage-title').innerText = `迴廊 ${GAME_STATE.festivalFloor || 1}層`;
-                else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
-                    const type = GAME_STATE.currentMode.split('_')[1];
-                    const names = {gold: '黃金寶庫', exp: '幻影之森', stone: '熔爐深淵'};
-                    document.getElementById('battle-stage-title').innerText = `${names[type]} T${getDungeonFarmLevel(type)}-${GAME_STATE.dungeonRun[type].level}`;
+                else if (GAME_STATE.currentMode === 'dungeon') {
+                    document.getElementById('battle-stage-title').innerText = `深淵秘境`;
                 } else if (GAME_STATE.currentMode === 'season') document.getElementById('battle-stage-title').innerText = `賽季討伐`;
                 else document.getElementById('battle-stage-title').innerText = `${GAME_STATE.stage.chapter}-${GAME_STATE.stage.level}`;
             }
@@ -3396,10 +3313,8 @@
             if (document.getElementById('gacha-current-tickets')) document.getElementById('gacha-current-tickets').innerText = GAME_STATE.tickets.toLocaleString();
             if (document.getElementById('tower-level-display')) document.getElementById('tower-level-display').innerText = `${GAME_STATE.towerLevel}F`;
             refreshGachaPityUI();
-            if (document.getElementById('dungeon-lvl-gold')) {
-                document.getElementById('dungeon-lvl-gold').innerText = `T${GAME_STATE.dungeons.gold}`;
-                document.getElementById('dungeon-lvl-exp').innerText = `T${GAME_STATE.dungeons.exp}`;
-                document.getElementById('dungeon-lvl-stone').innerText = `T${GAME_STATE.dungeons.stone}`;
+            if (document.getElementById('dungeon-highscore')) {
+                document.getElementById('dungeon-highscore').innerText = (GAME_STATE.dungeonHighScore || 0).toLocaleString();
             }
             if (document.getElementById('season-current-coins')) {
                 document.getElementById('season-current-coins').innerText = GAME_STATE.starCoins.toLocaleString();
@@ -4710,17 +4625,16 @@
                 // 其實賽季討伐跟其他模式一樣，每次挑戰結束（全軍覆沒）都可以直接開始下一次，
                 // 這裡改成跟秘境/試煉塔一樣顯示按鈕，並在 handleCombatEnd 裡接上自動繼續的邏輯。
                 document.getElementById('btn-auto-battle').style.display = 'block';
-            } else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
-                document.getElementById('btn-auto-battle').style.display = 'block'; const dType = GAME_STATE.currentMode.split('_')[1]; const sm = getDungeonDifficultyMult(dType);
-                let mId, mName, mColor, mIcon, mSkill;
-                if (dType === 'gold') {mId = 'dm_gold'; mName = '黃金守衛'; mColor = '#facc15'; mIcon = 'fa-coins'; mSkill = {type: 'shield', chance: 0.25, value: 0.12, desc: '守護寶藏的意志，受擊時有 25% 機率為自身與同伴凝結等同最大生命值 12% 的護盾。'};}
-                else if (dType === 'exp') {mId = 'dm_exp'; mName = '幻影之靈'; mColor = '#34d399'; mIcon = 'fa-brain'; mSkill = {type: 'stealth', chance: 0.28, desc: '虛無的幻影軀體，每回合開始時有 28% 機率隱匿，迴避下一次攻擊。'};}
-                else {mId = 'dm_stone'; mName = '熔岩巨像'; mColor = '#78716c'; mIcon = 'fa-cubes'; mSkill = {type: 'burn', value: 0.18, duration: 3, desc: '大招迸發灼熱熔岩，每回合造成攻擊力 18% 的灼燒傷害，持續 3 回合。'};}
-                // 關卡內越深（同一階層裡第幾關）敵人越多，呼應「越往裡走越難」的地牢感，範圍 2~7 隻
-                const runLevel = GAME_STATE.dungeonRun[dType].level;
-                const eCount = Math.min(7, 2 + Math.floor(runLevel / 2));
+            } else if (GAME_STATE.currentMode === 'dungeon') {
+                document.getElementById('btn-auto-battle').style.display = 'block';
+                // ★ 秘境再次重做：取消刷本階層，改成單一關卡的無盡討伐——固定 9 隻秘境守衛（3x3 混編）出場，
+                // 死一隻立刻由 respawnDungeonGuard() 補上新的一隻頂替（見 executeHit 內的補位判定），
+                // 直到全軍覆沒為止。怪物血量/攻擊隨累積造成的傷害持續提高，防禦維持不變（見 getDungeonEnemyScale）。
+                const sm = getDungeonEnemyScale();
+                const eCount = 9;
                 for (let i = 0; i < eCount; i++) {
-                    combatEntities.push({baseId: mId, name: mName, team: 'enemy', x: 0, y: 0, hp: Math.floor(250 * sm), maxHp: Math.floor(250 * sm), atk: Math.floor(35 * sm), def: Math.floor(15 * sm), role: '戰士', color: mColor, icon: mIcon, row: i % 3, col: Math.floor(i / 3), skill: mSkill});
+                    const g = DUNGEON_GUARD_TYPES[i % DUNGEON_GUARD_TYPES.length];
+                    combatEntities.push({baseId: g.mId, name: g.mName, team: 'enemy', x: 0, y: 0, hp: Math.floor(250 * sm), maxHp: Math.floor(250 * sm), atk: Math.floor(35 * sm), def: 15, role: '戰士', color: g.mColor, icon: g.mIcon, row: i % 3, col: Math.floor(i / 3), skill: {...g.mSkill}});
                 }
             } else {
                 document.getElementById('btn-auto-battle').style.display = 'block'; const chapStr = GAME_STATE.stage.chapter.toString(); const db = MONSTER_DB[chapStr] || MONSTER_DB[1];
@@ -4789,11 +4703,10 @@
             updateDynamicBackground();
         }
 
-        function startDungeonBattle(type) {
+        function startDungeonBattle() {
             snapshotCurrentBattleIfNeeded(); // 經過秘境也不會把還沒打完的遠征/賽季戰鬥沖掉
-            switchTab('battle', {internal: true}); GAME_STATE.currentMode = 'dungeon_' + type; combatEntities = [];
-            const names = {gold: '黃金寶庫', exp: '幻影之森', stone: '熔爐深淵'};
-            document.getElementById('battle-stage-title').innerText = `${names[type]} Lv.${getDungeonFarmLevel(type)}`; setTimeout(initCombatUnits, 100);
+            switchTab('battle', {internal: true}); GAME_STATE.currentMode = 'dungeon'; combatEntities = [];
+            document.getElementById('battle-stage-title').innerText = `深淵秘境`; setTimeout(initCombatUnits, 100);
             refreshNavHighlightForMode();
             updateDynamicBackground();
         }
@@ -4807,7 +4720,7 @@
             if (mode === 'tower') target = 'tower';
             else if (mode === 'season') target = 'season';
             else if (mode === 'rift' || mode === 'festival') target = 'season-mode';
-            else if (mode && mode.startsWith('dungeon_')) target = 'dungeon';
+            else if (mode === 'dungeon') target = 'dungeon';
 
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-target="${target}"]`);
@@ -4817,174 +4730,105 @@
         /* ============================================================
            秘境背景刷本 (Background Dungeon Auto-Farm)
            不使用畫布戰鬥引擎，而是像現有的「營地掛機」離線收益一樣，
-           用真實經過時間 + setInterval 做「單次瞬間結算」，三種資源各自獨立累計、互不影響，
-           開啟後即使切去遠征、賽季等其他分頁持續進行手動戰鬥，背景刷本依然會照常結算，
-           重新整理頁面或關閉瀏覽器後再打開，也會依離線經過的時間一次補齊（上限 12 小時，避免久未開啟時瞬間結算過量）。
+           用真實經過時間 + setInterval 做「單次瞬間結算」，開啟後即使切去遠征、賽季等其他分頁持續進行手動戰鬥，
+           背景刷本依然會照常結算，重新整理頁面或關閉瀏覽器後再打開，也會依離線經過的時間一次補齊（上限 12 小時，避免久未開啟時瞬間結算過量）。
            ============================================================ */
         const DUNGEON_AUTO_FARM_INTERVAL_MS = 8000; // 每 8 秒（真實時間）結算一次
         const DUNGEON_AUTO_FARM_MAX_OFFLINE_MS = 12 * 60 * 60 * 1000; // 離線累積上限 12 小時
-        const DUNGEON_NAMES = {gold: '黃金寶庫', exp: '幻影之森', stone: '熔爐深淵'};
         let dungeonAutoFarmIntervalId = null;
 
         function ensureDungeonAutoFarmState() {
-            if (!GAME_STATE.dungeonAutoFarm) GAME_STATE.dungeonAutoFarm = {gold: false, exp: false, stone: false};
-            if (!GAME_STATE.dungeonAutoFarmLastTick) GAME_STATE.dungeonAutoFarmLastTick = {gold: 0, exp: 0, stone: 0};
-            if (!GAME_STATE.dungeonFarmLevel) GAME_STATE.dungeonFarmLevel = {gold: GAME_STATE.dungeons.gold, exp: GAME_STATE.dungeons.exp, stone: GAME_STATE.dungeons.stone};
-            if (!GAME_STATE.dungeonRun) GAME_STATE.dungeonRun = {gold: {level: 1, combo: 0}, exp: {level: 1}, stone: {level: 1, heat: 0}};
+            if (typeof GAME_STATE.dungeonAutoFarm !== 'boolean') GAME_STATE.dungeonAutoFarm = false;
+            if (typeof GAME_STATE.dungeonAutoFarmLastTick !== 'number') GAME_STATE.dungeonAutoFarmLastTick = 0;
+            if (typeof GAME_STATE.dungeonHighScore !== 'number') GAME_STATE.dungeonHighScore = 0;
         }
 
         /* ============================================================
-           秘境改版：從「無限往上刷等級」改成「階層 (Tier) + 階層內固定 10 關」的有限關卡設計。
-           GAME_STATE.dungeonFarmLevel[type] 現在代表「選擇挑戰第幾階層」(沿用舊欄位名，語意升級)，
-           GAME_STATE.dungeons[type] 代表「已解鎖到第幾階層」(前線)，
-           GAME_STATE.dungeonRun[type] 追蹤「在目前這個階層裡，闖到第幾關、累積了多少層機制加成」。
-           三種秘境的核心玩法規則完全不同：
-             - 黃金寶庫「寶藏連鎖」：每次挑戰疊加金幣加成
-             - 幻影之森「見習加成」：依目前上陣佈陣的等級落差給經驗加成，鼓勵帶新人練等
-             - 熔爐深淵「熔煉試煉」：每次挑戰疊加熔煉層數，敵人變強、鍛造石獎勵也跟著提升
-           每個階層闖完 10 關會發放完成寶箱，並在前線階層時推進到下一階層，之後重新從第 1 關開始。
-           ★ 改版：秘境現在跟賽季討伐一樣「打多少傷害拿多少獎勵」（見 handleCombatEnd 與 resolveDungeonClear
-           的 ratio 參數），不再有「打輸就連鎖/熔煉歸零」的懲罰，每次挑戰不論輸贏都算完成一次、繼續往下推進。
+           秘境再次重做：取消刷本階層選擇，整個秘境只剩「一個關卡」——單場無盡討伐。
+           固定 9 隻秘境守衛（黃金守衛／幻影之靈／熔岩巨像 3x3 混編）出場，死一隻立刻由
+           respawnDungeonGuard() 補上新的一隻頂替原本的站位，一直打到全軍覆沒為止。
+           怪物血量與攻擊會隨著「這場戰鬥累積造成的傷害」持續提高（見 getDungeonEnemyScale），
+           但防禦刻意不變——越打越猛、但不會變得摸不動，維持這個模式該有的爽快感。
+           獎勵直接等於這場累積造成的總傷害換算成金幣/經驗/鍛造石，不再有階層、深淵祝福這些機制。
            ============================================================ */
-        const DUNGEON_LEVELS_PER_TIER = 10;
+        const DUNGEON_GUARD_TYPES = [
+            {mId: 'dm_gold', mName: '黃金守衛', mColor: '#facc15', mIcon: 'fa-shield-halved', mSkill: {type: 'shield', chance: 0.25, value: 0.12, desc: '守護寶藏的意志，受擊時有 25% 機率為自身與同伴凝結等同最大生命值 12% 的護盾。'}},
+            {mId: 'dm_exp', mName: '幻影之靈', mColor: '#34d399', mIcon: 'fa-brain', mSkill: {type: 'stealth', chance: 0.28, desc: '虛無的幻影軀體，每回合開始時有 28% 機率隱匿，迴避下一次攻擊。'}},
+            {mId: 'dm_stone', mName: '熔岩巨像', mColor: '#78716c', mIcon: 'fa-cubes', mSkill: {type: 'burn', value: 0.18, duration: 3, desc: '大招迸發灼熱熔岩，每回合造成攻擊力 18% 的灼燒傷害，持續 3 回合。'}}
+        ];
 
-        // 該秘境目前的戰鬥難度倍率：階層是主要跳階，階層內 1~10 關是小幅遞增，熔爐深淵額外疊加熔煉層數
-        function getDungeonDifficultyMult(type) {
-            ensureDungeonAutoFarmState();
-            const tier = getDungeonFarmLevel(type);
-            const run = GAME_STATE.dungeonRun[type];
-            let sm = 1 + (tier - 1) * 0.35 + (run.level - 1) * 0.08;
-            if (type === 'stone') sm += (run.heat || 0) * 0.05;
-            return sm;
+        // 怪物目前的強度倍率：完全看這場戰鬥累積造成(=怪物累積承受)的傷害，每 3000 點傷害翻一倍；
+        // 只套用在血量/攻擊上，防禦刻意不跟著漲（見下方 respawnDungeonGuard 與 initCombatUnits 的怪物生成）。
+        function getDungeonEnemyScale() {
+            return 1 + (GAME_STATE.currentMode === 'dungeon' ? eventTotalDamage : 0) / 3000;
         }
 
-        // 秘境戰鬥結算的核心邏輯：手動討伐勝利、背景刷本，都呼叫這個函式，確保三種秘境的規則只寫一次、行為一致
-        // ★ 改版：新增 ratio 參數（0~1），代表這次戰鬥「造成的傷害 / 敵人總血量」的比例，跟賽季討伐一樣
-        // 「打多少傷害拿多少獎勵」；背景刷本沒有實際戰鬥可言，維持視為 100% 全額結算 (ratio 預設 1)。
-        function resolveDungeonClear(type, ratio) {
-            if (typeof ratio !== 'number' || isNaN(ratio)) ratio = 1;
-            ensureDungeonAutoFarmState();
-            const tier = getDungeonFarmLevel(type);
-            const run = GAME_STATE.dungeonRun[type];
-            const wasAtFrontierTier = tier >= GAME_STATE.dungeons[type];
-            const baseReward = 150 + tier * 90 + run.level * 20;
-
-            let gain = 0, rewardText = '', bonusChestText = '';
-
-            if (type === 'gold') {
-                run.combo = Math.min(10, run.combo + 1); // 寶藏連鎖：每次挑戰 +1 層，最高 10 層 (+80%)，不再因為沒打贏就歸零
-                const comboMult = 1 + run.combo * 0.08;
-                gain = Math.floor(baseReward * 2 * comboMult * ratio);
-                GAME_STATE.gold += gain;
-                rewardText = `獲得 ${gain} 金幣（寶藏連鎖 x${run.combo}，加成 +${run.combo * 8}%）`;
-            } else if (type === 'exp') {
-                // 見習加成：依目前上陣佈陣裡最高與最低等級的差距給經驗加成，鼓勵帶低等級英雄一起上陣練等
-                const slots = (GAME_STATE.gridSlots || []).filter(Boolean).map(id => GAME_STATE.roster[id] ? GAME_STATE.roster[id].level : 1);
-                let apprenticeBonus = 0;
-                if (slots.length >= 2) {
-                    const maxLv = Math.max(...slots), minLv = Math.min(...slots);
-                    apprenticeBonus = Math.min(0.5, (maxLv - minLv) * 0.01); // 每差 1 級 +1%，最高 +50%
-                }
-                gain = Math.floor(baseReward * 1.5 * (1 + apprenticeBonus) * ratio);
-                GAME_STATE.heroExp += gain;
-                rewardText = `獲得 ${gain} 英雄經驗${apprenticeBonus > 0 ? `（見習加成 +${Math.floor(apprenticeBonus * 100)}%）` : ''}`;
-            } else { // stone
-                run.heat = (run.heat || 0) + 1; // 熔煉試煉：每次挑戰 +1 層熔煉，敵人變強但鍛造石獎勵也跟著提升，不再因為沒打贏就歸零
-                const heatMult = 1 + run.heat * 0.08;
-                gain = Math.floor((baseReward / 10) * heatMult * ratio);
-                GAME_STATE.forgeStones += gain;
-                rewardText = `獲得 ${gain} 鍛造石（熔煉層數 x${run.heat}，加成 +${run.heat * 8}%）`;
-            }
-
-            run.level++; // ★ 不論這次是否全滅敵人，都算完成一次挑戰、往這個階層的下一關推進
-            let completedTier = false;
-            if (run.level > DUNGEON_LEVELS_PER_TIER) {
-                completedTier = true;
-                if (type === 'gold') {
-                    const chestGain = Math.floor(baseReward * 2 * (1 + run.combo * 0.08) * 2);
-                    GAME_STATE.gold += chestGain; bonusChestText = `完成寶箱：+${chestGain} 金幣`;
-                } else if (type === 'exp') {
-                    const chestGain = Math.floor(baseReward * 1.5 * 2);
-                    GAME_STATE.heroExp += chestGain; bonusChestText = `完成寶箱：+${chestGain} 經驗`;
-                } else {
-                    const chestGain = Math.floor((baseReward / 10) * (1 + run.heat * 0.08) * 2);
-                    GAME_STATE.forgeStones += chestGain; bonusChestText = `完成寶箱：+${chestGain} 鍛造石`;
-                }
-                if (wasAtFrontierTier) {GAME_STATE.dungeons[type]++; GAME_STATE.dungeonFarmLevel[type] = GAME_STATE.dungeons[type];}
-                GAME_STATE.dungeonRun[type] = type === 'gold' ? {level: 1, combo: 0} : (type === 'stone' ? {level: 1, heat: 0} : {level: 1});
-            }
-
-            return {gain, rewardText, bonusChestText, completedTier};
+        // 秘境守衛死亡時立刻呼叫：在同一個站位補上一隻新的隨機守衛，血量/攻擊套用當下的強度倍率，防禦固定 15
+        function respawnDungeonGuard(slot) {
+            const g = DUNGEON_GUARD_TYPES[Math.floor(Math.random() * DUNGEON_GUARD_TYPES.length)];
+            const sm = getDungeonEnemyScale();
+            slot.baseId = g.mId; slot.name = g.mName; slot.color = g.mColor; slot.icon = g.mIcon; slot.skill = {...g.mSkill};
+            slot.maxHp = Math.floor(250 * sm); slot.hp = slot.maxHp;
+            slot.atk = Math.floor(35 * sm);
+            slot.def = 15; // ★ 防禦不隨累積傷害提高，維持基礎值
+            slot.shield = 0; slot.stunned = false; slot.stealth = false; slot.burnStacks = null; slot.poisonStacks = null;
+            floatingTexts.push({x: slot.x, y: slot.y - 100, text: `補位！`, isCrit: true, color: '#f87171', life: 50});
         }
 
-        // 取得目前選擇要挑戰/刷本的等級（可能低於已解鎖的最高等級），夾在 [1, 最高等級] 之間避免存檔異常
-        function getDungeonFarmLevel(type) {
+        // 秘境獎勵：直接把這場累積造成的總傷害換算成三種資源，不再看階層或機制加成
+        function resolveDungeonSessionReward(totalDamage) {
             ensureDungeonAutoFarmState();
-            const lvl = GAME_STATE.dungeonFarmLevel[type] || GAME_STATE.dungeons[type];
-            return Math.max(1, Math.min(lvl, GAME_STATE.dungeons[type]));
+            const goldGain = Math.floor(totalDamage * 0.5);
+            const expGain = Math.floor(totalDamage * 0.35);
+            const stoneGain = Math.floor(totalDamage * 0.06);
+            GAME_STATE.gold += goldGain; GAME_STATE.heroExp += expGain; GAME_STATE.forgeStones += stoneGain;
+            if (totalDamage > GAME_STATE.dungeonHighScore) GAME_STATE.dungeonHighScore = Math.floor(totalDamage);
+            const rewardText = `${goldGain} 金幣／${expGain} 經驗／${stoneGain} 鍛造石`;
+            return {goldGain, expGain, stoneGain, rewardText};
         }
 
-        // 秘境卡片上的「-」「+」按鈕：調整想挑戰/背景刷本的等級，範圍限制在 [1, 最高已解鎖等級]
-        function adjustDungeonFarmLevel(type, delta) {
-            ensureDungeonAutoFarmState();
-            const current = getDungeonFarmLevel(type);
-            const next = Math.max(1, Math.min(current + delta, GAME_STATE.dungeons[type]));
-            if (next === current) return;
-            GAME_STATE.dungeonFarmLevel[type] = next;
-            ToneAudioEngine.playClick();
-            saveGame();
-            renderDungeonAutoFarmButtons();
-        }
-
-        // 開關某一種秘境的背景刷本；一次只能刷一種，開啟新的會自動關掉其他正在進行的
-        function toggleDungeonAutoFarm(type) {
+        // 開關秘境的背景刷本
+        function toggleDungeonAutoFarm() {
             ensureDungeonAutoFarmState();
             ToneAudioEngine.playClick();
-            const turningOn = !GAME_STATE.dungeonAutoFarm[type];
-            if (turningOn) {
-                // 一次只能刷一種：先把其他已開啟的關掉（並結算它們關閉前累積的量，避免資源憑空消失）
-                ['gold', 'exp', 'stone'].forEach(t => {
-                    if (t !== type && GAME_STATE.dungeonAutoFarm[t]) GAME_STATE.dungeonAutoFarm[t] = false;
-                });
-                GAME_STATE.dungeonAutoFarm[type] = true;
-                GAME_STATE.dungeonAutoFarmLastTick[type] = Date.now();
-                showToast(`已開啟「${DUNGEON_NAMES[type]}」背景刷本，切去其他分頁也會持續累積`);
+            GAME_STATE.dungeonAutoFarm = !GAME_STATE.dungeonAutoFarm;
+            if (GAME_STATE.dungeonAutoFarm) {
+                GAME_STATE.dungeonAutoFarmLastTick = Date.now();
+                showToast('已開啟秘境背景刷本，切去其他分頁也會持續累積');
             } else {
-                GAME_STATE.dungeonAutoFarm[type] = false;
-                showToast(`已關閉「${DUNGEON_NAMES[type]}」背景刷本`);
+                showToast('已關閉秘境背景刷本');
             }
             saveGame();
             renderDungeonAutoFarmButtons();
             updateNavDungeonFarmDot();
         }
 
-        // 依現有 startDungeonBattle 勝利結算用的同一套公式，瞬間結算一次該秘境的產出並推進等級
-        function resolveOneDungeonAutoClear(type) {
-            // 背景刷本現在跟手動討伐共用同一套「階層 + 10 關 + 各秘境專屬機制」規則，只是不用人在秘境分頁
-            resolveDungeonClear(type);
+        // 背景刷本沒有真的在打，用目前佈陣英雄的攻擊力總和粗略估計「這個 tick 大概能累積多少傷害」，
+        // 換算成跟手動討伐相同的獎勵公式，讓背景刷本的產出跟陣容強度成正比
+        function resolveOneDungeonAutoClear() {
+            const heroes = (GAME_STATE.gridSlots || []).filter(Boolean).map(id => GAME_STATE.roster[id] ? getEffectiveHero(HERO_DATABASE.find(h => h.id === id)) : null).filter(Boolean);
+            const totalAtk = heroes.reduce((s, h) => s + (h.atk || 0), 0) || 50;
+            const simulatedDamage = Math.floor(totalAtk * 6); // 粗略估計一次 tick 相當於數次攻擊的傷害量
+            resolveDungeonSessionReward(simulatedDamage);
         }
 
-        // 檢查三種秘境背景刷本各自累積的時間，達到間隔就結算對應次數；離開頁面很久後回來也會依離線時間一次補齊
+        // 檢查秘境背景刷本累積的時間，達到間隔就結算對應次數；離開頁面很久後回來也會依離線時間一次補齊
         function processDungeonAutoFarmTicks() {
             ensureDungeonAutoFarmState();
+            if (!GAME_STATE.dungeonAutoFarm) return;
             const now = Date.now();
-            let anyChanged = false;
-            ['gold', 'exp', 'stone'].forEach(type => {
-                if (!GAME_STATE.dungeonAutoFarm[type]) return;
-                let elapsed = now - (GAME_STATE.dungeonAutoFarmLastTick[type] || now);
-                if (elapsed > DUNGEON_AUTO_FARM_MAX_OFFLINE_MS) elapsed = DUNGEON_AUTO_FARM_MAX_OFFLINE_MS;
-                if (elapsed < 0) elapsed = 0;
-                const ticks = Math.floor(elapsed / DUNGEON_AUTO_FARM_INTERVAL_MS);
-                if (ticks > 0) {
-                    for (let i = 0; i < ticks; i++) resolveOneDungeonAutoClear(type);
-                    GAME_STATE.dungeonAutoFarmLastTick[type] += ticks * DUNGEON_AUTO_FARM_INTERVAL_MS;
-                    anyChanged = true;
-                }
-            });
-            if (anyChanged) {saveGame(); updateHUD();}
+            let elapsed = now - (GAME_STATE.dungeonAutoFarmLastTick || now);
+            if (elapsed > DUNGEON_AUTO_FARM_MAX_OFFLINE_MS) elapsed = DUNGEON_AUTO_FARM_MAX_OFFLINE_MS;
+            if (elapsed < 0) elapsed = 0;
+            const ticks = Math.floor(elapsed / DUNGEON_AUTO_FARM_INTERVAL_MS);
+            if (ticks > 0) {
+                for (let i = 0; i < ticks; i++) resolveOneDungeonAutoClear();
+                GAME_STATE.dungeonAutoFarmLastTick += ticks * DUNGEON_AUTO_FARM_INTERVAL_MS;
+                saveGame(); updateHUD();
+            }
         }
 
-        // 啟動背景刷本的持續檢查（每 2 秒檢查一次是否有秘境達到結算間隔），只需要在遊戲啟動時呼叫一次
+        // 啟動背景刷本的持續檢查（每 2 秒檢查一次是否達到結算間隔），只需要在遊戲啟動時呼叫一次
         function initDungeonAutoFarm() {
             ensureDungeonAutoFarmState();
             processDungeonAutoFarmTicks(); // 先補齊上次關閉遊戲到現在離線期間累積的量
@@ -4994,45 +4838,28 @@
             dungeonAutoFarmIntervalId = setInterval(processDungeonAutoFarmTicks, 2000);
         }
 
-        // 秘境分頁上三顆「背景刷本：開/關」按鈕的顯示狀態
+        // 秘境分頁上「背景刷本：開/關」按鈕與說明文字的顯示狀態
         function renderDungeonAutoFarmButtons() {
             ensureDungeonAutoFarmState();
-            ['gold', 'exp', 'stone'].forEach(type => {
-                const btn = document.getElementById('dungeon-autofarm-btn-' + type);
-                if (btn) {
-                    const active = GAME_STATE.dungeonAutoFarm[type];
-                    btn.innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-1"></i>背景刷本：${active ? '開' : '關'}`;
-                    btn.classList.toggle('text-emerald-400', active);
-                    btn.classList.toggle('border-emerald-500/50', active);
-                }
-                const lvlEl = document.getElementById('dungeon-farmlvl-' + type);
-                if (lvlEl) lvlEl.innerText = `T${getDungeonFarmLevel(type)}`;
-                const maxEl = document.getElementById('dungeon-maxlvl-' + type);
-                if (maxEl) maxEl.innerText = `最高 T${GAME_STATE.dungeons[type]}`;
-
-                const run = GAME_STATE.dungeonRun[type];
-                const progEl = document.getElementById('dungeon-runprogress-' + type);
-                if (progEl) progEl.innerText = `本階層進度：${run.level}/${DUNGEON_LEVELS_PER_TIER} 關`;
-                const mechEl = document.getElementById('dungeon-mechanic-' + type);
-                if (mechEl) {
-                    if (type === 'gold') mechEl.innerText = `寶藏連鎖 x${run.combo}（+${run.combo * 8}% 金幣）`;
-                    else if (type === 'stone') mechEl.innerText = `熔煉層數 x${run.heat || 0}（+${(run.heat || 0) * 8}% 鍛造石，敵人也更強）`;
-                    else {
-                        const slots = (GAME_STATE.gridSlots || []).filter(Boolean).map(id => GAME_STATE.roster[id] ? GAME_STATE.roster[id].level : 1);
-                        const bonus = slots.length >= 2 ? Math.min(50, (Math.max(...slots) - Math.min(...slots))) : 0;
-                        mechEl.innerText = `見習加成：目前佈陣等級差 +${bonus}%`;
-                    }
-                }
-            });
+            const btn = document.getElementById('dungeon-autofarm-btn');
+            if (btn) {
+                const active = GAME_STATE.dungeonAutoFarm;
+                btn.innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-1"></i>背景刷本：${active ? '開' : '關'}`;
+                btn.classList.toggle('text-emerald-400', active);
+                btn.classList.toggle('border-emerald-500/50', active);
+            }
+            const mechEl = document.getElementById('dungeon-mechanic');
+            if (mechEl) mechEl.innerText = `一開始 9 隻守衛，死一隻補一隻；血量/攻擊隨累積傷害提高，防禦不變`;
+            const hsEl = document.getElementById('dungeon-highscore');
+            if (hsEl) hsEl.innerText = (GAME_STATE.dungeonHighScore || 0).toLocaleString();
         }
 
-        // 導覽列「秘境」按鈕上的小綠點：只要有任一種正在背景刷本就顯示
+        // 導覽列「秘境」按鈕上的小綠點：正在背景刷本時顯示
         function updateNavDungeonFarmDot() {
             ensureDungeonAutoFarmState();
             const dot = document.getElementById('nav-dungeon-farm-dot');
             if (!dot) return;
-            const anyActive = GAME_STATE.dungeonAutoFarm.gold || GAME_STATE.dungeonAutoFarm.exp || GAME_STATE.dungeonAutoFarm.stone;
-            dot.classList.toggle('hidden', !anyActive);
+            dot.classList.toggle('hidden', !GAME_STATE.dungeonAutoFarm);
         }
 
         function updateCombatLogic() {
@@ -5161,13 +4988,19 @@
                 if (attacker.team === 'player') {
                     battleAnalytics.dps[attacker.name] += Math.floor(damage);
                     // ★ 秘境改版後也要看「造成了多少傷害」來算獎勵，所以連同賽季討伐一起累計
-                    if (GAME_STATE.currentMode === 'season' || (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_'))) {
+                    if (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon') {
                         eventTotalDamage += Math.floor(damage);
                         if (GAME_STATE.currentMode === 'season') eventBossCurrentHp -= damage;
                     }
                 }
                 if (target.team === 'player') battleAnalytics.tank[target.name] += Math.floor(damage);
                 updateAnalyticsUI();
+
+                // ★ 秘境重做：怪物死亡立刻在同一個站位補上新的一隻，戰鬥不會因為殺光敵人而提早結束，
+                // 只有玩家全軍覆沒才會結束；此時 eventTotalDamage 已經算入這次的傷害，補位的怪物強度會反映最新倍率。
+                if (GAME_STATE.currentMode === 'dungeon' && target.team === 'enemy' && target.hp <= 0) {
+                    respawnDungeonGuard(target);
+                }
             };
 
             // 內部函數：處理回合開始時的持續效果（灼燒/中毒扣血、攻擊力增益倒數）
@@ -5670,24 +5503,14 @@
                 btnNext.innerText = "返回賽季頁面"; btnNext.onclick = () => switchTab('season');
                 // ★ 開啟自動戰鬥時，跟秘境/試煉塔一樣自動接著挑戰下一次，不用每次全軍覆沒後手動再點一次「進入討伐」
                 if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
-            } else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
-                // ★ 改版：秘境不再要求「打贏」才有收穫，改成跟賽季討伐一樣「造成多少傷害，就拿多少獎勵」。
-                // 全軍覆沒也照樣結算、連鎖／熔煉層數不會歸零，不用每次都得殺光敵人才有東西拿，
-                // 體感更輕鬆，也才能放心開自動戰鬥連續刷。
-                const dType = GAME_STATE.currentMode.split('_')[1];
-                const dNames = {gold: '黃金寶庫', exp: '幻影之森', stone: '熔爐深淵'};
-                const clearedLevel = GAME_STATE.dungeonRun[dType].level; // resolveDungeonClear 會改變它，先記下來
-                const clearedTier = getDungeonFarmLevel(dType);
-                const totalEnemyHp = combatEntities.filter(e => e.team === 'enemy').reduce((sum, e) => sum + e.maxHp, 0) || 1;
-                const dmgRatio = Math.max(0.15, Math.min(1, eventTotalDamage / totalEnemyHp)); // 保底 15%，不會完全空手而回
-                const result = resolveDungeonClear(dType, dmgRatio);
-                let descHtml = `${dNames[dType]} T${clearedTier} 第 ${clearedLevel}/${DUNGEON_LEVELS_PER_TIER} 關<br>造成 ${Math.floor(dmgRatio * 100)}% 傷害，${result.rewardText}`;
-                if (result.completedTier) {
-                    descHtml += `<div class="mt-2 text-[10px] font-bold text-amber-400 border-t border-amber-900/50 pt-1"><i class="fa-solid fa-box-open mr-1"></i>本階層 10 關全數突破！${result.bonusChestText}</div>`;
-                }
+            } else if (GAME_STATE.currentMode === 'dungeon') {
+                // ★ 再次重做：秘境不再有階層/深淵祝福，怪物死一隻補一隻打到全軍覆沒為止，
+                // 這場累積造成的總傷害直接換算成三種資源獎勵（跟賽季討伐同一套精神）。
+                const result = resolveDungeonSessionReward(eventTotalDamage);
+                const descHtml = `這場總共造成了 <span class="text-amber-400 font-bold">${eventTotalDamage.toLocaleString()}</span> 點傷害<br>獲得 ${result.rewardText}`;
                 document.getElementById('overlay-desc').innerHTML = descHtml;
-                document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-box-open text-amber-500 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]"></i>'; document.getElementById('overlay-title').innerText = result.completedTier ? '階層完成' : (isWin ? '秘境突破' : '討伐結束');
-                btnNext.innerHTML = `<i class="fa-solid fa-play mr-1"></i>${isWin ? '挑戰下一層' : '再次挑戰'}`; btnNext.onclick = () => startNextBattle();
+                document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-box-open text-amber-500 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]"></i>'; document.getElementById('overlay-title').innerText = '討伐結束';
+                btnNext.innerHTML = `<i class="fa-solid fa-play mr-1"></i>再次挑戰`; btnNext.onclick = () => startNextBattle();
                 if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
             } else if (isWin && GAME_STATE.currentMode === 'rift') {
                 const floor = GAME_STATE.riftFloor || 1;
@@ -5727,11 +5550,12 @@
                     const eReward = Math.floor((40 + GAME_STATE.stage.chapter * 20) * stageMult);
                     // 寶石掉落數量控制：原本「隨機基礎值 + 隨關卡無上限疊加」在高關卡會變得數字忽大忽小又不斷膨脹。
                     // 改成掉落機率維持隨機，但掉落「數量」固定依關卡計算、並設上限，數字可預期、不會亂跳。
-                    // ★ 平衡調整：寶石太稀缺會卡住碎片/抽卡的取得速度，把掉落機率跟數量都提高一截。
+                    // ★ 平衡調整：鍛造石是裝備強化的唯一來源（4 個裝備欄、每欄最高 20 級，總量需求不小），
+                    // 跟寶石一起調高掉落機率與數量，避免裝備強化卡關。
                     const diamondBonus = Math.min(8, Math.floor(totalStage / 10)); // 每 10 關 +1，最多 +8
-                    const stoneBonus = Math.min(4, Math.floor(totalStage / 18)); // 每 18 關 +1，最多 +4
+                    const stoneBonus = Math.min(6, Math.floor(totalStage / 12)); // 每 12 關 +1，最多 +6
                     let extraDiamonds = Math.random() < 0.45 ? (3 + diamondBonus) : 0;
-                    let extraStones = Math.random() < 0.20 ? (1 + stoneBonus) : 0;
+                    let extraStones = Math.random() < 0.35 ? (2 + stoneBonus) : 0;
                     GAME_STATE.gold += gReward; GAME_STATE.heroExp += eReward; GAME_STATE.diamonds += extraDiamonds; GAME_STATE.forgeStones += extraStones;
 
                     let chapterBlocked = false;
@@ -5771,8 +5595,8 @@
             else if (GAME_STATE.currentMode === 'season') {document.getElementById('battle-stage-title').innerText = `賽季討伐`;}
             else if (GAME_STATE.currentMode === 'rift') {document.getElementById('battle-stage-title').innerText = `迷宮 ${GAME_STATE.riftFloor || 1}層`;}
             else if (GAME_STATE.currentMode === 'festival') {document.getElementById('battle-stage-title').innerText = `迴廊 ${GAME_STATE.festivalFloor || 1}層`;}
-            else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon_')) {
-                const dType = GAME_STATE.currentMode.split('_')[1]; const names = {gold: '黃金寶庫', exp: '幻影之森', stone: '熔爐深淵'}; document.getElementById('battle-stage-title').innerText = `${names[dType]} T${getDungeonFarmLevel(dType)}-${GAME_STATE.dungeonRun[dType].level}`;
+            else if (GAME_STATE.currentMode === 'dungeon') {
+                document.getElementById('battle-stage-title').innerText = `深淵秘境`;
             }
             else {document.getElementById('battle-stage-title').innerText = `${GAME_STATE.stage.chapter}-${GAME_STATE.stage.level}`;}
             initCombatUnits();
