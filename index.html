@@ -1320,6 +1320,11 @@
                             class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-sky-900/60 text-sky-300 border border-sky-600">即時挑戰</button>
                         <button onclick="switchArenaSubTab('shop')" id="btn-arena-shop"
                             class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">榮譽商店</button>
+                        <button onclick="switchArenaSubTab('mail')" id="btn-arena-mail"
+                            class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] relative">信件<span
+                                id="arena-mail-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-black"></span></button>
+                        <button onclick="switchArenaSubTab('admin')" id="btn-arena-admin"
+                            class="hidden flex-1 py-2 rounded-lg text-[11px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">管理員</button>
                     </div>
 
                     <!-- 即時挑戰子頁 -->
@@ -1334,6 +1339,37 @@
                     <div id="arena-shop-panel" class="hidden flex-col gap-2">
                         <p class="text-[9px] text-stone-500">打贏競技場對戰可以獲得榮譽點數，在這裡換成其他資源。</p>
                         <div id="arena-shop-list" class="space-y-2"></div>
+                    </div>
+
+                    <!-- 信件子頁 -->
+                    <div id="arena-mail-panel" class="hidden flex-col gap-2">
+                        <p class="text-[9px] text-stone-500">管理員可能會透過信件發放資源，記得來這裡領取。</p>
+                        <div id="arena-mail-list" class="space-y-2"></div>
+                    </div>
+
+                    <!-- 管理員子頁：只有帳號符合白名單的人看得到 -->
+                    <div id="arena-admin-panel" class="hidden flex-col gap-3">
+                        <p class="text-[9px] text-amber-400"><i class="fa-solid fa-shield-halved mr-1"></i>管理員身分，這裡發的信件所有玩家都領得到。</p>
+                        <div class="glass-panel p-3 rounded-xl border border-amber-700/40 flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <select id="admin-mail-target-type" onchange="document.getElementById('admin-mail-target-uid').classList.toggle('hidden', this.value !== 'uid')" class="flex-1 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                    <option value="all">廣播給所有玩家</option>
+                                    <option value="uid">指定玩家 UID</option>
+                                </select>
+                                <input id="admin-mail-target-uid" type="text" placeholder="玩家 UID" class="hidden flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                            </div>
+                            <input id="admin-mail-title" type="text" placeholder="標題" maxlength="20" class="bg-black/40 text-stone-200 text-[11px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                            <textarea id="admin-mail-body" placeholder="內容" maxlength="200" rows="2" class="bg-black/40 text-stone-200 text-[11px] px-2 py-1.5 rounded border border-[#3e3328] outline-none resize-none"></textarea>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input id="admin-mail-gold" type="number" placeholder="金幣" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-exp" type="number" placeholder="英雄經驗" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-diamond" type="number" placeholder="寶石" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-stone" type="number" placeholder="鍛造石" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-ticket" type="number" placeholder="召喚卷軸" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-honor" type="number" placeholder="榮譽點數" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                            </div>
+                            <button onclick="sendAdminMail()" class="w-full py-2 bg-amber-800/70 text-amber-200 text-[11px] font-bold rounded border border-amber-600 hover:bg-amber-700 transition">發送信件</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1962,17 +1998,25 @@
             updateArenaAccountUI();
             renderArenaShop();
             startArenaPresenceLoop();
+            listenPlayerMail();
+            document.getElementById('btn-arena-admin').classList.toggle('hidden', !isCurrentUserAdmin());
         }
 
         function switchArenaSubTab(sub) {
             ToneAudioEngine.playClick();
-            const isPvp = sub === 'pvp';
-            document.getElementById('arena-pvp-panel').classList.toggle('hidden', !isPvp);
-            document.getElementById('arena-pvp-panel').classList.toggle('flex', isPvp);
-            document.getElementById('arena-shop-panel').classList.toggle('hidden', isPvp);
-            document.getElementById('arena-shop-panel').classList.toggle('flex', !isPvp);
-            document.getElementById('btn-arena-pvp').className = `flex-1 py-2 rounded-lg text-[11px] font-bold ${isPvp ? 'bg-sky-900/60 text-sky-300 border border-sky-600' : 'bg-black/40 text-stone-400 border border-[#3e3328]'}`;
-            document.getElementById('btn-arena-shop').className = `flex-1 py-2 rounded-lg text-[11px] font-bold ${!isPvp ? 'bg-amber-900/60 text-amber-300 border border-amber-600' : 'bg-black/40 text-stone-400 border border-[#3e3328]'}`;
+            const panels = {pvp: 'arena-pvp-panel', shop: 'arena-shop-panel', mail: 'arena-mail-panel', admin: 'arena-admin-panel'};
+            const btnColors = {pvp: 'bg-sky-900/60 text-sky-300 border-sky-600', shop: 'bg-amber-900/60 text-amber-300 border-amber-600', mail: 'bg-emerald-900/60 text-emerald-300 border-emerald-600', admin: 'bg-rose-900/60 text-rose-300 border-rose-600'};
+            Object.keys(panels).forEach(key => {
+                const el = document.getElementById(panels[key]);
+                if (!el) return;
+                el.classList.toggle('hidden', key !== sub);
+                el.classList.toggle('flex', key === sub);
+                const btn = document.getElementById('btn-arena-' + key);
+                if (btn && !btn.classList.contains('hidden')) {
+                    btn.className = `flex-1 py-2 rounded-lg text-[11px] font-bold relative border ${key === sub ? btnColors[key] : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
+                }
+            });
+            if (sub === 'mail') document.getElementById('arena-mail-dot').classList.add('hidden'); // 打開信件分頁就當作已讀，把小紅點關掉
         }
 
         async function saveMpDisplayName() {
@@ -1998,6 +2042,23 @@
         // ★ 即時廣播：跟舊版「手動上傳陣容」不同，這裡是停留在競技場畫面時，每 20 秒自動把「目前上陣佈陣」
         // 廣播成一份線上狀態（不用另外按上傳鈕，陣容永遠是最新的）。只存 heroId + 站位 + level/star/equips，
         // 對手挑戰時會用同一份 HERO_DATABASE 在自己的裝置上重建出完整戰鬥數值來模擬戰鬥。
+        // ★ 反作弊（局部）：竄改本地存檔（例如亂改進度碼再匯入）沒辦法完全防止——這個架構沒有真正的伺服器在算
+        // 每一份戰鬥/資源，本質上就是單機遊戲。但一旦要素材廣播到競技場讓別人挑戰，竄改過的假資料就會影響到
+        // 其他真人玩家，所以至少在「送出去給別人看到」這一關做基本的合理性檢查：用遊戲本身的等級/星級公式
+        // 反推每個英雄「理論上限」的戰力，超出太多就直接擋下來不廣播，並提示可能是進度異常。
+        // 真正擋得住的是下面「Firestore 安全規則」那段（伺服器端強制上限，用戶端 JS 改不掉）。
+        function getPlausibleMaxHeroPower(heroId) {
+            const db = HERO_DATABASE.find(h => h.id === heroId);
+            if (!db) return 0;
+            const maxLevelMult = 1 + (MAX_HERO_LEVEL - 1) * 0.12;
+            const maxStarMult = 1 + (MAX_STAR_LEVEL - 1) * 0.15;
+            const maxArtifactMult = 1 + (100 * 0.01); // 聖物強化滿階 100 階
+            const maxEquipMult = 1.6; // 4 件裝備都滿 20 級的粗估加成上限
+            const totalMult = maxLevelMult * maxStarMult * maxArtifactMult * maxEquipMult;
+            const maxHp = db.baseHp * totalMult, maxAtk = db.baseAtk * totalMult, maxDef = db.baseDef * totalMult;
+            return maxHp * 0.5 + maxAtk * 2 + maxDef * 1.5 + (db.crit || 0) * 10 * 1.5;
+        }
+
         async function broadcastArenaPresence() {
             if (!mpConnected) return;
             const team = (GAME_STATE.gridSlots || []).map((id, idx) => {
@@ -2005,6 +2066,19 @@
                 const r = GAME_STATE.roster[id];
                 return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0], row: Math.floor(idx / 2), col: (idx % 2) * 2};
             }).filter(Boolean);
+
+            // 逐一檢查每位上陣英雄是否超出這個遊戲數值系統理論上能達到的合理上限
+            for (const slot of team) {
+                const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === slot.heroId));
+                if (!h) continue;
+                const plausibleMax = getPlausibleMaxHeroPower(slot.heroId);
+                if (h.combatPower > plausibleMax * 1.05) { // 留 5% 容錯空間
+                    console.warn(`偵測到 ${slot.heroId} 戰力異常 (${h.combatPower} > 上限 ${Math.floor(plausibleMax)})，已停止廣播到競技場`);
+                    showToast('偵測到陣容數值異常，暫時無法廣播到競技場');
+                    return;
+                }
+            }
+
             try {
                 await fbDb.collection('arenaPresence').doc(fbUser.uid).set({
                     displayName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`,
@@ -2029,6 +2103,7 @@
             const wasActive = !!arenaPresenceInterval;
             if (arenaPresenceInterval) {clearInterval(arenaPresenceInterval); arenaPresenceInterval = null;}
             if (arenaPresenceUnsub) {arenaPresenceUnsub(); arenaPresenceUnsub = null;}
+            if (arenaMailUnsub) {arenaMailUnsub(); arenaMailUnsub = null;}
             if (wasActive && mpConnected && fbDb && fbUser) fbDb.collection('arenaPresence').doc(fbUser.uid).delete().catch(() => {});
         }
 
@@ -2111,6 +2186,135 @@
             showToast(`兌換成功：${item.name} x${item.amount}`);
         }
 
+        /* ============================================================
+           信件系統 + 管理員發放資源
+           mail/{uid} 這份文件底下存一個 messages 陣列，每封信有 rewards 物件（各種資源的數量）。
+           一般玩家：只能讀自己的信、領取獎勵（獎勵直接加進本地存檔，然後把那封信標記為已領取）。
+           管理員：Email 符合下面 ADMIN_EMAILS 清單的帳號，才看得到「管理員」分頁，可以發信給
+           單一玩家（指定 UID）或廣播給所有玩家（遍歷 players collection 逐一寫入）。
+           ★ 這裡的白名單只控制「要不要顯示管理員介面」，真正擋壞人的關卡在 Firestore 安全規則
+           （見下方說明文字），沒設好安全規則的話，任何人都能打開瀏覽器主控台直接呼叫 sendAdminMail()
+           幫自己塞資源，這點會在回覆裡另外說明。
+           ============================================================ */
+        const ADMIN_EMAILS = ['huangjingyuan0128@gmail.com'
+            // ★ 把你自己註冊帳號用的 Email 填進這個陣列，符合的帳號登入後就會看到「管理員」分頁
+            // 'you@example.com',
+        ];
+
+        function isCurrentUserAdmin() {
+            return !!(fbUser && !fbUser.isAnonymous && fbUser.email && ADMIN_EMAILS.includes(fbUser.email));
+        }
+
+        // 即時監聽自己的信箱：只要管理員發了新信，畫面會自動更新，不用手動整理
+        let arenaMailUnsub = null;
+        function listenPlayerMail() {
+            if (!mpConnected) return;
+            if (arenaMailUnsub) arenaMailUnsub();
+            arenaMailUnsub = fbDb.collection('mail').doc(fbUser.uid).onSnapshot(doc => {
+                const list = document.getElementById('arena-mail-list');
+                const dot = document.getElementById('arena-mail-dot');
+                if (!list) return;
+                const messages = (doc.exists && doc.data().messages) || [];
+                const unclaimedCount = messages.filter(m => !m.claimed).length;
+                if (dot) dot.classList.toggle('hidden', unclaimedCount === 0 || !document.getElementById('arena-mail-panel').classList.contains('hidden'));
+                if (messages.length === 0) {
+                    list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-6">信箱空空如也</div>`;
+                    return;
+                }
+                list.innerHTML = '';
+                [...messages].reverse().forEach(msg => {
+                    const rewardText = Object.entries(msg.rewards || {}).filter(([, v]) => v > 0)
+                        .map(([k, v]) => `${{gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', honorPoints: '榮譽點數'}[k] || k} +${v}`).join('／');
+                    const card = document.createElement('div');
+                    card.className = `glass-panel p-3 rounded-xl border ${msg.claimed ? 'border-[#3e3328] opacity-60' : 'border-emerald-600/50'}`;
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-[11px] font-bold text-stone-200">${msg.title || '無標題'}</span>
+                            ${msg.claimed ? '<span class="text-[9px] text-stone-500">已領取</span>' : ''}
+                        </div>
+                        <p class="text-[10px] text-stone-400 mb-2">${msg.body || ''}</p>
+                        ${rewardText ? `<p class="text-[9px] text-amber-400 mb-2">${rewardText}</p>` : ''}
+                        ${msg.claimed ? '' : `<button class="w-full py-1.5 bg-emerald-900/60 text-emerald-300 text-[10px] font-bold rounded border border-emerald-700 hover:bg-emerald-800 transition">領取</button>`}`;
+                    if (!msg.claimed) card.querySelector('button').onclick = () => claimMailReward(msg.id);
+                    list.appendChild(card);
+                });
+            }, err => console.warn('信箱監聽失敗：', err));
+        }
+
+        async function claimMailReward(msgId) {
+            ToneAudioEngine.playClick();
+            if (!mpConnected) return;
+            try {
+                const ref = fbDb.collection('mail').doc(fbUser.uid);
+                const snap = await ref.get();
+                if (!snap.exists) return;
+                const messages = snap.data().messages || [];
+                const msg = messages.find(m => m.id === msgId);
+                if (!msg || msg.claimed) return;
+
+                const r = msg.rewards || {};
+                if (r.gold) GAME_STATE.gold += r.gold;
+                if (r.heroExp) GAME_STATE.heroExp += r.heroExp;
+                if (r.diamonds) GAME_STATE.diamonds += r.diamonds;
+                if (r.forgeStones) GAME_STATE.forgeStones += r.forgeStones;
+                if (r.tickets) GAME_STATE.tickets += r.tickets;
+                if (r.honorPoints) GAME_STATE.honorPoints = (GAME_STATE.honorPoints || 0) + r.honorPoints;
+                saveGame(); updateHUD();
+
+                msg.claimed = true;
+                await ref.update({messages});
+                showToast('已領取信件獎勵！');
+            } catch (err) {console.warn('領取信件失敗：', err); showToast('領取失敗，請檢查網路連線');}
+        }
+
+        // 管理員發信：可以指定單一玩家 UID，或廣播給 players collection 裡的所有人
+        async function sendAdminMail() {
+            ToneAudioEngine.playClick();
+            if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); return;}
+            const title = document.getElementById('admin-mail-title').value.trim().slice(0, 20);
+            const body = document.getElementById('admin-mail-body').value.trim().slice(0, 200);
+            if (!title) {showToast('請輸入標題'); return;}
+            const rewards = {
+                gold: parseInt(document.getElementById('admin-mail-gold').value) || 0,
+                heroExp: parseInt(document.getElementById('admin-mail-exp').value) || 0,
+                diamonds: parseInt(document.getElementById('admin-mail-diamond').value) || 0,
+                forgeStones: parseInt(document.getElementById('admin-mail-stone').value) || 0,
+                tickets: parseInt(document.getElementById('admin-mail-ticket').value) || 0,
+                honorPoints: parseInt(document.getElementById('admin-mail-honor').value) || 0
+            };
+            const targetType = document.getElementById('admin-mail-target-type').value;
+            const msg = {id: `m_${Date.now()}_${Math.floor(Math.random() * 1000)}`, title, body, rewards, sentAt: Date.now(), claimed: false};
+
+            try {
+                if (targetType === 'uid') {
+                    const targetUid = document.getElementById('admin-mail-target-uid').value.trim();
+                    if (!targetUid) {showToast('請輸入玩家 UID'); return;}
+                    await sendMailToUid(targetUid, msg);
+                    showToast('已發送給指定玩家');
+                } else {
+                    const playersSnap = await fbDb.collection('players').get();
+                    let count = 0;
+                    for (const doc of playersSnap.docs) {
+                        await sendMailToUid(doc.id, msg);
+                        count++;
+                    }
+                    showToast(`已廣播給 ${count} 位玩家`);
+                }
+                document.getElementById('admin-mail-title').value = '';
+                document.getElementById('admin-mail-body').value = '';
+                ['gold', 'exp', 'diamond', 'stone', 'ticket', 'honor'].forEach(k => document.getElementById('admin-mail-' + k).value = '');
+            } catch (err) {console.warn('發信失敗：', err); showToast('發信失敗，請檢查網路連線或安全規則設定');}
+        }
+
+        async function sendMailToUid(uid, msg) {
+            const ref = fbDb.collection('mail').doc(uid);
+            const snap = await ref.get();
+            const messages = (snap.exists && snap.data().messages) || [];
+            messages.push(msg);
+            await ref.set({messages});
+        }
+
+
 
         const BUILT_IN_ASSETS = {
             // 如果你希望有一張「永遠覆蓋全局」的背景再填這裡，否則留空
@@ -2159,7 +2363,7 @@
 
                 // --- S1 限定 ---
                 'h_uther': './images/h_uther.png',      // [UR] 聖光使者·烏瑟
-                'h_s1_lr': './images/h_s1_lr.png',      // [LR] 夜魘收割者·莫瑟斯
+                'h_s1_lr': '',      // [LR] 夜魘收割者·莫瑟斯
                 'h_s1_ssr1': './images/h_s1_ssr1.png',    // 亡靈督軍
                 'h_s1_ssr2': './images/h_s1_ssr2.png',    // 瘟疫使者
 
@@ -3688,7 +3892,7 @@
            避免跟舊版一樣線性疊加會炸到 +400%），消耗資源也大幅提高，變成真正的長期養成目標。
            ============================================================ */
         const ALTAR_MAX_ARTIFACT_TIER = 100;
-        const ALTAR_PRAYER_COOLDOWN_MS = 1 * 60 * 60 * 1000; // 24 小時可領一次
+        const ALTAR_PRAYER_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小時可領一次
         let selectedAltarHeroId = null;
 
         function getAltarArtifactCost(tier) {
@@ -3699,7 +3903,7 @@
             // 一樣是長期目標，但至少是「打得到終點」的長期目標。
             return {
                 gold: 2000 + tier * 300,
-                stones: 100 + tier * 8
+                stones: 80 + tier * 8
             };
         }
 
@@ -3712,10 +3916,10 @@
                 renderAltarPrayerStatus();
                 return;
             }
-            const gold = 100000 + GAME_STATE.highestStage.chapter * 100;
-            const exp = 100000 + GAME_STATE.highestStage.chapter * 60;
-            const stones = 300000 + GAME_STATE.highestStage.chapter * 3;
-            const diamonds = 10000 + Math.floor(GAME_STATE.highestStage.chapter * 1.5);
+            const gold = 800 + GAME_STATE.highestStage.chapter * 100;
+            const exp = 500 + GAME_STATE.highestStage.chapter * 60;
+            const stones = 30 + GAME_STATE.highestStage.chapter * 3;
+            const diamonds = 30 + Math.floor(GAME_STATE.highestStage.chapter * 1.5);
             GAME_STATE.gold += gold; GAME_STATE.heroExp += exp; GAME_STATE.forgeStones += stones; GAME_STATE.diamonds += diamonds;
             GAME_STATE.lastAltarPrayerTime = now;
             saveGame(); updateHUD(); renderAltarPrayerStatus();
@@ -4050,7 +4254,7 @@
         // ★ 秘境／賽季這類需要重複刷的模式常常嫌動畫太慢，把上限從 x3 拉高到 x10
         function cycleBattleSpeed() {
             ToneAudioEngine.playClick();
-            const SPEED_STEPS = [1, 2, 3, 5, 10,15,20];
+            const SPEED_STEPS = [1, 2, 3, 5, 10];
             const idx = SPEED_STEPS.indexOf(battleSpeed);
             battleSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
             const btn = document.getElementById('btn-battle-speed');
@@ -5077,8 +5281,8 @@
                     showToast("戰鬥次數不足，請繼續遠征或討伐！");
                 }
             } else if (type === 'gold') {
-                if (GAME_STATE.gold >= 80000) {
-                    GAME_STATE.gold -= 80000;
+                if (GAME_STATE.gold >= 8000) {
+                    GAME_STATE.gold -= 8000;
                     GAME_STATE.specialTickets += 2;
                     showToast("🎉 成功花費金幣兌換 2 張 特急招募卷！");
                 } else {
@@ -5095,8 +5299,8 @@
                 }
             } else if (type === 'stone') {
                 // ★ 新增任務：消耗鍛造石直接兌換，裝備都點滿、鍛造石用不完的玩家可以拿來換卷軸
-                if (GAME_STATE.forgeStones >= 80000) {
-                    GAME_STATE.forgeStones -= 80000;
+                if (GAME_STATE.forgeStones >= 800) {
+                    GAME_STATE.forgeStones -= 800;
                     GAME_STATE.specialTickets += 2;
                     showToast("🎉 成功花費鍛造石兌換 2 張 特急招募卷！");
                 } else {
@@ -5104,8 +5308,8 @@
                 }
             } else if (type === 'exp') {
                 // ★ 新增任務：消耗英雄經驗直接兌換，英雄都練滿等、經驗堆積用不完時可以拿來換卷軸
-                if (GAME_STATE.heroExp >= 500000) {
-                    GAME_STATE.heroExp -= 500000;
+                if (GAME_STATE.heroExp >= 5000) {
+                    GAME_STATE.heroExp -= 5000;
                     GAME_STATE.specialTickets += 1;
                     showToast("🎉 成功花費英雄經驗兌換 1 張 特急招募卷！");
                 } else {
@@ -6367,7 +6571,7 @@
                     const img = customImgCache[e.baseId];
 
                     // 【智慧縮放】：手機直式倍率拉高到 6.5（電腦版維持霸氣的 7 倍）
-                    const scaleMult = isMobile ? 7 : 7;
+                    const scaleMult = isMobile ? 6.5 : 7;
                     currentDrawSize = shapeSize * scaleMult;
 
                     // 【位置微調】：如果是 Boss 且在手機上，把圖稍微往下壓 (0.65)，避免頭被 UI 擋住
@@ -6645,7 +6849,7 @@
             } else if (isWin) {
                 if (GAME_STATE.currentMode === 'tower') {
                     // ★ 平衡調整：試煉塔是穩定寶石來源之一，獎勵基礎值與成長都調高一些
-                    const nextD = 100 + (GAME_STATE.towerLevel * 50); const nextS = 5 + (GAME_STATE.towerLevel * 2); GAME_STATE.diamonds += nextD; GAME_STATE.forgeStones += nextS; GAME_STATE.towerLevel++; document.getElementById('overlay-desc').innerText = `塔 ${GAME_STATE.towerLevel - 1}F 通關！獲得 ${nextD} 寶石，${nextS} 鍛造石。`;
+                    const nextD = 55 + (GAME_STATE.towerLevel * 10); const nextS = 5 + (GAME_STATE.towerLevel * 2); GAME_STATE.diamonds += nextD; GAME_STATE.forgeStones += nextS; GAME_STATE.towerLevel++; document.getElementById('overlay-desc').innerText = `塔 ${GAME_STATE.towerLevel - 1}F 通關！獲得 ${nextD} 寶石，${nextS} 鍛造石。`;
                 } else {
                     // 遠征獎勵：改用「關卡倍率」讓越高關卡的獎勵成長更明顯（原本是純線性加法，高關卡感受不出差異）。
                     // ★ 平衡調整：成長率從 0.06 降到 0.035——現在英雄升級曲線拉長到 200 級、花費也改成二次成長，
