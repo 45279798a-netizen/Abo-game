@@ -1144,7 +1144,7 @@
                 <div
                     class="max-w-md mx-auto mb-3 bg-[#1a130e] border border-[#3e3328] rounded-lg p-2.5 flex flex-col gap-1.5">
                     <div class="flex justify-between items-center text-[9px]">
-                        <span class="text-stone-400"><i class="fa-solid fa-scroll text-indigo-400 mr-1"></i>持有卷軸：<span
+                        <span class="text-stone-400"><i id="gacha-ticket-icon" class="fa-solid fa-scroll text-indigo-400 mr-1"></i><span id="gacha-ticket-label">持有卷軸</span>：<span
                                 id="gacha-current-tickets" class="text-white font-bold">0</span></span>
                         <span class="text-stone-400">距保底 <span id="gacha-pity-rarity">SSR</span>：<span id="gacha-pity"
                                 class="text-fantasy-gold font-bold">0</span>/<span id="gacha-pity-max">80</span></span>
@@ -1179,22 +1179,7 @@
                             <button id="gacha-pull10-btn"
                                 class="flex-1 py-2.5 rounded-lg text-xs font-bold border transition active:scale-95">10抽</button>
                         </div>
-                    </div>
-                </div>
-
-                <div class="max-w-md mx-auto pb-6">
-                    <!-- 寶石兌換卷軸 -->
-                    <div
-                        class="mt-2 bg-[#1a130e] p-3 rounded-lg border border-[#3e3328] flex justify-between items-center text-[10px]">
-                        <span class="text-stone-400">寶石兌換普通卷軸</span>
-                        <div class="flex gap-2">
-                            <button onclick="buyTickets(1)"
-                                class="px-2 py-1 bg-black/60 rounded border border-sky-900 text-sky-400 hover:bg-sky-900/30 transition">100
-                                <i class="fa-solid fa-gem"></i></button>
-                            <button onclick="buyTickets(10)"
-                                class="px-2 py-1 bg-black/60 rounded border border-sky-900 text-sky-400 hover:bg-sky-900/30 transition">1000
-                                <i class="fa-solid fa-gem"></i></button>
-                        </div>
+                        <p id="gacha-diamond-hint" class="text-[8px] text-stone-500 mt-2"><i class="fa-solid fa-gem mr-1"></i>召喚卷軸不夠時，會自動用寶石補足差額（60 寶石 = 1 抽）</p>
                     </div>
                 </div>
             </div>
@@ -1317,7 +1302,9 @@
             </div>
             <div class="p-3 bg-[#0a0806] border-t border-[#5a4634] flex gap-3 shrink-0 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]"
                 id="modal-hero-actions">
-                <button onclick="upgradeSelectedHeroLevel()" id="btn-upgrade-lvl"
+                <button onmousedown="startLevelUpHold()" onmouseup="stopLevelUpHold()"
+                    onmouseleave="cancelLevelUpHold()" ontouchstart="startLevelUpHold()"
+                    ontouchend="stopLevelUpHold()" ontouchcancel="cancelLevelUpHold()" id="btn-upgrade-lvl"
                     class="flex-1 py-2 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs flex flex-col items-center justify-center transition active:scale-95 hover:border-fantasy-gold">升級</button>
                 <button onclick="upgradeSelectedHeroStar()" id="btn-upgrade-star"
                     class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">覺醒</button>
@@ -1441,8 +1428,12 @@
             英靈降臨</h2>
         <div id="summon-result-box"
             class="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-8 w-full max-w-2xl justify-items-center"></div>
-        <button onclick="document.getElementById('summon-modal').classList.add('hidden')"
-            class="btn-gold px-10 py-3 rounded-lg font-bold text-sm tracking-widest">確認收編</button>
+        <div class="flex gap-3">
+            <button onclick="document.getElementById('summon-modal').classList.add('hidden')"
+                class="px-8 py-3 rounded-lg font-bold text-sm tracking-widest bg-[#2a2118] text-stone-300 border border-[#5a4634] hover:border-fantasy-gold transition active:scale-95">確認收編</button>
+            <button onclick="performSummon(10, gachaCurrentPool)"
+                class="btn-gold px-8 py-3 rounded-lg font-bold text-sm tracking-widest active:scale-95">再次10連</button>
+        </div>
     </div>
 
     <!-- 設定 Modal -->
@@ -1456,29 +1447,12 @@
             <h2 class="text-lg font-bold text-fantasy-gold mb-4 border-b border-[#3e3328] pb-2 shrink-0">遊戲設定與備份</h2>
 
             <div class="overflow-y-auto custom-scrollbar space-y-4 pr-1">
-                <div class="bg-[#1a120c] p-4 rounded-lg border border-[#3e3328] shadow-inner-dark">
-                    <label class="block text-stone-300 text-xs font-bold mb-2"><i
-                            class="fa-solid fa-image mr-1"></i>更改全局背景</label>
-                    <input type="file" id="bg-upload" accept="image/*" class="hidden"
-                        onchange="processImageUpload(this, 'bg')">
-                    <button onclick="document.getElementById('bg-upload').click()"
-                        class="w-full py-2 bg-stone-800 text-stone-200 text-[10px] font-bold rounded mb-2 hover:bg-stone-700 transition">上傳自訂圖片</button>
-                    <button onclick="resetCustomImage('bg')"
-                        class="w-full py-2 bg-red-900/30 text-red-400 text-[10px] font-bold rounded border border-red-900/50 hover:bg-red-900/50 transition">恢復預設背景</button>
-                </div>
-
-                <div class="bg-[#1a120c] p-4 rounded-lg border border-[#3e3328] shadow-inner-dark">
-                    <label class="block text-stone-300 text-xs font-bold mb-2"><i
-                            class="fa-solid fa-user-pen mr-1"></i>更換實體立繪 (騎士)</label>
-                    <select id="hero-custom-select"
-                        class="w-full mb-2 bg-[#0a0806] text-stone-300 text-[10px] p-2 rounded border border-[#3e3328] outline-none focus:border-fantasy-gold transition"></select>
-                    <input type="file" id="hero-upload" accept="image/png, image/webp" class="hidden"
-                        onchange="processImageUpload(this, 'hero')">
-                    <button onclick="document.getElementById('hero-upload').click()"
-                        class="w-full py-2 bg-stone-800 text-stone-200 text-[10px] font-bold rounded mb-2 hover:bg-stone-700 transition">上傳去背圖片
-                        (PNG/WEBP)</button>
-                    <button onclick="resetCustomImage('hero')"
-                        class="w-full py-2 bg-red-900/30 text-red-400 text-[10px] font-bold rounded border border-red-900/50 hover:bg-red-900/50 transition">恢復預設圖標</button>
+                <div class="bg-[#1a120c] p-4 rounded-lg border border-emerald-900/50 shadow-inner-dark">
+                    <label class="block text-emerald-400 text-xs font-bold mb-2"><i
+                            class="fa-solid fa-arrows-rotate mr-1"></i>重新載入</label>
+                    <p class="text-[8px] text-stone-400 mb-3">畫面卡住、動畫跑掉，或是更新版本後想確保載入最新內容時可以用這個；不會清除存檔進度。</p>
+                    <button onclick="reloadGame()"
+                        class="w-full py-2 bg-emerald-900/50 text-emerald-300 text-[10px] font-bold rounded border border-emerald-800/50 hover:bg-emerald-900/80 transition">重新載入遊戲</button>
                 </div>
 
                 <div class="bg-[#1a120c] p-4 rounded-lg border border-sky-900/50 shadow-inner-dark">
@@ -1576,37 +1550,67 @@
     <div id="season-task-modal"
         class="fixed inset-0 bg-black/90 z-[60] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
         <div
-            class="glass-panel w-full max-w-sm rounded-xl p-5 relative border border-rose-700/50 shadow-[0_0_30px_rgba(244,63,94,0.2)]">
+            class="glass-panel w-full max-w-sm rounded-xl p-5 relative border border-rose-700/50 shadow-[0_0_30px_rgba(244,63,94,0.2)] max-h-[85vh] flex flex-col">
             <button onclick="closeSeasonTaskModal()"
                 class="absolute top-3 right-3 text-stone-400 bg-black/50 hover:bg-black w-8 h-8 rounded-full transition"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 class="text-lg font-bold text-rose-400 font-magic mb-1 flex items-center"><i
+            <h2 class="text-lg font-bold text-rose-400 font-magic mb-1 flex items-center shrink-0"><i
                     class="fa-solid fa-clipboard-list mr-2"></i>賽季特急任務</h2>
-            <p class="text-[9px] text-stone-400 mb-4 border-b border-[#3e3328] pb-2">完成無限循環任務，獲取特急招募卷。<br><span
+            <p class="text-[9px] text-stone-400 mb-4 border-b border-[#3e3328] pb-2 shrink-0">完成無限循環任務，獲取特急招募卷。<br><span
                     class="text-emerald-400 font-bold">進度可重複累積，努力農起來吧！</span></p>
 
-            <div class="space-y-3">
+            <div class="space-y-3 overflow-y-auto custom-scrollbar pr-1">
                 <!-- 任務 1：戰鬥次數 -->
                 <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
                     <div>
                         <div class="text-xs font-bold text-stone-200">身經百戰</div>
-                        <div class="text-[9px] text-stone-400 mt-1">完成任意戰鬥 5 次</div>
+                        <div class="text-[9px] text-stone-400 mt-1">完成任意戰鬥 4 次</div>
                         <div class="text-[10px] text-rose-400 font-bold mt-1">進度: <span id="task-battle-prog">0</span> /
-                            5
+                            4
                         </div>
                     </div>
                     <button onclick="claimSeasonTask('battle')"
                         class="px-3 py-2 rounded bg-rose-900/50 border border-rose-700 text-[10px] font-bold text-rose-200 hover:bg-rose-700 transition active:scale-95 shadow">領取
-                        1 卷</button>
+                        2 卷</button>
                 </div>
                 <!-- 任務 2：消耗金幣 -->
                 <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
                     <div>
                         <div class="text-xs font-bold text-stone-200">王國後勤</div>
-                        <div class="text-[9px] text-stone-400 mt-1">消耗 10,000 金幣直接兌換</div>
+                        <div class="text-[9px] text-stone-400 mt-1">消耗 8,000 金幣直接兌換</div>
                     </div>
                     <button onclick="claimSeasonTask('gold')"
                         class="px-3 py-2 rounded bg-yellow-900/50 border border-yellow-700 text-[10px] font-bold text-yellow-200 hover:bg-yellow-700 transition active:scale-95 shadow">兌換
+                        2 卷</button>
+                </div>
+                <!-- 任務 3：消耗寶石 -->
+                <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
+                    <div>
+                        <div class="text-xs font-bold text-stone-200">寶石祭儀</div>
+                        <div class="text-[9px] text-stone-400 mt-1">消耗 300 寶石直接兌換</div>
+                    </div>
+                    <button onclick="claimSeasonTask('diamond')"
+                        class="px-3 py-2 rounded bg-sky-900/50 border border-sky-700 text-[10px] font-bold text-sky-200 hover:bg-sky-700 transition active:scale-95 shadow">兌換
+                        2 卷</button>
+                </div>
+                <!-- 任務 4：消耗鍛造石 -->
+                <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
+                    <div>
+                        <div class="text-xs font-bold text-stone-200">鍛造貢獻</div>
+                        <div class="text-[9px] text-stone-400 mt-1">消耗 800 鍛造石直接兌換</div>
+                    </div>
+                    <button onclick="claimSeasonTask('stone')"
+                        class="px-3 py-2 rounded bg-emerald-900/50 border border-emerald-700 text-[10px] font-bold text-emerald-200 hover:bg-emerald-700 transition active:scale-95 shadow">兌換
+                        2 卷</button>
+                </div>
+                <!-- 任務 5：消耗英雄經驗 -->
+                <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
+                    <div>
+                        <div class="text-xs font-bold text-stone-200">陪練回收</div>
+                        <div class="text-[9px] text-stone-400 mt-1">消耗 5,000 英雄經驗直接兌換</div>
+                    </div>
+                    <button onclick="claimSeasonTask('exp')"
+                        class="px-3 py-2 rounded bg-purple-900/50 border border-purple-700 text-[10px] font-bold text-purple-200 hover:bg-purple-700 transition active:scale-95 shadow">兌換
                         1 卷</button>
                 </div>
             </div>
@@ -3372,7 +3376,7 @@
                 else document.getElementById('battle-stage-title').innerText = `${GAME_STATE.stage.chapter}-${GAME_STATE.stage.level}`;
             }
 
-            if (document.getElementById('gacha-current-tickets')) document.getElementById('gacha-current-tickets').innerText = GAME_STATE.tickets.toLocaleString();
+            if (document.getElementById('gacha-current-tickets')) refreshGachaTicketDisplay();
             if (document.getElementById('tower-level-display')) document.getElementById('tower-level-display').innerText = `${GAME_STATE.towerLevel}F`;
             refreshGachaPityUI();
             if (document.getElementById('dungeon-highscore')) {
@@ -4103,14 +4107,14 @@
             };
         }
 
-        function upgradeSelectedHeroLevel() {
-            ToneAudioEngine.playClick();
+        function upgradeSelectedHeroLevel(silent) {
+            if (!silent) ToneAudioEngine.playClick();
             const heroId = GAME_STATE.selectedHeroId;
-            if (!heroId) return; // 確保有選中英雄
+            if (!heroId) return false; // 確保有選中英雄
 
             const hero = GAME_STATE.roster[heroId];
 
-            if (hero.level >= MAX_HERO_LEVEL) {showToast(`已達最高等級 Lv.${MAX_HERO_LEVEL}！`); return;}
+            if (hero.level >= MAX_HERO_LEVEL) {if (!silent) showToast(`已達最高等級 Lv.${MAX_HERO_LEVEL}！`); return false;}
 
             // 這裡的公式必須和 openHeroModal 裡面顯示的費用一致
             const cost = getHeroLevelUpCost(hero.level);
@@ -4133,10 +4137,48 @@
                 if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
                 if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
 
-                showToast(`升級成功！當前等級 Lv.${hero.level}`);
+                if (!silent) showToast(`升級成功！當前等級 Lv.${hero.level}`);
+                return true;
             } else {
-                showToast("資源不足！需要更多金幣與英雄經驗。");
+                if (!silent) showToast("資源不足！需要更多金幣與英雄經驗。");
+                return false;
             }
+        }
+
+        // ★ 新增：長按「升級」按鈕連續升級，不用一級一級點到手痠。
+        // 按住 350ms 後開始每 90ms 自動升一級一次，直到放開、等級封頂、或資源不夠為止。
+        // 放開得夠快（沒滿 350ms）就當作一般單次點擊處理，只會升一級；長按放開則統一顯示一次「連續升級 N 次」，
+        // 不會在放開的瞬間又多觸發一次點擊事件（因為按鈕本身沒有掛 onclick，全部由 mousedown/up 自己控制）。
+        let levelUpHoldTimer = null, levelUpHoldCount = 0, levelUpHoldFired = false;
+        function startLevelUpHold() {
+            clearLevelUpHoldTimer();
+            levelUpHoldCount = 0; levelUpHoldFired = false;
+            levelUpHoldTimer = setTimeout(function tick() {
+                levelUpHoldFired = true;
+                if (upgradeSelectedHeroLevel(true)) {
+                    levelUpHoldCount++;
+                    levelUpHoldTimer = setTimeout(tick, 90);
+                } else {
+                    clearLevelUpHoldTimer();
+                }
+            }, 350);
+        }
+        function clearLevelUpHoldTimer() {
+            if (levelUpHoldTimer) {clearTimeout(levelUpHoldTimer); levelUpHoldTimer = null;}
+        }
+        function stopLevelUpHold() {
+            clearLevelUpHoldTimer();
+            if (levelUpHoldFired) {
+                if (levelUpHoldCount > 0) {ToneAudioEngine.playClick(); showToast(`連續升級 ${levelUpHoldCount} 次！`);}
+            } else {
+                upgradeSelectedHeroLevel(); // 放得夠快，視為一般單次點擊
+            }
+            levelUpHoldFired = false; levelUpHoldCount = 0;
+        }
+        function cancelLevelUpHold() {
+            // 手指/滑鼠滑出按鈕範圍：只清掉計時器，不補點一次，避免滑走還誤觸發升級
+            clearLevelUpHoldTimer();
+            levelUpHoldFired = false; levelUpHoldCount = 0;
         }
 
         // ============ 英雄潛能覺醒 (升星) 邏輯 ============
@@ -4235,13 +4277,6 @@
 
         function closeProbModal() {ToneAudioEngine.playClick(); document.getElementById('prob-modal').classList.add('hidden');}
 
-        function buyTickets(amount) {
-            // ★ 平衡調整：召喚卷軸的寶石兌換價從 100 降到 60，讓寶石換算成抽卡次數更划算一些
-            ToneAudioEngine.playClick(); const cost = amount * 60;
-            if (GAME_STATE.diamonds >= cost) {GAME_STATE.diamonds -= cost; GAME_STATE.tickets += amount; saveGame(); updateHUD(); showToast(`成功購買 ${amount} 張召喚卷軸！`);}
-            else showToast("寶石餘額不足！");
-        }
-
         // 召喚頁：卡池設定資料，setGachaPool() 依此動態填充單一橫幅，取代原本三個卡池堆疊卡片
         const GACHA_POOL_CONFIG = {
             standard: {
@@ -4271,8 +4306,20 @@
         };
         let gachaCurrentPool = 'standard';
 
+        // ★ 修正：原本「持有卷軸」這格不管切到哪個卡池都固定顯示普通召喚卷軸的數量，
+        // 切到「特急」卡池時看到的其實是普通卷軸、不是實際會扣的特急招募卷，容易讓人誤判自己夠不夠抽。
+        // 改成依目前選中的卡池動態切換要顯示哪一種票券。
+        function refreshGachaTicketDisplay() {
+            const isSpecial = gachaCurrentPool === 'special';
+            const val = isSpecial ? GAME_STATE.specialTickets : GAME_STATE.tickets;
+            document.getElementById('gacha-current-tickets').innerText = val.toLocaleString();
+            document.getElementById('gacha-ticket-label').innerText = isSpecial ? '持有特急招募卷' : '持有卷軸';
+            document.getElementById('gacha-ticket-icon').className = isSpecial ? 'fa-solid fa-bolt text-rose-400 mr-1' : 'fa-solid fa-scroll text-indigo-400 mr-1';
+        }
+
         function setGachaPool(pool) {
             gachaCurrentPool = pool;
+            refreshGachaTicketDisplay();
             const config = GACHA_POOL_CONFIG[pool];
 
             document.querySelectorAll('.gacha-pool-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.pool === pool));
@@ -4294,6 +4341,9 @@
             btn10.className = `flex-1 py-2.5 rounded-lg text-xs font-bold border transition active:scale-95 ${config.btn10Class}`;
             btn10.innerHTML = `10抽 (<i class="fa-solid ${config.ticketIcon} mx-1"></i>10)`;
             btn10.onclick = () => performSummon(10, pool);
+
+            // 寶石補抽提示只適用於常駐／限定池，特急池維持只能用特急招募卷
+            document.getElementById('gacha-diamond-hint').classList.toggle('hidden', pool === 'special');
 
             refreshGachaPityUI();
         }
@@ -4319,19 +4369,29 @@
             special: {urRate: 0.01, ssrRate: 0.08, srRate: 0.18, pityAt: 50, pityRarity: 'UR'}  // 特急：多了 1% UR，SSR 安慰率提高到 8%，50 抽保底 UR
         };
 
+        // ★ 常駐／限定卡池：卷軸不夠時可以直接用寶石補（跟商店換卷軸同一個 60 寶石/抽的價格），
+        // 不用再特地跑去商店先換卷軸才能抽，寶石可以直接抽。特急卡池維持只能用特急招募卷，不受影響。
+        const GACHA_DIAMOND_PER_PULL = 60;
         function performSummon(times, poolType = 'standard') {
             ToneAudioEngine.playClick();
 
             let isSpecial = poolType === 'special';
-            let costCurrency = isSpecial ? GAME_STATE.specialTickets : GAME_STATE.tickets;
+            let diamondsUsedForPulls = 0;
 
-            if (costCurrency < times) {
-                showToast(isSpecial ? "特急招募卷不足！請去解賽季任務。" : "召喚卷軸不足！");
-                return;
+            if (isSpecial) {
+                if (GAME_STATE.specialTickets < times) {showToast("特急招募卷不足！請去解賽季任務。"); return;}
+                GAME_STATE.specialTickets -= times;
+            } else {
+                const ticketsToUse = Math.min(GAME_STATE.tickets, times);
+                const remainingPulls = times - ticketsToUse;
+                const diamondCost = remainingPulls * GACHA_DIAMOND_PER_PULL;
+                if (remainingPulls > 0 && GAME_STATE.diamonds < diamondCost) {
+                    showToast(`召喚卷軸不足，寶石也不夠（還差 ${diamondCost - GAME_STATE.diamonds} 顆）！`);
+                    return;
+                }
+                GAME_STATE.tickets -= ticketsToUse;
+                if (remainingPulls > 0) {GAME_STATE.diamonds -= diamondCost; diamondsUsedForPulls = diamondCost;}
             }
-
-            if (isSpecial) GAME_STATE.specialTickets -= times;
-            else GAME_STATE.tickets -= times;
 
             const box = document.getElementById('summon-result-box'); box.innerHTML = '';
             const currentSeasonConfig = SEASON_CONFIG[GAME_STATE.season.id];
@@ -4407,6 +4467,7 @@
                 setTimeout(() => {el.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; el.style.opacity = '1'; el.style.transform = 'scale(1)';}, i * 100 + 50);
             }
             saveGame(); updateHUD(); document.getElementById('summon-modal').classList.remove('hidden');
+            if (diamondsUsedForPulls > 0) showToast(`召喚卷軸不足，已用 ${diamondsUsedForPulls} 顆寶石直接抽`);
         }
 
         // ============ 賽季任務系統邏輯 ============
@@ -4423,21 +4484,49 @@
 
         function claimSeasonTask(type) {
             ToneAudioEngine.playClick();
+            // ★ 平衡調整：特急招募卷太難拿，門檻降低、獎勵數量提高，讓特急卡池不會抽到卷軸見底就卡住
             if (type === 'battle') {
-                if (GAME_STATE.battlesFought >= 5) {
-                    GAME_STATE.battlesFought -= 5;
-                    GAME_STATE.specialTickets += 1;
-                    showToast("🎉 獲得 1 張 特急招募卷！");
+                if (GAME_STATE.battlesFought >= 4) {
+                    GAME_STATE.battlesFought -= 4;
+                    GAME_STATE.specialTickets += 2;
+                    showToast("🎉 獲得 2 張 特急招募卷！");
                 } else {
                     showToast("戰鬥次數不足，請繼續遠征或討伐！");
                 }
             } else if (type === 'gold') {
-                if (GAME_STATE.gold >= 10000) {
-                    GAME_STATE.gold -= 10000;
-                    GAME_STATE.specialTickets += 1;
-                    showToast("🎉 成功花費金幣兌換 1 張 特急招募卷！");
+                if (GAME_STATE.gold >= 8000) {
+                    GAME_STATE.gold -= 8000;
+                    GAME_STATE.specialTickets += 2;
+                    showToast("🎉 成功花費金幣兌換 2 張 特急招募卷！");
                 } else {
                     showToast("金幣不足！");
+                }
+            } else if (type === 'diamond') {
+                // ★ 新增任務：消耗寶石直接兌換，給不缺卷軸但寶石有餘裕的玩家多一條路可以換特急卷
+                if (GAME_STATE.diamonds >= 300) {
+                    GAME_STATE.diamonds -= 300;
+                    GAME_STATE.specialTickets += 2;
+                    showToast("🎉 成功花費寶石兌換 2 張 特急招募卷！");
+                } else {
+                    showToast("寶石不足！");
+                }
+            } else if (type === 'stone') {
+                // ★ 新增任務：消耗鍛造石直接兌換，裝備都點滿、鍛造石用不完的玩家可以拿來換卷軸
+                if (GAME_STATE.forgeStones >= 800) {
+                    GAME_STATE.forgeStones -= 800;
+                    GAME_STATE.specialTickets += 2;
+                    showToast("🎉 成功花費鍛造石兌換 2 張 特急招募卷！");
+                } else {
+                    showToast("鍛造石不足！");
+                }
+            } else if (type === 'exp') {
+                // ★ 新增任務：消耗英雄經驗直接兌換，英雄都練滿等、經驗堆積用不完時可以拿來換卷軸
+                if (GAME_STATE.heroExp >= 5000) {
+                    GAME_STATE.heroExp -= 5000;
+                    GAME_STATE.specialTickets += 1;
+                    showToast("🎉 成功花費英雄經驗兌換 1 張 特急招募卷！");
+                } else {
+                    showToast("英雄經驗不足！");
                 }
             }
             saveGame();
@@ -4502,9 +4591,16 @@
         }
 
         function openSettingsModal() {
-            ToneAudioEngine.playClick(); const s = document.getElementById('hero-custom-select'); s.innerHTML = '';
-            s.innerHTML += `<optgroup label="所有騎士陣營" class="bg-[#1f1610] text-stone-400">`; HERO_DATABASE.forEach(h => s.innerHTML += `<option value="${h.id}">${h.name}</option>`); s.innerHTML += `</optgroup>`;
+            ToneAudioEngine.playClick();
             document.getElementById('settings-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('settings-modal').classList.remove('opacity-0'), 10);
+        }
+
+        // ★ 新增：重新載入——單純重整頁面，不會動到 localStorage 裡的存檔進度，
+        // 跟下面「重置遊戲進度」的危險操作是完全不同的兩件事，畫面卡住/動畫跑掉時可以先試這個
+        function reloadGame() {
+            ToneAudioEngine.playClick();
+            showToast("正在重新載入...");
+            setTimeout(() => location.reload(), 300);
         }
 
         function closeSettingsModal() {ToneAudioEngine.playClick(); document.getElementById('settings-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('settings-modal').classList.add('hidden'), 300);}
@@ -4538,64 +4634,6 @@
         ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
             document.addEventListener(evt, updateFullscreenIcon);
         });
-
-        function processImageUpload(input, type) {
-            if (!input.files || !input.files[0]) return; const file = input.files[0];
-            if (file.size > 5 * 1024 * 1024) {showToast("圖片檔案過大，請選擇 5MB 以下的圖片。"); return;}
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const cv = document.createElement('canvas'); const ctx = cv.getContext('2d');
-                    let w = img.width, h = img.height; const max = type === 'bg' ? 1280 : 256;
-                    if (w > max || h > max) {const r = Math.min(max / w, max / h); w *= r; h *= r;}
-                    cv.width = w; cv.height = h; ctx.drawImage(img, 0, 0, w, h);
-                    const b64 = cv.toDataURL(type === 'bg' ? 'image/jpeg' : 'image/png', type === 'bg' ? 0.8 : 1.0);
-
-                    try {
-                        const testState = JSON.parse(JSON.stringify(GAME_STATE));
-                        if (type === 'bg') testState.customBG = b64; else testState.customHeroes[document.getElementById('hero-custom-select').value] = b64;
-                        localStorage.setItem('resonance_test_save', JSON.stringify(testState)); localStorage.removeItem('resonance_test_save');
-                    } catch (err) {showToast("⚠️ 儲存空間已滿，無法套用。"); return;}
-
-                    if (type === 'bg') {
-                        GAME_STATE.customBG = b64; document.getElementById('global-bg-container').style.backgroundImage = `url(${b64})`; saveGame(); showToast("自訂背景套用成功！");
-                    } else {
-                        const heroId = document.getElementById('hero-custom-select').value; GAME_STATE.customHeroes[heroId] = b64;
-                        const cacheImg = new Image(); cacheImg.onload = () => {
-                            customImgCache[heroId] = cacheImg; saveGame(); showToast("自訂立繪套用成功！");
-                            if (!document.getElementById('tab-battle').classList.contains('hidden')) initCombatUnits(); renderFormationUI(); renderHeroesList();
-                        }; cacheImg.src = b64;
-                    }
-                }; img.src = e.target.result;
-            }; reader.readAsDataURL(file);
-        }
-
-        /* === 3. 恢復預設圖片功能 === */
-
-        function resetCustomImage(t) {
-            ToneAudioEngine.playClick();
-            if (t === 'bg') {
-                GAME_STATE.customBG = BUILT_IN_ASSETS.bgOverride; // 移除全局覆蓋
-                updateDynamicBackground(); // 重新計算並套用章節背景
-            } else {
-                // ...(保持原本英雄圖片的邏輯)
-                const id = document.getElementById('hero-custom-select').value;
-                if (BUILT_IN_ASSETS.heroes[id] && BUILT_IN_ASSETS.heroes[id].trim() !== '') {
-                    GAME_STATE.customHeroes[id] = BUILT_IN_ASSETS.heroes[id];
-                    const cacheImg = new Image();
-                    cacheImg.onload = () => {customImgCache[id] = cacheImg;};
-                    cacheImg.src = BUILT_IN_ASSETS.heroes[id];
-                } else {
-                    delete GAME_STATE.customHeroes[id];
-                    delete customImgCache[id];
-                }
-                if (!document.getElementById('tab-battle').classList.contains('hidden')) initCombatUnits();
-                renderFormationUI();
-                renderHeroesList();
-            }
-            saveGame(); showToast("已恢復為遊戲預設外觀。");
-        }
 
         /* === 戰鬥引擎 === */
         let canvas, ctx, combatEntities = [], animationFrameId;
