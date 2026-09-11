@@ -496,7 +496,7 @@
                 </button>
                 <button onclick="toggleFullscreen()"
                     class="w-8 h-8 rounded-lg bg-black/80 border border-[#5a4634] flex items-center justify-center text-stone-300 active:scale-95 transition shadow-inner-dark hover:border-fantasy-gold">
-                    <i class="fa-solid fa-expand"></i>
+                    <i id="fullscreen-icon" class="fa-solid fa-expand"></i>
                 </button>
                 <button onclick="openSettingsModal()"
                     class="w-8 h-8 rounded-lg bg-black/80 border border-[#5a4634] flex items-center justify-center text-stone-300 active:scale-95 transition shadow-inner-dark hover:border-fantasy-gold">
@@ -2138,16 +2138,61 @@
         const ToneAudioEngine = (() => {
             let initialized = false;
             let isMuted = true;
-            let hitSynth, magicSynth, clickSynth;
+            let hitSynth, magicSynth, clickSynth, critSynth, victorySynth, defeatSynth;
+            let reverb, delay;
+            let bgmPad, bgmMelody;
+            let bgmStarted = false;
+
+            // 背景音樂：Am-F-C-G 的簡單奇幻風和弦循環，搭配一段五聲音階小旋律，全部用 Tone.js 合成、不用外部音檔
+            const BGM_CHORDS = [['A2', 'C3', 'E3'], ['F2', 'A2', 'C3'], ['C3', 'E3', 'G3'], ['G2', 'B2', 'D3']];
+            const BGM_MELODY = ['A4', null, 'C5', 'E5', null, 'D5', 'C5', null, 'E5', null, 'G5', 'F5', null, 'E5', 'D5', null];
 
             return {
                 init: async () => {
                     if (initialized) return;
                     try {
                         await Tone.start();
-                        hitSynth = new Tone.MembraneSynth().toDestination(); hitSynth.volume.value = -5;
-                        magicSynth = new Tone.FMSynth().toDestination(); magicSynth.volume.value = -5;
-                        clickSynth = new Tone.Synth().toDestination(); clickSynth.volume.value = -12;
+                        // ★ 共用空間感效果器：原本每個音效都是乾巴巴的單一合成器直接輸出，
+                        // 加一點 Reverb（殘響）跟 FeedbackDelay（回音）讓聲音有空間感、不再那麼廉價生硬
+                        reverb = new Tone.Reverb({decay: 2.5, wet: 0.28}).toDestination();
+                        delay = new Tone.FeedbackDelay({delayTime: '8n', feedback: 0.18, wet: 0.15}).connect(reverb);
+
+                        hitSynth = new Tone.MembraneSynth({octaves: 4, pitchDecay: 0.02, envelope: {attack: 0.001, decay: 0.25, sustain: 0}}).connect(reverb);
+                        hitSynth.volume.value = -6;
+
+                        magicSynth = new Tone.PolySynth(Tone.FMSynth, {harmonicity: 2.5, modulationIndex: 8, envelope: {attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.6}}).connect(delay);
+                        magicSynth.volume.value = -9;
+
+                        clickSynth = new Tone.Synth({oscillator: {type: 'triangle'}, envelope: {attack: 0.001, decay: 0.08, sustain: 0, release: 0.05}}).connect(reverb);
+                        clickSynth.volume.value = -14;
+
+                        // ★ 新增：暴擊音效，原本暴擊跟一般攻擊共用同一個悶悶的打擊音，聽不出差別；
+                        // 現在暴擊會多疊一個明亮的和音「叮！」，打起來更爽快
+                        critSynth = new Tone.PolySynth(Tone.Synth, {oscillator: {type: 'square'}, envelope: {attack: 0.001, decay: 0.15, sustain: 0, release: 0.1}}).connect(delay);
+                        critSynth.volume.value = -12;
+
+                        // ★ 新增：勝利／落敗音效，原本戰鬥結算完全靜音
+                        victorySynth = new Tone.PolySynth(Tone.Synth, {oscillator: {type: 'triangle'}, envelope: {attack: 0.01, decay: 0.3, sustain: 0.2, release: 0.8}}).connect(reverb);
+                        victorySynth.volume.value = -8;
+                        defeatSynth = new Tone.PolySynth(Tone.Synth, {oscillator: {type: 'sawtooth'}, envelope: {attack: 0.02, decay: 0.5, sustain: 0.1, release: 1}}).connect(reverb);
+                        defeatSynth.volume.value = -14;
+
+                        // ★ 新增：背景音樂——原本「BGM」按鈕其實只是把音效整組靜音/取消靜音，並沒有真的音樂在播。
+                        // 用 Tone.Transport + Tone.Sequence 排一段會自動循環的和弦墊音+旋律，音量壓低當作氛圍底噪。
+                        const bgmVolume = new Tone.Volume(-18).connect(reverb);
+                        bgmPad = new Tone.PolySynth(Tone.AMSynth, {envelope: {attack: 1.2, decay: 0.5, sustain: 0.6, release: 2}}).connect(bgmVolume);
+                        bgmMelody = new Tone.FMSynth({harmonicity: 1.5, modulationIndex: 3, envelope: {attack: 0.05, decay: 0.3, sustain: 0.2, release: 0.8}}).connect(delay);
+                        bgmMelody.volume.value = -22;
+
+                        let chordIdx = 0;
+                        new Tone.Sequence((time, note) => {
+                            if (note === 'CHORD') {bgmPad.triggerAttackRelease(BGM_CHORDS[chordIdx % BGM_CHORDS.length], '2m', time); chordIdx++;}
+                        }, ['CHORD', null, null, null, null, null, null, null], '2n').start(0);
+                        new Tone.Sequence((time, note) => {
+                            if (note) bgmMelody.triggerAttackRelease(note, '8n', time);
+                        }, BGM_MELODY, '8n').start(0);
+                        Tone.Transport.bpm.value = 76;
+
                         initialized = true;
                     } catch (e) {console.warn("Audio init failed", e);}
                 },
@@ -2157,15 +2202,32 @@
                     const icon = document.getElementById('bgm-icon');
                     if (!isMuted) {
                         icon.classList.replace('fa-volume-xmark', 'fa-volume-high'); icon.classList.add('text-fantasy-gold');
-                        showToast("音效已開啟");
+                        if (!bgmStarted) {Tone.Transport.start(); bgmStarted = true;}
+                        Tone.Destination.mute = false;
+                        showToast("音樂與音效已開啟");
                     } else {
                         icon.classList.replace('fa-volume-high', 'fa-volume-xmark'); icon.classList.remove('text-fantasy-gold');
+                        Tone.Destination.mute = true;
                         showToast("已靜音");
                     }
                 },
                 playClick: () => {if (initialized && !isMuted) clickSynth.triggerAttackRelease("C5", "32n");},
                 playHit: () => {if (initialized && !isMuted) hitSynth.triggerAttackRelease("C2", "8n");},
-                playMagic: () => {if (initialized && !isMuted) magicSynth.triggerAttackRelease("E5", "8n");},
+                playMagic: () => {if (initialized && !isMuted) magicSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n");},
+                playCrit: () => {if (initialized && !isMuted) critSynth.triggerAttackRelease(["C5", "E5"], "16n");},
+                playVictory: () => {
+                    if (!initialized || isMuted) return;
+                    const t = Tone.now();
+                    victorySynth.triggerAttackRelease(["C4", "E4", "G4"], "8n", t);
+                    victorySynth.triggerAttackRelease(["E4", "G4", "C5"], "8n", t + 0.15);
+                    victorySynth.triggerAttackRelease(["G4", "C5", "E5"], "4n", t + 0.3);
+                },
+                playDefeat: () => {
+                    if (!initialized || isMuted) return;
+                    const t = Tone.now();
+                    defeatSynth.triggerAttackRelease(["C3", "Eb3", "G3"], "4n", t);
+                    defeatSynth.triggerAttackRelease(["B2", "D3", "F3"], "2n", t + 0.35);
+                },
             }
         })();
 
@@ -4446,7 +4508,36 @@
         }
 
         function closeSettingsModal() {ToneAudioEngine.playClick(); document.getElementById('settings-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('settings-modal').classList.add('hidden'), 300);}
-        function toggleFullscreen() {ToneAudioEngine.playClick(); if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => { }); else document.exitFullscreen();}
+        // ★ 全螢幕改用標準 Web Fullscreen API，並補上各家瀏覽器的前綴版本 (webkit/moz/ms)，
+        // 尤其 iOS Safari／舊版 Android WebView 常常沒有標準 requestFullscreen，需要對應的前綴方法才會生效。
+        // 同時監聽 fullscreenchange 事件，讓按鈕圖示能正確反映目前是否處於全螢幕狀態，而不是永遠顯示「展開」。
+        function getFullscreenElement() {
+            return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        }
+        function toggleFullscreen() {
+            ToneAudioEngine.playClick();
+            const el = document.documentElement;
+            if (!getFullscreenElement()) {
+                const request = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+                if (request) {
+                    request.call(el).catch(() => showToast("這個瀏覽器不支援全螢幕"));
+                } else {
+                    showToast("這個瀏覽器不支援全螢幕");
+                }
+            } else {
+                const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+                if (exit) exit.call(document).catch(() => {});
+            }
+        }
+        function updateFullscreenIcon() {
+            const icon = document.getElementById('fullscreen-icon');
+            if (!icon) return;
+            icon.classList.toggle('fa-expand', !getFullscreenElement());
+            icon.classList.toggle('fa-compress', !!getFullscreenElement());
+        }
+        ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+            document.addEventListener(evt, updateFullscreenIcon);
+        });
 
         function processImageUpload(input, type) {
             if (!input.files || !input.files[0]) return; const file = input.files[0];
@@ -5238,7 +5329,7 @@
                         let dmg = Math.max(5, currentActor.activeAtk - (currentTarget.def * 0.4));
                         let isCrit = false; let fxColor = '#ffffff';
 
-                        if (Math.random() * 100 < currentActor.crit) {dmg *= 1.5; isCrit = true; screenShake = 5; fxColor = '#ffd54f';}
+                        if (Math.random() * 100 < currentActor.crit) {dmg *= 1.5; isCrit = true; screenShake = 5; fxColor = '#ffd54f'; ToneAudioEngine.playCrit();}
 
                         executeHit(currentActor, currentTarget, dmg, isCrit, 'basic', fxColor);
 
@@ -5503,6 +5594,7 @@
 
         function handleCombatEnd(isWin) {
             currentState = CSTATE.IDLE_WIN; DOM_CACHE.battleStateOverlay.style.opacity = '1'; DOM_CACHE.battleStateOverlay.style.pointerEvents = 'auto';
+            if (isWin) ToneAudioEngine.playVictory(); else ToneAudioEngine.playDefeat();
             // 每次戰鬥結束增加次數 (用來解賽季任務)
             if (GAME_STATE.battlesFought !== undefined) {
                 GAME_STATE.battlesFought++;
