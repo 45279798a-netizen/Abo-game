@@ -3618,6 +3618,14 @@
                 totalMonsters++; encountered++;
                 monsterList.push({id: 'm_void', name: '深淵魔影', role: '首領', color: '#d946ef', icon: 'fa-ghost', maxHp: '???', atk: '???', def: '???', desc: '來自迷宮深處的無盡幻影，實力深不可測。', skill: {type: 'stun', chance: 0.3, desc: '來自深淵的無盡幻影，大招有 30% 機率使目標陷入混亂暈眩，無法行動一回合。'}});
 
+                // ★ 補上圖鑑遺漏：秘境的三種怪物（黃金守衛／幻影之靈／熔岩巨像）一直都沒有被收錄進圖鑑，
+                // 之前是因為它們沒有放進 MONSTER_DB、而是直接寫在秘境的生成邏輯裡 (DUNGEON_GUARD_TYPES)，
+                // 圖鑑只掃描 MONSTER_DB 自然看不到。這裡直接引用同一份 DUNGEON_GUARD_TYPES，維持兩邊資料同步。
+                DUNGEON_GUARD_TYPES.forEach(g => {
+                    totalMonsters++; encountered++;
+                    monsterList.push({id: g.mId, name: g.mName, role: '秘境守衛', color: g.mColor, icon: g.mIcon, maxHp: 250, atk: 35, def: 15, desc: '深淵秘境裡的無盡守衛，死一隻立刻由同類補位，隨著戰鬥累積的傷害越打越強（但防禦維持不變）。', skill: g.mSkill});
+                });
+
                 document.getElementById('codex-progress').innerText = `${encountered}/${totalMonsters} (100%)`;
 
                 monsterList.forEach(m => {
@@ -3711,7 +3719,14 @@
                 Object.values(SEASON_CONFIG).forEach(s => {if (s.boss.id === id) m = {...s.boss, role: '首領', maxHp: '???', atk: '???', def: '???', desc: '極度危險的強大存在。', skill: {type: 'aoe', desc: '每回合有 25% 機率發動範圍攻擊，對全體騎士造成 100% 攻擊力的傷害；在賽季討伐模式中，傷害還會隨累積總傷害持續提升。'}};});
                 if (id === 'm_void') m = {id: 'm_void', name: '深淵魔影', role: '首領', color: '#d946ef', icon: 'fa-ghost', maxHp: '???', atk: '???', def: '???', desc: '來自迷宮深處的無盡幻影，實力深不可測。', skill: {type: 'stun', chance: 0.3, desc: '來自深淵的無盡幻影，大招有 30% 機率使目標陷入混亂暈眩，無法行動一回合。'}};
             }
-            else {Object.keys(MONSTER_DB).forEach(chap => MONSTER_DB[chap].forEach(mob => {if (mob.id === id) m = mob;}));}
+            else {
+                Object.keys(MONSTER_DB).forEach(chap => MONSTER_DB[chap].forEach(mob => {if (mob.id === id) m = mob;}));
+                // ★ 秘境守衛不在 MONSTER_DB 裡（定義在 DUNGEON_GUARD_TYPES），要另外找一次，不然點下去會沒反應
+                if (!m) {
+                    const g = DUNGEON_GUARD_TYPES.find(x => x.mId === id);
+                    if (g) m = {id: g.mId, name: g.mName, role: '秘境守衛', color: g.mColor, icon: g.mIcon, maxHp: 250, atk: 35, def: 15, desc: '深淵秘境裡的無盡守衛，死一隻立刻由同類補位，隨著戰鬥累積的傷害越打越強（但防禦維持不變）。', skill: g.mSkill};
+                }
+            }
             if (!m) return;
 
             const iconContainer = document.getElementById('codex-detail-icon');
@@ -4514,13 +4529,14 @@
                 // ★ 修正：原本 usableWidth=0.88, startX=0.06 會把 row=2 的角色推到螢幕 94% 的位置，
                 // 角色圖示本身還有半個身位寬度，等於整個人被切到螢幕邊緣外面去，在手機窄螢幕上特別明顯
                 // (看起來像是「奇怪的方塊卡在邊邊」)。收窄可用範圍，讓最外側的角色也能完整留在畫面內。
-                const usableWidth = cx * 0.62; const startX = cx * 0.19; const gapX = usableWidth / 2; x = startX + row * gapX;
+                // ★ 角色倍率一路拉高到 6.5x 之後，原本的車道間距 (gapX) 太窄，導致不同路(row)的角色在螢幕上
+                // 互相疊在一起（尤其後排還有左右錯位，疊加起來更容易撞在一起）。拉寬可用範圍，車道間距加大。
+                const usableWidth = cx * 0.76; const startX = cx * 0.12; const gapX = usableWidth / 2; x = startX + row * gapX;
                 if (GAME_STATE.currentMode === 'season' && team === 'enemy') {y = cy * 0.24; x = cx * 0.5;}
                 else {
-                    // ★ 第四次修正：這次附圖多畫了一條線，中間特別留了一塊「空白」交戰帶——
-                    // 量測兩條線的位置，敵方跟我方縱深其實接近對稱（各約 29~30%），中間留一段更寬的空白，
-                    // 不再是敵方吃六成這種不對稱比例，是我看錯了上一張圖的間距。
-                    const pFrontY = cy * 0.60, pBackY = cy * 0.90, pGapY = (pBackY - pFrontY) / 2;
+                    // ★ 第五次修正：我方縮小到只佔 20% 縱深（血條才不會被擠到畫面外面看不到），
+                    // 下面多出來的空間刻意留白，不硬把後排角色往下拉伸去填滿剩餘空間。
+                    const pFrontY = cy * 0.60, pBackY = cy * 0.80, pGapY = (pBackY - pFrontY) / 2;
                     const eFrontY = cy * 0.46, eBackY = cy * 0.17, eGapY = (eFrontY - eBackY) / 2;
                     y = team === 'player' ? pFrontY + col * pGapY : eFrontY - col * eGapY;
                     // 錯位：非前排單位左右微微交錯，避免與同一路的前排單位直接疊在一起
