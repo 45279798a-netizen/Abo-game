@@ -1480,6 +1480,18 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <label class="block text-stone-300 text-xs font-bold mb-1"><i
+                                    class="fa-solid fa-expand mr-1"></i>自動全螢幕</label>
+                            <p class="text-[8px] text-stone-400">點擊畫面第一下時自動嘗試進入全螢幕，不用另外按右上角的展開鈕；關掉的話全螢幕只能手動點按鈕開啟。</p>
+                        </div>
+                        <button id="auto-fullscreen-toggle-btn" onclick="toggleAutoFullscreen()"
+                            class="shrink-0 ml-3 w-12 h-7 rounded-full border transition relative"></button>
+                    </div>
+                </div>
+
+                <div class="bg-[#1a120c] p-4 rounded-lg border border-[#3e3328] shadow-inner-dark">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-stone-300 text-xs font-bold mb-1"><i
                                     class="fa-solid fa-water mr-1"></i>背景動態效果</label>
                             <p class="text-[8px] text-stone-400">讓背景圖緩慢縮放平移，有呼吸感；如果覺得畫面一直在動會分心，或想省電，可以關掉。</p>
                         </div>
@@ -1730,7 +1742,7 @@
 
                 // --- S1 限定 ---
                 'h_uther': './images/h_uther.png',      // [UR] 聖光使者·烏瑟
-                'h_s1_lr': './images/h_s1_lr.png',      // [LR] 夜魘收割者·莫瑟斯
+                'h_s1_lr': '',      // [LR] 夜魘收割者·莫瑟斯
                 'h_s1_ssr1': './images/h_s1_ssr1.png',    // 亡靈督軍
                 'h_s1_ssr2': './images/h_s1_ssr2.png',    // 瘟疫使者
 
@@ -4724,6 +4736,7 @@
         function openSettingsModal() {
             ToneAudioEngine.playClick();
             updateBgMotionUI();
+            updateAutoFullscreenUI();
             document.getElementById('settings-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('settings-modal').classList.remove('opacity-0'), 10);
         }
 
@@ -4749,6 +4762,21 @@
             ToneAudioEngine.playClick();
             GAME_STATE.bgMotionEnabled = !(GAME_STATE.bgMotionEnabled !== false);
             updateBgMotionUI();
+            saveGame();
+        }
+
+        // ★ 新增：自動全螢幕開關——控制「使用者第一次操作畫面時」要不要順便嘗試進入全螢幕
+        function updateAutoFullscreenUI() {
+            const enabled = !GAME_STATE.autoFullscreenDisabled;
+            const btn = document.getElementById('auto-fullscreen-toggle-btn');
+            if (!btn) return;
+            btn.className = `shrink-0 ml-3 w-12 h-7 rounded-full border transition relative ${enabled ? 'bg-emerald-600 border-emerald-400' : 'bg-black/50 border-[#3e3328]'}`;
+            btn.innerHTML = `<span class="absolute top-0.5 ${enabled ? 'right-0.5' : 'left-0.5'} w-6 h-6 rounded-full bg-white shadow transition-all"></span>`;
+        }
+        function toggleAutoFullscreen() {
+            ToneAudioEngine.playClick();
+            GAME_STATE.autoFullscreenDisabled = !GAME_STATE.autoFullscreenDisabled;
+            updateAutoFullscreenUI();
             saveGame();
         }
 
@@ -4780,6 +4808,37 @@
             icon.classList.toggle('fa-expand', !getFullscreenElement());
             icon.classList.toggle('fa-compress', !!getFullscreenElement());
         }
+
+        function requestFullscreenSilently() {
+            if (getFullscreenElement()) return;
+            const el = document.documentElement;
+            const request = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+            if (request) {
+                const p = request.call(el);
+                if (p && p.catch) p.catch((err) => console.warn('Auto fullscreen failed:', err));
+            }
+        }
+        // ★ 安卓版瀏覽器不會自己進全螢幕，得靠使用者手動點右上角的展開鈕才會進去，體驗上像是「壞掉」。
+        // 瀏覽器基於安全限制，一定要有真實的使用者互動（點擊/觸控）才能呼叫 requestFullscreen()，
+        // 沒辦法在網頁一載入就自動全螢幕。這裡改成監聽「使用者第一次操作畫面」，同時掛
+        // pointerdown/touchstart/click 三種事件（不同瀏覽器、不同輸入裝置觸發的事件不太一樣，
+        // 多掛幾種可以提高在各種安卓瀏覽器/WebView 上真的抓得到使用者手勢的機率），
+        // 趁著那個互動動作，順便嘗試進入全螢幕，不用額外多一個「點我全螢幕」的按鈕或提示。
+        // 用手動 removeEventListener 而不是單純的 {once:true}，確保三種事件裡不管哪個先觸發，
+        // 都只會真正嘗試一次，其餘的監聽器會一起被清掉，不會重複呼叫。
+        // 可以在設定頁關掉這個行為（例如不喜歡遊戲自動要求全螢幕的人）。
+        let autoFullscreenAttempted = false;
+        function attemptAutoFullscreenOnce() {
+            if (autoFullscreenAttempted) return;
+            autoFullscreenAttempted = true;
+            ['pointerdown', 'touchstart', 'click'].forEach(evt => document.removeEventListener(evt, attemptAutoFullscreenOnce));
+            if (GAME_STATE.autoFullscreenDisabled) return;
+            requestFullscreenSilently();
+        }
+        ['pointerdown', 'touchstart', 'click'].forEach(evt => {
+            document.addEventListener(evt, attemptAutoFullscreenOnce, {passive: true});
+        });
+
         ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
             document.addEventListener(evt, updateFullscreenIcon);
         });
