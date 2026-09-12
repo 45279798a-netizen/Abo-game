@@ -44,6 +44,21 @@
             --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
 
+        /* ★ 新增：等級/星級「突破檢查點」按鈕專用的光暈動畫，跟一般升級按鈕明顯區分開來，
+           提醒玩家這次要花碎片／超越結晶，不是普通的單級升級 */
+        .breakthrough-glow {
+            background: linear-gradient(135deg, #7c2d12, #b45309, #f59e0b, #b45309, #7c2d12);
+            background-size: 200% 200%;
+            animation: breakthrough-pulse 1.8s ease-in-out infinite;
+            border-color: #fbbf24 !important;
+            color: #fff8e1 !important;
+        }
+        @keyframes breakthrough-pulse {
+            0% {background-position: 0% 50%; box-shadow: 0 0 6px rgba(251, 191, 36, 0.4);}
+            50% {background-position: 100% 50%; box-shadow: 0 0 16px rgba(251, 191, 36, 0.85);}
+            100% {background-position: 0% 50%; box-shadow: 0 0 6px rgba(251, 191, 36, 0.4);}
+        }
+
         body {
             background-color: #000;
             background-image:
@@ -1142,6 +1157,12 @@
                     </div>
                 </div>
 
+                <!-- ★ 新增：一鍵全體升星，跳過逐一點擊/動畫，一次把所有碎片夠用的英雄升到不能再升為止 -->
+                <button onclick="autoAwakenAllHeroes()"
+                    class="shrink-0 w-full mb-3 py-2 rounded-lg bg-gradient-to-r from-purple-800/70 to-fuchsia-800/70 text-purple-100 text-[11px] font-bold border border-purple-600 hover:from-purple-700 hover:to-fuchsia-700 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>一鍵全體升星
+                </button>
+
                 <!-- 篩選/排序列 -->
                 <div class="flex items-center gap-2 mb-3 shrink-0 overflow-x-auto custom-scrollbar pb-1"
                     id="heroes-filter-bar">
@@ -1462,6 +1483,14 @@
                                 <div class="text-[9px] text-amber-400 text-center mb-1"><span id="worldboss-reward-note">-</span></div>
                                 <div class="text-[8px] text-rose-500 text-center mb-2"><i class="fa-solid fa-fire mr-1"></i>首領血量越低攻防越高，後期會越打越痛，注意保留血量與資源</div>
                                 <p class="text-[8px] text-stone-500 text-center mb-2"><i class="fa-solid fa-gauge-high mr-1"></i>此模式最高可開到 20 倍速</p>
+                                <!-- ★ 新增：傭兵助戰——每天 1 次可以借用其他在線玩家戰力最高的英雄，額外加入隊伍 -->
+                                <div class="bg-black/30 rounded-lg px-2 py-2 mb-2 text-[9px]">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-sky-400 font-bold"><i class="fa-solid fa-user-plus mr-1"></i>傭兵助戰</span>
+                                        <span id="mercenary-status-text" class="text-stone-400">尚未借用</span>
+                                    </div>
+                                    <button onclick="openMercenaryPicker()" id="mercenary-btn" class="w-full py-1.5 rounded bg-sky-900/50 text-sky-300 border border-sky-700 hover:bg-sky-800 transition font-bold">尋找傭兵（每日 1 次）</button>
+                                </div>
                                 <button onclick="startWorldBossBattle()"
                                     class="w-full py-2.5 rounded-lg bg-gradient-to-b from-rose-600 to-rose-900 border border-rose-400 text-white font-bold text-xs shadow-lg active:scale-95 transition">討伐</button>
                             </div>
@@ -1697,6 +1726,30 @@
                 <p class="text-[9px] text-stone-500 mb-3">目前擁有的英雄碎片，可以到英雄詳情頁用碎片升星，或是拿去黑市上架賣給其他玩家。</p>
                 <div id="inventory-shard-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
                 <p id="inventory-empty-text" class="hidden text-center text-stone-500 text-[10px] py-10">目前沒有任何英雄碎片</p>
+
+                <!-- ★ 新增：溢出碎片熔爐——手上囤太多用不到的碎片，可以分解成超越結晶，不用讓多餘碎片放著生灰塵 -->
+                <div class="glass-panel p-3 rounded-xl border border-fuchsia-700/40 flex flex-col gap-2 mt-4">
+                    <span class="text-[10px] text-fuchsia-300 font-bold"><i class="fa-solid fa-fire mr-1"></i>溢出碎片熔爐</span>
+                    <p class="text-[9px] text-stone-500">用不到的英雄碎片可以分解成超越結晶（20 碎片 = 1 結晶），留著給高星大突破或裝備鍛造使用，不用讓囤積的碎片放著浪費。</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="furnace-hero-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                        <input id="furnace-amount" type="number" placeholder="分解數量" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                    </div>
+                    <button onclick="recycleHeroShards()" class="w-full py-2 bg-fuchsia-900/60 text-fuchsia-200 text-[11px] font-bold rounded border border-fuchsia-700 hover:bg-fuchsia-800 transition">分解成超越結晶</button>
+                </div>
+
+                <!-- ★ 新增：8 部位裝備系統——「八大鍛爐」秘境還沒做，這裡先開放簡化版鍛造當作暫定取得管道 -->
+                <div class="glass-panel p-3 rounded-xl border border-amber-700/40 flex flex-col gap-2 mt-4">
+                    <span class="text-[10px] text-amber-400 font-bold"><i class="fa-solid fa-hammer mr-1"></i>裝備鍛造（暫定取得方式）</span>
+                    <p class="text-[9px] text-stone-500">花費鍛造石與金幣，指定部位與套裝直接鍛造一件全新裝備（+0）。之後「八大鍛爐」秘境上線後會有更多取得管道，兩者不衝突。</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="forge-slot-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                        <select id="forge-set-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                    </div>
+                    <button onclick="forgeEquipmentItem()" class="w-full py-2 bg-amber-800/70 text-amber-200 text-[11px] font-bold rounded border border-amber-600 hover:bg-amber-700 transition">鍛造（<span id="forge-cost-label"></span>）</button>
+                </div>
+                <h3 class="text-[10px] text-stone-400 font-bold mt-4 mb-2"><i class="fa-solid fa-vest mr-1"></i>裝備背包</h3>
+                <div id="equipment-inventory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
             </div>
 
             <!-- ★ 新增：黑市，玩家對玩家交易英雄碎片 -->
@@ -1716,6 +1769,19 @@
                         <input id="bm-exchange-amount" type="number" placeholder="輸入數量" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                         <button onclick="exchangeDiamondToBMC()" class="shrink-0 px-2 py-1.5 bg-sky-900/60 text-sky-300 text-[9px] font-bold rounded border border-sky-700 hover:bg-sky-800 transition">寶石→黑市幣</button>
                         <button onclick="exchangeBMCToDiamond()" class="shrink-0 px-2 py-1.5 bg-purple-900/60 text-purple-300 text-[9px] font-bold rounded border border-purple-700 hover:bg-purple-800 transition">黑市幣→寶石</button>
+                    </div>
+                </div>
+
+                <!-- ★ 新增：每日限量鍛造石補給——用黑市幣跟系統換鍛造石，每天有總量上限，不是玩家對玩家交易 -->
+                <div class="glass-panel p-3 rounded-xl border border-stone-600/40 flex flex-col gap-2 shrink-0">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] text-stone-400"><i class="fa-solid fa-hammer text-stone-300 mr-1"></i>每日限量鍛造石補給</span>
+                        <span class="text-stone-300 font-bold text-[10px]">今日剩餘 <span id="bm-forge-stone-remaining">2000</span> / 2000</span>
+                    </div>
+                    <p class="text-[8px] text-stone-500">系統直接販售，跟玩家上架的碎片交易無關；匯率：50 黑市幣 = 1 顆鍛造石，每帳號每天限購 2000 顆。</p>
+                    <div class="flex gap-2">
+                        <input id="bm-forge-stone-amount" type="number" placeholder="購買數量" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                        <button onclick="purchaseDailyForgeStones()" class="shrink-0 px-3 py-1.5 bg-stone-700/60 text-stone-200 text-[9px] font-bold rounded border border-stone-500 hover:bg-stone-600 transition">購買</button>
                     </div>
                 </div>
 
@@ -1828,6 +1894,30 @@
                 <button onmousedown="starLongPresser.start()" onmouseup="starLongPresser.stop()" onmouseleave="starLongPresser.cancel()" ontouchstart="starLongPresser.start()" ontouchend="starLongPresser.stop()" ontouchcancel="starLongPresser.cancel()" id="btn-upgrade-star"
                     class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">覺醒</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ★ 新增：8 部位裝備系統的「選擇裝備」彈窗，從英雄詳情頁的裝備部位卡片點「裝備／更換」開啟 -->
+    <div id="equipment-picker-modal"
+        class="fixed inset-0 bg-black/95 z-[80] hidden flex-col items-center justify-center p-4 backdrop-blur-md opacity-0 transition-opacity duration-300">
+        <div class="glass-panel w-full max-w-md rounded-2xl overflow-hidden border border-[#5a4634] flex flex-col max-h-[80vh]">
+            <div class="p-3 border-b border-[#3e3328] flex justify-between items-center shrink-0">
+                <span class="font-bold text-stone-200 text-sm" id="equipment-picker-title">選擇裝備</span>
+                <button onclick="closeEquipmentPicker()" class="text-stone-400 hover:text-white w-8 h-8 rounded-full hover:bg-black/40 transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="equipment-picker-list" class="p-3 overflow-y-auto custom-scrollbar space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- ★ 新增：世界首領「傭兵助戰」選擇彈窗 -->
+    <div id="mercenary-picker-modal"
+        class="fixed inset-0 bg-black/95 z-[80] hidden flex-col items-center justify-center p-4 backdrop-blur-md opacity-0 transition-opacity duration-300">
+        <div class="glass-panel w-full max-w-md rounded-2xl overflow-hidden border border-[#5a4634] flex flex-col max-h-[80vh]">
+            <div class="p-3 border-b border-[#3e3328] flex justify-between items-center shrink-0">
+                <span class="font-bold text-stone-200 text-sm">選擇要借用的傭兵</span>
+                <button onclick="closeMercenaryPicker()" class="text-stone-400 hover:text-white w-8 h-8 rounded-full hover:bg-black/40 transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="mercenary-picker-list" class="p-3 overflow-y-auto custom-scrollbar space-y-2"></div>
         </div>
     </div>
 
@@ -2378,6 +2468,11 @@
                 if (!r) continue;
                 if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > PLAUSIBLE_MAX_STAR_ESTIMATE || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
             }
+            // ★ 新增：8 部位裝備系統的強化等級也一併檢查，超過上限視為異常存檔
+            for (const itemId in (state.equipmentInventory || {})) {
+                const item = state.equipmentInventory[itemId];
+                if (item && (item.level || 0) > EQUIPMENT_MAX_LEVEL) return false;
+            }
             if ((state.gold || 0) > 999999999999 || (state.diamonds || 0) > 999999999 || (state.forgeStones || 0) > 999999999) return false;
             return true;
         }
@@ -2594,11 +2689,15 @@
             // ★ 星級現在無上限，這裡不能直接用 MAX_STAR_LEVEL (Infinity) 算，不然這個合理性檢查會直接失效。
             // 改用一個「夠寬鬆但還是有限」的估計值，只用在這個粗略防呆檢查上，跟遊戲實際的星級上限脫鉤。
             const maxTotalBonus = 1 + getStarBonusRatio(PLAUSIBLE_MAX_STAR_ESTIMATE) + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER);
-            const maxEquipFlat = {hp: 20 * 80, atk: 20 * 15, def: 20 * 8}; // 4 件裝備都強化滿 20 級的粗估加算數值上限
-            const maxHp = classBase.hp * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.hp;
+            // ★ 同步 8 部位裝備系統：8 個部位都強化滿 +20 的粗估加算數值上限（武器/副手/胸甲/頭盔/鞋子/手套/戒指/項鍊各自算一次）
+            const maxEquipFlat = {hp: 17710, atk: 2030, def: 1260, crit: 5};
+            // 套裝加成也給一個寬鬆估計（假設 8 件都湊滿同一套裝的最高數值型加成：狂暴 4 件 暴傷+35% 概念上已經算進 critDmgMult，
+            // 這裡額外估一個暴擊率/生命%的寬鬆上限，避免漏算導致誤判）
+            const maxSetHpPct = 20, maxSetCrit = 12; // 對應「守護」2件 HP+20%／「狂暴」2件 暴擊+12% 這類數值型套裝加成的參考上限
+            const maxHp = (classBase.hp * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.hp) * (1 + maxSetHpPct / 100);
             const maxAtk = classBase.atk * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.atk;
             const maxDef = classBase.def * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.def;
-            const maxCrit = (db.crit || 0) + 20 * 2;
+            const maxCrit = (db.crit || 0) + maxEquipFlat.crit + maxSetCrit;
             return maxHp * 0.5 + maxAtk * 2 + maxDef * 1.5 + maxCrit * 10;
         }
 
@@ -2607,7 +2706,7 @@
             const team = (GAME_STATE.gridSlots || []).map((id, idx) => {
                 if (!id || !GAME_STATE.roster[id]) return null;
                 const r = GAME_STATE.roster[id];
-                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0], row: Math.floor(idx / 2), col: (idx % 2) * 2};
+                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
             }).filter(Boolean);
 
             // 逐一檢查每位上陣英雄是否超出這個遊戲數值系統理論上能達到的合理上限
@@ -2971,7 +3070,7 @@
             const myTeam = (GAME_STATE.gridSlots || []).map((id, idx) => {
                 if (!id || !GAME_STATE.roster[id]) return null;
                 const r = GAME_STATE.roster[id];
-                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0], row: Math.floor(idx / 2), col: (idx % 2) * 2};
+                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
             }).filter(Boolean);
             if (myTeam.length === 0) {showToast('請先到佈陣頁面上陣至少一位英雄'); return;}
             try {
@@ -3036,7 +3135,7 @@
             const myTeam = (GAME_STATE.gridSlots || []).map((id, idx) => {
                 if (!id || !GAME_STATE.roster[id]) return null;
                 const r = GAME_STATE.roster[id];
-                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0], row: Math.floor(idx / 2), col: (idx % 2) * 2};
+                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
             }).filter(Boolean);
             if (myTeam.length === 0) {showToast('請先到佈陣頁面上陣至少一位英雄'); return;}
             try {
@@ -3303,7 +3402,108 @@
                 document.getElementById('btn-wb-board-total').className = `flex-1 py-1 text-[9px] font-bold rounded transition ${currentWorldBossBoardMode === 'total' ? 'bg-rose-900/60 text-rose-300' : 'text-stone-500 hover:bg-[#2a2118]'}`;
                 document.getElementById('btn-wb-board-best').className = `flex-1 py-1 text-[9px] font-bold rounded transition ${currentWorldBossBoardMode === 'best' ? 'bg-amber-900/60 text-amber-300' : 'text-stone-500 hover:bg-[#2a2118]'}`;
                 refreshWorldBossLeaderboard();
+                updateMercenaryStatusUI();
             } catch (err) {console.warn('讀取世界首領資料失敗：', err);}
+        }
+
+        /* ============================================================
+           傭兵助戰 (Mercenary Assist)：每人每天挑戰世界首領時，有 1 次機會可以借用「目前在線的
+           其他玩家」戰力最高的一位英雄，額外加入隊伍（正常編隊已經是 6 人滿編，這是世界首領限定
+           的額外加成，用完當次戰鬥就消耗掉，明天才能再借用一次新的）。
+           借用對象直接從 arenaPresence（競技場即時廣播，本來就公開可讀）裡挑選，不需要額外的
+           好友系統或新的 Firestore 規則。
+           ============================================================ */
+        function getTodayDateStr() {
+            const d = new Date();
+            return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+        }
+        function hasMercenaryUsedToday() {
+            return GAME_STATE.lastMercenaryDate === getTodayDateStr();
+        }
+        function updateMercenaryStatusUI() {
+            const statusEl = document.getElementById('mercenary-status-text');
+            const btn = document.getElementById('mercenary-btn');
+            if (!statusEl || !btn) return;
+            if (GAME_STATE.mercenarySelection) {
+                statusEl.innerText = `已借用：${GAME_STATE.mercenarySelection.fromName}的英雄`;
+                statusEl.className = 'text-emerald-400 font-bold';
+                btn.innerText = '重新選擇';
+            } else if (hasMercenaryUsedToday()) {
+                statusEl.innerText = '今天已用完';
+                statusEl.className = 'text-stone-500';
+                btn.disabled = true; btn.classList.add('opacity-50');
+                btn.innerText = '明天再來';
+            } else {
+                statusEl.innerText = '尚未借用';
+                statusEl.className = 'text-stone-400';
+                btn.disabled = false; btn.classList.remove('opacity-50');
+                btn.innerText = '尋找傭兵（每日 1 次）';
+            }
+        }
+
+        let mercenaryCandidates = [];
+        async function openMercenaryPicker() {
+            ToneAudioEngine.playClick();
+            if (!mpConnected) {showToast('尚未連線'); return;}
+            if (hasMercenaryUsedToday() && !GAME_STATE.mercenarySelection) {showToast('今天已經借用過傭兵了，明天再來'); return;}
+            const listEl = document.getElementById('mercenary-picker-list');
+            listEl.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-6">搜尋在線玩家中...</div>`;
+            const modal = document.getElementById('mercenary-picker-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            try {
+                const snap = await fbDb.collection('arenaPresence').orderBy('power', 'desc').limit(10).get();
+                const others = snap.docs.map(d => ({uid: d.id, ...d.data()})).filter(d => d.uid !== fbUser.uid).slice(0, 2);
+                mercenaryCandidates = [];
+                others.forEach(c => {
+                    // 找出這位玩家隊伍裡戰力最高的一位英雄（借用他們廣播出來的公開陣容資料重建數值）
+                    let best = null, bestPower = -1;
+                    (c.team || []).forEach(slot => {
+                        const db = HERO_DATABASE.find(h => h.id === slot.heroId);
+                        if (!db) return;
+                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
+                        const originalRoster = GAME_STATE.roster[slot.heroId];
+                        GAME_STATE.roster[slot.heroId] = fakeRoster;
+                        const h = getEffectiveHero(db);
+                        if (originalRoster === undefined) delete GAME_STATE.roster[slot.heroId]; else GAME_STATE.roster[slot.heroId] = originalRoster;
+                        if (h && h.combatPower > bestPower) {bestPower = h.combatPower; best = {slot, h};}
+                    });
+                    if (best) mercenaryCandidates.push({fromUid: c.uid, fromName: c.displayName || '???', slot: best.slot, h: best.h, power: bestPower});
+                });
+                if (mercenaryCandidates.length === 0) {
+                    listEl.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-6">目前沒有其他在線玩家可以借用，晚點再試試看</div>`;
+                    return;
+                }
+                listEl.innerHTML = mercenaryCandidates.map((c, idx) => `
+                    <button onclick="selectMercenary(${idx})" class="w-full py-2 px-3 bg-black/40 rounded-lg border border-[#3e3328] hover:border-fantasy-gold transition flex justify-between items-center text-left">
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-bold text-stone-200 truncate">${c.fromName}</div>
+                            <div class="text-[9px] text-stone-400 truncate">${c.h.name}（${c.h.rarity}・Lv.${c.h.effectiveLevel}・${c.h.star}★）</div>
+                        </div>
+                        <span class="text-[10px] text-fantasy-gold font-bold shrink-0 ml-2">⚡${c.power.toLocaleString()}</span>
+                    </button>
+                `).join('');
+            } catch (err) {
+                console.warn('搜尋傭兵失敗：', err);
+                listEl.innerHTML = `<div class="text-center text-[10px] text-rose-400 py-6">搜尋失敗，請稍後再試</div>`;
+            }
+        }
+        function closeMercenaryPicker() {
+            ToneAudioEngine.playClick();
+            const modal = document.getElementById('mercenary-picker-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {modal.classList.add('hidden'); modal.classList.remove('flex');}, 300);
+        }
+        function selectMercenary(idx) {
+            ToneAudioEngine.playClick();
+            const c = mercenaryCandidates[idx];
+            if (!c) return;
+            GAME_STATE.mercenarySelection = {fromUid: c.fromUid, fromName: c.fromName, slot: c.slot};
+            GAME_STATE.lastMercenaryDate = getTodayDateStr();
+            saveGame();
+            closeMercenaryPicker();
+            updateMercenaryStatusUI();
+            showToast(`已借用 ${c.fromName} 的 ${c.h.name}，下一場世界首領戰鬥會加入隊伍`);
         }
 
         let worldBossPrevBattleSpeed = null;
@@ -3440,6 +3640,114 @@
                     <div class="text-amber-300 font-bold text-xs shrink-0"><i class="fa-solid fa-gem text-[10px] mr-0.5"></i>${GAME_STATE.heroShards[id]}</div>`;
                 list.appendChild(card);
             });
+            populateForgeSelects();
+            renderEquipmentInventoryList();
+            populateFurnaceHeroSelect(shardIds);
+        }
+
+        // ★ 新增：溢出碎片熔爐——把用不到的碎片分解成超越結晶，固定匯率 20 碎片 = 1 結晶。
+        // 跟企劃書原本設想的「英雄粉塵」中介貨幣不同：這裡簡化成一步到位直接換結晶，
+        // 因為現在星級沒有分季節上限，很難定義「達到當季星級上限」這個觸發點，
+        // 乾脆讓玩家自己決定要不要把暫時用不到的碎片換成更泛用的結晶。
+        const SHARD_FURNACE_RATE = 20; // 20 碎片 = 1 結晶
+        function populateFurnaceHeroSelect(shardIds) {
+            const sel = document.getElementById('furnace-hero-select');
+            if (!sel) return;
+            const prevValue = sel.value;
+            sel.innerHTML = '<option value="">選擇要分解碎片的英雄...</option>';
+            (shardIds || Object.keys(GAME_STATE.heroShards || {})).forEach(id => {
+                const dbHero = HERO_DATABASE.find(h => h.id === id);
+                if (!dbHero || (GAME_STATE.heroShards[id] || 0) <= 0) return;
+                const opt = document.createElement('option');
+                opt.value = id; opt.innerText = `${dbHero.name}（持有 ${GAME_STATE.heroShards[id]}）`;
+                sel.appendChild(opt);
+            });
+            if (prevValue) sel.value = prevValue;
+        }
+        function recycleHeroShards() {
+            ToneAudioEngine.playClick();
+            const heroId = document.getElementById('furnace-hero-select').value;
+            const amount = parseInt(document.getElementById('furnace-amount').value);
+            if (!heroId) {showToast('請先選擇要分解碎片的英雄'); return;}
+            if (!amount || amount <= 0) {showToast('請輸入要分解的碎片數量'); return;}
+            const owned = (GAME_STATE.heroShards && GAME_STATE.heroShards[heroId]) || 0;
+            if (owned < amount) {showToast('碎片數量不足'); return;}
+            if (amount < SHARD_FURNACE_RATE) {showToast(`數量太少，至少要 ${SHARD_FURNACE_RATE} 碎片才能分解成 1 顆結晶`); return;}
+            const crystalsGained = Math.floor(amount / SHARD_FURNACE_RATE);
+            const actualShardsUsed = crystalsGained * SHARD_FURNACE_RATE;
+            GAME_STATE.heroShards[heroId] = owned - actualShardsUsed;
+            if (GAME_STATE.boundHeroShards && GAME_STATE.boundHeroShards[heroId] > GAME_STATE.heroShards[heroId]) {
+                GAME_STATE.boundHeroShards[heroId] = GAME_STATE.heroShards[heroId];
+            }
+            GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + crystalsGained;
+            saveGame(); updateHUD();
+            renderInventoryUI();
+            document.getElementById('furnace-amount').value = '';
+            showToast(`分解成功：${actualShardsUsed} 碎片 → ${crystalsGained} 超越結晶`);
+        }
+
+        // ★ 暫定的裝備取得方式：花固定的鍛造石＋金幣，指定部位／套裝直接鍛造一件 +0 裝備。
+        // 「八大鍛爐」秘境（依套裝掉落殘頁、湊滿保底合成）還沒做，這裡先讓裝備系統能被實際使用，
+        // 之後鍛爐上線後，鍛造可以繼續當作其中一種取得管道，不衝突。
+        const EQUIPMENT_FORGE_COST = {gold: 5000, stones: 300};
+        function populateForgeSelects() {
+            const slotSel = document.getElementById('forge-slot-select');
+            const setSel = document.getElementById('forge-set-select');
+            if (!slotSel || !setSel) return;
+            if (slotSel.options.length === 0) {
+                EQUIPMENT_SLOTS.forEach(slot => {
+                    const opt = document.createElement('option'); opt.value = slot; opt.innerText = EQUIPMENT_SLOT_CONFIG[slot].name; slotSel.appendChild(opt);
+                });
+            }
+            if (setSel.options.length === 0) {
+                Object.keys(EQUIPMENT_SETS).forEach(setId => {
+                    const opt = document.createElement('option'); opt.value = setId; opt.innerText = EQUIPMENT_SETS[setId].name; setSel.appendChild(opt);
+                });
+            }
+            const label = document.getElementById('forge-cost-label');
+            if (label) label.innerText = `${EQUIPMENT_FORGE_COST.gold.toLocaleString()} 金幣／${EQUIPMENT_FORGE_COST.stones} 鍛造石`;
+        }
+
+        function forgeEquipmentItem() {
+            ToneAudioEngine.playClick();
+            const slot = document.getElementById('forge-slot-select').value;
+            const setId = document.getElementById('forge-set-select').value;
+            if (!slot || !setId) return;
+            if (GAME_STATE.gold < EQUIPMENT_FORGE_COST.gold || GAME_STATE.forgeStones < EQUIPMENT_FORGE_COST.stones) {
+                showToast('資源不足！需要更多金幣與鍛造石。'); return;
+            }
+            GAME_STATE.gold -= EQUIPMENT_FORGE_COST.gold;
+            GAME_STATE.forgeStones -= EQUIPMENT_FORGE_COST.stones;
+            if (!GAME_STATE.equipmentInventory) GAME_STATE.equipmentInventory = {};
+            const item = createEquipmentItem(slot, setId);
+            GAME_STATE.equipmentInventory[item.id] = item;
+            saveGame(); updateHUD();
+            renderEquipmentInventoryList();
+            showToast(`鍛造成功！獲得 ${EQUIPMENT_SLOT_CONFIG[slot].name}（${EQUIPMENT_SETS[setId].name}）`);
+        }
+
+        // 裝備背包清單：顯示所有鍛造出來的裝備物件，包含目前裝備在哪位英雄身上
+        function renderEquipmentInventoryList() {
+            const list = document.getElementById('equipment-inventory-list');
+            if (!list) return;
+            const inv = GAME_STATE.equipmentInventory || {};
+            const items = Object.values(inv);
+            if (items.length === 0) {
+                list.innerHTML = `<div class="col-span-full text-center text-[10px] text-stone-500 py-6">背包裡沒有任何裝備，上面可以花資源鍛造一件</div>`;
+                return;
+            }
+            items.sort((a, b) => b.level - a.level);
+            list.innerHTML = items.map(item => {
+                const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
+                const setDef = item.setId && EQUIPMENT_SETS[item.setId];
+                const equippedHero = item.equippedBy && HERO_DATABASE.find(h => h.id === item.equippedBy);
+                return `<div class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center">
+                    <i class="fa-solid ${cfg ? cfg.icon : 'fa-question'} text-lg mb-1" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
+                    <div class="text-[9px] font-bold text-stone-300">${cfg ? cfg.name : '???'} +${item.level}</div>
+                    <div class="text-[8px]" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
+                    ${equippedHero ? `<div class="text-[8px] text-emerald-400 mt-0.5 truncate w-full">裝備於：${equippedHero.name}</div>` : '<div class="text-[8px] text-stone-600 mt-0.5">未裝備</div>'}
+                </div>`;
+            }).join('');
         }
 
         /* ============================================================
@@ -3472,9 +3780,43 @@
 
         function refreshBlackMarketUI() {
             document.getElementById('bm-currency-display').innerText = (GAME_STATE.blackMarketCurrency || 0).toLocaleString();
+            updateDailyForgeStoneUI();
             if (!mpConnected) return;
             listenBlackMarketBrowse();
             listenBlackMarketMine();
+        }
+
+        // ★ 新增：每日限量鍛造石補給——系統直接販售（不是玩家對玩家交易），50 黑市幣 = 1 顆，每天限購 2000 顆
+        const DAILY_FORGE_STONE_LIMIT = 2000;
+        const DAILY_FORGE_STONE_BMC_RATE = 50; // 50 黑市幣 = 1 顆鍛造石
+        function getDailyForgeStonePurchased() {
+            if (GAME_STATE.dailyForgeStoneDate !== getTodayDateStr()) {
+                GAME_STATE.dailyForgeStoneDate = getTodayDateStr();
+                GAME_STATE.dailyForgeStonePurchased = 0;
+            }
+            return GAME_STATE.dailyForgeStonePurchased || 0;
+        }
+        function updateDailyForgeStoneUI() {
+            const el = document.getElementById('bm-forge-stone-remaining');
+            if (!el) return;
+            el.innerText = (DAILY_FORGE_STONE_LIMIT - getDailyForgeStonePurchased()).toLocaleString();
+        }
+        function purchaseDailyForgeStones() {
+            ToneAudioEngine.playClick();
+            const amount = parseInt(document.getElementById('bm-forge-stone-amount').value);
+            if (!amount || amount <= 0) {showToast('請輸入要購買的數量'); return;}
+            const remaining = DAILY_FORGE_STONE_LIMIT - getDailyForgeStonePurchased();
+            if (amount > remaining) {showToast(`今日剩餘額度只有 ${remaining} 顆`); return;}
+            const cost = amount * DAILY_FORGE_STONE_BMC_RATE;
+            if ((GAME_STATE.blackMarketCurrency || 0) < cost) {showToast('黑市貨幣不足'); return;}
+            GAME_STATE.blackMarketCurrency -= cost;
+            GAME_STATE.forgeStones += amount;
+            GAME_STATE.dailyForgeStonePurchased = getDailyForgeStonePurchased() + amount;
+            saveGame(); updateHUD();
+            document.getElementById('bm-currency-display').innerText = GAME_STATE.blackMarketCurrency.toLocaleString();
+            document.getElementById('bm-forge-stone-amount').value = '';
+            updateDailyForgeStoneUI();
+            showToast(`購買成功：${cost.toLocaleString()} 黑市幣 → ${amount} 鍛造石`);
         }
 
         function exchangeDiamondToBMC() {
@@ -3504,15 +3846,23 @@
             showToast(`兌換成功：${actualCost.toLocaleString()} 黑市貨幣 → ${diamonds} 寶石`);
         }
 
+        // ★ 3 人環境適配：日巡（常駐）池抽到的重複碎片會標記一部分為 bound（不可交易），
+        // 這裡算出「總持有 - bound」= 真正可以拿去黑市上架的數量
+        function getTradeableShardCount(heroId) {
+            const total = (GAME_STATE.heroShards && GAME_STATE.heroShards[heroId]) || 0;
+            const bound = (GAME_STATE.boundHeroShards && GAME_STATE.boundHeroShards[heroId]) || 0;
+            return Math.max(0, total - bound);
+        }
+
         function populateBlackMarketSellSelect() {
             const sel = document.getElementById('bm-sell-hero');
             sel.innerHTML = '<option value="">選擇要上架的英雄碎片</option>';
-            const shardIds = Object.keys(GAME_STATE.heroShards || {}).filter(id => (GAME_STATE.heroShards[id] || 0) > 0);
+            const shardIds = Object.keys(GAME_STATE.heroShards || {}).filter(id => getTradeableShardCount(id) > 0);
             shardIds.forEach(id => {
                 const dbHero = HERO_DATABASE.find(h => h.id === id);
                 if (!dbHero) return;
                 const opt = document.createElement('option');
-                opt.value = id; opt.innerText = `${dbHero.name}（持有 ${GAME_STATE.heroShards[id]} 個）`;
+                opt.value = id; opt.innerText = `${dbHero.name}（可上架 ${getTradeableShardCount(id)} 個）`;
                 sel.appendChild(opt);
             });
         }
@@ -3526,7 +3876,8 @@
             if (!heroId) {showToast('請選擇要上架的英雄'); return;}
             if (!amount || amount <= 0) {showToast('請輸入正確的碎片數量'); return;}
             if (!price || price <= 0) {showToast('請輸入正確的總價'); return;}
-            if ((GAME_STATE.heroShards[heroId] || 0) < amount) {showToast('碎片數量不足'); return;}
+            // ★ 只能上架「可交易」的部分，日巡池標記為 bound 的碎片不算在內
+            if (getTradeableShardCount(heroId) < amount) {showToast('可交易的碎片數量不足（部分碎片來自日巡池，已綁定無法交易）'); return;}
 
             const dbHero = HERO_DATABASE.find(h => h.id === heroId);
             try {
@@ -3767,7 +4118,7 @@
                     const dbHero = HERO_DATABASE.find(h => h.id === r.heroId);
                     if (dbHero) {
                         if (r.heroGrantType === 'hero' && !GAME_STATE.roster[r.heroId]) {
-                            GAME_STATE.roster[r.heroId] = {level: 1, star: dbHero.star || 1, artifactTier: 0, equips: [0, 0, 0, 0]};
+                            GAME_STATE.roster[r.heroId] = {level: 1, star: dbHero.star || 1, artifactTier: 0, equippedItems: {}};
                             showToast(`🎉 獲得英雄：${dbHero.name}！`);
                         } else {
                             const shardAmt = r.heroGrantType === 'hero' ? 30 : (r.heroShardAmount || 10);
@@ -4307,7 +4658,8 @@
             // ★ 保底改成三個卡池各自獨立累計，互不共用（原本三卡池共用同一個 gachaPityCount 是設計錯誤）
             gachaPity: {standard: 0, limited: 0, special: 0},
             gridSlots: ['h_militia', null, null, null, null, null],
-            roster: {'h_militia': {level: 1, star: 1, artifactTier: 0, equips: [0, 0, 0, 0]}},
+            roster: {'h_militia': {level: 1, star: 1, artifactTier: 0, equippedItems: {}}},
+            equipmentInventory: {}, // ★ 新增：8 部位裝備系統的背包，key 是裝備物件 id
 
             // ★ 修正：不再把整個內建圖庫複製進 DEFAULT_STATE——這是「舊照片凍結、更新圖庫玩家看不到」
             // 這個 bug 真正的源頭。現在 customHeroes 只用來放「玩家自己上傳覆蓋的圖片」（目前沒有對應的
@@ -4315,6 +4667,11 @@
             customHeroes: {},
             customBG: BUILT_IN_ASSETS.bgOverride,
             heroShards: {}, // ★ 英雄碎片 (per-hero)，召喚抽到重複英雄或賽季商店兌換取得，用來手動升星
+            boundHeroShards: {}, // ★ 3人環境適配：日巡(常駐)池抽到的碎片會標記一部分在這裡，不可上架黑市交易
+            mercenarySelection: null, // ★ 傭兵助戰：目前借用中、還沒用掉的傭兵資料
+            lastMercenaryDate: null, // ★ 傭兵助戰：上次借用的日期字串，用來限制每日1次
+            dailyForgeStonePurchased: 0, // ★ 黑市每日限量鍛造石補給：今天已購買數量
+            dailyForgeStoneDate: null, // ★ 上次購買的日期字串，用來每日重置額度
 
             season: {id: 1, highScore: 0, totalDamage: 0, passRound: 1, lastSwitchTime: 0},
 
@@ -5079,6 +5436,46 @@
             updateHUD();
         }
 
+        /* ============================================================
+           【企劃書】經濟與掛機基礎產出 (AFK Economy)
+           ★ 新增：玩家離線的這段時間會依照企劃書附件的基礎產出速率累積收益，回來時（見
+           startGameAfterAuth）自動結算領取一次。這是原本「營地掛機」系統被拿掉之後留下的
+           lastIdleClaim 欄位重新賦予用途，不是另外疊加一個新的存檔欄位。
+           公式：最終收益 = 基礎產出(/hr) × (1 + 最高通關章節 × 0.1) × 1.5^(賽季-1)，
+           離線時間上限 24 小時（避免長期不上線的收益無限累積）。
+           ============================================================ */
+        const AFK_BASE_RATES = {gold: 3000, exp: 5000, stones: 50, tickets: 10, crystalChancePerHour: 0.01};
+        const AFK_MAX_OFFLINE_HOURS = 24;
+        function claimOfflineEarnings() {
+            if (!GAME_STATE.lastIdleClaim) {GAME_STATE.lastIdleClaim = Date.now(); return;}
+            const elapsedMs = Date.now() - GAME_STATE.lastIdleClaim;
+            let hours = elapsedMs / (60 * 60 * 1000);
+            if (hours < 0.1) {GAME_STATE.lastIdleClaim = Date.now(); return;} // 離開不到 6 分鐘，靜靜歸零，不特別跳通知
+            hours = Math.min(hours, AFK_MAX_OFFLINE_HOURS);
+
+            const chapterMult = 1 + (GAME_STATE.highestStage.chapter || 1) * 0.1;
+            const seasonMult = Math.pow(1.5, (GAME_STATE.season.id || 1) - 1);
+            const totalMult = chapterMult * seasonMult;
+
+            const goldGain = Math.floor(AFK_BASE_RATES.gold * hours * totalMult);
+            const expGain = Math.floor(AFK_BASE_RATES.exp * hours * totalMult);
+            const stoneGain = Math.floor(AFK_BASE_RATES.stones * hours * totalMult);
+            const ticketGain = Math.floor(AFK_BASE_RATES.tickets * hours * totalMult);
+            const crystalGain = Math.floor(hours * AFK_BASE_RATES.crystalChancePerHour);
+
+            GAME_STATE.gold += goldGain;
+            GAME_STATE.heroExp += expGain;
+            GAME_STATE.forgeStones += stoneGain;
+            GAME_STATE.tickets += ticketGain;
+            if (crystalGain > 0) GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + crystalGain;
+            GAME_STATE.lastIdleClaim = Date.now();
+
+            saveGame(); updateHUD();
+            let msg = `🎁 離線收益（${hours.toFixed(1)} 小時）：+${goldGain.toLocaleString()} 金幣／+${expGain.toLocaleString()} 經驗／+${stoneGain} 鍛造石／+${ticketGain} 召喚卷`;
+            if (crystalGain > 0) msg += `／+${crystalGain} 超越結晶`;
+            showToast(msg);
+        }
+
         // ★ 保護機制：管理員如果把「英雄等級上限」或「聖物強化上限」往下調，但玩家有些英雄已經超過
         // 新的上限，這裡會把所有英雄的等級／聖物階級強制鎖回目前的上限值，避免升級按鈕判斷異常、
         // 或是利用「上限被調低前衝上去的舊進度」鑽漏洞。只會往下修正，不會影響原本沒超過上限的英雄。
@@ -5458,7 +5855,7 @@
                     const pickId = pool[Math.floor(Math.random() * pool.length)];
                     const dbHero = HERO_DATABASE.find(h => h.id === pickId);
                     if (!GAME_STATE.roster[pickId]) {
-                        GAME_STATE.roster[pickId] = {level: 1, star: dbHero.star, artifactTier: 0, equips: [0, 0, 0, 0]};
+                        GAME_STATE.roster[pickId] = {level: 1, star: dbHero.star, artifactTier: 0, equippedItems: {}};
                         showToast(`🎉 兌換獲得全新英雄：${dbHero.name}`);
                     } else {
                         // 改成發放英雄碎片，跟召喚重複抽到的規則一致，玩家自己決定何時拿碎片去升星
@@ -6047,6 +6444,162 @@
             '輔助': {blockRate: 0,    critDmgBase: 1.5, energyStartBonus: 0,  effRes: 0.15, lifestealBase: 0},
         };
 
+        /* ============================================================
+           【企劃書】8 部位裝備體系與 8 大共鳴套裝
+           ★ 這是全新的裝備系統，取代原本「每個英雄 4 條抽象強化軌道 (eq[0~3])」的舊設計。
+           現在裝備是背包裡的獨立物件（有自己的部位/套裝歸屬/強化等級），可以在不同英雄之間
+           拆下來重新裝備，不再永久綁死在單一英雄身上。玩家已確認舊裝備資料可以直接覆蓋重置。
+           ★ 取得方式（暫定）：專屬的「八大鍛爐」秘境還沒做，這裡先開放一個簡化版的「工坊鍛造」，
+           花鍛造石+金幣指定部位/套裝直接鍛造一件 0 強化的裝備，讓這個系統現在就能被使用；
+           之後八大鍛爐上線後，鍛造的角色會自然變成「保底」的其中一種取得管道，不衝突。
+           ============================================================ */
+        const EQUIPMENT_SLOTS = ['weapon', 'offhand', 'armor', 'helmet', 'boots', 'gloves', 'ring', 'necklace'];
+        const EQUIPMENT_SLOT_CONFIG = {
+            weapon:   {name: '武器',   icon: 'fa-khanda',        base: {atk: 200},               perLevel: {atk: 35},              unlockDesc: '+5 解鎖暴傷／+15 解鎖穿透'},
+            offhand:  {name: '副手',   icon: 'fa-shield-halved', base: {atk: 100, hp: 1000},      perLevel: {atk: 15, hp: 150},      unlockDesc: '+10 解鎖技能增傷'},
+            armor:    {name: '胸甲',   icon: 'fa-vest',          base: {hp: 2000, def: 150},       perLevel: {hp: 300, def: 25},     unlockDesc: '+10 解鎖傷害減免'},
+            helmet:   {name: '頭盔',   icon: 'fa-helmet-battle', base: {hp: 1500, magicRes: 150},  perLevel: {hp: 200, magicRes: 20},unlockDesc: '+10 解鎖效果抵抗'},
+            boots:    {name: '鞋子',   icon: 'fa-socks',         base: {def: 100},                perLevel: {def: 15},              unlockDesc: '+10 解鎖行動優先級'},
+            gloves:   {name: '手套',   icon: 'fa-mitten',        base: {atk: 120},                perLevel: {atk: 20},              unlockDesc: '+15 解鎖連擊率'},
+            ring:     {name: '戒指',   icon: 'fa-ring',          base: {crit: 5},                 perLevel: {},                     unlockDesc: '+20 解鎖開局初始能量'},
+            necklace: {name: '項鍊',   icon: 'fa-gem',           base: {hp: 50, atk: 50, def: 50}, perLevel: {hp: 8, atk: 8, def: 8},unlockDesc: '+20 解鎖回能加速'},
+        };
+        const EQUIPMENT_MAX_LEVEL = 20;
+
+        // 8 大共鳴套裝：2/4/6/8 件階梯疊加。比較單純、可以直接換算成數值的效果先接上戰鬥（見 getEffectiveHero），
+        // 少數需要獨立判定時機的特殊機制（免死/復活/反彈/引爆等）先記錄描述文字，尚未接上戰鬥引擎，
+        // 會在之後專門的套裝機制那一輪再逐一實作，避免這次一次牽動太多新的戰鬥分支。
+        const EQUIPMENT_SETS = {
+            berserk:  {name: '狂暴', color: '#ef4444', bonuses: {
+                2: {desc: '暴擊率 +12%', stat: {critRate: 12}},
+                4: {desc: '暴擊傷害 +35%', stat: {critDmgPct: 35}},
+                6: {desc: '暴擊時疊加攻擊力（尚未接上戰鬥）', stat: {}},
+                8: {desc: '暴擊無視 40% 防禦，且擊殺刷新大招（尚未接上戰鬥）', stat: {}},
+            }},
+            breaker:  {name: '破陣', color: '#f97316', bonuses: {
+                2: {desc: '技能傷害 +15%', stat: {skillDmgPct: 15}},
+                4: {desc: '真實傷害倍率 +20%', stat: {trueDmgPct: 20}},
+                6: {desc: '攻擊降低目標防禦（尚未接上戰鬥）', stat: {}},
+                8: {desc: '攻擊高血量目標必觸發 15% 真傷（尚未接上戰鬥）', stat: {}},
+            }},
+            guardian: {name: '守護', color: '#3b82f6', bonuses: {
+                2: {desc: '生命值 +20%', stat: {hpPct: 20}},
+                4: {desc: '殘血時為全隊護盾（尚未接上戰鬥）', stat: {}},
+                6: {desc: '反彈真實傷害（尚未接上戰鬥）', stat: {}},
+                8: {desc: '免控，且能代友軍承受致命傷（尚未接上戰鬥）', stat: {}},
+            }},
+            swift:    {name: '神速', color: '#22c55e', bonuses: {
+                2: {desc: '開局初始能量 +25', stat: {startEnergy: 25}},
+                4: {desc: '首回合免疫控場，且無法被驅散（尚未接上戰鬥）', stat: {}},
+                6: {desc: '回能速度加快（尚未接上戰鬥）', stat: {}},
+                8: {desc: '開局全員滿能，但前 2 回合大招傷害 -40%（尚未接上戰鬥）', stat: {}},
+            }},
+            undying:  {name: '不滅', color: '#a855f7', bonuses: {
+                2: {desc: '生命偷取 +10%', stat: {lifesteal: 10}},
+                4: {desc: '免死一次並回滿能量（尚未接上戰鬥）', stat: {}},
+                6: {desc: '死後可復活一次（尚未接上戰鬥）', stat: {}},
+                8: {desc: '傷害轉真傷，血越低打得越痛（尚未接上戰鬥）', stat: {}},
+            }},
+            wish:     {name: '祈願', color: '#fbbf24', bonuses: {
+                2: {desc: '治療量 +25%', stat: {healPct: 25}},
+                4: {desc: '治療附帶攻防加成（尚未接上戰鬥）', stat: {}},
+                6: {desc: '全隊被動回血（尚未接上戰鬥）', stat: {}},
+                8: {desc: '溢出治療轉換成護盾（尚未接上戰鬥）', stat: {}},
+            }},
+            venom:    {name: '劇毒', color: '#16a34a', bonuses: {
+                2: {desc: '命中率與持續傷害 +15%', stat: {hitPct: 15, dotPct: 15}},
+                4: {desc: '攻擊附加疊加中毒（尚未接上戰鬥）', stat: {}},
+                6: {desc: '中毒目標造成的傷害降低（尚未接上戰鬥）', stat: {}},
+                8: {desc: '大招引爆所有持續傷害效果（尚未接上戰鬥）', stat: {}},
+            }},
+            counter:  {name: '反制', color: '#78716c', bonuses: {
+                2: {desc: '格擋率 +20%', stat: {blockRate: 20}},
+                4: {desc: '格擋成功減傷 70% 並反擊（尚未接上戰鬥）', stat: {}},
+                6: {desc: '反擊時回血回能（尚未接上戰鬥）', stat: {}},
+                8: {desc: '永久嘲諷，受擊時繳械敵方（尚未接上戰鬥）', stat: {}},
+            }},
+        };
+
+        let equipmentItemIdCounter = 0; // 裝備物件的流水號，配合時間戳記組成唯一 id
+        function createEquipmentItem(slot, setId) {
+            equipmentItemIdCounter++;
+            return {
+                id: `eq_${Date.now()}_${equipmentItemIdCounter}`,
+                slot, setId, level: 0, equippedBy: null,
+            };
+        }
+
+        // 算出單一裝備物件目前（含強化等級）提供的白字數值
+        function getEquipmentItemStats(item) {
+            if (!item) return {};
+            const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
+            if (!cfg) return {};
+            const stats = {};
+            Object.keys(cfg.base).forEach(k => stats[k] = cfg.base[k]);
+            Object.keys(cfg.perLevel || {}).forEach(k => {
+                stats[k] = (stats[k] || 0) + cfg.perLevel[k] * (item.level || 0);
+            });
+            return stats;
+        }
+
+        // ★ 裝備欄位可能存兩種型態：本機自己的 roster 存的是「裝備物件 id」字串（查 GAME_STATE.equipmentInventory），
+        // 但競技場廣播快照／模擬對手陣容時，equippedItems 存的是「已經展開好的裝備資料物件」（因為對方裝備背包
+        // 不在自己裝置上，沒辦法用 id 查表）。這裡統一处理這兩種情況，其餘函式都呼叫這裡取得裝備物件。
+        // ★ 競技場廣播／邀請對戰用：把本機的「裝備物件 id」欄位展開成完整資料物件，
+        // 因為對方裝置沒有自己的 equipmentInventory，只能靠廣播出去的資料直接重建（見 resolveEquippedItem）。
+        function denormalizeEquippedItems(r) {
+            const out = {};
+            if (!r || !r.equippedItems) return out;
+            EQUIPMENT_SLOTS.forEach(slot => {
+                const item = resolveEquippedItem(r.equippedItems[slot]);
+                if (item) out[slot] = {slot: item.slot, setId: item.setId, level: item.level};
+            });
+            return out;
+        }
+
+        function resolveEquippedItem(ref) {
+            if (!ref) return null;
+            if (typeof ref === 'string') return (GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[ref]) || null;
+            return ref; // 已經是展開後的物件，直接使用
+        }
+
+        // 強化到下一級所需的鍛造石／金幣消耗；跟原本 4 格系統的曲線同一套精神，校準到「+20 大約需要 2800 顆鍛造石」
+        function getEquipmentEnhanceCost(currentLevel) {
+            return {
+                stones: 10 + currentLevel * 14,
+                gold: 200 + currentLevel * 300,
+            };
+        }
+
+        // 統計某位英雄目前裝備的 8 個部位裡，各套裝各穿了幾件。傳入的是 roster 物件本身
+        // （本機英雄傳 GAME_STATE.roster[heroId]，競技場模擬對手傳廣播快照），不是 heroId。
+        function getHeroSetCounts(r) {
+            const counts = {};
+            if (!r || !r.equippedItems) return counts;
+            EQUIPMENT_SLOTS.forEach(slot => {
+                const item = resolveEquippedItem(r.equippedItems[slot]);
+                if (item && item.setId) counts[item.setId] = (counts[item.setId] || 0) + 1;
+            });
+            return counts;
+        }
+
+        // 依套裝件數統計，彙總出目前生效的所有「已接上戰鬥」數值加成（2/4/6/8 件門檻，未達門檻不計入）
+        function getSetBonusStats(setCounts) {
+            const agg = {critRate: 0, critDmgPct: 0, skillDmgPct: 0, trueDmgPct: 0, hpPct: 0, startEnergy: 0, lifesteal: 0, healPct: 0, hitPct: 0, dotPct: 0, blockRate: 0};
+            Object.keys(setCounts).forEach(setId => {
+                const setDef = EQUIPMENT_SETS[setId];
+                if (!setDef) return;
+                const count = setCounts[setId];
+                [2, 4, 6, 8].forEach(threshold => {
+                    if (count >= threshold && setDef.bonuses[threshold]) {
+                        const stat = setDef.bonuses[threshold].stat || {};
+                        Object.keys(stat).forEach(k => {agg[k] = (agg[k] || 0) + stat[k];});
+                    }
+                });
+            });
+            return agg;
+        }
+
         // 等級成長倍率：分段公式，Lv1~30 每級 +8%、Lv31~70 每級 +5%、Lv71~100 每級 +3%、Lv101+ 每級 +2%
         function getLevelMultiplier(level) {
             const l = Math.max(1, level || 1);
@@ -6105,10 +6658,9 @@
 
         function getEffectiveHero(db) {
             if (!db) return null;
-            const r = GAME_STATE.roster[db.id] || {level: 1, star: db.star || 1, artifactTier: 0, equips: [0, 0, 0, 0]};
+            const r = GAME_STATE.roster[db.id] || {level: 1, star: db.star || 1, artifactTier: 0, equippedItems: {}};
             const l = r.level; // ★ 庇護等級移除：不再跟最高等級英雄同步，就是自己實際的等級
             const star = r.star || 1;
-            const eq = r.equips || [0, 0, 0, 0];
 
             const rarityMult = RARITY_BASE_MULT[db.rarity] || 1.0;
             const passive = RARITY_PASSIVES[db.rarity] || RARITY_PASSIVES.R;
@@ -6123,28 +6675,48 @@
             // 2. 等級成長倍率（分段公式）
             const lvlMult = getLevelMultiplier(l);
 
-            // 3. 加算加成池：星級（對數）+ 聖物（分段）。裝備目前仍是舊的 4 格直接加算數值，
-            //    尚未併入這個比例池——8 部位裝備／套裝系統是後續階段，這次不動裝備數值結構。
+            // 3. 加算加成池：星級（對數）+ 聖物（分段）
             const totalBonus = 1 + getStarBonusRatio(star) + getArtifactBonusRatio(r.artifactTier || 0);
             const artifactDmgReduce = getArtifactDmgReduceRatio(r.artifactTier || 0);
 
-            // 4. 現有 4 格裝備系統的直接加算數值（維持相容）
-            const eqHp = eq[2] * 80, eqAtk = eq[0] * 15, eqDef = eq[1] * 8;
+            // 4. ★ 新版 8 部位裝備：把 8 個部位目前裝備的物件數值直接加總（每個部位各自的白字＋強化等級加成）
+            let eqHp = 0, eqAtk = 0, eqDef = 0, eqCrit = 0;
+            EQUIPMENT_SLOTS.forEach(slot => {
+                const item = resolveEquippedItem(r.equippedItems && r.equippedItems[slot]);
+                if (!item) return;
+                const stats = getEquipmentItemStats(item);
+                eqHp += stats.hp || 0; eqAtk += stats.atk || 0; eqDef += stats.def || 0; eqCrit += stats.crit || 0;
+                // magicRes 目前只記錄在裝備物件上，還沒接進傷害公式（傷害公式目前只有物理防禦減免這一種），
+                // 之後要做魔法傷害/物理傷害分流時再接上
+            });
 
-            const hp = Math.floor(baseHp * lvlMult * totalBonus + eqHp);
+            // 5. 套裝加成：統計目前穿了幾件同套裝，達到 2/4/6/8 件門檻的數值加成一起套用
+            const setCounts = getHeroSetCounts(r);
+            const setBonus = getSetBonusStats(setCounts);
+
+            const hp = Math.floor((baseHp * lvlMult * totalBonus + eqHp) * (1 + (setBonus.hpPct || 0) / 100));
             const atk = Math.floor(baseAtk * lvlMult * totalBonus + eqAtk);
             const def = Math.floor(baseDef * lvlMult * totalBonus + eqDef);
-            const crit = (db.crit || 0) + (eq[3] * 2);
+            const crit = (db.crit || 0) + eqCrit + (setBonus.critRate || 0);
 
             // 稀有度天賦：速度、初始能量加成、受傷減免（+聖物高階免傷）、全傷害加成、GR 免死
             const spd = (classBase.spd || 100) + (passive.spd || 0);
             const dmgReduce = Math.min(0.6, (passive.dmgReduce || 0) + artifactDmgReduce);
             const dmgBonus = passive.dmgBonus || 0;
             const cheatDeath = !!passive.cheatDeath;
-            const critDmgMult = classPassive.critDmgBase || 1.5; // 基礎暴傷：刺客 180%，其他職業 150%（暴擊時再套用 300% 硬上限）
-            const energyStartBonus = (passive.energyStart || 0) + (classPassive.energyStartBonus || 0);
-            const hitRate = 1; // ★ 目前沒有專門的命中率數值來源，先給滿命中；之後可接裝備/天賦提供額外命中
-            const dodgeRate = 0; // ★ 同上，閃避率之後可以接裝備/天賦來源，目前預設 0
+            // 基礎暴傷：刺客 180%，其他職業 150%，套裝「狂暴」4件再疊加百分比（暴擊時再套用 300% 硬上限）
+            const critDmgMult = (classPassive.critDmgBase || 1.5) + (setBonus.critDmgPct || 0) / 100;
+            const energyStartBonus = (passive.energyStart || 0) + (classPassive.energyStartBonus || 0) + (setBonus.startEnergy || 0);
+            const hitRate = 1 + (setBonus.hitPct || 0) / 100; // ★ 命中率：基礎滿命中，「劇毒」套裝2件再加成
+            const dodgeRate = 0; // ★ 閃避率之後可以接裝備/天賦來源，目前預設 0
+            // ★ 以下幾項套裝數值已經記錄在角色身上，但還沒有對應的戰鬥分支可以套用（技能傷害%/真傷%/生命偷取/
+            // 持續傷害%/格擋率——格擋是全新機制，真傷/持續傷害是分散在各技能各自計算，需要之後專門的套裝機制那一輪處理）
+            const skillDmgBonus = (setBonus.skillDmgPct || 0) / 100;
+            const trueDmgBonus = (setBonus.trueDmgPct || 0) / 100;
+            const lifestealBonus = (classPassive.lifestealBase || 0) + (setBonus.lifesteal || 0) / 100;
+            const healBonus = (setBonus.healPct || 0) / 100;
+            const dotBonus = (setBonus.dotPct || 0) / 100;
+            const blockRate = (classPassive.blockRate || 0) + (setBonus.blockRate || 0) / 100;
 
             // ★ 升星現在也會讓專屬技能一起變強，不再只是單純的數值倍率：
             // 技能的「數值型」欄位 (value/傷害或治療幅度) 每星 +5%，「機率型」欄位 (chance) 每星 +1.5% 並封頂 95%，
@@ -6162,6 +6734,7 @@
             return {
                 ...db, ...r, effectiveLevel: l, maxHp: hp, atk, def, crit, skill: effSkill,
                 spd, dmgReduce, dmgBonus, cheatDeath, critDmgMult, energyStartBonus, hitRate, dodgeRate,
+                skillDmgBonus, trueDmgBonus, lifestealBonus, healBonus, dotBonus, blockRate, setCounts,
                 combatPower: Math.floor(hp * 0.5 + atk * 2 + def * 1.5 + crit * 10)
             };
         }
@@ -6498,7 +7071,7 @@
                 const hId = config.exclusiveHero;
                 const dbH = HERO_DATABASE.find(x => x.id === hId);
                 if (!GAME_STATE.roster[hId]) {
-                    GAME_STATE.roster[hId] = {level: 1, star: dbH.star, artifactTier: 0, equips: [0, 0, 0, 0]};
+                    GAME_STATE.roster[hId] = {level: 1, star: dbH.star, artifactTier: 0, equippedItems: {}};
                     showToast(`🎉 獲得賽季限定英雄：${dbH.name}！`);
                 } else if ((GAME_STATE.roster[hId].star || 1) >= MAX_STAR_LEVEL) {
                     // ★ 修正：這裡原本不管星級多高都直接 .star++，完全沒檢查上限，
@@ -6936,27 +7509,41 @@
             document.getElementById('modal-hero-avatar').innerHTML = custom ? `<img src="${custom}" class="w-full h-full object-cover">` : `<i class="fa-solid ${h.avatarIcon}" style="color:${h.color}"></i>`;
 
             const costLvl = getHeroLevelUpCost(h.level);
+            const nextLevel = h.level + 1;
+            const lvlBreakthrough = getLevelBreakthroughCost(nextLevel);
             const btnLvl = document.getElementById('btn-upgrade-lvl');
             if (h.level >= MAX_HERO_LEVEL) {
                 btnLvl.innerHTML = `<span><i class="fa-solid fa-level-up text-emerald-500 mr-1"></i>已達最高等級 Lv.${MAX_HERO_LEVEL}</span>`;
-                btnLvl.disabled = true; btnLvl.classList.add('opacity-50');
+                btnLvl.disabled = true; btnLvl.classList.add('opacity-50'); btnLvl.classList.remove('breakthrough-glow');
+            } else if (lvlBreakthrough) {
+                // ★ 突破檢查點（每 20 級）：切換成特殊光暈樣式，提醒玩家這次要花碎片/結晶，跟一般升級不一樣
+                const shardsOwned = (GAME_STATE.heroShards && GAME_STATE.heroShards[h.id]) || 0;
+                const totalGold = costLvl.gold + lvlBreakthrough.gold;
+                const affordable = GAME_STATE.gold >= totalGold && GAME_STATE.heroExp >= costLvl.exp && shardsOwned >= lvlBreakthrough.shards && (GAME_STATE.transcendCrystals || 0) >= lvlBreakthrough.crystals;
+                btnLvl.innerHTML = `<span><i class="fa-solid fa-burst text-amber-400 mr-1"></i>突破至 Lv.${nextLevel}</span><span class="text-[9px] mt-1 font-normal tracking-wide"><i class="fa-solid fa-coins text-yellow-500"></i> ${totalGold.toLocaleString()} <i class="fa-solid fa-flask text-emerald-500 ml-1"></i> ${costLvl.exp} <i class="fa-solid fa-gem text-purple-300 ml-1"></i> ${shardsOwned}/${lvlBreakthrough.shards}${lvlBreakthrough.crystals > 0 ? ` <i class="fa-solid fa-hexagon text-cyan-300 ml-1"></i> ${(GAME_STATE.transcendCrystals || 0)}/${lvlBreakthrough.crystals}` : ''}</span>`;
+                btnLvl.classList.add('breakthrough-glow');
+                btnLvl.disabled = !affordable; if (btnLvl.disabled) btnLvl.classList.add('opacity-50'); else btnLvl.classList.remove('opacity-50');
             } else {
-                btnLvl.innerHTML = `<span><i class="fa-solid fa-level-up text-emerald-500 mr-1"></i>提升等級</span><span class="text-[9px] mt-1 text-stone-400 font-normal tracking-wide"><i class="fa-solid fa-coins text-yellow-500"></i> ${costLvl.gold} <i class="fa-solid fa-flask text-emerald-500 ml-1"></i> ${costLvl.exp}</span>`;
+                btnLvl.innerHTML = `<span><i class="fa-solid fa-level-up text-emerald-500 mr-1"></i>提升等級</span><span class="text-[9px] mt-1 text-stone-400 font-normal tracking-wide"><i class="fa-solid fa-coins text-yellow-500"></i> ${costLvl.gold.toLocaleString()} <i class="fa-solid fa-flask text-emerald-500 ml-1"></i> ${costLvl.exp}</span>`;
+                btnLvl.classList.remove('breakthrough-glow');
                 btnLvl.disabled = (GAME_STATE.gold < costLvl.gold || GAME_STATE.heroExp < costLvl.exp); if (btnLvl.disabled) btnLvl.classList.add('opacity-50'); else btnLvl.classList.remove('opacity-50');
             }
 
             const shardsOwned = (GAME_STATE.heroShards && GAME_STATE.heroShards[h.id]) || 0;
-            const costStarShards = getHeroStarUpCost(h.star);
+            const costStar = getHeroStarUpCost(h.star);
             const btnStar = document.getElementById('btn-upgrade-star');
             if (h.star >= MAX_STAR_LEVEL) {
                 // ★ LR 英雄滿星後，再拿到的碎片會自動轉化成「超越結晶」，這裡順便顯示目前結晶庫存，
                 // 不然玩家滿星之後完全看不到碎片轉換去哪了，會以為東西憑空消失
                 const crystalNote = h.rarity === 'LR' ? `<span class="text-[8px] mt-1 text-amber-700 font-bold block">之後再拿到的碎片會自動轉化為超越結晶（目前持有 ${(GAME_STATE.transcendCrystals || 0).toLocaleString()}）</span>` : '';
                 btnStar.innerHTML = `<span><i class="fa-solid fa-star text-[#110c08] mr-1"></i>已達最高星級 ${MAX_STAR_LEVEL}★</span>${crystalNote}`;
-                btnStar.disabled = true; btnStar.classList.add('opacity-50');
+                btnStar.disabled = true; btnStar.classList.add('opacity-50'); btnStar.classList.remove('breakthrough-glow');
             } else {
-                btnStar.innerHTML = `<span><i class="fa-solid fa-star text-[#110c08] mr-1"></i>潛能覺醒 (+${h.star})</span><span class="text-[9px] mt-1 text-[#110c08]/80 font-bold tracking-wide"><i class="fa-solid fa-gem text-purple-900"></i> ${shardsOwned}/${costStarShards} 碎片</span>`;
-                btnStar.disabled = (shardsOwned < costStarShards); if (btnStar.disabled) btnStar.classList.add('opacity-50'); else btnStar.classList.remove('opacity-50');
+                const isMajor = costStar.crystals > 0;
+                const affordableStar = shardsOwned >= costStar.shards && GAME_STATE.gold >= costStar.gold && (GAME_STATE.transcendCrystals || 0) >= costStar.crystals;
+                btnStar.innerHTML = `<span><i class="fa-solid ${isMajor ? 'fa-burst' : 'fa-star'} text-[#110c08] mr-1"></i>${isMajor ? '大突破' : '潛能覺醒'} (+${h.star})</span><span class="text-[9px] mt-1 text-[#110c08]/80 font-bold tracking-wide"><i class="fa-solid fa-gem text-purple-900"></i> ${shardsOwned}/${costStar.shards} <i class="fa-solid fa-coins text-yellow-800 ml-1"></i> ${costStar.gold.toLocaleString()}${isMajor ? ` <i class="fa-solid fa-hexagon text-cyan-800 ml-1"></i> ${(GAME_STATE.transcendCrystals || 0)}/${costStar.crystals}` : ''}</span>`;
+                btnStar.classList.toggle('breakthrough-glow', isMajor);
+                btnStar.disabled = !affordableStar; if (btnStar.disabled) btnStar.classList.add('opacity-50'); else btnStar.classList.remove('opacity-50');
             }
 
             renderEquipments(h); document.getElementById('hero-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('hero-modal').classList.remove('opacity-0'), 10);
@@ -6973,59 +7560,66 @@
             }, 300);
         }
 
+        // ★ 8 部位裝備版本：每個部位顯示目前裝備的物件（套裝名稱＋強化等級），或是「尚未裝備」，
+        // 「更換」開啟選擇清單，強化按鈕沿用長按連續升級元件（見下方 equipmentLongPressers）
         function renderEquipments(h) {
             const slots = document.getElementById('modal-equip-slots'); slots.innerHTML = '';
-            const eqData = [{name: '武器', icon: 'fa-khanda', color: 'text-red-400', stat: '攻擊 +15'}, {name: '護甲', icon: 'fa-shield', color: 'text-sky-400', stat: '防禦 +8'}, {name: '頭盔', icon: 'fa-crown', color: 'text-emerald-400', stat: '生命 +80'}, {name: '飾品', icon: 'fa-ring', color: 'text-yellow-400', stat: '暴擊 +2%'}];
-            const eqLevels = h.equips || [0, 0, 0, 0]; const maxLevel = h.effectiveLevel;
+            const hero = GAME_STATE.roster[h.id];
+            if (!hero) return;
+            if (!hero.equippedItems) hero.equippedItems = {};
 
-            eqData.forEach((eq, idx) => {
-                const lv = eqLevels[idx]; const costGold = 50 + (lv * 40); const costStone = 2 + (lv * 2);
-                const MAX_LVL = 20;
-                const isMax = lv >= MAX_LVL || lv >= maxLevel;
-                const canUpgrade = !isMax && GAME_STATE.gold >= costGold && GAME_STATE.forgeStones >= costStone;
-                let limitReason = '<div class="py-1">等級上限</div>';
-                if (lv >= MAX_LVL) limitReason = '<div class="py-1 text-red-400 font-bold">極限(Lv.20)</div>';
-                else if (lv >= maxLevel) limitReason = '<div class="py-1 text-stone-500 font-bold">需提升英雄</div>';
+            EQUIPMENT_SLOTS.forEach(slot => {
+                const cfg = EQUIPMENT_SLOT_CONFIG[slot];
+                const itemId = hero.equippedItems[slot];
+                const item = itemId && GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[itemId];
+                const setDef = item && item.setId && EQUIPMENT_SETS[item.setId];
 
-                slots.innerHTML += `
-                <div class="bg-black/50 p-2 rounded-lg border border-[#3e3328] flex flex-col items-center justify-between text-center relative shadow-inner">
-                    <div class="text-[10px] font-bold text-stone-300 mb-1">${eq.name} <span class="text-white">Lv.${lv}</span></div>
-                    <i class="fa-solid ${eq.icon} ${eq.color} text-xl my-1.5 drop-shadow-md"></i>
-                    <div class="text-[9px] text-stone-500 mb-2 font-bold">${eq.stat}/級</div>
-                    <button onmousedown="equipmentLongPressers[${idx}].start()" onmouseup="equipmentLongPressers[${idx}].stop()" onmouseleave="equipmentLongPressers[${idx}].cancel()" ontouchstart="equipmentLongPressers[${idx}].start()" ontouchend="equipmentLongPressers[${idx}].stop()" ontouchcancel="equipmentLongPressers[${idx}].cancel()" class="w-full py-1.5 rounded text-[9px] font-bold transition-all ${isMax ? 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50' : (canUpgrade ? 'bg-[#2a2118] text-stone-200 border border-[#5a4634] hover:border-fantasy-gold active:scale-95' : 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50')}" ${isMax || !canUpgrade ? 'disabled' : ''}>
-                        ${isMax ? limitReason : `<div class="flex justify-center gap-1.5"><i class="fa-solid fa-coins text-yellow-500 mt-0.5"></i> ${costGold}</div><div class="flex justify-center gap-1.5 mt-0.5"><i class="fa-solid fa-hammer text-stone-400 mt-0.5"></i> ${costStone}</div>`}
-                    </button>
-                </div>`;
+                const card = document.createElement('div');
+                card.className = 'bg-black/50 p-2 rounded-lg border border-[#3e3328] flex flex-col items-center justify-between text-center relative shadow-inner';
+
+                if (item) {
+                    const enhanceCost = getEquipmentEnhanceCost(item.level);
+                    const isMaxLvl = item.level >= EQUIPMENT_MAX_LEVEL;
+                    const canEnhance = !isMaxLvl && GAME_STATE.gold >= enhanceCost.gold && GAME_STATE.forgeStones >= enhanceCost.stones;
+                    card.innerHTML = `
+                        <div class="text-[9px] font-bold text-stone-300 mb-0.5">${cfg.name} <span class="text-white">+${item.level}</span></div>
+                        <i class="fa-solid ${cfg.icon} text-lg my-1 drop-shadow-md" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
+                        <div class="text-[8px] mb-1 font-bold truncate w-full" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
+                        <button onclick="openEquipmentPicker('${slot}')" class="w-full py-1 rounded text-[8px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] hover:border-stone-400 transition mb-1">更換</button>
+                        <button onmousedown="equipmentLongPressers['${slot}'].start()" onmouseup="equipmentLongPressers['${slot}'].stop()" onmouseleave="equipmentLongPressers['${slot}'].cancel()" ontouchstart="equipmentLongPressers['${slot}'].start()" ontouchend="equipmentLongPressers['${slot}'].stop()" ontouchcancel="equipmentLongPressers['${slot}'].cancel()" class="w-full py-1 rounded text-[8px] font-bold transition-all ${isMaxLvl ? 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50' : (canEnhance ? 'bg-[#2a2118] text-stone-200 border border-[#5a4634] hover:border-fantasy-gold active:scale-95' : 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50')}" ${isMaxLvl || !canEnhance ? 'disabled' : ''}>
+                            ${isMaxLvl ? '已滿級' : `<i class="fa-solid fa-hammer text-stone-400"></i> ${enhanceCost.stones} <i class="fa-solid fa-coins text-yellow-500 ml-1"></i> ${enhanceCost.gold}`}
+                        </button>`;
+                } else {
+                    card.innerHTML = `
+                        <div class="text-[9px] font-bold text-stone-500 mb-0.5">${cfg.name}</div>
+                        <i class="fa-solid ${cfg.icon} text-lg my-1 text-stone-700"></i>
+                        <div class="text-[8px] text-stone-600 mb-1">尚未裝備</div>
+                        <button onclick="openEquipmentPicker('${slot}')" class="w-full py-1.5 rounded text-[8px] font-bold bg-[#2a2118] text-stone-300 border border-[#5a4634] hover:border-fantasy-gold transition">裝備</button>`;
+                }
+                slots.appendChild(card);
             });
         }
 
-        // ============ 裝備強化邏輯 ============
-        // 【修復】：UI 按鈕原本呼叫 upgradeEquipment()，但這個函式從未被定義過，
-        // 導致玩家點擊「強化裝備」按鈕完全沒有反應 (Console 會丟出 ReferenceError)。
-        function upgradeEquipment(idx, silent) {
+        // ============ 裝備強化邏輯（8 部位版本）============
+        function enhanceEquippedItem(slot, silent) {
             if (!silent) ToneAudioEngine.playClick();
             const heroId = GAME_STATE.selectedHeroId;
             if (!heroId) return false;
-
             const hero = GAME_STATE.roster[heroId];
-            if (!hero.equips) hero.equips = [0, 0, 0, 0];
-
-            const effectiveHero = getEffectiveHero(HERO_DATABASE.find(x => x.id === heroId));
-            const lv = hero.equips[idx];
-            const MAX_LVL = 20;
-            const isMax = lv >= MAX_LVL || lv >= effectiveHero.effectiveLevel;
-            if (isMax) {
-                if (!silent) showToast(lv >= MAX_LVL ? "此裝備已達強化上限 (Lv.20)！" : "裝備等級不可超過英雄等級，請先提升英雄等級！");
+            if (!hero || !hero.equippedItems) return false;
+            const itemId = hero.equippedItems[slot];
+            const item = itemId && GAME_STATE.equipmentInventory[itemId];
+            if (!item) {if (!silent) showToast('這個部位還沒裝備東西'); return false;}
+            if (item.level >= EQUIPMENT_MAX_LEVEL) {
+                if (!silent) showToast(`此裝備已達強化上限 (+${EQUIPMENT_MAX_LEVEL})！`);
                 return false;
             }
 
-            const costGold = 50 + (lv * 40);
-            const costStone = 2 + (lv * 2);
-
-            if (GAME_STATE.gold >= costGold && GAME_STATE.forgeStones >= costStone) {
-                GAME_STATE.gold -= costGold;
-                GAME_STATE.forgeStones -= costStone;
-                hero.equips[idx]++;
+            const cost = getEquipmentEnhanceCost(item.level);
+            if (GAME_STATE.gold >= cost.gold && GAME_STATE.forgeStones >= cost.stones) {
+                GAME_STATE.gold -= cost.gold;
+                GAME_STATE.forgeStones -= cost.stones;
+                item.level++;
 
                 saveGame();
                 updateHUD();
@@ -7034,12 +7628,90 @@
                 if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
                 if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
 
-                if (!silent) showToast(`裝備強化成功！當前等級 Lv.${hero.equips[idx]}`);
+                if (!silent) showToast(`裝備強化成功！當前 +${item.level}`);
                 return true;
             } else {
                 if (!silent) showToast("資源不足！需要更多金幣與鍛造石。");
                 return false;
             }
+        }
+
+        // ============ 裝備／卸下（選擇清單彈窗）============
+        let equipmentPickerSlot = null;
+        function openEquipmentPicker(slot) {
+            ToneAudioEngine.playClick();
+            equipmentPickerSlot = slot;
+            const cfg = EQUIPMENT_SLOT_CONFIG[slot];
+            document.getElementById('equipment-picker-title').innerText = `選擇${cfg.name}（${cfg.unlockDesc}）`;
+            renderEquipmentPickerList();
+            const modal = document.getElementById('equipment-picker-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+        function closeEquipmentPicker() {
+            ToneAudioEngine.playClick();
+            const modal = document.getElementById('equipment-picker-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {modal.classList.add('hidden'); modal.classList.remove('flex');}, 300);
+        }
+        function renderEquipmentPickerList() {
+            const list = document.getElementById('equipment-picker-list');
+            const slot = equipmentPickerSlot;
+            const heroId = GAME_STATE.selectedHeroId;
+            const hero = GAME_STATE.roster[heroId];
+            const currentItemId = hero.equippedItems && hero.equippedItems[slot];
+            let html = '';
+            if (currentItemId) {
+                html += `<button onclick="unequipItem('${slot}')" class="w-full py-2 bg-rose-900/50 text-rose-300 text-[10px] font-bold rounded border border-rose-700 hover:bg-rose-800 transition">卸下目前裝備</button>`;
+            }
+            const inv = GAME_STATE.equipmentInventory || {};
+            const candidates = Object.values(inv).filter(it => it.slot === slot && !it.equippedBy);
+            if (candidates.length === 0) {
+                html += `<div class="text-center text-[10px] text-stone-500 py-6">背包裡沒有這個部位的裝備，去背包分頁鍛造一件吧</div>`;
+            } else {
+                candidates.sort((a, b) => b.level - a.level).forEach(item => {
+                    const setDef = item.setId && EQUIPMENT_SETS[item.setId];
+                    html += `<button onclick="equipItem('${item.id}')" class="w-full py-2 px-3 bg-black/40 rounded-lg border border-[#3e3328] hover:border-fantasy-gold transition flex justify-between items-center">
+                        <span class="text-[10px] font-bold" style="color:${setDef ? setDef.color : '#94a3b8'}">${setDef ? setDef.name : '無套裝'}</span>
+                        <span class="text-[10px] text-stone-300">+${item.level}</span>
+                    </button>`;
+                });
+            }
+            list.innerHTML = html;
+        }
+        function equipItem(itemId) {
+            ToneAudioEngine.playClick();
+            const heroId = GAME_STATE.selectedHeroId;
+            const hero = GAME_STATE.roster[heroId];
+            const item = GAME_STATE.equipmentInventory[itemId];
+            if (!hero || !item) return;
+            if (!hero.equippedItems) hero.equippedItems = {};
+            // 如果這個部位原本已經裝了別的，先卸下（改回未裝備狀態），一個部位只能同時裝一件
+            const prevItemId = hero.equippedItems[item.slot];
+            if (prevItemId && GAME_STATE.equipmentInventory[prevItemId]) GAME_STATE.equipmentInventory[prevItemId].equippedBy = null;
+            hero.equippedItems[item.slot] = itemId;
+            item.equippedBy = heroId;
+            saveGame(); updateHUD();
+            closeEquipmentPicker();
+            openHeroModal(heroId);
+            if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
+            if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
+            showToast('裝備成功！');
+        }
+        function unequipItem(slot) {
+            ToneAudioEngine.playClick();
+            const heroId = GAME_STATE.selectedHeroId;
+            const hero = GAME_STATE.roster[heroId];
+            if (!hero || !hero.equippedItems) return;
+            const itemId = hero.equippedItems[slot];
+            if (itemId && GAME_STATE.equipmentInventory[itemId]) GAME_STATE.equipmentInventory[itemId].equippedBy = null;
+            hero.equippedItems[slot] = null;
+            saveGame(); updateHUD();
+            closeEquipmentPicker();
+            openHeroModal(heroId);
+            if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
+            if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
+            showToast('已卸下裝備');
         }
 
         // ★ 通用長按升級小工具：包一層 mousedown/touchstart 事件，讓任何「升級」按鈕都能長按連續觸發，
@@ -7103,7 +7775,9 @@
             return {start, stop, cancel};
         }
         // 每個裝備欄位各自要有自己的長按狀態，不然同時按兩個欄位的計次會互相干擾，用陣列各自存一份
-        const equipmentLongPressers = [0, 1, 2, 3].map(idx => createLongPressUpgrader((silent) => upgradeEquipment(idx, silent)));
+        // 每個裝備部位各自要有自己的長按狀態，不然同時按兩個部位的計次會互相干擾，用 slot 名稱各自存一份
+        const equipmentLongPressers = {};
+        EQUIPMENT_SLOTS.forEach(slot => {equipmentLongPressers[slot] = createLongPressUpgrader((silent) => enhanceEquippedItem(slot, silent));});
 
         // ============ 英雄升級邏輯 ============
         // ★ 英雄等級上限 200，升級花費改成二次曲線成長 (原本是線性 +50/+30，高等級時費用幾乎跟不上收入，
@@ -7118,11 +7792,31 @@
         // 這裡另外訂一個「夠寬鬆但還是有限」的估計值，只用在合理性檢查上，跟遊戲實際的星級系統脫鉤，
         // 不會因為玩家真的推到很高星級就被誤判成異常。
         const PLAUSIBLE_MAX_STAR_ESTIMATE = 1000;
+        // ★ 改用企劃書附件的公式：單級金幣消耗 100 × 1.055^(Lvl-1)（指數成長，取代原本的二次曲線）。
+        // 英雄經驗消耗企劃書沒有特別重新規範，維持原本的公式不變。
         function getHeroLevelUpCost(level) {
             return {
-                gold: Math.floor(150 + level * 40 + level * level * 0.6),
+                gold: Math.floor(100 * Math.pow(1.055, level - 1)),
                 exp: Math.floor(80 + level * 22 + level * level * 0.3)
             };
+        }
+
+        // ★ 新增：每 20 級一次「突破」，除了上面單級的基礎金幣消耗外，額外需要碎片／金幣（高階再加超越結晶）。
+        // 120 級以後的突破全部沿用 120 級這一階的消耗，不再繼續往上加碼。
+        const LEVEL_BREAKTHROUGH_TABLE = {
+            20:  {shards: 50,  gold: 10000,  crystals: 0},
+            40:  {shards: 100, gold: 50000,  crystals: 0},
+            60:  {shards: 150, gold: 150000, crystals: 0},
+            80:  {shards: 200, gold: 300000, crystals: 2},
+            100: {shards: 250, gold: 500000, crystals: 4},
+            120: {shards: 300, gold: 800000, crystals: 8},
+        };
+        // 傳入「即將升到的等級」，是突破檢查點就回傳額外消耗，不是就回傳 null
+        function getLevelBreakthroughCost(targetLevel) {
+            if (targetLevel % 20 !== 0) return null;
+            if (LEVEL_BREAKTHROUGH_TABLE[targetLevel]) return LEVEL_BREAKTHROUGH_TABLE[targetLevel];
+            if (targetLevel > 120) return LEVEL_BREAKTHROUGH_TABLE[120];
+            return null;
         }
 
         function upgradeSelectedHeroLevel(silent) {
@@ -7136,12 +7830,29 @@
 
             // 這裡的公式必須和 openHeroModal 裡面顯示的費用一致
             const cost = getHeroLevelUpCost(hero.level);
+            const targetLevel = hero.level + 1;
+            const breakthrough = getLevelBreakthroughCost(targetLevel);
+
+            // ★ 新增：升到突破檢查點（每 20 級）需要額外的碎片／金幣／超越結晶，屬於比較貴重的一次性消耗。
+            // 長按連續升級（silent=true）遇到突破檢查點時直接停下來，不會不小心把結晶／大量碎片燒光，
+            // 玩家必須自己手動點一下（silent=false）才能真的跨過這個檢查點，見 createLongPressUpgrader。
+            if (breakthrough && silent) return false;
+
+            const shardsOwned = (GAME_STATE.heroShards && GAME_STATE.heroShards[heroId]) || 0;
+            const needGold = cost.gold + (breakthrough ? breakthrough.gold : 0);
+            const needShards = breakthrough ? breakthrough.shards : 0;
+            const needCrystals = breakthrough ? breakthrough.crystals : 0;
 
             // 檢查資源是否足夠
-            if (GAME_STATE.gold >= cost.gold && GAME_STATE.heroExp >= cost.exp) {
+            if (GAME_STATE.gold >= needGold && GAME_STATE.heroExp >= cost.exp && shardsOwned >= needShards && (GAME_STATE.transcendCrystals || 0) >= needCrystals) {
                 // 扣除資源
-                GAME_STATE.gold -= cost.gold;
+                GAME_STATE.gold -= needGold;
                 GAME_STATE.heroExp -= cost.exp;
+                if (breakthrough) {
+                    if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
+                    GAME_STATE.heroShards[heroId] = shardsOwned - needShards;
+                    GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) - needCrystals;
+                }
 
                 // 提升等級
                 hero.level++;
@@ -7155,10 +7866,13 @@
                 if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
                 if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
 
-                if (!silent) showToast(`升級成功！當前等級 Lv.${hero.level}`);
+                if (!silent) showToast(breakthrough ? `突破成功！當前等級 Lv.${hero.level}` : `升級成功！當前等級 Lv.${hero.level}`);
                 return true;
             } else {
-                if (!silent) showToast("資源不足！需要更多金幣與英雄經驗。");
+                if (!silent) {
+                    if (breakthrough) showToast(`突破資源不足！需要 ${needGold.toLocaleString()} 金幣、${needShards} 碎片${needCrystals > 0 ? `、${needCrystals} 超越結晶` : ''}。`);
+                    else showToast("資源不足！需要更多金幣與英雄經驗。");
+                }
                 return false;
             }
         }
@@ -7172,8 +7886,21 @@
         // ★ 移除星級上限：可以無限升星，星級越高消耗的碎片也越多 (5+star*5，線性成長，不會失控)。
         // 因為現在可以無限堆疊戰力，遠征章節的難度曲線也跟著大幅提高，讓這個系統有意義的成長空間。
         const MAX_STAR_LEVEL = Infinity;
+        // ★ 改用企劃書附件的分級消耗表：1~5★/6~10★/11~20★ 各自固定碎片+金幣消耗，
+        // 10★與20★是「大突破」，除了更多碎片/金幣，還要額外的超越結晶。
+        // 20★以後企劃書沒有繼續定義——這裡的設計延伸：級距內消耗沿用 20★那一階（30碎片/5000金幣），
+        // 每 10 星一次的大突破則以「前一次大突破 × 1.5」估算成長，讓無限星級系統在企劃書沒寫到的
+        // 範圍內還是有逐漸變貴的曲線，不會憑空停在 20★大突破的數字不變。
         function getHeroStarUpCost(star) {
-            return 5 + star * 5;
+            const target = (star || 1) + 1; // 這是「升到 target 星」需要的花費
+            const isMajorBreakthrough = target % 10 === 0;
+            if (target <= 5) return {shards: 10, gold: 1000, crystals: 0};
+            if (target <= 10) return isMajorBreakthrough ? {shards: 50, gold: 10000, crystals: 2} : {shards: 20, gold: 2000, crystals: 0};
+            if (target <= 20) return isMajorBreakthrough ? {shards: 80, gold: 25000, crystals: 4} : {shards: 30, gold: 5000, crystals: 0};
+            if (!isMajorBreakthrough) return {shards: 30, gold: 5000, crystals: 0};
+            const breakthroughsPast20 = Math.floor(target / 10) - 2; // 30★=1, 40★=2, 50★=3...
+            const scale = Math.pow(1.5, breakthroughsPast20);
+            return {shards: Math.floor(80 * scale), gold: Math.floor(25000 * scale), crystals: Math.floor(4 * scale)};
         }
 
         // ★ 新增：英雄碎片統一由這個函式發放，處理「LR 英雄已經滿星 (10星) 還一直拿到碎片」的溢出問題——
@@ -7204,12 +7931,23 @@
                 return false;
             }
 
-            if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
-            const owned = GAME_STATE.heroShards[heroId] || 0;
             const cost = getHeroStarUpCost(hero.star);
 
-            if (owned >= cost) {
-                GAME_STATE.heroShards[heroId] = owned - cost;
+            // ★ 大突破（10★/20★/30★...）需要消耗超越結晶，長按連續升星（silent=true）遇到這種等級直接停下，
+            // 避免不小心把結晶燒光，玩家必須自己手動點一下（silent=false）才能真的跨過這個門檻。
+            if (cost.crystals > 0 && silent) return false;
+
+            if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
+            const owned = GAME_STATE.heroShards[heroId] || 0;
+
+            if (owned >= cost.shards && GAME_STATE.gold >= cost.gold && (GAME_STATE.transcendCrystals || 0) >= cost.crystals) {
+                GAME_STATE.heroShards[heroId] = owned - cost.shards;
+                // ★ bound（不可交易）碎片數量不能超過扣完之後剩下的總量，確保「可交易數量 = 總量-bound」永遠不會是負的
+                if (GAME_STATE.boundHeroShards && GAME_STATE.boundHeroShards[heroId] > GAME_STATE.heroShards[heroId]) {
+                    GAME_STATE.boundHeroShards[heroId] = GAME_STATE.heroShards[heroId];
+                }
+                GAME_STATE.gold -= cost.gold;
+                if (cost.crystals > 0) GAME_STATE.transcendCrystals -= cost.crystals;
 
                 // 提升星級 (連帶提升專屬技能數值，見 getEffectiveHero)
                 hero.star++;
@@ -7224,12 +7962,43 @@
                 if (!silent) showToast(`覺醒成功！突破至 ${hero.star} 星！屬性與專屬技能數值一併提升。`);
                 return true;
             } else {
-                if (!silent) showToast(`英雄碎片不足！還差 ${cost - owned} 個碎片，可透過召喚重複英雄或賽季商店取得。`);
+                if (!silent) {
+                    const missing = [];
+                    if (owned < cost.shards) missing.push(`${cost.shards - owned} 碎片`);
+                    if (GAME_STATE.gold < cost.gold) missing.push(`${(cost.gold - GAME_STATE.gold).toLocaleString()} 金幣`);
+                    if ((GAME_STATE.transcendCrystals || 0) < cost.crystals) missing.push(`${cost.crystals - (GAME_STATE.transcendCrystals || 0)} 超越結晶`);
+                    showToast(`資源不足！還差 ${missing.join('、')}。`);
+                }
                 return false;
             }
         }
         // 星級升級也套用跟裝備/聖物強化一樣的通用長按小工具，長按可以連續升星
         const starLongPresser = createLongPressUpgrader((silent) => upgradeSelectedHeroStar(silent));
+
+        // ★ 新增：一鍵全體升星 (Auto-Awaken All)——依序把「目前擁有的每一位英雄」都升星到不能再升為止，
+        // 跳過逐一點擊/動畫，最後跳一次總結算。大突破（10★/20★/30★...需要超越結晶）本來就設計成
+        // 只能手動單點才能跨過（見 upgradeSelectedHeroStar 的 silent 攔截），這裡沿用同一套保護，
+        // 不會因為一鍵操作就把結晶燒光，只會升到「免結晶」能升的最高星級為止。
+        function autoAwakenAllHeroes() {
+            ToneAudioEngine.playClick();
+            const prevSelected = GAME_STATE.selectedHeroId;
+            let totalStarUps = 0, heroesAffected = 0;
+            Object.keys(GAME_STATE.roster || {}).forEach(heroId => {
+                GAME_STATE.selectedHeroId = heroId;
+                let countForThisHero = 0;
+                while (upgradeSelectedHeroStar(true)) countForThisHero++;
+                if (countForThisHero > 0) {heroesAffected++; totalStarUps += countForThisHero;}
+            });
+            GAME_STATE.selectedHeroId = prevSelected;
+            saveGame(); updateHUD();
+            renderHeroesList();
+            if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
+            if (totalStarUps === 0) {
+                showToast('目前沒有英雄的碎片／金幣足夠升星');
+            } else {
+                showToast(`✨ 一鍵升星完成：${heroesAffected} 位英雄共升了 ${totalStarUps} 次星（需要超越結晶的大突破不會自動執行，要自己手動點）`);
+            }
+        }
 
         function openProbModal() {
             ToneAudioEngine.playClick();
@@ -7419,6 +8188,9 @@
             const rates = POOL_RATES[poolType] || POOL_RATES.standard;
             if (!GAME_STATE.gachaPity) GAME_STATE.gachaPity = {standard: 0, limited: 0, special: 0};
 
+            // ★ 先把「這次召喚每一抽的結果」全部算完、資源都發放完畢，再交給對應的渲染函式決定怎麼顯示。
+            // 拆開「算結果」跟「畫卡片」這兩件事，是為了讓 100 連抽可以改成彙總顯示，不用被迫生成上百張卡片。
+            const results = [];
             for (let i = 0; i < times; i++) {
                 GAME_STATE.gachaPity[poolType]++; let rarity = 'R'; let roll = Math.random();
                 const pity = GAME_STATE.gachaPity[poolType];
@@ -7463,14 +8235,44 @@
                 // 隨機選出英雄
                 const hero = pool[Math.floor(Math.random() * pool.length)];
 
-                let shardGainText = '';
+                let isNewHero = false, shardConverted = false, shardAmount = 0;
                 if (!GAME_STATE.roster[hero.id]) {
-                    GAME_STATE.roster[hero.id] = {level: 1, star: hero.star, artifactTier: 0, equips: [0, 0, 0, 0]};
+                    GAME_STATE.roster[hero.id] = {level: 1, star: hero.star, artifactTier: 0, equippedItems: {}};
+                    isNewHero = true;
                 } else {
                     // 重複英雄改成發放「英雄碎片」，用來在英雄詳情頁手動升星，不再抽到重複就直接自動升星
                     // ★ 平衡調整：碎片產出全面調高，配合升星所需總量下修，讓潛能覺醒不用堆積如山的重複抽卡
-                    const shardAmount = {LR: 30, UR: 24, SSR: 14, SR: 9, R: 6}[rarity] || 6;
-                    const shardConverted = grantHeroShards(hero.id, shardAmount);
+                    shardAmount = {LR: 30, UR: 24, SSR: 14, SR: 9, R: 6}[rarity] || 6;
+                    shardConverted = grantHeroShards(hero.id, shardAmount);
+                }
+                // ★ 3 人環境適配：日巡（常駐）池抽到的碎片標記成 bound（不可上架黑市），
+                // 限定／特急池維持可交易，讓真正稀有的限定角色碎片才能在黑市流通
+                if (poolType === 'standard' && !isNewHero) {
+                    if (!GAME_STATE.boundHeroShards) GAME_STATE.boundHeroShards = {};
+                    GAME_STATE.boundHeroShards[hero.id] = (GAME_STATE.boundHeroShards[hero.id] || 0) + (shardConverted ? 0 : shardAmount);
+                }
+
+                results.push({rarity, hero, isNewHero, shardConverted, shardAmount});
+            }
+
+            // ★ 大量召喚（100 連抽等）改成彙總結算，嚴禁一次生成上百個卡片 DOM，避免動畫堆疊、手機頓格；
+            // 1 抽／10 抽維持原本一張一張翻卡的體驗，畢竟這個數量沒有效能疑慮，翻卡感也是抽卡的樂趣之一。
+            if (times >= 50) {
+                renderAggregatedSummonResults(results, box);
+            } else {
+                renderIndividualSummonCards(results, box);
+            }
+
+            saveGame(); updateHUD(); document.getElementById('summon-modal').classList.remove('hidden');
+            if (diamondsUsedForPulls > 0) showToast(`召喚卷軸不足，已用 ${diamondsUsedForPulls} 顆寶石直接抽`);
+        }
+
+        // 少量召喚（1/10 抽）：維持原本一張一張翻卡片的視覺效果
+        function renderIndividualSummonCards(results, box) {
+            results.forEach((r, i) => {
+                const {rarity, hero, isNewHero, shardConverted, shardAmount} = r;
+                let shardGainText = '';
+                if (!isNewHero) {
                     shardGainText = shardConverted
                         ? `<div class="absolute bottom-0 left-0 right-0 bg-black/80 text-amber-300 text-[7px] text-center py-0.5 border-t border-amber-700/50">已滿星，轉化結晶 +${shardAmount}</div>`
                         : `<div class="absolute bottom-0 left-0 right-0 bg-black/80 text-purple-300 text-[7px] text-center py-0.5 border-t border-purple-800/50">碎片 +${shardAmount}</div>`;
@@ -7486,16 +8288,61 @@
                 const dName = hero.name.includes('·') ? hero.name.split('·')[1] : hero.name;
                 const el = document.createElement('div'); el.className = `p-3 rounded-xl border-2 flex flex-col items-center justify-center aspect-square w-full ${borderStyle} transform transition hover:scale-105 relative`;
 
-                // 如果是限定或LR/UR加上標籤
                 let exBadge = hero.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1 py-0.5 rounded-br text-[7px] border-b border-r border-rose-500 text-rose-200">限定</div>` : '';
 
                 el.innerHTML = `${exBadge}${shardGainText}<div class="text-4xl mb-2 drop-shadow-md" style="color:${(rarity === 'SSR' || rarity === 'UR' || rarity === 'LR') ? hero.color : '#78716c'}"><i class="fa-solid ${hero.avatarIcon}"></i></div><div class="text-[10px] font-bold text-white mb-1.5 truncate w-full text-center">${dName}</div><div class="text-[9px] font-bold px-2 py-0.5 rounded shadow ${badgeColor}">${rarity}</div>`;
                 el.style.opacity = '0'; el.style.transform = 'scale(0.8)'; box.appendChild(el);
                 setTimeout(() => {el.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; el.style.opacity = '1'; el.style.transform = 'scale(1)';}, i * 100 + 50);
-            }
-            saveGame(); updateHUD(); document.getElementById('summon-modal').classList.remove('hidden');
-            if (diamondsUsedForPulls > 0) showToast(`召喚卷軸不足，已用 ${diamondsUsedForPulls} 顆寶石直接抽`);
+            });
         }
+
+        // ★ 新增：大量召喚（100 連抽）彙總結算——只個別列出 UR/LR 這種真正稀有的結果（通常一次不會太多張，
+        // 逐張展示才有驚喜感），其餘 R/SR/SSR 全部合併成「稀有度 × 次數」的統計列表，不生成大量卡片 DOM。
+        function renderAggregatedSummonResults(results, box) {
+            const highlightRarities = ['LR', 'UR'];
+            const highlights = results.filter(r => highlightRarities.includes(r.rarity));
+            const counts = {}; // rarity -> count
+            const newHeroNames = []; // 這次召喚裡「首次獲得」的英雄名稱，特別標出來
+            results.forEach(r => {
+                counts[r.rarity] = (counts[r.rarity] || 0) + 1;
+                if (r.isNewHero && !highlightRarities.includes(r.rarity)) newHeroNames.push(r.hero.name);
+            });
+
+            let html = `<div class="col-span-full text-center text-[11px] font-bold text-fantasy-gold mb-2">本次共 ${results.length} 抽</div>`;
+
+            // 稀有度統計長條
+            const rarityOrder = ['LR', 'UR', 'SSR', 'SR', 'R'];
+            const rarityColor = {LR: 'text-amber-300', UR: 'text-rose-400', SSR: 'text-yellow-400', SR: 'text-purple-400', R: 'text-stone-400'};
+            html += `<div class="col-span-full glass-panel p-3 rounded-xl border border-[#3e3328] flex flex-wrap justify-center gap-x-4 gap-y-1 mb-2">`;
+            rarityOrder.forEach(r => {
+                if (counts[r]) html += `<span class="text-[11px] font-bold ${rarityColor[r]}">${r} × ${counts[r]}</span>`;
+            });
+            html += `</div>`;
+
+            box.innerHTML = html;
+
+            // LR/UR 這種真正稀有的結果，各自用原本的翻卡樣式個別展示（數量通常不多，不會有效能問題）
+            highlights.forEach((r, i) => {
+                const {rarity, hero} = r;
+                const borderStyle = rarity === 'LR' ? 'border-amber-300 shadow-[0_0_20px_rgba(253,224,71,0.85)] bg-gradient-to-b from-amber-900/60 via-fuchsia-950/40 to-[#1a120c]' : 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.8)] bg-gradient-to-b from-rose-900/60 to-[#1a120c]';
+                const badgeColor = rarity === 'LR' ? 'bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black' : 'bg-rose-500 text-white';
+                const dName = hero.name.includes('·') ? hero.name.split('·')[1] : hero.name;
+                const el = document.createElement('div'); el.className = `p-3 rounded-xl border-2 flex flex-col items-center justify-center aspect-square w-full ${borderStyle} transform transition hover:scale-105 relative`;
+                let exBadge = hero.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1 py-0.5 rounded-br text-[7px] border-b border-r border-rose-500 text-rose-200">限定</div>` : '';
+                el.innerHTML = `${exBadge}<div class="text-4xl mb-2 drop-shadow-md" style="color:${hero.color}"><i class="fa-solid ${hero.avatarIcon}"></i></div><div class="text-[10px] font-bold text-white mb-1.5 truncate w-full text-center">${dName}</div><div class="text-[9px] font-bold px-2 py-0.5 rounded shadow ${badgeColor}">${rarity}</div>`;
+                el.style.opacity = '0'; el.style.transform = 'scale(0.8)'; box.appendChild(el);
+                setTimeout(() => {el.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; el.style.opacity = '1'; el.style.transform = 'scale(1)';}, i * 120 + 50);
+            });
+
+            if (newHeroNames.length > 0) {
+                const note = document.createElement('div');
+                note.className = 'col-span-full text-center text-[10px] text-emerald-400 mt-2';
+                note.innerText = `首次獲得：${newHeroNames.join('、')}`;
+                box.appendChild(note);
+            }
+        }
+
+
 
         // ============ 賽季任務系統邏輯 ============
         function openSeasonTaskModal() {
@@ -7888,7 +8735,7 @@
                     arenaOpponentSnapshot.team.forEach(slot => {
                         const db = HERO_DATABASE.find(h => h.id === slot.heroId);
                         if (!db) return;
-                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equips: slot.equips};
+                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
                         const originalRoster = GAME_STATE.roster[slot.heroId];
                         GAME_STATE.roster[slot.heroId] = fakeRoster; // 暫時借位算完數值馬上還原，不影響玩家自己的存檔
                         const h = getEffectiveHero(db);
@@ -7907,7 +8754,7 @@
                     arenaGuestOpponentData.fromTeam.forEach(slot => {
                         const db = HERO_DATABASE.find(h => h.id === slot.heroId);
                         if (!db) return;
-                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equips: slot.equips};
+                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
                         const originalRoster = GAME_STATE.roster[slot.heroId];
                         GAME_STATE.roster[slot.heroId] = fakeRoster;
                         const h = getEffectiveHero(db);
@@ -7931,6 +8778,27 @@
                 const wbBossDef = getBossConfigById(wb.bossId) || {};
                 const wbSkill = wbBossDef.skill ? {...wbBossDef.skill, value: (wbBossDef.skill.value || 1) * bossSkillMult} : {type: 'aoe', value: bossSkillMult};
                 combatEntities.push({baseId: wb.bossId || 'm_worldboss', name: wb.bossName || '全服首領', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: Math.floor((wb.bossBaseAtk || 260) * enrageMult), def: Math.floor((wb.bossBaseDef || 90) * enrageMult), crit: wb.bossCrit || 15, role: 'boss', color: wb.bossColor || '#a21caf', icon: wb.bossIcon || 'fa-dragon', row: 1, col: 1, skill: wbSkill});
+
+                // ★ 新增：傭兵助戰——如果玩家今天已經借用過某位傭兵，這裡加入隊伍當作額外的第 7 人
+                // （正常編隊本來就是 6 人滿編，這是世界首領限定的額外加成，用完這一場就消耗掉，
+                // 明天才能再借用一次新的）。站位放在第 4 排，不會跟正常 6 人編隊的站位重疊。
+                if (GAME_STATE.mercenarySelection) {
+                    const merc = GAME_STATE.mercenarySelection;
+                    const db = HERO_DATABASE.find(x => x.id === merc.slot.heroId);
+                    if (db) {
+                        const fakeRoster = {level: merc.slot.level, star: merc.slot.star, artifactTier: merc.slot.artifactTier, equippedItems: merc.slot.equippedItems};
+                        const originalRoster = GAME_STATE.roster[merc.slot.heroId];
+                        GAME_STATE.roster[merc.slot.heroId] = fakeRoster;
+                        const h = getEffectiveHero(db);
+                        if (originalRoster === undefined) delete GAME_STATE.roster[merc.slot.heroId]; else GAME_STATE.roster[merc.slot.heroId] = originalRoster;
+                        if (h) {
+                            combatEntities.push({...h, baseId: h.id, hp: h.maxHp, maxHp: h.maxHp, atk: h.atk, def: h.def, team: 'player', row: 3, col: 1, x: 0, y: 0, tx: 0, ty: 0, actionTimer: 0, stunned: false, shield: 0, damageText: [], energy: h.energyStartBonus || 0, maxEnergy: 100, isMercenary: true, mercenaryFrom: merc.fromName});
+                            floatingTexts.push({x: 0, y: 0, text: `${merc.fromName} 的傭兵支援：${h.name}`, isCrit: true, color: '#38bdf8', life: 80});
+                        }
+                    }
+                    GAME_STATE.mercenarySelection = null; // 用完就消耗掉，這場結束後不會一直留著
+                    saveGame();
+                }
             } else if (GAME_STATE.currentMode === 'season') {
                 const bossConfig = SEASON_CONFIG[GAME_STATE.season.id] ? SEASON_CONFIG[GAME_STATE.season.id].boss : SEASON_CONFIG[1].boss;
                 const topHero = Object.values(GAME_STATE.roster).sort((a, b) => b.level - a.level)[0]; const pLevel = topHero ? topHero.level : 1;
@@ -8416,6 +9284,14 @@
                     floatingTexts.push({x: attacker.x, y: attacker.y - 60, text: `+${Math.floor(heal)}`, isCrit: false, color: '#4ade80', life: 45});
                 }
 
+                // ★ 新增：通用生命偷取——職業天賦（戰士 +5%）與套裝加成（「不滅」2件 +10%）疊加而成，
+                // 不管這次命中是不是專門的吸血技能，只要攻擊者有這個數值就會額外回血，兩者可以疊加
+                if (attacker.lifestealBonus > 0 && damage > 0) {
+                    const bonusHeal = damage * attacker.lifestealBonus;
+                    attacker.hp = Math.min(attacker.maxHp, attacker.hp + bonusHeal);
+                    floatingTexts.push({x: attacker.x, y: attacker.y - 40, text: `+${Math.floor(bonusHeal)}`, isCrit: false, color: '#86efac', life: 40});
+                }
+
                 // 判定：暈眩 (大招)
                 // ★ 新增：世界首領韌性保護——強制免疫暈眩等硬控，避免被鎖死無法行動
                 if (skillType === 'stun' && Math.random() < (attacker.skill.chance || 0.4) && !(GAME_STATE.currentMode === 'worldboss' && target.team === 'enemy')) {
@@ -8727,8 +9603,9 @@
                     // --- 治療/護盾類大招 ---
                     if (sType === 'heal_all' || sType === 'holy_shield') {
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
+                        const healMult = 1 + (currentActor.healBonus || 0); // ★ 套用治療量加成（例如「祈願」套裝2件 +25%）
                         allies.forEach(t => {
-                            let healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0);
+                            let healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * healMult;
                             t.hp = Math.min(t.maxHp, t.hp + healAmt);
                             floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
                             visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#4ade80', life: 30, maxLife: 30});
@@ -8739,7 +9616,7 @@
                                 visualEffects.push({type: 'shield', x: t.x, y: t.y, color: '#fde047', life: 35, maxLife: 35});
                             }
                         });
-                        bumpAnalytics('heal', currentActor.team, currentActor.name, currentActor.activeAtk * (currentActor.skill.value || 2.0) * allies.length);
+                        bumpAnalytics('heal', currentActor.team, currentActor.name, currentActor.activeAtk * (currentActor.skill.value || 2.0) * healMult * allies.length);
                     }
                     // --- 增益類大招 (提升全體友軍攻擊力，不造成傷害) ---
                     else if (sType === 'buff_atk') {
@@ -9016,7 +9893,7 @@
                         // 治療類小技能：只治療血量比例最低的一位友軍，效果減半（復甦類小技能不會真的復活人，留給大招）
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                         const t = allies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0] || currentActor;
-                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * 0.5;
+                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * 0.5 * (1 + (currentActor.healBonus || 0));
                         t.hp = Math.min(t.maxHp, t.hp + healAmt);
                         floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
                         visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#4ade80', life: 30, maxLife: 30});
@@ -9033,7 +9910,7 @@
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                         const t = allies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0] || currentActor;
                         t.burnStacks = null; t.poisonStacks = null; t.stunned = false;
-                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 1.0) * 0.5;
+                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 1.0) * 0.5 * (1 + (currentActor.healBonus || 0));
                         t.hp = Math.min(t.maxHp, t.hp + healAmt);
                         floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
                         visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#67e8f9', life: 30, maxLife: 30});
@@ -9119,7 +9996,7 @@
                 else {
                     // --- 普攻/普通治癒 ---
                     if (currentActor.role === '輔助') {
-                        let healAmount = Math.max(10, currentActor.activeAtk * 1.5); currentTarget.hp = Math.min(currentTarget.maxHp, currentTarget.hp + healAmount);
+                        let healAmount = Math.max(10, currentActor.activeAtk * 1.5 * (1 + (currentActor.healBonus || 0))); currentTarget.hp = Math.min(currentTarget.maxHp, currentTarget.hp + healAmount);
                         floatingTexts.push({x: currentTarget.x, y: currentTarget.y - 60, text: `+${Math.floor(healAmount)}`, isCrit: false, color: '#4ade80', life: 45}); ToneAudioEngine.playMagic();
                         visualEffects.push({type: 'heal', x: currentTarget.x, y: currentTarget.y, color: '#4ade80', life: 30, maxLife: 30});
                         bumpAnalytics('heal', currentActor.team, currentActor.name, healAmount); updateAnalyticsUI();
@@ -9644,6 +10521,7 @@
         // 真正開始載入遊戲（原本 window.onload 的內容整段搬到這裡），統一由「單機」或「登入成功」兩條路徑呼叫
         function startGameAfterAuth() {
             loadGame(); initAutoSave(); initSeasonTimer(); initDungeonAutoFarm(); initCampaignAutoFarm();
+            claimOfflineEarnings();
             applySeasonTheme();
             refreshSeasonModeNavButton();
             switchTab('battle');
