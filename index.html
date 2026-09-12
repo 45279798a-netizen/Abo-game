@@ -1394,26 +1394,27 @@
                                     <div id="worldboss-hp-bar" class="bg-gradient-to-r from-rose-600 to-rose-400 h-full transition-all duration-500" style="width: 100%"></div>
                                 </div>
                                 <div class="text-[10px] text-stone-400 text-center mb-1"><span id="worldboss-hp-text">-</span></div>
-                                <div class="text-[9px] text-amber-400 text-center mb-3"><span id="worldboss-reward-note">-</span></div>
-                                <p class="text-[8px] text-stone-500 text-center mb-2"><i class="fa-solid fa-gauge-high mr-1"></i>此模式最高只能開到 5 倍速，避免首領被瞬間打爆</p>
+                                <div class="text-[9px] text-amber-400 text-center mb-1"><span id="worldboss-reward-note">-</span></div>
+                                <div class="text-[8px] text-rose-500 text-center mb-2"><i class="fa-solid fa-fire mr-1"></i>首領血量越低攻防越高，後期會越打越痛，注意保留血量與資源</div>
+                                <p class="text-[8px] text-stone-500 text-center mb-2"><i class="fa-solid fa-gauge-high mr-1"></i>此模式最高可開到 20 倍速</p>
                                 <button onclick="startWorldBossBattle()"
                                     class="w-full py-2.5 rounded-lg bg-gradient-to-b from-rose-600 to-rose-900 border border-rose-400 text-white font-bold text-xs shadow-lg active:scale-95 transition">討伐</button>
                             </div>
-                            <div class="text-[10px] text-stone-500">傷害排行榜</div>
-                            <div id="worldboss-leaderboard" class="space-y-2"></div>
-                        </div>
-
-                        <!-- 專屬聖物：不管首領有沒有開放都能練，這是個人的養成道具，跟特定一場首領活動無關 -->
-                        <div class="glass-panel p-4 rounded-xl border border-amber-700/50">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-amber-400 font-bold text-xs"><i class="fa-solid fa-gem mr-1"></i>首領專屬聖物</span>
-                                <span class="text-[9px] text-stone-500">只在討伐首領時生效</span>
+                            <div class="glass-panel p-3 rounded-xl border border-[#3e3328] grid grid-cols-2 gap-2 text-center">
+                                <div>
+                                    <div class="text-[8px] text-stone-500">我的總傷害</div>
+                                    <div id="worldboss-my-total" class="text-rose-400 font-bold text-xs">0</div>
+                                </div>
+                                <div>
+                                    <div class="text-[8px] text-stone-500">我的單場最高</div>
+                                    <div id="worldboss-my-best" class="text-amber-400 font-bold text-xs">0</div>
+                                </div>
                             </div>
-                            <div id="worldboss-relic-affixes" class="space-y-1.5 mb-3"></div>
-                            <button onclick="rerollWorldBossRelic()"
-                                class="w-full py-2 rounded-lg bg-gradient-to-b from-amber-600 to-amber-900 border border-amber-400 text-white font-bold text-[11px] shadow active:scale-95 transition">
-                                <i class="fa-solid fa-dice mr-1"></i>刷新詞條（消耗 <span id="worldboss-reroll-cost">-</span> 鍛造石）
-                            </button>
+                            <div class="flex gap-1 bg-black/30 p-1 rounded-lg border border-[#3e3328]">
+                                <button onclick="switchWorldBossBoard('total')" id="btn-wb-board-total" class="flex-1 py-1 text-[9px] font-bold rounded transition">總傷害排行</button>
+                                <button onclick="switchWorldBossBoard('best')" id="btn-wb-board-best" class="flex-1 py-1 text-[9px] font-bold rounded transition">單場最高排行</button>
+                            </div>
+                            <div id="worldboss-leaderboard" class="space-y-2"></div>
                         </div>
                     </div>
 
@@ -1487,6 +1488,10 @@
                                 <div>
                                     <label class="text-[9px] text-stone-500 block mb-1">每點傷害換鍛造石</label>
                                     <input id="admin-boss-stonerate" type="number" step="0.001" placeholder="0" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[9px] text-stone-500 block mb-1">血量越低攻防加成上限（%，0 = 不啟用血量越低越強的機制）</label>
+                                    <input id="admin-boss-enragecap" type="number" step="1" placeholder="200" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 </div>
                             </div>
                             <button onclick="openAdminWorldBoss()" class="w-full py-2 bg-red-800/70 text-red-200 text-[11px] font-bold rounded border border-red-600 hover:bg-red-700 transition">開啟本次活動（重置血量與排行榜）</button>
@@ -2743,82 +2748,54 @@
 
         /* ============================================================
            全服首領討伐：所有玩家共用同一顆血條，各自在自己裝置上單獨討伐，傷害用 Firestore transaction
-           原子性地扣血，避免多人同時扣血互相蓋掉。這個模式最高只能開到 5 倍速（怕大家全開高倍速秒殺首領，
-           大家都還沒反應過來活動就結束了），進場時會自動把速度夾到 5 以內，離場時還原玩家原本選的速度。
+           原子性地扣血，避免多人同時扣血互相蓋掉。這個模式可以開到最高 20 倍速。
 
-           首領專屬聖物：獨立於一般裝備/聖物強化系統之外的隨機詞條道具，只在討伐首領這個模式下生效。
-           每次刷新會從詞條池隨機挑 3~5 條、且每條的數值也重新隨機，故意做成「重骰」手感，
-           讓玩家會想在這裡多花一些時間跟資源去追求好的詞條組合。
+           ★ 血量越低攻防越高：首領會依照「目前共用血量還剩多少 %」變得更兇猛，越接近被打死、
+           每個人單獨面對的難度越高，攻擊力／防禦力最高能加成到管理員設定的上限（開啟活動時設定）。
            ============================================================ */
-        const WORLDBOSS_RELIC_AFFIX_POOL = [
-            {stat: 'atk', label: '攻擊力', min: 8, max: 25},
-            {stat: 'hp', label: '生命值', min: 8, max: 25},
-            {stat: 'def', label: '防禦力', min: 8, max: 25},
-            {stat: 'crit', label: '暴擊率', min: 5, max: 15},
-            {stat: 'dmgVsBoss', label: '對首領傷害', min: 10, max: 30},
-            {stat: 'goldFind', label: '討伐金幣加成', min: 15, max: 40}
-        ];
 
-        function getWorldBossRelicRerollCost() {
-            const count = GAME_STATE.worldBossRelicRerollCount || 0;
-            return Math.min(2000, 200 + count * 50); // 越刷越貴，但有封頂，不會刷到最後貴到刷不起
-        }
-
-        function rerollWorldBossRelic() {
-            ToneAudioEngine.playClick();
-            const cost = getWorldBossRelicRerollCost();
-            if (GAME_STATE.forgeStones < cost) {showToast('鍛造石不足！'); return;}
-            GAME_STATE.forgeStones -= cost;
-            GAME_STATE.worldBossRelicRerollCount = (GAME_STATE.worldBossRelicRerollCount || 0) + 1;
-
-            const pool = [...WORLDBOSS_RELIC_AFFIX_POOL].sort(() => Math.random() - 0.5);
-            const affixCount = 3 + Math.floor(Math.random() * 3); // 3~5 條，最多 5 條
-            const chosen = pool.slice(0, affixCount).map(def => ({
-                stat: def.stat, label: def.label,
-                value: Math.round((def.min + Math.random() * (def.max - def.min)) * 10) / 10
-            }));
-            GAME_STATE.worldBossRelic = {affixes: chosen};
-
-            saveGame(); updateHUD();
-            renderWorldBossRelic();
-            showToast(`✨ 詞條已重新刷新！這次共 ${affixCount} 條`);
-        }
-
-        function renderWorldBossRelic() {
-            const box = document.getElementById('worldboss-relic-affixes');
-            const costEl = document.getElementById('worldboss-reroll-cost');
-            if (costEl) costEl.innerText = getWorldBossRelicRerollCost().toLocaleString();
-            if (!box) return;
-            const relic = GAME_STATE.worldBossRelic;
-            if (!relic || !relic.affixes || relic.affixes.length === 0) {
-                box.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-3">尚未擁有聖物，點下面的按鈕第一次刷新！</div>`;
-                return;
-            }
-            box.innerHTML = relic.affixes.map(a => `<div class="flex justify-between items-center bg-black/40 px-2.5 py-1.5 rounded border border-amber-800/40 text-[10px]"><span class="text-amber-300">${a.label}</span><span class="text-stone-200 font-bold">+${a.value}%</span></div>`).join('');
-        }
-
-        // 把聖物詞條的加成套用到玩家陣容上，只在 initCombatUnits 的 'worldboss' 分支呼叫，
-        // 對首領傷害的詞條直接併進攻擊力加成裡（反正這個模式本來就是打首領，效果上是等價的），
-        // 不用另外修改 executeHit 的傷害計算，風險比較低。
-        function applyWorldBossRelicBonus(entities) {
-            const relic = GAME_STATE.worldBossRelic;
-            if (!relic || !relic.affixes) return;
-            const bonus = {};
-            relic.affixes.forEach(a => {bonus[a.stat] = (bonus[a.stat] || 0) + a.value;});
-            const atkPct = (bonus.atk || 0) + (bonus.dmgVsBoss || 0);
-            entities.forEach(e => {
-                if (e.team !== 'player') return;
-                if (atkPct) e.atk = Math.floor(e.atk * (1 + atkPct / 100));
-                if (bonus.hp) {e.maxHp = Math.floor(e.maxHp * (1 + bonus.hp / 100)); e.hp = e.maxHp;}
-                if (bonus.def) e.def = Math.floor(e.def * (1 + bonus.def / 100));
-                if (bonus.crit) e.crit = (e.crit || 0) + bonus.crit;
-            });
+        // 依目前全服首領剩餘血量百分比計算攻防加成倍率；血量越低，加成越接近管理員設定的上限
+        function getWorldBossEnrageMultiplier() {
+            if (!currentWorldBossConfig || !currentWorldBossConfig.maxHp) return 1;
+            const hpPct = Math.max(0, Math.min(1, currentWorldBossConfig.currentHp / currentWorldBossConfig.maxHp));
+            const maxBonusPct = currentWorldBossConfig.atkDefBonusCap || 0;
+            return 1 + (1 - hpPct) * (maxBonusPct / 100);
         }
 
         // 讀取全服首領目前血量並更新畫面；boss 資料不存在時（例如第一次使用）自動建立一份初始資料
-        let currentWorldBossConfig = null; // 快取目前這場首領的設定（獎勵倍率等），開打時記住，結算時要用
+        let currentWorldBossConfig = null; // 快取目前這場首領的設定（獎勵倍率、攻防上限等），開打時記住，結算時要用
+        let currentWorldBossBoardMode = 'total'; // 'total' = 總傷害排行，'best' = 單場最高排行
+        function switchWorldBossBoard(mode) {
+            ToneAudioEngine.playClick();
+            currentWorldBossBoardMode = mode;
+            document.getElementById('btn-wb-board-total').className = `flex-1 py-1 text-[9px] font-bold rounded transition ${mode === 'total' ? 'bg-rose-900/60 text-rose-300' : 'text-stone-500 hover:bg-[#2a2118]'}`;
+            document.getElementById('btn-wb-board-best').className = `flex-1 py-1 text-[9px] font-bold rounded transition ${mode === 'best' ? 'bg-amber-900/60 text-amber-300' : 'text-stone-500 hover:bg-[#2a2118]'}`;
+            refreshWorldBossLeaderboard();
+        }
+
+        async function refreshWorldBossLeaderboard() {
+            if (!mpConnected) return;
+            try {
+                const sortField = currentWorldBossBoardMode === 'best' ? 'bestSingleHit' : 'totalDamage';
+                const lbSnap = await fbDb.collection('worldBoss').doc('current').collection('contributions').orderBy(sortField, 'desc').limit(10).get();
+                const lbList = document.getElementById('worldboss-leaderboard');
+                if (!lbList) return;
+                lbList.innerHTML = '';
+                if (lbSnap.empty) {
+                    lbList.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-3">還沒有人對首領造成傷害</div>`;
+                } else {
+                    let rank = 0;
+                    lbSnap.forEach(doc => {
+                        rank++;
+                        const d = doc.data();
+                        const val = sortField === 'best' ? (d.bestSingleHit || 0) : (d.totalDamage || 0);
+                        lbList.innerHTML += `<div class="flex justify-between items-center bg-black/40 px-3 py-1.5 rounded border border-[#3e3328] text-[10px]"><span class="text-stone-300">${rank}. ${d.displayName || '???'}</span><span class="${sortField === 'best' ? 'text-amber-400' : 'text-rose-400'} font-bold">${val.toLocaleString()}</span></div>`;
+                    });
+                }
+            } catch (err) {console.warn('讀取排行榜失敗：', err);}
+        }
+
         async function refreshWorldBossUI() {
-            renderWorldBossRelic();
             const notOpenBox = document.getElementById('worldboss-not-open');
             const openBox = document.getElementById('worldboss-open-content');
             if (!mpConnected) return;
@@ -2843,21 +2820,18 @@
                 const pct = Math.max(0, Math.min(100, (data.currentHp / data.maxHp) * 100));
                 document.getElementById('worldboss-hp-bar').style.width = `${pct}%`;
                 document.getElementById('worldboss-hp-text').innerText = `${Math.max(0, Math.floor(data.currentHp)).toLocaleString()} / ${data.maxHp.toLocaleString()}`;
-                document.getElementById('worldboss-reward-note').innerText = `本次獎勵：造成傷害每 1 點約可換 ${data.goldPerDamage || 0.05} 金幣`;
+                const enrageMult = getWorldBossEnrageMultiplier();
+                document.getElementById('worldboss-reward-note').innerText = `本次獎勵：每點傷害約 ${data.goldPerDamage || 0.05} 金幣｜目前攻防加成 +${Math.round((enrageMult - 1) * 100)}%`;
 
-                const lbSnap = await fbDb.collection('worldBoss').doc('current').collection('contributions').orderBy('totalDamage', 'desc').limit(10).get();
-                const lbList = document.getElementById('worldboss-leaderboard');
-                lbList.innerHTML = '';
-                if (lbSnap.empty) {
-                    lbList.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-3">還沒有人對首領造成傷害</div>`;
-                } else {
-                    let rank = 0;
-                    lbSnap.forEach(doc => {
-                        rank++;
-                        const d = doc.data();
-                        lbList.innerHTML += `<div class="flex justify-between items-center bg-black/40 px-3 py-1.5 rounded border border-[#3e3328] text-[10px]"><span class="text-stone-300">${rank}. ${d.displayName || '???'}</span><span class="text-rose-400 font-bold">${(d.totalDamage || 0).toLocaleString()}</span></div>`;
-                    });
-                }
+                // 個人統計：自己目前的總傷害／單場最高
+                const myContribSnap = await ref.collection('contributions').doc(fbUser.uid).get();
+                const myData = myContribSnap.exists ? myContribSnap.data() : {totalDamage: 0, bestSingleHit: 0};
+                document.getElementById('worldboss-my-total').innerText = (myData.totalDamage || 0).toLocaleString();
+                document.getElementById('worldboss-my-best').innerText = (myData.bestSingleHit || 0).toLocaleString();
+
+                document.getElementById('btn-wb-board-total').className = `flex-1 py-1 text-[9px] font-bold rounded transition ${currentWorldBossBoardMode === 'total' ? 'bg-rose-900/60 text-rose-300' : 'text-stone-500 hover:bg-[#2a2118]'}`;
+                document.getElementById('btn-wb-board-best').className = `flex-1 py-1 text-[9px] font-bold rounded transition ${currentWorldBossBoardMode === 'best' ? 'bg-amber-900/60 text-amber-300' : 'text-stone-500 hover:bg-[#2a2118]'}`;
+                refreshWorldBossLeaderboard();
             } catch (err) {console.warn('讀取世界首領資料失敗：', err);}
         }
 
@@ -2870,9 +2844,7 @@
             switchTab('battle', {internal: true});
             GAME_STATE.currentMode = 'worldboss';
             combatEntities = [];
-            // ★ 這個模式最高只能開到 5 倍速，避免首領被瞬間打爆；離開時會還原玩家原本的速度設定
-            worldBossPrevBattleSpeed = battleSpeed;
-            if (battleSpeed > 5) battleSpeed = 5;
+            worldBossPrevBattleSpeed = battleSpeed; // 這個模式沒有額外速度限制，最高一樣可以開到 20 倍
             document.getElementById('battle-stage-title').innerText = `全服首領討伐`;
             setTimeout(initCombatUnits, 100);
             refreshNavHighlightForMode();
@@ -2880,7 +2852,7 @@
         }
 
         // 戰鬥結束後用 transaction 把這次造成的傷害原子性地從共用血量扣掉，避免多人同時扣血互相蓋掉；
-        // 同時更新自己的貢獻紀錄，讓排行榜看得到；金幣獎勵會套用聖物的「討伐金幣加成」詞條
+        // 同時更新自己的「總傷害」跟「單場最高傷害」兩項紀錄，讓排行榜能分開顯示
         async function submitWorldBossDamage(damage) {
             if (!mpConnected || damage <= 0) return;
             try {
@@ -2894,8 +2866,13 @@
                 const contribRef = bossRef.collection('contributions').doc(fbUser.uid);
                 await fbDb.runTransaction(async (tx) => {
                     const doc = await tx.get(contribRef);
-                    const prev = doc.exists ? (doc.data().totalDamage || 0) : 0;
-                    tx.set(contribRef, {displayName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`, totalDamage: prev + damage}, {merge: true});
+                    const prevTotal = doc.exists ? (doc.data().totalDamage || 0) : 0;
+                    const prevBest = doc.exists ? (doc.data().bestSingleHit || 0) : 0;
+                    tx.set(contribRef, {
+                        displayName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`,
+                        totalDamage: prevTotal + damage,
+                        bestSingleHit: Math.max(prevBest, damage)
+                    }, {merge: true});
                 });
             } catch (err) {console.warn('提交世界首領傷害失敗：', err);}
         }
@@ -3129,6 +3106,7 @@
                 document.getElementById('admin-boss-goldrate').value = d.goldPerDamage || 0.05;
                 document.getElementById('admin-boss-diamondrate').value = d.diamondPerDamage || 0;
                 document.getElementById('admin-boss-stonerate').value = d.stonePerDamage || 0;
+                document.getElementById('admin-boss-enragecap').value = d.atkDefBonusCap || 0;
             } catch (err) {console.warn(err);}
         }
 
@@ -3144,6 +3122,7 @@
             const goldPerDamage = parseFloat(document.getElementById('admin-boss-goldrate').value) || 0.05;
             const diamondPerDamage = parseFloat(document.getElementById('admin-boss-diamondrate').value) || 0;
             const stonePerDamage = parseFloat(document.getElementById('admin-boss-stonerate').value) || 0;
+            const atkDefBonusCap = parseFloat(document.getElementById('admin-boss-enragecap').value) || 0;
             try {
                 const ref = fbDb.collection('worldBoss').doc('current');
                 // 清空舊的排行榜紀錄，讓這次活動重新統計
@@ -3153,7 +3132,7 @@
 
                 await ref.set({
                     bossId: bossDef.id, bossName: bossDef.name, bossColor: bossDef.color, bossIcon: bossDef.icon,
-                    maxHp, currentHp: maxHp, goldPerDamage, diamondPerDamage, stonePerDamage,
+                    maxHp, currentHp: maxHp, goldPerDamage, diamondPerDamage, stonePerDamage, atkDefBonusCap,
                     status: 'active',
                     openedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     openedBy: GAME_STATE.mpDisplayName || fbUser.email
@@ -3312,7 +3291,7 @@
 
                 // --- S1 限定 ---
                 'h_uther': './images/h_uther.png',      // [UR] 聖光使者·烏瑟
-                'h_s1_lr': '',      // [LR] 夜魘收割者·莫瑟斯
+                'h_s1_lr': './images/h_s1_lr.png',      // [LR] 夜魘收割者·莫瑟斯
                 'h_s1_ssr1': './images/h_s1_ssr1.png',    // 亡靈督軍
                 'h_s1_ssr2': './images/h_s1_ssr2.png',    // 瘟疫使者
 
@@ -5256,8 +5235,9 @@
         // ★ 秘境／賽季這類需要重複刷的模式常常嫌動畫太慢，把上限從 x3 拉高到 x10
         function cycleBattleSpeed() {
             ToneAudioEngine.playClick();
-            // ★ 全服首領這個模式最高只能到 5 倍速（怕大家全開高倍速秒殺首領），只在這個模式下限縮循環步驟
-            const SPEED_STEPS = GAME_STATE.currentMode === 'worldboss' ? [1, 2, 3, 5] : [1, 2, 3, 5, 10, 15, 20];
+            // ★ 全服首領現在改成血量越低越兇猛來平衡高倍速秒殺的問題，不用再額外限制速度上限，
+            // 這個模式跟其他模式一樣最高可以開到 20 倍速
+            const SPEED_STEPS = [1, 2, 3, 5, 10, 15, 20];
             const idx = SPEED_STEPS.indexOf(battleSpeed);
             battleSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
             const btn = document.getElementById('btn-battle-speed');
@@ -6710,13 +6690,14 @@
             } else if (GAME_STATE.currentMode === 'worldboss') {
                 // ★ 全服首領：跟賽季討伐同一種「無限血量、打到全軍覆沒為止」設計，血量本身只是本地顯示用的假血條，
                 // 真正共用的血量存在 Firestore，戰鬥結束時才把這場造成的傷害一次性提交上去扣血（見 handleCombatEnd）。
-                // ★ 修正：首領的身分（名稱/圖示/顏色）現在改成沿用管理員這次選定的賽季首領，不再寫死「深淵吞噬者」
+                // 首領的身分（名稱/圖示/顏色）沿用管理員這次選定的賽季首領。
+                // ★ 新增：血量越低攻防越高——依照目前共用血量剩餘百分比計算加成倍率，越接近被打死的階段，
+                // 每個人單獨面對的首領就越兇猛，最高加成上限由管理員在開啟活動時設定 (atkDefBonusCap)。
                 document.getElementById('btn-auto-battle').style.display = 'block';
                 eventBossTotalHp = 99999999; eventBossCurrentHp = eventBossTotalHp;
                 const wb = currentWorldBossConfig || {};
-                combatEntities.push({baseId: wb.bossId || 'm_worldboss', name: wb.bossName || '全服首領', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: 260, def: 90, role: 'boss', color: wb.bossColor || '#a21caf', icon: wb.bossIcon || 'fa-dragon', row: 1, col: 1, skill: {type: 'aoe'}});
-                // ★ 首領專屬聖物的詞條加成，只在這個模式下套用到玩家陣容上
-                applyWorldBossRelicBonus(combatEntities);
+                const enrageMult = getWorldBossEnrageMultiplier();
+                combatEntities.push({baseId: wb.bossId || 'm_worldboss', name: wb.bossName || '全服首領', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: Math.floor(260 * enrageMult), def: Math.floor(90 * enrageMult), role: 'boss', color: wb.bossColor || '#a21caf', icon: wb.bossIcon || 'fa-dragon', row: 1, col: 1, skill: {type: 'aoe'}});
             } else if (GAME_STATE.currentMode === 'season') {
                 const bossConfig = SEASON_CONFIG[GAME_STATE.season.id] ? SEASON_CONFIG[GAME_STATE.season.id].boss : SEASON_CONFIG[1].boss;
                 const topHero = Object.values(GAME_STATE.roster).sort((a, b) => b.level - a.level)[0]; const pLevel = topHero ? topHero.level : 1;
@@ -7905,18 +7886,16 @@
                 saveGame();
             } else if (GAME_STATE.currentMode === 'worldboss') {
                 // ★ 全服首領：不管輸贏，這場造成的傷害都會提交上去扣共用血量；獎勵套用管理員設定的倍率
-                // (金幣/寶石/鍛造石都可以個別設定，設 0 就代表這場不發那個資源) + 聖物「討伐金幣加成」詞條，
-                // 速度還原成玩家原本選的（進場時被強制夾到 5 倍以內）
+                // (金幣/寶石/鍛造石都可以個別設定，設 0 就代表這場不發那個資源)。
+                // 速度沒有額外限制（血量越低越兇猛已經足夠平衡高倍速的問題，不需要再限制速度）
                 submitWorldBossDamage(eventTotalDamage);
                 if (worldBossPrevBattleSpeed !== null) {battleSpeed = worldBossPrevBattleSpeed; worldBossPrevBattleSpeed = null;}
 
-                const goldFindBonus = (GAME_STATE.worldBossRelic && GAME_STATE.worldBossRelic.affixes)
-                    ? GAME_STATE.worldBossRelic.affixes.filter(a => a.stat === 'goldFind').reduce((s, a) => s + a.value, 0) : 0;
                 const wbCfg = currentWorldBossConfig || {};
                 const goldRate = wbCfg.goldPerDamage || 0.05;
                 const diamondRate = wbCfg.diamondPerDamage || 0;
                 const stoneRate = wbCfg.stonePerDamage || 0;
-                const bossGold = Math.floor(Math.max(50, eventTotalDamage * goldRate) * (1 + goldFindBonus / 100));
+                const bossGold = Math.floor(Math.max(50, eventTotalDamage * goldRate));
                 const bossDiamonds = Math.floor(eventTotalDamage * diamondRate);
                 const bossStones = Math.floor(eventTotalDamage * stoneRate);
                 GAME_STATE.gold += bossGold;
