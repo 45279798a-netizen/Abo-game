@@ -1339,16 +1339,18 @@
                     <p class="text-[8px] text-stone-500 text-center shrink-0">停留在這個畫面時，會自動把你目前的陣容即時廣播給其他玩家看到，不用另外手動上傳；離開畫面幾分鐘後就會從別人的名單上消失。</p>
 
                     <!-- 子頁籤 -->
-                    <div class="flex gap-2 shrink-0">
+                    <div class="flex gap-1.5 shrink-0">
                         <button onclick="switchArenaSubTab('pvp')" id="btn-arena-pvp"
-                            class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-sky-900/60 text-sky-300 border border-sky-600">即時挑戰</button>
+                            class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-sky-900/60 text-sky-300 border border-sky-600">即時挑戰</button>
+                        <button onclick="switchArenaSubTab('boss')" id="btn-arena-boss"
+                            class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">首領</button>
                         <button onclick="switchArenaSubTab('shop')" id="btn-arena-shop"
-                            class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">榮譽商店</button>
+                            class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">商店</button>
                         <button onclick="switchArenaSubTab('mail')" id="btn-arena-mail"
-                            class="flex-1 py-2 rounded-lg text-[11px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] relative">信件<span
+                            class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] relative">信件<span
                                 id="arena-mail-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-black"></span></button>
                         <button onclick="switchArenaSubTab('admin')" id="btn-arena-admin"
-                            class="hidden flex-1 py-2 rounded-lg text-[11px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">管理員</button>
+                            class="hidden flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">管理員</button>
                     </div>
 
                     <!-- 即時挑戰子頁 -->
@@ -1372,6 +1374,49 @@
                         <div id="arena-opponent-list" class="space-y-2"></div>
                     </div>
 
+                    <!-- ★ 新增：全服首領子頁 -->
+                    <div id="arena-boss-panel" class="hidden flex-col gap-3">
+                        <!-- 管理員還沒開啟活動時顯示 -->
+                        <div id="worldboss-not-open" class="hidden glass-panel p-4 rounded-xl border border-[#3e3328] text-center">
+                            <i class="fa-solid fa-hourglass text-stone-500 text-2xl mb-2"></i>
+                            <p class="text-[11px] text-stone-400">全服首領活動尚未開放</p>
+                            <p class="text-[9px] text-stone-600 mt-1">請等待管理員開啟本次活動</p>
+                        </div>
+
+                        <!-- 管理員開啟活動後顯示戰鬥內容 -->
+                        <div id="worldboss-open-content" class="hidden flex-col gap-3">
+                            <div class="glass-panel p-4 rounded-xl border border-rose-700/50">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-rose-400 font-bold text-xs"><i class="fa-solid fa-dragon mr-1"></i><span id="worldboss-name">全服首領</span></span>
+                                    <span class="text-[10px] text-stone-400">剩餘血量</span>
+                                </div>
+                                <div class="w-full bg-black/50 rounded-full h-3 border border-[#3e3328] overflow-hidden mb-2">
+                                    <div id="worldboss-hp-bar" class="bg-gradient-to-r from-rose-600 to-rose-400 h-full transition-all duration-500" style="width: 100%"></div>
+                                </div>
+                                <div class="text-[10px] text-stone-400 text-center mb-1"><span id="worldboss-hp-text">-</span></div>
+                                <div class="text-[9px] text-amber-400 text-center mb-3"><span id="worldboss-reward-note">-</span></div>
+                                <p class="text-[8px] text-stone-500 text-center mb-2"><i class="fa-solid fa-gauge-high mr-1"></i>此模式最高只能開到 5 倍速，避免首領被瞬間打爆</p>
+                                <button onclick="startWorldBossBattle()"
+                                    class="w-full py-2.5 rounded-lg bg-gradient-to-b from-rose-600 to-rose-900 border border-rose-400 text-white font-bold text-xs shadow-lg active:scale-95 transition">討伐</button>
+                            </div>
+                            <div class="text-[10px] text-stone-500">傷害排行榜</div>
+                            <div id="worldboss-leaderboard" class="space-y-2"></div>
+                        </div>
+
+                        <!-- 專屬聖物：不管首領有沒有開放都能練，這是個人的養成道具，跟特定一場首領活動無關 -->
+                        <div class="glass-panel p-4 rounded-xl border border-amber-700/50">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-amber-400 font-bold text-xs"><i class="fa-solid fa-gem mr-1"></i>首領專屬聖物</span>
+                                <span class="text-[9px] text-stone-500">只在討伐首領時生效</span>
+                            </div>
+                            <div id="worldboss-relic-affixes" class="space-y-1.5 mb-3"></div>
+                            <button onclick="rerollWorldBossRelic()"
+                                class="w-full py-2 rounded-lg bg-gradient-to-b from-amber-600 to-amber-900 border border-amber-400 text-white font-bold text-[11px] shadow active:scale-95 transition">
+                                <i class="fa-solid fa-dice mr-1"></i>刷新詞條（消耗 <span id="worldboss-reroll-cost">-</span> 鍛造石）
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- 榮譽商店子頁 -->
                     <div id="arena-shop-panel" class="hidden flex-col gap-2">
                         <p class="text-[9px] text-stone-500">打贏競技場對戰可以獲得榮譽點數，在這裡換成其他資源。</p>
@@ -1387,6 +1432,56 @@
                     <!-- 管理員子頁：只有帳號符合白名單的人看得到 -->
                     <div id="arena-admin-panel" class="hidden flex-col gap-3">
                         <p class="text-[9px] text-amber-400"><i class="fa-solid fa-shield-halved mr-1"></i>管理員身分，這裡發的信件所有玩家都領得到。</p>
+
+                        <!-- ★ 新增：賽季／限時活動全域控制。這裡設定的值會即時同步給「所有玩家」（存在 Firestore，
+                             不是只有自己看到），迷宮/巢穴/矩陣/盛典這些原本綁賽季時間的活動，現在改成由管理員
+                             決定「現在要開哪一個」，跟遠征章節（已經不綁賽季了）完全分開。 -->
+                        <div class="glass-panel p-3 rounded-xl border border-purple-700/40 flex flex-col gap-2">
+                            <p class="text-[10px] text-purple-300 font-bold"><i class="fa-solid fa-earth-asia mr-1"></i>全域賽季／限時活動設定（影響所有玩家）</p>
+                            <div>
+                                <label class="text-[9px] text-stone-500 block mb-1">目前賽季（影響抽卡/通行證預設顯示）</label>
+                                <select id="admin-current-season" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-stone-500 block mb-1">限時活動（決定「限時活動」分頁現在開哪個）</label>
+                                <select id="admin-active-event" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                    <option value="">關閉（不開放任何限時活動）</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">英雄等級上限</label>
+                                    <input id="admin-max-hero-level" type="number" min="1" placeholder="100" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">聖物強化上限（階）</label>
+                                    <input id="admin-max-artifact-tier" type="number" min="1" placeholder="10" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                            </div>
+                            <p class="text-[8px] text-amber-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>只往上調整才安全；往下調會讓已經超過新上限的玩家進度顯示異常，目前沒有自動修正機制。</p>
+                            <button onclick="saveAdminGameConfig()" class="w-full py-2 bg-purple-800/70 text-purple-200 text-[11px] font-bold rounded border border-purple-600 hover:bg-purple-700 transition">套用設定（立即同步給所有玩家）</button>
+                            <p id="admin-config-status" class="text-[9px] text-stone-500 text-center"></p>
+                        </div>
+
+                        <!-- ★ 新增：全服首領開啟／設定 -->
+                        <div class="glass-panel p-3 rounded-xl border border-red-700/40 flex flex-col gap-2">
+                            <p class="text-[10px] text-red-300 font-bold"><i class="fa-solid fa-dragon mr-1"></i>全服首領活動控制</p>
+                            <p id="admin-boss-current-status" class="text-[9px] text-stone-500">尚未讀取狀態</p>
+                            <input id="admin-boss-name" type="text" placeholder="首領名稱（例如：深淵吞噬者）" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">首領血量</label>
+                                    <input id="admin-boss-maxhp" type="number" placeholder="100000000" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">每點傷害換金幣</label>
+                                    <input id="admin-boss-goldrate" type="number" step="0.01" placeholder="0.05" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                            </div>
+                            <button onclick="openAdminWorldBoss()" class="w-full py-2 bg-red-800/70 text-red-200 text-[11px] font-bold rounded border border-red-600 hover:bg-red-700 transition">開啟本次活動（重置血量與排行榜）</button>
+                            <button onclick="closeAdminWorldBoss()" class="w-full py-1.5 bg-black/50 text-stone-400 text-[10px] font-bold rounded border border-[#3e3328] hover:bg-black/70 transition">關閉活動</button>
+                        </div>
+
                         <div class="glass-panel p-3 rounded-xl border border-amber-700/40 flex flex-col gap-2">
                             <div class="flex gap-2">
                                 <select id="admin-mail-target-type" onchange="document.getElementById('admin-mail-target-uid').classList.toggle('hidden', this.value !== 'uid')" class="flex-1 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
@@ -1942,6 +2037,7 @@
                     // 已經是登入狀態（重新整理頁面前就登入過），直接以雲端資料為準載入，不用再讓玩家輸入一次帳密
                     fbUser = user;
                     mpConnected = true;
+                    listenAdminGameConfig();
                     await fbUser.getIdToken(true);
                     hideAppSplash();
                     const gotCloudData = await loadFromCloudAuthoritative();
@@ -2000,6 +2096,7 @@
         // 本地 localStorage 這時候的角色，變成單純是雲端資料的「快取」，不再是資料的來源。
         async function onGateAuthSuccess(isNewRegistration) {
             mpConnected = true;
+            listenAdminGameConfig();
             await fbUser.getIdToken(true);
             const playerRef = fbDb.collection('players').doc(fbUser.uid);
             const snap = await playerRef.get();
@@ -2011,6 +2108,13 @@
 
             if (isNewRegistration) {
                 GAME_STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
+                // ★ 新帳號預設瀏覽「管理員設定的目前賽季」通行證頁面，而不是永遠都是 S1
+                try {
+                    const cfgSnap = await fbDb.collection('gameConfig').doc('current').get();
+                    if (cfgSnap.exists && cfgSnap.data().currentSeasonId && SEASON_CONFIG[cfgSnap.data().currentSeasonId]) {
+                        GAME_STATE.season.id = cfgSnap.data().currentSeasonId;
+                    }
+                } catch (err) {console.warn('讀取全域賽季設定失敗，使用預設 S1：', err);}
                 saveGame(); // 寫回本地當快取，startGameAfterAuth() 裡的 loadGame() 才會讀到這份乾淨的新進度
                 startGameAfterAuth();
                 pushCloudSave(); // 立刻建立這個帳號在雲端的存檔，不用等節流的自動同步
@@ -2075,7 +2179,7 @@
             for (const heroId in (state.roster || {})) {
                 const r = state.roster[heroId];
                 if (!r) continue;
-                if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > MAX_STAR_LEVEL || (r.artifactTier || 0) > 100) return false;
+                if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > MAX_STAR_LEVEL || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
             }
             if ((state.gold || 0) > 999999999999 || (state.diamonds || 0) > 999999999 || (state.forgeStones || 0) > 999999999) return false;
             return true;
@@ -2236,8 +2340,8 @@
 
         function switchArenaSubTab(sub) {
             ToneAudioEngine.playClick();
-            const panels = {pvp: 'arena-pvp-panel', shop: 'arena-shop-panel', mail: 'arena-mail-panel', admin: 'arena-admin-panel'};
-            const btnColors = {pvp: 'bg-sky-900/60 text-sky-300 border-sky-600', shop: 'bg-amber-900/60 text-amber-300 border-amber-600', mail: 'bg-emerald-900/60 text-emerald-300 border-emerald-600', admin: 'bg-rose-900/60 text-rose-300 border-rose-600'};
+            const panels = {pvp: 'arena-pvp-panel', boss: 'arena-boss-panel', shop: 'arena-shop-panel', mail: 'arena-mail-panel', admin: 'arena-admin-panel'};
+            const btnColors = {pvp: 'bg-sky-900/60 text-sky-300 border-sky-600', boss: 'bg-red-900/60 text-red-300 border-red-600', shop: 'bg-amber-900/60 text-amber-300 border-amber-600', mail: 'bg-emerald-900/60 text-emerald-300 border-emerald-600', admin: 'bg-rose-900/60 text-rose-300 border-rose-600'};
             Object.keys(panels).forEach(key => {
                 const el = document.getElementById(panels[key]);
                 if (!el) return;
@@ -2245,11 +2349,12 @@
                 el.classList.toggle('flex', key === sub);
                 const btn = document.getElementById('btn-arena-' + key);
                 if (btn && !btn.classList.contains('hidden')) {
-                    btn.className = `flex-1 py-2 rounded-lg text-[11px] font-bold relative border ${key === sub ? btnColors[key] : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
+                    btn.className = `flex-1 py-2 rounded-lg text-[10px] font-bold relative border ${key === sub ? btnColors[key] : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
                 }
             });
             if (sub === 'mail') document.getElementById('arena-mail-dot').classList.add('hidden'); // 打開信件分頁就當作已讀，把小紅點關掉
-            if (sub === 'admin') {loadAdminPlayerList(); populateAdminMailHeroSelect();}
+            if (sub === 'admin') {loadAdminPlayerList(); populateAdminMailHeroSelect(); populateAdminSeasonSelects(); refreshAdminBossStatus();}
+            if (sub === 'boss') refreshWorldBossUI();
         }
 
         async function saveMpDisplayName() {
@@ -2285,7 +2390,7 @@
             if (!db) return 0;
             const maxLevelMult = 1 + (MAX_HERO_LEVEL - 1) * 0.12;
             const maxStarMult = 1 + (MAX_STAR_LEVEL - 1) * 0.15;
-            const maxArtifactMult = 1 + (100 * 0.01); // 聖物強化滿階 100 階
+            const maxArtifactMult = 1 + (ALTAR_MAX_ARTIFACT_TIER * 0.10); // 聖物強化滿階 10 階 (+100%)
             const maxEquipMult = 1.6; // 4 件裝備都滿 20 級的粗估加成上限
             const totalMult = maxLevelMult * maxStarMult * maxArtifactMult * maxEquipMult;
             const maxHp = db.baseHp * totalMult, maxAtk = db.baseAtk * totalMult, maxDef = db.baseDef * totalMult;
@@ -2467,7 +2572,7 @@
                         showToast('對方拒絕了你的邀請');
                     }
                 });
-            } catch (err) {console.warn('發送邀請失敗：', err); showToast('發送邀請失敗，請檢查網路連線');}
+            } catch (err) {console.warn('發送邀請失敗：', err); showToast('發送邀請失敗：' + (err.code || err.message || '請檢查網路連線'));}
         }
 
         async function cancelArenaInvite() {
@@ -2625,6 +2730,163 @@
             return gain;
         }
 
+        /* ============================================================
+           全服首領討伐：所有玩家共用同一顆血條，各自在自己裝置上單獨討伐，傷害用 Firestore transaction
+           原子性地扣血，避免多人同時扣血互相蓋掉。這個模式最高只能開到 5 倍速（怕大家全開高倍速秒殺首領，
+           大家都還沒反應過來活動就結束了），進場時會自動把速度夾到 5 以內，離場時還原玩家原本選的速度。
+
+           首領專屬聖物：獨立於一般裝備/聖物強化系統之外的隨機詞條道具，只在討伐首領這個模式下生效。
+           每次刷新會從詞條池隨機挑 3~5 條、且每條的數值也重新隨機，故意做成「重骰」手感，
+           讓玩家會想在這裡多花一些時間跟資源去追求好的詞條組合。
+           ============================================================ */
+        const WORLDBOSS_RELIC_AFFIX_POOL = [
+            {stat: 'atk', label: '攻擊力', min: 8, max: 25},
+            {stat: 'hp', label: '生命值', min: 8, max: 25},
+            {stat: 'def', label: '防禦力', min: 8, max: 25},
+            {stat: 'crit', label: '暴擊率', min: 5, max: 15},
+            {stat: 'dmgVsBoss', label: '對首領傷害', min: 10, max: 30},
+            {stat: 'goldFind', label: '討伐金幣加成', min: 15, max: 40}
+        ];
+
+        function getWorldBossRelicRerollCost() {
+            const count = GAME_STATE.worldBossRelicRerollCount || 0;
+            return Math.min(2000, 200 + count * 50); // 越刷越貴，但有封頂，不會刷到最後貴到刷不起
+        }
+
+        function rerollWorldBossRelic() {
+            ToneAudioEngine.playClick();
+            const cost = getWorldBossRelicRerollCost();
+            if (GAME_STATE.forgeStones < cost) {showToast('鍛造石不足！'); return;}
+            GAME_STATE.forgeStones -= cost;
+            GAME_STATE.worldBossRelicRerollCount = (GAME_STATE.worldBossRelicRerollCount || 0) + 1;
+
+            const pool = [...WORLDBOSS_RELIC_AFFIX_POOL].sort(() => Math.random() - 0.5);
+            const affixCount = 3 + Math.floor(Math.random() * 3); // 3~5 條，最多 5 條
+            const chosen = pool.slice(0, affixCount).map(def => ({
+                stat: def.stat, label: def.label,
+                value: Math.round((def.min + Math.random() * (def.max - def.min)) * 10) / 10
+            }));
+            GAME_STATE.worldBossRelic = {affixes: chosen};
+
+            saveGame(); updateHUD();
+            renderWorldBossRelic();
+            showToast(`✨ 詞條已重新刷新！這次共 ${affixCount} 條`);
+        }
+
+        function renderWorldBossRelic() {
+            const box = document.getElementById('worldboss-relic-affixes');
+            const costEl = document.getElementById('worldboss-reroll-cost');
+            if (costEl) costEl.innerText = getWorldBossRelicRerollCost().toLocaleString();
+            if (!box) return;
+            const relic = GAME_STATE.worldBossRelic;
+            if (!relic || !relic.affixes || relic.affixes.length === 0) {
+                box.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-3">尚未擁有聖物，點下面的按鈕第一次刷新！</div>`;
+                return;
+            }
+            box.innerHTML = relic.affixes.map(a => `<div class="flex justify-between items-center bg-black/40 px-2.5 py-1.5 rounded border border-amber-800/40 text-[10px]"><span class="text-amber-300">${a.label}</span><span class="text-stone-200 font-bold">+${a.value}%</span></div>`).join('');
+        }
+
+        // 把聖物詞條的加成套用到玩家陣容上，只在 initCombatUnits 的 'worldboss' 分支呼叫，
+        // 對首領傷害的詞條直接併進攻擊力加成裡（反正這個模式本來就是打首領，效果上是等價的），
+        // 不用另外修改 executeHit 的傷害計算，風險比較低。
+        function applyWorldBossRelicBonus(entities) {
+            const relic = GAME_STATE.worldBossRelic;
+            if (!relic || !relic.affixes) return;
+            const bonus = {};
+            relic.affixes.forEach(a => {bonus[a.stat] = (bonus[a.stat] || 0) + a.value;});
+            const atkPct = (bonus.atk || 0) + (bonus.dmgVsBoss || 0);
+            entities.forEach(e => {
+                if (e.team !== 'player') return;
+                if (atkPct) e.atk = Math.floor(e.atk * (1 + atkPct / 100));
+                if (bonus.hp) {e.maxHp = Math.floor(e.maxHp * (1 + bonus.hp / 100)); e.hp = e.maxHp;}
+                if (bonus.def) e.def = Math.floor(e.def * (1 + bonus.def / 100));
+                if (bonus.crit) e.crit = (e.crit || 0) + bonus.crit;
+            });
+        }
+
+        // 讀取全服首領目前血量並更新畫面；boss 資料不存在時（例如第一次使用）自動建立一份初始資料
+        let currentWorldBossConfig = null; // 快取目前這場首領的設定（獎勵倍率等），開打時記住，結算時要用
+        async function refreshWorldBossUI() {
+            renderWorldBossRelic();
+            const notOpenBox = document.getElementById('worldboss-not-open');
+            const openBox = document.getElementById('worldboss-open-content');
+            if (!mpConnected) return;
+            try {
+                const ref = fbDb.collection('worldBoss').doc('current');
+                const snap = await ref.get();
+                const data = snap.exists ? snap.data() : null;
+                currentWorldBossConfig = data;
+
+                // ★ 沒有管理員開啟過、或管理員手動關閉了活動，就不顯示戰鬥內容，改顯示「尚未開放」
+                if (!data || data.status !== 'active') {
+                    if (notOpenBox) notOpenBox.classList.remove('hidden');
+                    if (openBox) {openBox.classList.add('hidden'); openBox.classList.remove('flex');}
+                    return;
+                }
+                if (notOpenBox) notOpenBox.classList.add('hidden');
+                if (openBox) {openBox.classList.remove('hidden'); openBox.classList.add('flex');}
+
+                document.getElementById('worldboss-name').innerText = data.bossName || '全服首領';
+                const pct = Math.max(0, Math.min(100, (data.currentHp / data.maxHp) * 100));
+                document.getElementById('worldboss-hp-bar').style.width = `${pct}%`;
+                document.getElementById('worldboss-hp-text').innerText = `${Math.max(0, Math.floor(data.currentHp)).toLocaleString()} / ${data.maxHp.toLocaleString()}`;
+                document.getElementById('worldboss-reward-note').innerText = `本次獎勵：造成傷害每 1 點約可換 ${data.goldPerDamage || 0.05} 金幣`;
+
+                const lbSnap = await fbDb.collection('worldBoss').doc('current').collection('contributions').orderBy('totalDamage', 'desc').limit(10).get();
+                const lbList = document.getElementById('worldboss-leaderboard');
+                lbList.innerHTML = '';
+                if (lbSnap.empty) {
+                    lbList.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-3">還沒有人對首領造成傷害</div>`;
+                } else {
+                    let rank = 0;
+                    lbSnap.forEach(doc => {
+                        rank++;
+                        const d = doc.data();
+                        lbList.innerHTML += `<div class="flex justify-between items-center bg-black/40 px-3 py-1.5 rounded border border-[#3e3328] text-[10px]"><span class="text-stone-300">${rank}. ${d.displayName || '???'}</span><span class="text-rose-400 font-bold">${(d.totalDamage || 0).toLocaleString()}</span></div>`;
+                    });
+                }
+            } catch (err) {console.warn('讀取世界首領資料失敗：', err);}
+        }
+
+        let worldBossPrevBattleSpeed = null;
+        function startWorldBossBattle() {
+            ToneAudioEngine.playClick();
+            if (!mpConnected) {showToast('尚未連線'); return;}
+            if (!currentWorldBossConfig || currentWorldBossConfig.status !== 'active') {showToast('首領尚未開放，請等待管理員開啟活動'); return;}
+            snapshotCurrentBattleIfNeeded();
+            switchTab('battle', {internal: true});
+            GAME_STATE.currentMode = 'worldboss';
+            combatEntities = [];
+            // ★ 這個模式最高只能開到 5 倍速，避免首領被瞬間打爆；離開時會還原玩家原本的速度設定
+            worldBossPrevBattleSpeed = battleSpeed;
+            if (battleSpeed > 5) battleSpeed = 5;
+            document.getElementById('battle-stage-title').innerText = `全服首領討伐`;
+            setTimeout(initCombatUnits, 100);
+            refreshNavHighlightForMode();
+            updateDynamicBackground();
+        }
+
+        // 戰鬥結束後用 transaction 把這次造成的傷害原子性地從共用血量扣掉，避免多人同時扣血互相蓋掉；
+        // 同時更新自己的貢獻紀錄，讓排行榜看得到；金幣獎勵會套用聖物的「討伐金幣加成」詞條
+        async function submitWorldBossDamage(damage) {
+            if (!mpConnected || damage <= 0) return;
+            try {
+                const bossRef = fbDb.collection('worldBoss').doc('current');
+                await fbDb.runTransaction(async (tx) => {
+                    const doc = await tx.get(bossRef);
+                    if (!doc.exists) return;
+                    const newHp = Math.max(0, doc.data().currentHp - damage);
+                    tx.update(bossRef, {currentHp: newHp});
+                });
+                const contribRef = bossRef.collection('contributions').doc(fbUser.uid);
+                await fbDb.runTransaction(async (tx) => {
+                    const doc = await tx.get(contribRef);
+                    const prev = doc.exists ? (doc.data().totalDamage || 0) : 0;
+                    tx.set(contribRef, {displayName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`, totalDamage: prev + damage}, {merge: true});
+                });
+            } catch (err) {console.warn('提交世界首領傷害失敗：', err);}
+        }
+
         function renderArenaShop() {
             const list = document.getElementById('arena-shop-list');
             if (!list) return;
@@ -2660,7 +2922,7 @@
            （見下方說明文字），沒設好安全規則的話，任何人都能打開瀏覽器主控台直接呼叫 sendAdminMail()
            幫自己塞資源，這點會在回覆裡另外說明。
            ============================================================ */
-        const ADMIN_EMAILS = ['huangjingyuan0128@gmail.com'
+        const ADMIN_EMAILS = ['huangjingyuan0128@gmail.com '
             // ★ 把你自己註冊帳號用的 Email 填進這個陣列，符合的帳號登入後就會看到「管理員」分頁
             // 'you@example.com',
         ];
@@ -2768,6 +3030,108 @@
                 opt.value = h.id; opt.innerText = `[${h.rarity}] ${h.name}`;
                 sel.appendChild(opt);
             });
+        }
+
+        // 填滿「目前賽季」跟「限時活動」兩個下拉選單；限時活動只列出真的有定義 exclusiveMode 的賽季
+        // （目前是 S3 迷宮、S4 巢穴、S5 矩陣、S6 盛典），並把目前 Firestore 裡存的設定值選起來
+        function populateAdminSeasonSelects() {
+            const seasonSel = document.getElementById('admin-current-season');
+            const eventSel = document.getElementById('admin-active-event');
+            if (!seasonSel || !eventSel) return;
+            if (seasonSel.options.length === 0) {
+                Object.keys(SEASON_CONFIG).forEach(id => {
+                    const opt = document.createElement('option');
+                    opt.value = id; opt.innerText = SEASON_CONFIG[id].name;
+                    seasonSel.appendChild(opt);
+                });
+            }
+            if (eventSel.options.length <= 1) {
+                Object.keys(SEASON_CONFIG).filter(id => SEASON_CONFIG[id].exclusiveMode).forEach(id => {
+                    const opt = document.createElement('option');
+                    opt.value = id; opt.innerText = `${SEASON_CONFIG[id].name}：${SEASON_CONFIG[id].exclusiveMode.title}`;
+                    eventSel.appendChild(opt);
+                });
+            }
+            if (adminGameConfig) {
+                if (adminGameConfig.currentSeasonId) seasonSel.value = adminGameConfig.currentSeasonId;
+                eventSel.value = adminGameConfig.activeEventSeasonId || '';
+            }
+            document.getElementById('admin-max-hero-level').value = (adminGameConfig && adminGameConfig.maxHeroLevel) || MAX_HERO_LEVEL;
+            document.getElementById('admin-max-artifact-tier').value = (adminGameConfig && adminGameConfig.maxArtifactTier) || ALTAR_MAX_ARTIFACT_TIER;
+        }
+
+        async function saveAdminGameConfig() {
+            ToneAudioEngine.playClick();
+            if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); return;}
+            const seasonId = parseInt(document.getElementById('admin-current-season').value) || 1;
+            const eventVal = document.getElementById('admin-active-event').value;
+            const eventSeasonId = eventVal ? parseInt(eventVal) : null;
+            const maxHeroLevel = parseInt(document.getElementById('admin-max-hero-level').value) || MAX_HERO_LEVEL;
+            const maxArtifactTier = parseInt(document.getElementById('admin-max-artifact-tier').value) || ALTAR_MAX_ARTIFACT_TIER;
+            try {
+                await fbDb.collection('gameConfig').doc('current').set({
+                    currentSeasonId: seasonId,
+                    activeEventSeasonId: eventSeasonId,
+                    maxHeroLevel, maxArtifactTier,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: GAME_STATE.mpDisplayName || fbUser.email
+                }, {merge: true});
+                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階`;
+                showToast('全域設定已同步給所有玩家');
+            } catch (err) {console.warn('儲存全域設定失敗：', err); showToast('儲存失敗，請檢查網路連線或安全規則設定');}
+        }
+
+        // 顯示目前全服首領的狀態，並把輸入框預填成現在的設定值，方便管理員微調後再次開啟
+        async function refreshAdminBossStatus() {
+            if (!isCurrentUserAdmin() || !mpConnected) return;
+            try {
+                const snap = await fbDb.collection('worldBoss').doc('current').get();
+                const statusEl = document.getElementById('admin-boss-current-status');
+                if (!snap.exists) {statusEl.innerText = '目前沒有任何首領資料，尚未開啟過活動'; return;}
+                const d = snap.data();
+                statusEl.innerText = `目前狀態：${d.status === 'active' ? '啟用中' : '已關閉'}，${d.bossName || '???'}，血量 ${Math.max(0, Math.floor(d.currentHp || 0)).toLocaleString()} / ${(d.maxHp || 0).toLocaleString()}`;
+                document.getElementById('admin-boss-name').value = d.bossName || '';
+                document.getElementById('admin-boss-maxhp').value = d.maxHp || '';
+                document.getElementById('admin-boss-goldrate').value = d.goldPerDamage || 0.05;
+            } catch (err) {console.warn(err);}
+        }
+
+        // ★ 開啟本次全服首領活動：管理員設定名稱/血量/獎勵倍率，這裡會把 currentHp 重置成滿血，
+        // 並且把排行榜（contributions 子集合）清空，讓這次活動重新從零開始統計，不會沿用上次的紀錄
+        async function openAdminWorldBoss() {
+            ToneAudioEngine.playClick();
+            if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); return;}
+            const bossName = document.getElementById('admin-boss-name').value.trim() || '全服首領';
+            const maxHp = parseInt(document.getElementById('admin-boss-maxhp').value) || 100000000;
+            const goldPerDamage = parseFloat(document.getElementById('admin-boss-goldrate').value) || 0.05;
+            try {
+                const ref = fbDb.collection('worldBoss').doc('current');
+                // 清空舊的排行榜紀錄，讓這次活動重新統計
+                const oldContribs = await ref.collection('contributions').get();
+                const deletions = oldContribs.docs.map(d => d.ref.delete());
+                await Promise.all(deletions);
+
+                await ref.set({
+                    bossName, maxHp, currentHp: maxHp, goldPerDamage,
+                    status: 'active',
+                    openedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    openedBy: GAME_STATE.mpDisplayName || fbUser.email
+                });
+                showToast(`已開啟全服首領活動：${bossName}`);
+                refreshAdminBossStatus();
+                refreshWorldBossUI();
+            } catch (err) {console.warn('開啟首領活動失敗：', err); showToast('開啟失敗，請檢查網路連線或安全規則設定');}
+        }
+
+        async function closeAdminWorldBoss() {
+            ToneAudioEngine.playClick();
+            if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); return;}
+            try {
+                await fbDb.collection('worldBoss').doc('current').set({status: 'inactive'}, {merge: true});
+                showToast('已關閉全服首領活動');
+                refreshAdminBossStatus();
+                refreshWorldBossUI();
+            } catch (err) {console.warn('關閉首領活動失敗：', err); showToast('操作失敗，請檢查網路連線');}
         }
 
         async function sendAdminMail() {
@@ -3127,9 +3491,10 @@
         // 主線章節解鎖上限：S1~S3 沿用原本「每賽季 +2 章」(S1=3章, S2=5章, S3=7章)，
         // S4 之後改成「每賽季 +1 章」，對應新增的第 8 章 (龍脈裂谷/S4)、第 9 章 (機械廢土/S5)、第 10 章 (拂曉聖殿/S6)，
         // 避免直接套用舊公式一次跳兩章 (原公式 S4 會變 9 章、S5 會變 11 章，但只做了對應數量的新章節)。
+        // ★ 修正：遠征章節不再跟賽季時間綁定，永遠回傳「全部章節都算賽季允許」，
+        // 章節能不能進，完全看玩家自己打到哪（highestStage.chapter），詳見 renderChapterList()
         function getMaxAllowedChapter() {
-            if (maxUnlockedSeason <= 3) return 3 + (maxUnlockedSeason - 1) * 2;
-            return Math.min(10, 7 + (maxUnlockedSeason - 3));
+            return CAMPAIGN_TOTAL_CHAPTERS;
         }
 
         // ★ 開發者模式：正式的賽季解鎖是綁帳號建立時間（每季 48 小時）算的，
@@ -3146,6 +3511,39 @@
             const now = Date.now();
             const SEASON_DURATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 小時
             return Math.floor((now - GAME_STATE.accountCreateTime) / SEASON_DURATION_MS) + 1;
+        }
+
+        /* ============================================================
+           全域遊戲設定 (由管理員控制)：目前賽季 + 目前開放的限時活動，存在 Firestore 的
+           gameConfig/current 這份文件，所有玩家即時讀取同一份（onSnapshot，管理員一改，所有人畫面立刻更新）。
+           沒有連線/沒設定 Firebase 的話，維持原本「靠帳號建立時間自動推進」的邏輯（見 getCurrentEra），
+           確保單機模式完全不受影響。
+           ============================================================ */
+        let adminGameConfig = null;
+        let adminGameConfigUnsub = null;
+        function listenAdminGameConfig() {
+            if (!mpConnected || !fbDb) return;
+            if (adminGameConfigUnsub) adminGameConfigUnsub();
+            adminGameConfigUnsub = fbDb.collection('gameConfig').doc('current').onSnapshot(doc => {
+                adminGameConfig = doc.exists ? doc.data() : null;
+                // ★ 新增：管理員可以在後台調整「英雄等級上限」跟「聖物強化上限」，即時同步給所有玩家。
+                // 沒設定過的話維持程式碼裡的預設值 (100 級 / 10 階)，不會突然變成 undefined 或 0。
+                if (adminGameConfig) {
+                    if (adminGameConfig.maxHeroLevel) MAX_HERO_LEVEL = adminGameConfig.maxHeroLevel;
+                    if (adminGameConfig.maxArtifactTier) ALTAR_MAX_ARTIFACT_TIER = adminGameConfig.maxArtifactTier;
+                    // ★ 管理員如果在玩家正在遊玩時把上限往下調，這裡立刻套用保護機制，不用等下次重新整理頁面
+                    if (typeof enforceProgressionCaps === 'function') {
+                        const wasClamped = enforceProgressionCaps();
+                        if (wasClamped) {
+                            if (typeof updateHUD === 'function') updateHUD();
+                            if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
+                            if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
+                        }
+                    }
+                }
+                refreshSeasonModeNavButton();
+                if (typeof checkSeasonModeUnlock === 'function' && !document.getElementById('tab-season-mode').classList.contains('hidden')) checkSeasonModeUnlock();
+            }, err => console.warn('讀取全域賽季設定失敗：', err));
         }
 
         /* === DOM 快取 ===
@@ -3355,10 +3753,20 @@
 
         // 魔物資料庫 (擴充至 7 章節)
         // 各章節的地圖名稱，選關選單跟戰鬥標題都會用到
+        // ★ 遠征章節擴充：改成 20 章、每章 25 關 (原本 10 章 x 10 關)，不再受賽季時間綁定，
+        // 章節解鎖純粹看玩家自己的進度 (highestStage.chapter)，跟目前是第幾季、有沒有開限時活動完全無關。
+        const CAMPAIGN_TOTAL_CHAPTERS = 20;
+        const CAMPAIGN_LEVELS_PER_CHAPTER = 25;
+
         const CHAPTER_NAMES = {
             1: '青翠草原', 2: '幽暗洞穴', 3: '荒廢地下城', 4: '迷霧森林',
             5: '荒蕪沙漠', 6: '冰封雪山', 7: '魔王城',
-            8: '龍脈裂谷', 9: '機械廢土', 10: '拂曉聖殿'
+            8: '龍脈裂谷', 9: '機械廢土', 10: '拂曉聖殿',
+            // 第 11~20 章：怪物沿用第 1~10 章同一批（跟試煉塔一樣共用 MONSTER_DB，見下方 spawn 邏輯的 %10 循環)，
+            // 只是換個更深邃/更危險的地名跟難度倍率，不用另外準備一整套新怪物美術資源
+            11: '深淵草原', 12: '腐蝕洞穴', 13: '崩壞地下城', 14: '幽冥森林',
+            15: '灼熱沙漠', 16: '極寒雪山', 17: '魔王城·核心',
+            18: '龍脈裂谷·深層', 19: '機械廢土·禁區', 20: '拂曉聖殿·至聖所'
         };
 
         const MONSTER_DB = {
@@ -3640,7 +4048,27 @@
             if (GAME_STATE.gridSlots.length > 6) {
                 GAME_STATE.gridSlots = GAME_STATE.gridSlots.slice(0, 6);
             }
+            enforceProgressionCaps(); // ★ 新增：確保沒有英雄的等級/聖物階級超過目前的上限設定
             updateHUD();
+        }
+
+        // ★ 保護機制：管理員如果把「英雄等級上限」或「聖物強化上限」往下調，但玩家有些英雄已經超過
+        // 新的上限，這裡會把所有英雄的等級／聖物階級強制鎖回目前的上限值，避免升級按鈕判斷異常、
+        // 或是利用「上限被調低前衝上去的舊進度」鑽漏洞。只會往下修正，不會影響原本沒超過上限的英雄。
+        // 呼叫時機：遊戲載入時，以及管理員即時調整上限設定時 (見 listenAdminGameConfig)。
+        function enforceProgressionCaps() {
+            let clamped = false;
+            Object.keys(GAME_STATE.roster || {}).forEach(heroId => {
+                const r = GAME_STATE.roster[heroId];
+                if (!r) return;
+                if ((r.level || 1) > MAX_HERO_LEVEL) {r.level = MAX_HERO_LEVEL; clamped = true;}
+                if ((r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) {r.artifactTier = ALTAR_MAX_ARTIFACT_TIER; clamped = true;}
+            });
+            if (clamped) {
+                saveGame();
+                showToast('部分騎士的等級／聖物階級超過目前上限，已自動調整回上限值');
+            }
+            return clamped;
         }
 
         // 賽季 DLC 切換邏輯 (解除切換冷卻限制)
@@ -3825,6 +4253,17 @@
         // 規則：抓「帳號時間已進入、且有定義 exclusiveMode 的賽季」裡最新的一筆；
         // 若帳號時間還沒到任何一個有 exclusiveMode 的賽季，改抓最早的一筆，顯示鎖定倒數（維持原本的預告體驗）。
         function getExclusiveModeInfo() {
+            // ★ 管理員如果有指定「限時活動」，優先用管理員設定的（不管是哪一季，只要那季有定義 exclusiveMode 就能開），
+            // 設成「無」的話代表管理員主動關閉所有限時活動，整個按鈕就會隱藏；
+            // 完全沒有 adminGameConfig（沒連線/管理員還沒設定過）才退回原本「靠帳號時間自動推進」的邏輯
+            if (adminGameConfig && adminGameConfig.hasOwnProperty('activeEventSeasonId')) {
+                const activeId = adminGameConfig.activeEventSeasonId;
+                if (!activeId) return null; // 管理員關閉了限時活動
+                const seasonConfig = SEASON_CONFIG[activeId];
+                if (!seasonConfig || !seasonConfig.exclusiveMode) return null;
+                return {seasonId: activeId, name: seasonConfig.name, mode: seasonConfig.exclusiveMode};
+            }
+
             const currentEra = getCurrentEra();
 
             const idsWithMode = Object.keys(SEASON_CONFIG).map(Number).filter(id => SEASON_CONFIG[id].exclusiveMode).sort((a, b) => a - b);
@@ -3845,7 +4284,10 @@
             btn.style.display = '';
             document.getElementById('nav-icon-season-mode').className = `fa-solid ${info.mode.navIcon} text-lg mb-1 text-${info.mode.themeColor}-500`;
             document.getElementById('nav-label-season-mode').className = `text-[10px] font-bold text-${info.mode.themeColor}-500`;
-            document.getElementById('nav-label-season-mode').innerText = info.mode.navLabel;
+            // ★ 導覽列文字固定顯示「限時活動」，不再跟著賽季顯示各自的專屬名稱（迷宮/巢穴/矩陣/盛典），
+            // 因為現在是管理員決定「這次要開哪個活動」，這個按鈕的定位變成一個共用的「限時活動」入口，
+            // 活動實際的名稱（例如「深淵迷宮」）會在點進去之後的畫面裡顯示
+            document.getElementById('nav-label-season-mode').innerText = '限時活動';
         }
 
         // 檢查賽季專屬模式解鎖狀態（原 checkRiftUnlock，泛化為讀 SEASON_CONFIG[id].exclusiveMode）
@@ -4387,22 +4829,20 @@
            聖城祭壇 (Altar) —— 每日祈禱 + 聖物強化 (artifactTier)
            ★ 移除「庇護等級」系統：原本低等級英雄的有效等級會被拉到「第 5 高等級英雄」的等級，
            等於變相免費同步戰力。拿掉後每個英雄就是老老實實看自己的等級，不再互相同步。
-           ★ 聖物強化擴充到 100 階（原本只有 5 階），每階加成從 4% 調降到 1%（100 階滿階 +100%，
-           避免跟舊版一樣線性疊加會炸到 +400%），消耗資源也大幅提高，變成真正的長期養成目標。
+           ★ 聖物強化改回 10 階（原本擴充到 100 階），每階加成從 1% 拉高到 10%（10 階滿階一樣是 +100%，
+           維持跟之前差不多的滿階總加成上限，只是分成 10 個比較有感的大階段，不是 100 個細碎的小階段），
+           消耗資源也一併重新調整，總投入量級跟之前的 100 階版本差不多，只是用更少次、更大步的方式達成。
            ============================================================ */
-        const ALTAR_MAX_ARTIFACT_TIER = 100;
+        let ALTAR_MAX_ARTIFACT_TIER = 10; // ★ 改成 let：管理員可以在後台調整這個上限（見 listenAdminGameConfig）
         const ALTAR_PRAYER_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小時可領一次
         let selectedAltarHeroId = null;
 
         function getAltarArtifactCost(tier) {
-            // ★ 平衡調整：原本帶二次項的公式算到 100 階終點，總共要吃掉約 77 萬鍛造石、1500 萬金幣，
-            // 光鍛造石就是裝備滿配 4 部位（1680 石）的 460 倍，遠遠超過鍛造石實際的取得速度，
-            // 等於系統上雖然開放到 100 階，實際上玩家幾乎不可能點滿，變成看得到打不到。
-            // 改成單純線性成長：100 階總消耗降到約 4.76 萬鍛造石、168 萬金幣，跟英雄練滿等的花費量級接近，
-            // 一樣是長期目標，但至少是「打得到終點」的長期目標。
+            // ★ 平衡調整：階數從 100 砍到 10，單階花費跟著等比例放大，10 階總花費維持跟原本 100 階版本
+            // 差不多的量級（約 185 萬金幣、5.6 萬鍛造石），只是變成 10 次大步，而不是 100 次小步。
             return {
-                gold: 2000 + tier * 300,
-                stones: 80 + tier * 8
+                gold: 50000 + tier * 30000,
+                stones: 2000 + tier * 800
             };
         }
 
@@ -4546,8 +4986,8 @@
             const star = r.star || 1;
 
             const eq = r.equips || [0, 0, 0, 0];
-            // 聖物強化 (artifactTier, 祭壇強化)：每階 +1% 全屬性，最高 100 階 (+100%)
-            const artifactMult = 1 + ((r.artifactTier || 0) * 0.01);
+            // 聖物強化 (artifactTier, 祭壇強化)：每階 +10% 全屬性，最高 10 階 (+100%，維持跟原本 100 階版本一樣的滿階上限)
+            const artifactMult = 1 + ((r.artifactTier || 0) * 0.10);
             const hp = Math.floor((db.baseHp * (1 + (l - 1) * 0.12) * (1 + (r.star - 1) * 0.15) + eq[2] * 80) * artifactMult);
             const atk = Math.floor((db.baseAtk * (1 + (l - 1) * 0.12) * (1 + (r.star - 1) * 0.15) + eq[0] * 15) * artifactMult);
             const def = Math.floor((db.baseDef * (1 + (l - 1) * 0.12) + eq[1] * 8) * artifactMult);
@@ -4613,6 +5053,7 @@
                     document.getElementById('battle-stage-title').innerText = `深淵秘境`;
                 } else if (GAME_STATE.currentMode === 'season') document.getElementById('battle-stage-title').innerText = `賽季討伐`;
                 else if (GAME_STATE.currentMode === 'arena') document.getElementById('battle-stage-title').innerText = `競技場：挑戰 ${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}`;
+                else if (GAME_STATE.currentMode === 'worldboss') document.getElementById('battle-stage-title').innerText = `全服首領討伐`;
                 else document.getElementById('battle-stage-title').innerText = `${GAME_STATE.stage.chapter}-${GAME_STATE.stage.level}`;
             }
 
@@ -4755,7 +5196,8 @@
         // ★ 秘境／賽季這類需要重複刷的模式常常嫌動畫太慢，把上限從 x3 拉高到 x10
         function cycleBattleSpeed() {
             ToneAudioEngine.playClick();
-            const SPEED_STEPS = [1, 2, 3, 5, 10, 15, 20];
+            // ★ 全服首領這個模式最高只能到 5 倍速（怕大家全開高倍速秒殺首領），只在這個模式下限縮循環步驟
+            const SPEED_STEPS = GAME_STATE.currentMode === 'worldboss' ? [1, 2, 3, 5] : [1, 2, 3, 5, 10, 15, 20];
             const idx = SPEED_STEPS.indexOf(battleSpeed);
             battleSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
             const btn = document.getElementById('btn-battle-speed');
@@ -5191,6 +5633,15 @@
             renderHeroesList();
         }
 
+        // ★ 新增：戰力數字縮寫小工具，避免騎士卡片這種寬度固定的地方，戰力衝到 4 位數以上就把文字擠破版面。
+        // 隨著玩家進度推進，戰力只會越來越高，單純縮小字體治標不治本，數字早晚還是會再次超出，
+        // 改成 1000 以上顯示成 1.2k、1000000 以上顯示成 1.2M 才是真正一勞永逸的做法。
+        function formatCompactNumber(n) {
+            if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            return Math.floor(n).toString();
+        }
+
         function renderHeroesList() {
             // 更新篩選藥丸的選中樣式
             document.querySelectorAll('.heroes-filter-btn').forEach(btn => {
@@ -5226,7 +5677,7 @@
                     <div class="absolute top-0 right-0 bg-black/60 px-1.5 py-0.5 rounded-bl-lg text-[8px] font-bold border-b border-l border-[#3e3328] ${rarityTextClass}">${h.rarity}</div>
                     ${custom ? `<img src="${custom}" class="w-12 h-12 rounded-full object-cover shadow-lg group-hover:scale-110 transition">` : `<i class="fa-solid ${h.avatarIcon} text-4xl drop-shadow-md group-hover:scale-110 transition" style="color:${h.color}"></i>`}
                     <span class="text-[10px] font-bold text-stone-200 mt-2 truncate w-full text-center">${dName}</span>
-                    <span class="text-[9px] text-yellow-500 font-bold mt-0.5 flex items-center gap-1.5"><i class="fa-solid fa-bolt text-[8px]"></i>${h.combatPower}<span class="text-amber-300"><i class="fa-solid fa-star text-[8px]"></i>${h.star || 1}</span></span>
+                    <span class="text-[9px] text-yellow-500 font-bold mt-0.5 flex items-center gap-1 max-w-full"><i class="fa-solid fa-bolt text-[8px] shrink-0"></i><span class="truncate">${formatCompactNumber(h.combatPower)}</span><span class="text-amber-300 shrink-0 flex items-center gap-0.5 ml-0.5"><i class="fa-solid fa-star text-[8px]"></i>${h.star || 1}</span></span>
                 </div>`;
                 fragment.appendChild(card.firstElementChild);
             });
@@ -5404,7 +5855,7 @@
         // ★ 英雄等級上限 200，升級花費改成二次曲線成長 (原本是線性 +50/+30，高等級時費用幾乎跟不上收入，
         // 導致金幣/經驗越後期越用不完)。公式：實測 1→200 級總花費約 241 萬金幣、125 萬經驗，
         // 對應目前的資源取得速度大約是數小時的專注遊玩量，作為長期目標而不是瞬間就能刷滿。
-        const MAX_HERO_LEVEL = 200;
+        let MAX_HERO_LEVEL = 100; // ★ 改成 let：管理員可以在後台調整這個上限（見 listenAdminGameConfig）
         function getHeroLevelUpCost(level) {
             return {
                 gold: Math.floor(150 + level * 40 + level * level * 0.6),
@@ -5871,14 +6322,9 @@
 
         function renderChapterList() {
             const c = document.getElementById('chapter-list'); c.innerHTML = '';
-            const maxAllowedChapter = getMaxAllowedChapter();
-            const totalChapters = 10;
+            const totalChapters = CAMPAIGN_TOTAL_CHAPTERS;
             for (let i = 1; i <= totalChapters; i++) {
-                const isUnlockedBySeason = i <= maxAllowedChapter;
                 const isUnlockedByProgress = i <= GAME_STATE.highestStage.chapter;
-
-                // 如果連賽季都還沒到，就不顯示，或者顯示上鎖
-                if (!isUnlockedBySeason && !isUnlockedByProgress) continue;
 
                 const btn = document.createElement('button');
                 btn.className = `w-full text-left px-4 py-3 rounded-lg font-bold text-sm border transition-all ${currentChapterView === i ? 'bg-[#3e3328] border-fantasy-gold text-fantasy-gold shadow-inner' : 'bg-black/40 border-[#3e3328] text-stone-400 hover:bg-[#1f1610]'} ${!isUnlockedByProgress ? 'opacity-50 cursor-not-allowed' : ''}`;
@@ -5889,7 +6335,7 @@
 
         function renderStageGrid(chap) {
             document.getElementById('stage-chapter-title').innerText = `第 ${chap} 章 ${CHAPTER_NAMES[chap] || ''}`; const g = document.getElementById('stage-grid'); g.innerHTML = '';
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= CAMPAIGN_LEVELS_PER_CHAPTER; i++) {
                 const isUnlocked = (chap < GAME_STATE.highestStage.chapter) || (chap === GAME_STATE.highestStage.chapter && i <= GAME_STATE.highestStage.level);
                 const isCurrent = GAME_STATE.stage.chapter === chap && GAME_STATE.stage.level === i;
                 const btn = document.createElement('button');
@@ -6201,6 +6647,14 @@
                         combatEntities.push({...h, baseId: h.id, hp: h.maxHp, maxHp: h.maxHp, atk: h.atk, def: h.def, team: 'enemy', row: slot.row, col: slot.col, x: 0, y: 0, tx: 0, ty: 0, actionTimer: 0, stunned: false, shield: 0, damageText: []});
                     });
                 }
+            } else if (GAME_STATE.currentMode === 'worldboss') {
+                // ★ 全服首領：跟賽季討伐同一種「無限血量、打到全軍覆沒為止」設計，血量本身只是本地顯示用的假血條，
+                // 真正共用的血量存在 Firestore，戰鬥結束時才把這場造成的傷害一次性提交上去扣血（見 handleCombatEnd）
+                document.getElementById('btn-auto-battle').style.display = 'block';
+                eventBossTotalHp = 99999999; eventBossCurrentHp = eventBossTotalHp;
+                combatEntities.push({baseId: 'm_worldboss', name: '深淵吞噬者', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: 260, def: 90, role: 'boss', color: '#a21caf', icon: 'fa-dragon', row: 1, col: 1, skill: {type: 'aoe'}});
+                // ★ 首領專屬聖物的詞條加成，只在這個模式下套用到玩家陣容上
+                applyWorldBossRelicBonus(combatEntities);
             } else if (GAME_STATE.currentMode === 'season') {
                 const bossConfig = SEASON_CONFIG[GAME_STATE.season.id] ? SEASON_CONFIG[GAME_STATE.season.id].boss : SEASON_CONFIG[1].boss;
                 const topHero = Object.values(GAME_STATE.roster).sort((a, b) => b.level - a.level)[0]; const pLevel = topHero ? topHero.level : 1;
@@ -6224,27 +6678,23 @@
                     combatEntities.push({baseId: g.mId, name: g.mName, team: 'enemy', x: 0, y: 0, hp: Math.floor(250 * sm), maxHp: Math.floor(250 * sm), atk: Math.floor(35 * sm), def: 15, role: '戰士', color: g.mColor, icon: g.mIcon, row: i % 3, col: Math.floor(i / 3), skill: {...g.mSkill}});
                 }
             } else {
-                document.getElementById('btn-auto-battle').style.display = 'block'; const chapStr = GAME_STATE.stage.chapter.toString(); const db = MONSTER_DB[chapStr] || MONSTER_DB[1];
-                const totalStage = (GAME_STATE.stage.chapter - 1) * 10 + GAME_STATE.stage.level; const sm = 0.5 + (totalStage * 0.1);
+                document.getElementById('btn-auto-battle').style.display = 'block';
+                // ★ 遠征擴充到 20 章：第 11~20 章的怪物直接循環沿用第 1~10 章同一批 MONSTER_DB（跟試煉塔
+                // 共用怪物同一個做法），不用另外畫一整套新怪物美術，用 %10 循環對照
+                const chapIdx = ((GAME_STATE.stage.chapter - 1) % 10) + 1;
+                const db = MONSTER_DB[chapIdx.toString()] || MONSTER_DB[1];
+                const totalStage = (GAME_STATE.stage.chapter - 1) * CAMPAIGN_LEVELS_PER_CHAPTER + GAME_STATE.stage.level;
+                // ★ 平衡調整：章節擴充到 20 章 x 25 關（總關卡數 500，原本 100），同時英雄等級上限從 200 降到 100，
+                // 舊的成長率 (0.1/關) 到關卡後期會遠遠超過玩家能達到的戰力上限，這裡重新抓一個温和很多的成長率，
+                // 目標是讓「怪物戰力上限／玩家戰力上限」的比例跟原本設計時差不多（遠征本來就該是能被完全打穿的
+                // 主線內容，真正的無限成長留給試煉塔/秘境/賽季討伐這些後期內容）。實際數值需要之後實測微調。
+                const sm = 0.5 + (totalStage * 0.01);
 
-                // S4 賽季 (第 8 章) 之後，每章最後一關 (第 10 關) 改成單一強力 boss 戰，呼應該賽季的世界首領，
-                // 不再是跟前面關卡一樣的多隻小怪組合
-                const CHAPTER_FINALE_BOSS = {8: SEASON_CONFIG[4] && SEASON_CONFIG[4].boss, 9: SEASON_CONFIG[5] && SEASON_CONFIG[5].boss, 10: SEASON_CONFIG[6] && SEASON_CONFIG[6].boss};
-                const finaleBoss = (GAME_STATE.stage.chapter >= 8 && GAME_STATE.stage.level === 10) ? CHAPTER_FINALE_BOSS[GAME_STATE.stage.chapter] : null;
-
-                if (finaleBoss) {
-                    combatEntities.push({
-                        baseId: finaleBoss.id, name: finaleBoss.name, team: 'enemy', x: 0, y: 0,
-                        hp: Math.floor(3000 * sm * 4), maxHp: Math.floor(3000 * sm * 4),
-                        atk: Math.floor(220 * sm), def: Math.floor(140 * sm),
-                        role: 'boss', color: finaleBoss.color, icon: finaleBoss.icon, row: 1, col: 1,
-                        skill: {type: 'aoe'}
-                    });
-                } else {
-                    const eCount = Math.max(1, Math.min(9, Math.floor((GAME_STATE.stage.chapter * 10 + GAME_STATE.stage.level) / 3)));
-                    for (let i = 0; i < eCount; i++) {
-                        const m = db[i % db.length]; combatEntities.push({baseId: m.id, name: m.name, team: 'enemy', x: 0, y: 0, hp: Math.floor(m.maxHp * sm), maxHp: Math.floor(m.maxHp * sm), atk: Math.floor(m.atk * sm), def: Math.floor(m.def * (sm * 0.8)), role: m.role, color: m.color, icon: m.icon, row: i % 3, col: Math.floor(i / 3), skill: m.skill || {type: 'basic'}});
-                    }
+                // ★ 遠征章節不再跟賽季綁定，原本第 8/9/10 章結尾會出現對應賽季世界首領的「章節魔王戰」機制
+                // 一併移除，章節內容現在完全自成一格，不依賴任何賽季資料
+                const eCount = Math.max(1, Math.min(9, Math.floor(totalStage / 14) + 1));
+                for (let i = 0; i < eCount; i++) {
+                    const m = db[i % db.length]; combatEntities.push({baseId: m.id, name: m.name, team: 'enemy', x: 0, y: 0, hp: Math.floor(m.maxHp * sm), maxHp: Math.floor(m.maxHp * sm), atk: Math.floor(m.atk * sm), def: Math.floor(m.def * (sm * 0.8)), role: m.role, color: m.color, icon: m.icon, row: i % 3, col: Math.floor(i / 3), skill: m.skill || {type: 'basic'}});
                 }
             }
 
@@ -6308,7 +6758,7 @@
             else if (mode === 'season') target = 'season';
             else if (mode === 'rift' || mode === 'festival') target = 'season-mode';
             else if (mode === 'dungeon') target = 'dungeon';
-            else if (mode === 'arena') target = 'arena';
+            else if (mode === 'arena' || mode === 'worldboss') target = 'arena';
 
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-target="${target}"]`);
@@ -6617,7 +7067,7 @@
                 // 戰鬥數據統計：現在兩邊陣營都會記錄（不再只記玩家這邊），競技場等模式才能看得到對方的數據
                 bumpAnalytics('dps', attacker.team, attacker.name, damage);
                 // ★ 秘境改版後也要看「造成了多少傷害」來算獎勵，所以連同賽季討伐一起累計（只看玩家造成的部分）
-                if (attacker.team === 'player' && (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon')) {
+                if (attacker.team === 'player' && (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon' || GAME_STATE.currentMode === 'worldboss')) {
                     eventTotalDamage += Math.floor(damage);
                     if (GAME_STATE.currentMode === 'season') eventBossCurrentHp -= damage;
                 }
@@ -7391,6 +7841,25 @@
                 document.getElementById('overlay-desc').innerHTML = `對手：<span class="text-sky-400 font-bold">${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}</span><br>獲得 <span class="text-amber-400 font-bold">${honorGain}</span> 榮譽點數<br>目前戰績：<span class="text-fantasy-gold font-bold">${GAME_STATE.arenaRecord.win}勝${GAME_STATE.arenaRecord.loss}敗</span>`;
                 btnNext.innerText = "返回競技場"; btnNext.onclick = () => switchTab('arena');
                 saveGame();
+            } else if (GAME_STATE.currentMode === 'worldboss') {
+                // ★ 全服首領：不管輸贏，這場造成的傷害都會提交上去扣共用血量；金幣獎勵套用聖物「討伐金幣加成」詞條，
+                // 速度還原成玩家原本選的（進場時被強制夾到 5 倍以內）
+                submitWorldBossDamage(eventTotalDamage);
+                if (worldBossPrevBattleSpeed !== null) {battleSpeed = worldBossPrevBattleSpeed; worldBossPrevBattleSpeed = null;}
+
+                const goldFindBonus = (GAME_STATE.worldBossRelic && GAME_STATE.worldBossRelic.affixes)
+                    ? GAME_STATE.worldBossRelic.affixes.filter(a => a.stat === 'goldFind').reduce((s, a) => s + a.value, 0) : 0;
+                // ★ 改成由管理員設定的獎勵倍率 (goldPerDamage)，不再是寫死的公式
+                const goldRate = (currentWorldBossConfig && currentWorldBossConfig.goldPerDamage) || 0.05;
+                const bossGold = Math.floor(Math.max(50, eventTotalDamage * goldRate) * (1 + goldFindBonus / 100));
+                GAME_STATE.gold += bossGold;
+
+                document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-dragon text-rose-500 drop-shadow-[0_0_15px_rgba(244,63,94,0.8)]"></i>';
+                document.getElementById('overlay-title').innerText = '討伐結束';
+                document.getElementById('overlay-desc').innerHTML = `對全服首領造成了 <span class="text-rose-400 font-bold">${eventTotalDamage.toLocaleString()}</span> 點傷害<br>獲得 <span class="text-fantasy-gold font-bold">${bossGold.toLocaleString()}</span> 金幣<br>已提交到全服排行榜！`;
+                btnNext.innerText = "返回競技場"; btnNext.onclick = () => switchTab('arena');
+                saveGame();
+                if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
             } else if (GAME_STATE.currentMode === 'season') {
                 const earnedCoins = Math.max(10, Math.floor(eventTotalDamage / 100)); GAME_STATE.starCoins += earnedCoins; GAME_STATE.season.totalDamage += eventTotalDamage; if (eventTotalDamage > GAME_STATE.season.highScore) GAME_STATE.season.highScore = eventTotalDamage;
                 const config = SEASON_CONFIG[GAME_STATE.season.id] || SEASON_CONFIG[1];
@@ -7448,18 +7917,18 @@
                     // 改成掉落機率維持隨機，但掉落「數量」固定依關卡計算、並設上限，數字可預期、不會亂跳。
                     // ★ 平衡調整：鍛造石是裝備強化的唯一來源（4 個裝備欄、每欄最高 20 級，總量需求不小），
                     // 跟寶石一起調高掉落機率與數量，避免裝備強化卡關。
-                    const diamondBonus = Math.min(8, Math.floor(totalStage / 10)); // 每 10 關 +1，最多 +8
-                    const stoneBonus = Math.min(6, Math.floor(totalStage / 12)); // 每 12 關 +1，最多 +6
+                    // ★ 章節擴充到 500 關（原本 100 關）之後，門檻也跟著拉長到 5 倍，不然遠征前幾章就會提早見頂
+                    const diamondBonus = Math.min(8, Math.floor(totalStage / 50)); // 每 50 關 +1，最多 +8
+                    const stoneBonus = Math.min(6, Math.floor(totalStage / 60)); // 每 60 關 +1，最多 +6
                     let extraDiamonds = Math.random() < 0.45 ? (3 + diamondBonus) : 0;
                     let extraStones = Math.random() < 0.35 ? (2 + stoneBonus) : 0;
                     GAME_STATE.gold += gReward; GAME_STATE.heroExp += eReward; GAME_STATE.diamonds += extraDiamonds; GAME_STATE.forgeStones += extraStones;
 
                     let chapterBlocked = false;
                     if (GAME_STATE.stage.chapter === GAME_STATE.highestStage.chapter && GAME_STATE.stage.level === GAME_STATE.highestStage.level) {
-                        if (GAME_STATE.stage.level >= 10) {
-                            // 新主線與賽季解鎖進度綁定：S1(3章), S2(5章), S3(7章)
-                            const maxAllowedChapter = getMaxAllowedChapter();
-                            if (GAME_STATE.stage.chapter < maxAllowedChapter) {
+                        if (GAME_STATE.stage.level >= CAMPAIGN_LEVELS_PER_CHAPTER) {
+                            // ★ 遠征章節不再跟賽季綁定，這裡單純看有沒有到最後一章 (CAMPAIGN_TOTAL_CHAPTERS)
+                            if (GAME_STATE.stage.chapter < CAMPAIGN_TOTAL_CHAPTERS) {
                                 GAME_STATE.stage.chapter++; GAME_STATE.stage.level = 1;
                                 GAME_STATE.highestStage.chapter = GAME_STATE.stage.chapter; GAME_STATE.highestStage.level = 1;
                             } else {
@@ -7471,7 +7940,7 @@
 
                     let dropText = ''; if (extraDiamonds > 0) dropText += ` <span class="text-sky-400 bg-black/40 px-2 py-0.5 rounded ml-1"><i class="fa-solid fa-gem mr-1"></i>${extraDiamonds}</span>`; if (extraStones > 0) dropText += ` <span class="text-stone-400 bg-black/40 px-2 py-0.5 rounded ml-1"><i class="fa-solid fa-hammer mr-1"></i>${extraStones}</span>`;
                     let descHtml = `取得勝利！獲得 ${gReward} 金幣，${eReward} 經驗。<br>${dropText ? '<div class="mt-2 text-[9px] text-stone-400">額外掉落:' + dropText + '</div>' : ''}`;
-                    if (chapterBlocked) descHtml += `<div class="mt-2 text-[10px] font-bold text-red-400 border-t border-red-900/50 pt-1"><i class="fa-solid fa-lock mr-1"></i>前方區域封鎖中，請等待新賽季紀元解鎖！</div>`;
+                    if (chapterBlocked) descHtml += `<div class="mt-2 text-[10px] font-bold text-fantasy-gold border-t border-amber-900/50 pt-1"><i class="fa-solid fa-flag-checkered mr-1"></i>恭喜通關遠征全部 ${CAMPAIGN_TOTAL_CHAPTERS} 章內容！</div>`;
                     document.getElementById('overlay-desc').innerHTML = descHtml;
                 }
                 document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-crown text-fantasy-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.8)]"></i>'; document.getElementById('overlay-title').innerText = '勝利';
@@ -7495,6 +7964,7 @@
                 document.getElementById('battle-stage-title').innerText = `深淵秘境`;
             }
             else if (GAME_STATE.currentMode === 'arena') {document.getElementById('battle-stage-title').innerText = `競技場：挑戰 ${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}`;}
+            else if (GAME_STATE.currentMode === 'worldboss') {document.getElementById('battle-stage-title').innerText = `全服首領討伐`;}
             else {document.getElementById('battle-stage-title').innerText = `${GAME_STATE.stage.chapter}-${GAME_STATE.stage.level}`;}
             initCombatUnits();
             updateDynamicBackground();
