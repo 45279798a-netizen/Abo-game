@@ -400,6 +400,14 @@
             background: linear-gradient(160deg, rgba(120, 53, 15, 0.55) 0%, rgba(20, 14, 10, 0.9) 65%) !important;
         }
 
+        /* ★ 新增更上位的 GR（比 LR 再高一階）——只能靠擊殺全服首領獲得，不開放抽卡/通行證取得。
+           用紅＋紫＋青三色疊加光暈，做出「比 LR 更高一個檔次」的視覺層次，呼應這批角色的毀滅系人設。 */
+        .hero-card.rarity-GR {
+            border-color: #f87171 !important;
+            box-shadow: 0 0 20px rgba(248, 113, 113, 0.6), 0 0 34px rgba(168, 85, 247, 0.35), 0 0 46px rgba(34, 211, 238, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            background: linear-gradient(160deg, rgba(76, 15, 30, 0.6) 0%, rgba(20, 14, 10, 0.9) 65%) !important;
+        }
+
         .hero-card.rarity-SSR {
             border-color: #d4af37 !important;
             box-shadow: 0 0 12px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -517,6 +525,9 @@
             <button onclick="switchTab('blackmarket')" class="nav-item" data-target="blackmarket"><i
                     class="fa-solid fa-user-secret text-lg mb-1 text-purple-400"></i><span
                     class="text-[10px] font-bold text-purple-400">黑市</span></button>
+            <button id="nav-btn-admin" onclick="switchTab('admin')" class="hidden nav-item" data-target="admin"><i
+                    class="fa-solid fa-user-shield text-lg mb-1 text-red-400"></i><span
+                    class="text-[10px] font-bold text-red-400">管理</span></button>
         </div>
     </nav>
 
@@ -1116,6 +1127,8 @@
                     id="heroes-filter-bar">
                     <button onclick="setHeroesFilter('all')" data-filter="all"
                         class="heroes-filter-btn shrink-0 px-3 py-1.5 rounded-full text-[9px] font-bold border transition">全部</button>
+                    <button onclick="setHeroesFilter('GR')" data-filter="GR"
+                        class="heroes-filter-btn shrink-0 px-3 py-1.5 rounded-full text-[9px] font-bold border transition">GR</button>
                     <button onclick="setHeroesFilter('LR')" data-filter="LR"
                         class="heroes-filter-btn shrink-0 px-3 py-1.5 rounded-full text-[9px] font-bold border transition">LR</button>
                     <button onclick="setHeroesFilter('UR')" data-filter="UR"
@@ -1268,6 +1281,9 @@
                 <div id="codex-filters" class="flex gap-2 mb-3 shrink-0 overflow-x-auto custom-scrollbar pb-1">
                     <button onclick="filterCodex('all', this)"
                         class="codex-filter-btn px-3 py-1 bg-yellow-900/40 text-fantasy-gold border border-fantasy-gold rounded text-[9px] font-bold whitespace-nowrap">全部</button>
+                    <button onclick="filterCodex('GR', this)"
+                        class="codex-filter-btn px-3 py-1 bg-black/50 text-stone-400 border border-[#3e3328] rounded text-[9px] font-bold whitespace-nowrap">GR
+                        神話</button>
                     <button onclick="filterCodex('LR', this)"
                         class="codex-filter-btn px-3 py-1 bg-black/50 text-stone-400 border border-[#3e3328] rounded text-[9px] font-bold whitespace-nowrap">LR
                         史詩</button>
@@ -1355,8 +1371,6 @@
                         <button onclick="switchArenaSubTab('mail')" id="btn-arena-mail"
                             class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] relative">信件<span
                                 id="arena-mail-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-black"></span></button>
-                        <button onclick="switchArenaSubTab('admin')" id="btn-arena-admin"
-                            class="hidden flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">管理員</button>
                     </div>
 
                     <!-- 即時挑戰子頁 -->
@@ -1436,8 +1450,15 @@
                         <div id="arena-mail-list" class="space-y-2"></div>
                     </div>
 
-                    <!-- 管理員子頁：只有帳號符合白名單的人看得到 -->
-                    <div id="arena-admin-panel" class="hidden flex-col gap-3">
+                </div>
+            </div>
+
+            <!-- ★ 獨立出來的管理員專屬選單，只有帳號符合白名單的人看得到（見 isCurrentUserAdmin） -->
+            <div id="tab-admin"
+                class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/80 backdrop-blur-md overflow-y-auto custom-scrollbar flex flex-col gap-3">
+                <h2 class="font-bold text-red-400 font-magic text-lg flex items-center shrink-0 border-b border-[#3e3328] pb-2">
+                    <i class="fa-solid fa-user-shield mr-2"></i>管理員後台
+                </h2>
                         <p class="text-[9px] text-amber-400"><i class="fa-solid fa-shield-halved mr-1"></i>管理員身分，這裡發的信件所有玩家都領得到。</p>
 
                         <!-- ★ 新增：賽季／限時活動全域控制。這裡設定的值會即時同步給「所有玩家」（存在 Firestore，
@@ -1466,6 +1487,22 @@
                                 </div>
                             </div>
                             <p class="text-[8px] text-amber-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>只往上調整才安全；往下調會讓已經超過新上限的玩家進度顯示異常，目前沒有自動修正機制。</p>
+
+                            <p class="text-[9px] text-red-300 font-bold border-t border-[#3e3328] pt-2"><i class="fa-solid fa-chess-king mr-1"></i>賽季首領數值調整（防止英雄無限升星後數值跟不上）</p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">攻擊力倍率</label>
+                                    <input id="admin-season-boss-atkmult" type="number" step="0.1" placeholder="1.0" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">防禦力倍率</label>
+                                    <input id="admin-season-boss-defmult" type="number" step="0.1" placeholder="1.0" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">暴擊率（%）</label>
+                                    <input id="admin-season-boss-crit" type="number" placeholder="15" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                            </div>
                             <button onclick="saveAdminGameConfig()" class="w-full py-2 bg-purple-800/70 text-purple-200 text-[11px] font-bold rounded border border-purple-600 hover:bg-purple-700 transition">套用設定（立即同步給所有玩家）</button>
                             <p id="admin-config-status" class="text-[9px] text-stone-500 text-center"></p>
                         </div>
@@ -1498,6 +1535,24 @@
                                 <div class="col-span-2">
                                     <label class="text-[9px] text-stone-500 block mb-1">血量越低攻防加成上限（%，0 = 不啟用血量越低越強的機制）</label>
                                     <input id="admin-boss-enragecap" type="number" step="1" placeholder="200" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">首領基礎攻擊力</label>
+                                    <input id="admin-boss-atk" type="number" placeholder="260" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">首領基礎防禦力</label>
+                                    <input id="admin-boss-def" type="number" placeholder="90" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[9px] text-stone-500 block mb-1">首領暴擊率（%）</label>
+                                    <input id="admin-boss-crit" type="number" placeholder="15" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[9px] text-stone-500 block mb-1">擊殺獎勵的 GR 英雄（大家合力擊殺後統一用信件發放）</label>
+                                    <select id="admin-boss-gr-hero" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                        <option value="random">隨機（5選1）</option>
+                                    </select>
                                 </div>
                             </div>
                             <button onclick="openAdminWorldBoss()" class="w-full py-2 bg-red-800/70 text-red-200 text-[11px] font-bold rounded border border-red-600 hover:bg-red-700 transition">開啟本次活動（重置血量與排行榜）</button>
@@ -1550,8 +1605,6 @@
                             </div>
                             <div id="admin-player-list" class="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar"></div>
                         </div>
-                    </div>
-                </div>
             </div>
 
             <!-- ★ 新增：背包，查看目前擁有的英雄碎片 -->
@@ -2389,13 +2442,13 @@
             startArenaPresenceLoop();
             listenPlayerMail();
             listenIncomingArenaInvites();
-            document.getElementById('btn-arena-admin').classList.toggle('hidden', !isCurrentUserAdmin());
+            document.getElementById('nav-btn-admin').classList.toggle('hidden', !isCurrentUserAdmin());
         }
 
         function switchArenaSubTab(sub) {
             ToneAudioEngine.playClick();
-            const panels = {pvp: 'arena-pvp-panel', boss: 'arena-boss-panel', shop: 'arena-shop-panel', mail: 'arena-mail-panel', admin: 'arena-admin-panel'};
-            const btnColors = {pvp: 'bg-sky-900/60 text-sky-300 border-sky-600', boss: 'bg-red-900/60 text-red-300 border-red-600', shop: 'bg-amber-900/60 text-amber-300 border-amber-600', mail: 'bg-emerald-900/60 text-emerald-300 border-emerald-600', admin: 'bg-rose-900/60 text-rose-300 border-rose-600'};
+            const panels = {pvp: 'arena-pvp-panel', boss: 'arena-boss-panel', shop: 'arena-shop-panel', mail: 'arena-mail-panel'};
+            const btnColors = {pvp: 'bg-sky-900/60 text-sky-300 border-sky-600', boss: 'bg-red-900/60 text-red-300 border-red-600', shop: 'bg-amber-900/60 text-amber-300 border-amber-600', mail: 'bg-emerald-900/60 text-emerald-300 border-emerald-600'};
             Object.keys(panels).forEach(key => {
                 const el = document.getElementById(panels[key]);
                 if (!el) return;
@@ -2407,7 +2460,6 @@
                 }
             });
             if (sub === 'mail') document.getElementById('arena-mail-dot').classList.add('hidden'); // 打開信件分頁就當作已讀，把小紅點關掉
-            if (sub === 'admin') {loadAdminPlayerList(); populateAdminMailHeroSelect(); populateAdminSeasonSelects(); refreshAdminBossStatus();}
             if (sub === 'boss') refreshWorldBossUI();
         }
 
@@ -2892,11 +2944,16 @@
         async function submitWorldBossDamage(damage) {
             if (!mpConnected || damage <= 0) return;
             try {
+                let isKillingBlow = false;
                 const bossRef = fbDb.collection('worldBoss').doc('current');
                 await fbDb.runTransaction(async (tx) => {
                     const doc = await tx.get(bossRef);
                     if (!doc.exists) return;
-                    const newHp = Math.max(0, doc.data().currentHp - damage);
+                    const prevHp = doc.data().currentHp;
+                    const newHp = Math.max(0, prevHp - damage);
+                    // ★ 新增：這次提交剛好把血量從「還活著」打到「歸零」的話，就代表這次是擊殺首領的那一擊，
+                    // 靠 Firestore transaction 的原子性保證，不會有兩個人同時搶到「擊殺」的判定。
+                    if (prevHp > 0 && newHp <= 0) isKillingBlow = true;
                     tx.update(bossRef, {currentHp: newHp});
                 });
                 const contribRef = bossRef.collection('contributions').doc(fbUser.uid);
@@ -2910,7 +2967,39 @@
                         bestSingleHit: Math.max(prevBest, damage)
                     }, {merge: true});
                 });
+                if (isKillingBlow) distributeGRHeroToAllContributors();
             } catch (err) {console.warn('提交世界首領傷害失敗：', err);}
+        }
+
+        // ★ 修改：全服首領被打死時，不再只發給打出最後一擊的人，而是「所有對這隻首領造成過傷害的玩家」
+        // 都會統一透過信件收到獎勵——用哪一位 GR 英雄由管理員在開啟活動時指定 (grHeroId)，
+        // 沒指定或選「隨機」的話才會在這裡隨機抽一位。
+        async function distributeGRHeroToAllContributors() {
+            try {
+                const grHeroes = HERO_DATABASE.filter(h => h.rarity === 'GR');
+                if (grHeroes.length === 0) return;
+                const cfg = currentWorldBossConfig || {};
+                let chosenHero;
+                if (cfg.grHeroId && cfg.grHeroId !== 'random') {
+                    chosenHero = grHeroes.find(h => h.id === cfg.grHeroId) || grHeroes[Math.floor(Math.random() * grHeroes.length)];
+                } else {
+                    chosenHero = grHeroes[Math.floor(Math.random() * grHeroes.length)];
+                }
+                const contribSnap = await fbDb.collection('worldBoss').doc('current').collection('contributions').get();
+                if (contribSnap.empty) return;
+                let count = 0;
+                for (const doc of contribSnap.docs) {
+                    await sendMailToUid(doc.id, {
+                        id: `grkill_${Date.now()}_${doc.id}`,
+                        title: '首領討伐成功！神話英雄降臨',
+                        body: `大家齊心協力擊敗了首領，獲得神話級 GR 英雄「${chosenHero.name}」獎勵！`,
+                        rewards: {heroId: chosenHero.id, heroGrantType: 'hero'},
+                        sentAt: Date.now(), claimed: false
+                    });
+                    count++;
+                }
+                showToast(`🎉🎉🎉 首領已擊敗！${chosenHero.name} 已透過信件發放給全部 ${count} 位參與的玩家`);
+            } catch (err) {console.warn('分配GR英雄獎勵失敗：', err);}
         }
 
         function renderArenaShop() {
@@ -2956,7 +3045,7 @@
                 const dbHero = HERO_DATABASE.find(h => h.id === id);
                 if (!dbHero) return;
                 const custom = GAME_STATE.customHeroes[id];
-                const rarityTextClass = dbHero.rarity === 'LR' ? 'text-amber-300' : (dbHero.rarity === 'UR' ? 'text-rose-400' : (dbHero.rarity === 'SSR' ? 'text-yellow-400' : (dbHero.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400')));
+                const rarityTextClass = dbHero.rarity === 'GR' ? 'text-red-400' : (dbHero.rarity === 'LR' ? 'text-amber-300' : (dbHero.rarity === 'UR' ? 'text-rose-400' : (dbHero.rarity === 'SSR' ? 'text-yellow-400' : (dbHero.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400'))));
                 const card = document.createElement('div');
                 card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center gap-2';
                 card.innerHTML = `
@@ -3317,6 +3406,9 @@
             }
             document.getElementById('admin-max-hero-level').value = (adminGameConfig && adminGameConfig.maxHeroLevel) || MAX_HERO_LEVEL;
             document.getElementById('admin-max-artifact-tier').value = (adminGameConfig && adminGameConfig.maxArtifactTier) || ALTAR_MAX_ARTIFACT_TIER;
+            document.getElementById('admin-season-boss-atkmult').value = (adminGameConfig && adminGameConfig.seasonBossAtkMult) || 1.0;
+            document.getElementById('admin-season-boss-defmult').value = (adminGameConfig && adminGameConfig.seasonBossDefMult) || 1.0;
+            document.getElementById('admin-season-boss-crit').value = (adminGameConfig && adminGameConfig.seasonBossCrit) || 15;
         }
 
         async function saveAdminGameConfig() {
@@ -3327,15 +3419,19 @@
             const eventSeasonId = eventVal ? parseInt(eventVal) : null;
             const maxHeroLevel = parseInt(document.getElementById('admin-max-hero-level').value) || MAX_HERO_LEVEL;
             const maxArtifactTier = parseInt(document.getElementById('admin-max-artifact-tier').value) || ALTAR_MAX_ARTIFACT_TIER;
+            const seasonBossAtkMult = parseFloat(document.getElementById('admin-season-boss-atkmult').value) || 1.0;
+            const seasonBossDefMult = parseFloat(document.getElementById('admin-season-boss-defmult').value) || 1.0;
+            const seasonBossCrit = parseFloat(document.getElementById('admin-season-boss-crit').value) || 15;
             try {
                 await fbDb.collection('gameConfig').doc('current').set({
                     currentSeasonId: seasonId,
                     activeEventSeasonId: eventSeasonId,
                     maxHeroLevel, maxArtifactTier,
+                    seasonBossAtkMult, seasonBossDefMult, seasonBossCrit,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: GAME_STATE.mpDisplayName || fbUser.email
                 }, {merge: true});
-                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階`;
+                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階，賽季首領攻/防倍率 ${seasonBossAtkMult}/${seasonBossDefMult}，暴擊 ${seasonBossCrit}%`;
                 showToast('全域設定已同步給所有玩家');
             } catch (err) {console.warn('儲存全域設定失敗：', err); showToast('儲存失敗：' + (err.code || err.message || '未知錯誤'));}
         }
@@ -3364,6 +3460,7 @@
         async function refreshAdminBossStatus() {
             if (!isCurrentUserAdmin() || !mpConnected) return;
             populateAdminBossSelect();
+            populateAdminGRHeroSelect();
             try {
                 const snap = await fbDb.collection('worldBoss').doc('current').get();
                 const statusEl = document.getElementById('admin-boss-current-status');
@@ -3376,7 +3473,22 @@
                 document.getElementById('admin-boss-diamondrate').value = d.diamondPerDamage || 0;
                 document.getElementById('admin-boss-stonerate').value = d.stonePerDamage || 0;
                 document.getElementById('admin-boss-enragecap').value = d.atkDefBonusCap || 0;
+                document.getElementById('admin-boss-atk').value = d.bossBaseAtk || 260;
+                document.getElementById('admin-boss-def').value = d.bossBaseDef || 90;
+                document.getElementById('admin-boss-crit').value = d.bossCrit || 15;
+                if (d.grHeroId) document.getElementById('admin-boss-gr-hero').value = d.grHeroId;
             } catch (err) {console.warn(err);}
+        }
+
+        // 填滿「擊殺獎勵的 GR 英雄」下拉選單
+        function populateAdminGRHeroSelect() {
+            const sel = document.getElementById('admin-boss-gr-hero');
+            if (!sel || sel.options.length > 1) return;
+            HERO_DATABASE.filter(h => h.rarity === 'GR').forEach(h => {
+                const opt = document.createElement('option');
+                opt.value = h.id; opt.innerText = h.name;
+                sel.appendChild(opt);
+            });
         }
 
         // ★ 開啟本次全服首領活動：管理員設定名稱/血量/獎勵倍率，這裡會把 currentHp 重置成滿血，
@@ -3392,6 +3504,10 @@
             const diamondPerDamage = parseFloat(document.getElementById('admin-boss-diamondrate').value) || 0;
             const stonePerDamage = parseFloat(document.getElementById('admin-boss-stonerate').value) || 0;
             const atkDefBonusCap = parseFloat(document.getElementById('admin-boss-enragecap').value) || 0;
+            const bossBaseAtk = parseInt(document.getElementById('admin-boss-atk').value) || 260;
+            const bossBaseDef = parseInt(document.getElementById('admin-boss-def').value) || 90;
+            const bossCrit = parseFloat(document.getElementById('admin-boss-crit').value) || 15;
+            const grHeroId = document.getElementById('admin-boss-gr-hero').value || 'random';
             try {
                 const ref = fbDb.collection('worldBoss').doc('current');
                 // 清空舊的排行榜紀錄，讓這次活動重新統計
@@ -3402,6 +3518,7 @@
                 await ref.set({
                     bossId: bossDef.id, bossName: bossDef.name, bossColor: bossDef.color, bossIcon: bossDef.icon,
                     maxHp, currentHp: maxHp, goldPerDamage, diamondPerDamage, stonePerDamage, atkDefBonusCap,
+                    bossBaseAtk, bossBaseDef, bossCrit, grHeroId,
                     status: 'active',
                     openedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     openedBy: GAME_STATE.mpDisplayName || fbUser.email
@@ -3985,6 +4102,27 @@
 
         // --- 英雄資料庫 (含賽季標籤，全面奇幻化) ---
         const HERO_DATABASE = [
+            // ============================================================
+            // ★ 新增最高稀有度 GR（比 LR 再高一階）：只能靠擊殺全服首領獲得，不開放抽卡/通行證取得，
+            // 每個角色都是「小技能疊層／標記 → 大招引爆／消耗 → 終極連動額外效果」的三段式連動設計。
+            // ============================================================
+            {id: 'h_gr_bahamut', name: '「滅世災炎」巴哈姆特', role: '戰士', rarity: 'GR', star: 1, baseHp: 2600, baseAtk: 360, baseDef: 130, crit: 25, avatarIcon: 'fa-dragon', color: '#ef4444',
+                skill: {type: 'gr_bahamut', value: 2.2, stackAtkPct: 10, stackLifestealPct: 10, maxStacks: 5, defIgnorePerStack: 15, desc: '小技能【狂血撕裂】：對敵方單體造成巨量傷害，並為自身疊加 1 層「逆鱗」（每層 +10% 攻擊力、+10% 吸血率，最高 5 層）。大招【深淵龍息·燼滅】：對敵方全體噴吐烈焰，消耗全部「逆鱗」層數，每層額外無視目標 15% 防禦力；若消耗滿 5 層且成功擊殺任一敵人，將立刻無消耗再次觸發一次【狂血撕裂】。'},
+                lore: '曾統治遠古巨龍巢穴的半龍人戰神，血液中流淌著純粹的毀滅之力。', isExclusive: true},
+            {id: 'h_gr_alexander', name: '「曙光初王」亞歷山大', role: '坦克', rarity: 'GR', star: 1, baseHp: 3200, baseAtk: 170, baseDef: 210, crit: 10, avatarIcon: 'fa-shield-halved', color: '#fbbf24',
+                skill: {type: 'gr_alexander', value: 3.0, healPct: 1.2, desc: '小技能【耀陽刻印】：舉盾嘲諷，在所有攻擊自己的敵人身上留下無法驅散的「耀陽」印記。大招【王權共鳴·天威】：猛砸地面震盪全場，強制引爆敵方身上所有「耀陽」印記，每個印記對其持有者造成「亞歷山大最大防禦力 300%」的真實傷害，並為我方血量最低的騎士恢復生命。'},
+                lore: '王國建國史詩中的第一代君王，手持聖盾，是光輝與榮耀的化身。', isExclusive: true},
+            {id: 'h_gr_astraea', name: '「星軌秘法」阿斯特萊雅', role: '法師', rarity: 'GR', star: 1, baseHp: 1750, baseAtk: 400, baseDef: 75, crit: 35, avatarIcon: 'fa-meteor', color: '#a855f7',
+                skill: {type: 'gr_astraea', value: 2.0, debuffAtkPct: 20, desc: '小技能【星塵引力】：召喚微型黑洞造成魔法傷害，並對目標附加「引力坍縮」（攻擊力 -20%）。大招【星神共鳴·超新星】：召喚隕石優先鎖定帶有「引力坍縮」的目標；命中坍縮目標時傷害翻倍，並將傷害 100% 濺射給周圍所有敵人，同時重新附加「引力坍縮」。'},
+                lore: '掌控星盤矩陣的神秘先知，能夠看穿深淵的過去與未來。', isExclusive: true},
+            {id: 'h_gr_kage', name: '「虛空殘影」暗刃·影', role: '刺客', rarity: 'GR', star: 1, baseHp: 1400, baseAtk: 390, baseDef: 60, crit: 48, avatarIcon: 'fa-user-ninja', color: '#8b5cf6',
+                skill: {type: 'gr_kage', value: 2.6, markTurns: 3, desc: '小技能【幽影步】：進入潛行狀態，並對目標施加「死亡倒數」標記（3 回合後自動爆發致死傷害）。大招【虛空斷頭台】：瞬間閃現至帶有「死亡倒數」標記的敵人背後進行背刺，提前引爆標記；若因此擊殺目標，「死亡氣息」將傳染給剩餘血量最低的兩名敵人，並立刻自動觸發二次引爆，形成連鎖刺殺。'},
+                lore: '誕生於虛空迷宮深處的無情死神，從沒有人見過他的真面目。', isExclusive: true},
+            {id: 'h_gr_evelynn', name: '「不朽靈木」伊芙琳', role: '輔助', rarity: 'GR', star: 1, baseHp: 2300, baseAtk: 190, baseDef: 105, crit: 12, avatarIcon: 'fa-seedling', color: '#22c55e',
+                skill: {type: 'gr_evelynn', healBoostPct: 50, shieldPct: 40, drainAtkPct: 20, desc: '小技能【新綠復甦】：為我方血量最低的兩名騎士種下「靈種」（受治療效果 +50%，受擊時微幅回血）。大招【森羅共鳴·萬物生長】：催動全場靈種開花，帶有靈種的騎士獲得最大生命值 40% 的護盾；同時藤蔓纏繞敵方全體，吸取其 20% 攻擊力平均轉移給帶有靈種的騎士。'},
+                lore: '幻影之森的守護神樹化身，掌握著復甦與靈魂共鳴的魔法。', isExclusive: true},
+
+
             {id: 'h_reina', name: '烈焰騎士·蕾娜', role: '戰士', rarity: 'SSR', star: 1, baseHp: 900, baseAtk: 120, baseDef: 45, crit: 15, avatarIcon: 'fa-fire', color: '#dc2626', skill: {type: 'splash', value: 1.5, splashValue: 0.5, splashCount: 2, desc: '大招對主目標造成 150% 攻擊力傷害，並波及最多 2 名其他敵人，各造成 50% 攻擊力傷害。'}, lore: '來自南方火山地帶的紅蓮騎士，手中的巨劍蘊含著不滅的火種。'},
             {id: 'h_noah', name: '冰霜法師·諾亞', role: '法師', rarity: 'SSR', star: 1, baseHp: 650, baseAtk: 140, baseDef: 30, crit: 20, avatarIcon: 'fa-snowflake', color: '#3b82f6', skill: {type: 'aoe', value: 1.6, desc: '大招施放暴風雪，對敵方全體造成 160% 攻擊力的魔法傷害。'}, lore: '極北冰原的天才法師，能瞬間凍結範圍內的一切生命。'},
             {id: 'h_valkyrie', name: '聖殿衛士·瓦爾基里', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1200, baseAtk: 75, baseDef: 70, crit: 5, avatarIcon: 'fa-shield-halved', color: '#eab308', skill: {type: 'shield', chance: 0.3, value: 0.12, desc: '受擊時有 30% 機率為自己與全體友軍施加等同自身最大生命值 12% 的護盾。'}, lore: '守護聖都的最高階神官騎士，是戰場上最堅不可摧的壁壘。'},
@@ -5461,6 +5599,10 @@
             if (tabId === 'arena') refreshArenaUI();
             if (tabId === 'inventory') renderInventoryUI();
             if (tabId === 'blackmarket') refreshBlackMarketUI();
+            if (tabId === 'admin') {
+                if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); switchTab('battle'); return;}
+                loadAdminPlayerList(); populateAdminMailHeroSelect(); populateAdminSeasonSelects(); refreshAdminBossStatus();
+            }
             if (tabId === 'tower') {
                 const nextD = 40 + (GAME_STATE.towerLevel * 8); const nextS = 5 + (GAME_STATE.towerLevel * 2);
                 document.getElementById('tower-reward-preview').innerHTML = `<span class="text-stone-300">通關獎勵預覽：</span><span class="text-sky-400"><i class="fa-solid fa-gem mr-1"></i>+${nextD}</span><span class="text-stone-400"><i class="fa-solid fa-hammer mr-1"></i>+${nextS}</span>`;
@@ -5660,6 +5802,7 @@
             if (codexCurrentTab === 'hero') {
                 let list = HERO_DATABASE;
 
+                if (codexCurrentFilter === 'GR') list = list.filter(h => h.rarity === 'GR');
                 if (codexCurrentFilter === 'LR') list = list.filter(h => h.rarity === 'LR');
                 if (codexCurrentFilter === 'UR') list = list.filter(h => h.rarity === 'UR');
                 if (codexCurrentFilter === 'SSR') list = list.filter(h => h.rarity === 'SSR');
@@ -5672,7 +5815,7 @@
 
                 list.forEach(h => {
                     const isHas = !!GAME_STATE.roster[h.id]; const dName = h.name.includes('·') ? h.name.split('·')[1] : h.name;
-                    const rColor = h.rarity === 'LR' ? 'text-amber-300' : (h.rarity === 'UR' ? 'text-rose-500' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400')));
+                    const rColor = h.rarity === 'GR' ? 'text-red-400' : (h.rarity === 'LR' ? 'text-amber-300' : (h.rarity === 'UR' ? 'text-rose-500' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400'))));
                     const exclusiveBadge = h.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1.5 py-0.5 rounded-br-lg text-[8px] font-bold border-b border-r border-rose-500 text-rose-200 z-10 shadow">S${h.seasonId} 限定</div>` : '';
 
                     // 【重點修復】：判斷是否有自訂圖片
@@ -5744,7 +5887,8 @@
 
             // 1. 動態設定稀有度專屬顏色與背景光暈
             let rarityColor = ''; let rarityBg = '';
-            if (h.rarity === 'LR') {rarityColor = 'text-amber-300'; rarityBg = 'from-amber-950/60';}
+            if (h.rarity === 'GR') {rarityColor = 'text-red-400'; rarityBg = 'from-red-950/60';}
+            else if (h.rarity === 'LR') {rarityColor = 'text-amber-300'; rarityBg = 'from-amber-950/60';}
             else if (h.rarity === 'UR') {rarityColor = 'text-rose-500'; rarityBg = 'from-rose-950/60';}
             else if (h.rarity === 'SSR') {rarityColor = 'text-yellow-400'; rarityBg = 'from-yellow-950/60';}
             else if (h.rarity === 'SR') {rarityColor = 'text-purple-400'; rarityBg = 'from-purple-950/60';}
@@ -5771,7 +5915,7 @@
             badgesContainer.className = "flex justify-center gap-2 mb-5";
 
             let badgesHtml = `<span class="bg-[#140e0a] text-[10px] px-3 py-1 rounded shadow-sm border border-[#3e3328] text-stone-300">${h.role}</span>`;
-            badgesHtml += `<span class="text-[10px] font-bold px-3 py-1 rounded shadow-sm ${h.rarity === 'LR' ? 'bg-gradient-to-r from-amber-400 via-fuchsia-500 to-amber-400 text-black' : (h.rarity === 'UR' ? 'bg-gradient-to-r from-rose-800 to-rose-500 text-white' : (h.rarity === 'SSR' ? 'bg-gradient-to-r from-yellow-700 to-yellow-500 text-white' : (h.rarity === 'SR' ? 'bg-gradient-to-r from-purple-700 to-purple-500 text-white' : 'bg-stone-600 text-white')))}">${h.rarity}</span>`;
+            badgesHtml += `<span class="text-[10px] font-bold px-3 py-1 rounded shadow-sm ${h.rarity === 'GR' ? 'bg-gradient-to-r from-red-600 via-purple-600 to-cyan-500 text-white' : (h.rarity === 'LR' ? 'bg-gradient-to-r from-amber-400 via-fuchsia-500 to-amber-400 text-black' : (h.rarity === 'UR' ? 'bg-gradient-to-r from-rose-800 to-rose-500 text-white' : (h.rarity === 'SSR' ? 'bg-gradient-to-r from-yellow-700 to-yellow-500 text-white' : (h.rarity === 'SR' ? 'bg-gradient-to-r from-purple-700 to-purple-500 text-white' : 'bg-stone-600 text-white'))))}">${h.rarity}</span>`;
             if (h.isExclusive) badgesHtml += `<span class="bg-rose-950/80 text-[10px] px-3 py-1 rounded border border-rose-500/50 text-rose-300 shadow-sm">S${h.seasonId} 限定</span>`;
             badgesContainer.innerHTML = badgesHtml;
 
@@ -5881,7 +6025,7 @@
                 const hid = GAME_STATE.gridSlots[i];
                 if (hid) {
                     const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === hid)); const custom = GAME_STATE.customHeroes[h.id];
-                    const rRing = h.rarity === 'LR' ? 'border-amber-300 shadow-[inset_0_0_14px_rgba(253,224,71,0.6)]' : (h.rarity === 'UR' ? 'border-rose-500/90 shadow-[inset_0_0_10px_rgba(244,63,94,0.4)]' : (h.rarity === 'SSR' ? 'border-fantasy-gold/80 shadow-[inset_0_0_10px_rgba(212,175,55,0.4)]' : (h.rarity === 'SR' ? 'border-purple-500/70' : 'border-stone-500/50')));
+                    const rRing = h.rarity === 'GR' ? 'border-red-400 shadow-[inset_0_0_16px_rgba(248,113,113,0.7)]' : (h.rarity === 'LR' ? 'border-amber-300 shadow-[inset_0_0_14px_rgba(253,224,71,0.6)]' : (h.rarity === 'UR' ? 'border-rose-500/90 shadow-[inset_0_0_10px_rgba(244,63,94,0.4)]' : (h.rarity === 'SSR' ? 'border-fantasy-gold/80 shadow-[inset_0_0_10px_rgba(212,175,55,0.4)]' : (h.rarity === 'SR' ? 'border-purple-500/70' : 'border-stone-500/50'))));
                     cell.classList.add('bg-gradient-to-b', 'from-[#241b12]', 'to-[#120d08]');
                     cell.innerHTML = `
                         <div class="absolute inset-0 border-2 rounded-xl pointer-events-none z-10 ${rRing}"></div>
@@ -5996,7 +6140,7 @@
                 const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === id));
                 const custom = GAME_STATE.customHeroes[h.id]; const dName = h.name.includes('·') ? h.name.split('·')[1] : h.name;
                 const exclusiveBadge = h.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1.5 py-0.5 rounded-br-lg text-[8px] font-bold border-b border-r border-rose-500 text-rose-200 z-10 shadow">S${h.seasonId} 限定</div>` : '';
-                const rarityClass = ['LR', 'UR', 'SSR', 'SR'].includes(h.rarity) ? `rarity-${h.rarity}` : '';
+                const rarityClass = ['GR', 'LR', 'UR', 'SSR', 'SR'].includes(h.rarity) ? `rarity-${h.rarity}` : '';
                 const rarityTextClass = h.rarity === 'LR' ? 'text-amber-300' : (h.rarity === 'UR' ? 'text-rose-400' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400')));
                 const card = document.createElement('div');
                 card.innerHTML = `
@@ -6017,7 +6161,7 @@
             ToneAudioEngine.playClick(); GAME_STATE.selectedHeroId = id; const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === id));
             document.getElementById('modal-hero-name').innerText = h.name; document.getElementById('modal-hero-level').innerText = `Lv.${h.effectiveLevel}`;
 
-            const rStyle = h.rarity === 'LR' ? 'bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black' : (h.rarity === 'UR' ? 'bg-rose-600 text-white' : (h.rarity === 'SSR' ? 'bg-fantasy-gold text-yellow-900' : (h.rarity === 'SR' ? 'bg-purple-600 text-white' : 'bg-stone-500 text-white')));
+            const rStyle = h.rarity === 'GR' ? 'bg-gradient-to-r from-red-600 via-purple-600 to-cyan-500 text-white' : (h.rarity === 'LR' ? 'bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black' : (h.rarity === 'UR' ? 'bg-rose-600 text-white' : (h.rarity === 'SSR' ? 'bg-fantasy-gold text-yellow-900' : (h.rarity === 'SR' ? 'bg-purple-600 text-white' : 'bg-stone-500 text-white'))));
             const rarityEl = document.getElementById('modal-hero-rarity'); rarityEl.className = `text-[9px] font-bold px-2 py-0.5 rounded shadow ${rStyle}`; rarityEl.innerText = h.rarity;
 
             const roleEl = document.getElementById('modal-hero-role'); roleEl.innerText = h.role + (h.isExclusive ? ` (S${h.seasonId}限定)` : '');
@@ -7010,14 +7154,18 @@
                 eventBossTotalHp = 99999999; eventBossCurrentHp = eventBossTotalHp;
                 const wb = currentWorldBossConfig || {};
                 const enrageMult = getWorldBossEnrageMultiplier();
-                combatEntities.push({baseId: wb.bossId || 'm_worldboss', name: wb.bossName || '全服首領', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: Math.floor(260 * enrageMult), def: Math.floor(90 * enrageMult), role: 'boss', color: wb.bossColor || '#a21caf', icon: wb.bossIcon || 'fa-dragon', row: 1, col: 1, skill: {type: 'aoe'}});
+                combatEntities.push({baseId: wb.bossId || 'm_worldboss', name: wb.bossName || '全服首領', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: Math.floor((wb.bossBaseAtk || 260) * enrageMult), def: Math.floor((wb.bossBaseDef || 90) * enrageMult), crit: wb.bossCrit || 15, role: 'boss', color: wb.bossColor || '#a21caf', icon: wb.bossIcon || 'fa-dragon', row: 1, col: 1, skill: {type: 'aoe'}});
             } else if (GAME_STATE.currentMode === 'season') {
                 const bossConfig = SEASON_CONFIG[GAME_STATE.season.id] ? SEASON_CONFIG[GAME_STATE.season.id].boss : SEASON_CONFIG[1].boss;
                 const topHero = Object.values(GAME_STATE.roster).sort((a, b) => b.level - a.level)[0]; const pLevel = topHero ? topHero.level : 1;
                 eventBossTotalHp = 99999999; eventBossCurrentHp = eventBossTotalHp;
-                const bossAtk = Math.floor(150 + pLevel * (GAME_STATE.season.id === 2 ? 35 : (GAME_STATE.season.id === 3 ? 45 : 25)));
-                const bossDef = Math.floor(40 + pLevel * (GAME_STATE.season.id === 2 ? 8 : (GAME_STATE.season.id === 3 ? 15 : 12)));
-                combatEntities.push({baseId: bossConfig.id, name: bossConfig.name, team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: bossAtk, def: bossDef, role: 'boss', color: bossConfig.color, icon: bossConfig.icon, row: 1, col: 1, skill: {type: 'aoe'}});
+                // ★ 新增：管理員可以調整賽季首領的攻擊/防禦倍率跟暴擊率，防止英雄無限升星之後首領數值跟不上戰力膨脹
+                const seasonBossAtkMult = (adminGameConfig && adminGameConfig.seasonBossAtkMult) || 1.0;
+                const seasonBossDefMult = (adminGameConfig && adminGameConfig.seasonBossDefMult) || 1.0;
+                const seasonBossCrit = (adminGameConfig && adminGameConfig.seasonBossCrit) || 15;
+                const bossAtk = Math.floor((150 + pLevel * (GAME_STATE.season.id === 2 ? 35 : (GAME_STATE.season.id === 3 ? 45 : 25))) * seasonBossAtkMult);
+                const bossDef = Math.floor((40 + pLevel * (GAME_STATE.season.id === 2 ? 8 : (GAME_STATE.season.id === 3 ? 15 : 12))) * seasonBossDefMult);
+                combatEntities.push({baseId: bossConfig.id, name: bossConfig.name, team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: bossAtk, def: bossDef, crit: seasonBossCrit, role: 'boss', color: bossConfig.color, icon: bossConfig.icon, row: 1, col: 1, skill: {type: 'aoe'}});
                 // ★ 修正：原本賽季討伐把「自動戰鬥」按鈕整個藏起來，玩家完全不能自動連續挑戰。
                 // 其實賽季討伐跟其他模式一樣，每次挑戰結束（全軍覆沒）都可以直接開始下一次，
                 // 這裡改成跟秘境/試煉塔一樣顯示按鈕，並在 handleCombatEnd 裡接上自動繼續的邏輯。
@@ -7330,6 +7478,20 @@
                     floatingTexts.push({x: attacker.x, y: attacker.y - 90, text: `+${bonus} 💰`, isCrit: false, color: '#fbbf24', life: 45});
                 }
 
+                // ★ 新增判定：耀陽刻印反標記 (GR 亞歷山大專屬)——只要有人攻擊「開啟耀陽刻印狀態」的亞歷山大，
+                // 攻擊者就會被留下無法驅散的「耀陽」印記，等亞歷山大放大招時一次引爆所有留有印記的敵人
+                if (target.sunbrandActive && attacker.team !== target.team) {
+                    attacker.sunbrandMarked = true;
+                    floatingTexts.push({x: attacker.x, y: attacker.y - 90, text: `耀陽印記`, isCrit: false, color: '#fbbf24', life: 45});
+                }
+
+                // ★ 新增判定：靈種微幅回血 (GR 伊芙琳專屬)——帶有靈種的友軍每次受擊都會回一點血
+                if (target.lifeSeed && target.hp > 0) {
+                    const regenAmt = Math.max(1, Math.floor(target.maxHp * 0.02));
+                    target.hp = Math.min(target.maxHp, target.hp + regenAmt);
+                    floatingTexts.push({x: target.x, y: target.y - 40, text: `+${regenAmt}`, isCrit: false, color: '#86efac', life: 35});
+                }
+
                 // 判定：吸血 (僅大招觸發)
                 if (skillType === 'lifesteal' || skillType === 'lifesteal_aoe') {
                     let heal = damage * (attacker.skill.lifestealRatio || attacker.skill.value || 0.5);
@@ -7465,6 +7627,16 @@
                     entity.atkBuffTurns--;
                     if (entity.atkBuffTurns <= 0) entity.atkBuffValue = 0;
                 }
+                // ★ 新增：死亡倒數 (GR 暗刃·影專屬)——每回合開始倒數一次，倒數歸零就自動引爆造成致死傷害
+                if (entity.deathCountdown && entity.deathCountdown > 0) {
+                    entity.deathCountdown--;
+                    if (entity.deathCountdown <= 0) {
+                        const dmg = Math.max(5, (entity.deathMarkAtk || 100) * 2.0 - entity.def * 0.3);
+                        entity.hp -= dmg;
+                        floatingTexts.push({x: entity.x, y: entity.y - 90, text: `死亡倒數引爆！${Math.floor(dmg)}`, isCrit: true, color: '#8b5cf6', life: 55});
+                        entity.deathCountdown = 0; entity.deathMarkAtk = 0;
+                    }
+                }
             };
 
             if (currentState === CSTATE.NEXT_TURN) {
@@ -7529,6 +7701,10 @@
                 // 攻擊力增益 (buff_atk 大招效果)：持續回合內每次行動都套用加成
                 if (currentActor.atkBuffValue && currentActor.atkBuffTurns > 0) {
                     activeAtk *= (1 + currentActor.atkBuffValue);
+                }
+                // ★ 新增：引力坍縮 (GR 阿斯特萊雅專屬)——被標記的敵人攻擊力下降，直到下次被超新星命中重新附加
+                if (currentActor.gravityCollapse && currentActor.atkDebuffPct) {
+                    activeAtk *= (1 - currentActor.atkDebuffPct / 100);
                 }
                 currentActor.activeAtk = activeAtk; // 暫存此回合攻擊力
 
@@ -7677,6 +7853,101 @@
                             floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
                         });
                         bumpAnalytics('heal', currentActor.team, currentActor.name, currentActor.activeAtk * 1.2 * alive.length);
+                    }
+                    // ============================================================
+                    // ★ 新增：5 位 GR 神話級英雄的大招（連動的「第二段」——引爆/消耗，含終極連動判定）
+                    // ============================================================
+                    else if (sType === 'gr_bahamut') {
+                        const stacks = currentActor.reverseScaleStacks || 0;
+                        const maxStacks = currentActor.skill.maxStacks || 5;
+                        const defIgnorePct = stacks * (currentActor.skill.defIgnorePerStack || 15);
+                        const targets = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0);
+                        let killedAny = false;
+                        targets.forEach(t => {
+                            const dmg = Math.max(5, currentActor.activeAtk * (currentActor.skill.value || 2.2) - (t.def * 0.3 * (1 - defIgnorePct / 100)));
+                            executeHit(currentActor, t, dmg, true, 'gr_bahamut_ult', fxColor);
+                            if (t.hp <= 0) killedAny = true;
+                        });
+                        floatingTexts.push({x: currentActor.x, y: currentActor.y - 110, text: `燼滅！`, isCrit: true, color: '#ef4444', life: 55});
+                        const consumedMax = stacks >= maxStacks;
+                        currentActor.reverseScaleStacks = 0;
+                        // 終極連動：消耗滿 5 層且成功擊殺任一敵人 → 無消耗立即再次觸發一次小技能
+                        if (consumedMax && killedAny) {
+                            const reTarget = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0).sort((a, b) => a.hp - b.hp)[0];
+                            if (reTarget) {
+                                const minorDmg = Math.max(5, currentActor.activeAtk * 1.3 - reTarget.def * 0.3);
+                                executeHit(currentActor, reTarget, minorDmg, true, 'gr_bahamut_hit', fxColor);
+                                currentActor.reverseScaleStacks = 1;
+                                floatingTexts.push({x: currentActor.x, y: currentActor.y - 130, text: `狂熱！再次撕裂！`, isCrit: true, color: '#fbbf24', life: 60});
+                            }
+                        }
+                    } else if (sType === 'gr_alexander') {
+                        const marked = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0 && e.sunbrandMarked);
+                        marked.forEach(t => {
+                            const dmg = Math.floor(currentActor.def * (currentActor.skill.value || 3.0));
+                            t.hp -= dmg; // 真實傷害，不扣減防禦
+                            floatingTexts.push({x: t.x, y: t.y - 90, text: `耀陽引爆！${dmg}`, isCrit: true, color: '#fbbf24', life: 50});
+                            t.sunbrandMarked = false;
+                            bumpAnalytics('dps', currentActor.team, currentActor.name, dmg);
+                            const lowest = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0).sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
+                            if (lowest) {
+                                const healAmt = currentActor.activeAtk * (currentActor.skill.healPct || 1.2);
+                                lowest.hp = Math.min(lowest.maxHp, lowest.hp + healAmt);
+                                floatingTexts.push({x: lowest.x, y: lowest.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
+                            }
+                        });
+                        currentActor.sunbrandActive = false;
+                        floatingTexts.push({x: currentActor.x, y: currentActor.y - 110, text: `天威！`, isCrit: true, color: '#fbbf24', life: 55});
+                    } else if (sType === 'gr_astraea') {
+                        const debuffedTarget = combatEntities.find(e => e.team !== currentActor.team && e.hp > 0 && e.gravityCollapse);
+                        const primary = debuffedTarget || currentTarget;
+                        let dmg = Math.max(5, currentActor.activeAtk * (currentActor.skill.value || 2.0) - primary.def * 0.3);
+                        const isDoubled = !!primary.gravityCollapse;
+                        if (isDoubled) dmg *= 2;
+                        executeHit(currentActor, primary, dmg, true, 'gr_astraea_ult', fxColor);
+                        if (isDoubled) {
+                            const others = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0 && e !== primary);
+                            others.forEach(o => executeHit(currentActor, o, dmg, true, 'gr_astraea_splash', fxColor));
+                            floatingTexts.push({x: primary.x, y: primary.y - 110, text: `超新星爆發！`, isCrit: true, color: '#a855f7', life: 55});
+                        }
+                        if (primary.hp > 0) {primary.gravityCollapse = true; primary.atkDebuffPct = currentActor.skill.debuffAtkPct || 20;}
+                    } else if (sType === 'gr_kage') {
+                        const marked = combatEntities.filter(e => e.team !== currentActor.team && e.deathCountdown > 0);
+                        const target = marked[0] || currentTarget;
+                        const dmg = Math.max(5, currentActor.activeAtk * (currentActor.skill.value || 2.6) - target.def * 0.2);
+                        executeHit(currentActor, target, dmg, true, 'gr_kage_ult', fxColor);
+                        target.deathCountdown = 0; target.deathMarkAtk = 0;
+                        floatingTexts.push({x: target.x, y: target.y - 110, text: `斷頭台！`, isCrit: true, color: '#8b5cf6', life: 55});
+                        if (target.hp <= 0) {
+                            const others = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0).sort((a, b) => a.hp - b.hp).slice(0, 2);
+                            others.forEach(o => {
+                                const chainDmg = Math.max(5, currentActor.activeAtk * 1.5 - o.def * 0.2);
+                                o.hp -= chainDmg;
+                                bumpAnalytics('dps', currentActor.team, currentActor.name, chainDmg);
+                                floatingTexts.push({x: o.x, y: o.y - 90, text: `死亡氣息傳染！${Math.floor(chainDmg)}`, isCrit: true, color: '#8b5cf6', life: 55});
+                            });
+                            if (others.length > 0) floatingTexts.push({x: target.x, y: target.y - 130, text: `連鎖刺殺！`, isCrit: true, color: '#a78bfa', life: 60});
+                        }
+                    } else if (sType === 'gr_evelynn') {
+                        const seeded = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0 && e.lifeSeed);
+                        const enemies = combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0);
+                        let totalDrained = 0;
+                        enemies.forEach(e => {
+                            const drainAmt = e.atk * (currentActor.skill.drainAtkPct || 20) / 100;
+                            e.atk = Math.max(1, e.atk - drainAmt);
+                            totalDrained += drainAmt;
+                        });
+                        if (seeded.length > 0) {
+                            const perAlly = totalDrained / seeded.length;
+                            seeded.forEach(t => {
+                                const shieldAmt = t.maxHp * (currentActor.skill.shieldPct || 40) / 100;
+                                t.shield = (t.shield || 0) + shieldAmt;
+                                t.atk = (t.atk || 0) + perAlly;
+                                floatingTexts.push({x: t.x, y: t.y - 90, text: `萬物生長`, isCrit: false, color: '#22c55e', life: 50});
+                                visualEffects.push({type: 'shield', x: t.x, y: t.y, color: '#22c55e', life: 35, maxLife: 35});
+                            });
+                        }
+                        floatingTexts.push({x: currentActor.x, y: currentActor.y - 110, text: `森羅共鳴！`, isCrit: true, color: '#22c55e', life: 55});
                     }
                     // --- 攻擊類大招 ---
                     else {
@@ -7839,6 +8110,49 @@
                         floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
                         visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#67e8f9', life: 30, maxLife: 30});
                         bumpAnalytics('heal', currentActor.team, currentActor.name, healAmt);
+                    }
+                    // ============================================================
+                    // ★ 新增：5 位 GR 神話級英雄的小技能（連動的「第一段」——疊層/標記/印記/靈種）
+                    // ============================================================
+                    else if (sType === 'gr_bahamut') {
+                        // 【狂血撕裂】：對單體造成傷害，並疊加 1 層「逆鱗」（最高 5 層，每層 +攻擊力/+吸血率）
+                        const stacks = currentActor.reverseScaleStacks || 0;
+                        const atkMult = 1 + stacks * (currentActor.skill.stackAtkPct || 10) / 100;
+                        const dmg = Math.max(5, currentActor.activeAtk * atkMult * 1.3 - currentTarget.def * 0.3);
+                        executeHit(currentActor, currentTarget, dmg, true, 'gr_bahamut_hit', fxColor);
+                        const newStacks = Math.min(currentActor.skill.maxStacks || 5, stacks + 1);
+                        currentActor.reverseScaleStacks = newStacks;
+                        const lifestealAmt = dmg * (newStacks * (currentActor.skill.stackLifestealPct || 10)) / 100;
+                        currentActor.hp = Math.min(currentActor.maxHp, currentActor.hp + lifestealAmt);
+                        floatingTexts.push({x: currentActor.x, y: currentActor.y - 100, text: `逆鱗 x${newStacks}`, isCrit: false, color: '#ef4444', life: 45});
+                    } else if (sType === 'gr_alexander') {
+                        // 【耀陽刻印】：本回合被攻擊時會反過來標記攻擊者（見 executeHit 裡的被動判定），這裡先攻擊一次打底
+                        const dmg = Math.max(5, currentActor.activeAtk * 0.9 - currentTarget.def * 0.3);
+                        executeHit(currentActor, currentTarget, dmg, false, 'gr_alexander_hit', fxColor);
+                        currentActor.sunbrandActive = true; // 開啟「反擊標記」狀態，直到下次大招引爆前持續有效
+                        floatingTexts.push({x: currentActor.x, y: currentActor.y - 100, text: `耀陽刻印`, isCrit: false, color: '#fbbf24', life: 45});
+                    } else if (sType === 'gr_astraea') {
+                        // 【星塵引力】：魔法傷害 + 附加「引力坍縮」(攻擊力下降)
+                        const dmg = Math.max(5, currentActor.activeAtk * 1.1 - currentTarget.def * 0.2);
+                        executeHit(currentActor, currentTarget, dmg, false, 'gr_astraea_hit', fxColor);
+                        currentTarget.gravityCollapse = true;
+                        currentTarget.atkDebuffPct = currentActor.skill.debuffAtkPct || 20;
+                        floatingTexts.push({x: currentTarget.x, y: currentTarget.y - 100, text: `引力坍縮`, isCrit: false, color: '#a855f7', life: 45});
+                    } else if (sType === 'gr_kage') {
+                        // 【幽影步】：潛行 + 對目標施加「死亡倒數」標記 (3 回合後自動引爆)
+                        currentActor.stealth = true;
+                        currentTarget.deathCountdown = currentActor.skill.markTurns || 3;
+                        currentTarget.deathMarkAtk = currentActor.activeAtk; // 記住施放當下的攻擊力，引爆時用這個算傷害
+                        floatingTexts.push({x: currentTarget.x, y: currentTarget.y - 100, text: `死亡倒數 ${currentActor.skill.markTurns || 3}`, isCrit: false, color: '#8b5cf6', life: 45});
+                        floatingTexts.push({x: currentActor.x, y: currentActor.y - 60, text: `潛行`, isCrit: false, color: '#a78bfa', life: 40});
+                    } else if (sType === 'gr_evelynn') {
+                        // 【新綠復甦】：幫血量最低的兩名友軍種下「靈種」(受治療 +50%、受擊微幅回血)
+                        const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0).sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+                        allies.slice(0, 2).forEach(t => {
+                            t.lifeSeed = true;
+                            floatingTexts.push({x: t.x, y: t.y - 90, text: `靈種`, isCrit: false, color: '#22c55e', life: 45});
+                            visualEffects.push({type: 'buff', x: t.x, y: t.y, color: '#22c55e', life: 30, maxLife: 30});
+                        });
                     } else {
                         // ★ 攻擊類小技能：改成保留大招的目標模式（AOE/連鎖/濺射/斬殺），只是範圍跟威力都縮小，
                         // 不再通通變成「單體打一下」——AOE/連鎖/濺射流派的小技能會多打一個目標，
