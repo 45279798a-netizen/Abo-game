@@ -539,6 +539,8 @@
              muted+playsinline+autoplay 是手機瀏覽器允許背景影片自動播放的必要條件。 -->
         <video id="global-bg-video" class="absolute inset-0 w-full h-full object-cover z-0 hidden" autoplay muted
             loop playsinline></video>
+        <!-- ★ 新增：自訂背景音樂播放器，貼在 BUILT_IN_ASSETS.bgm 裡的音樂路徑會在這裡播放 -->
+        <audio id="bgm-player" loop></audio>
 
         <header
             class="absolute top-0 left-0 right-0 h-14 z-40 flex justify-between items-center px-3 bg-gradient-to-b from-black/90 to-transparent pointer-events-none"
@@ -1389,6 +1391,10 @@
                     <div id="arena-chat-panel" class="hidden flex-col gap-2 flex-1 min-h-0">
                         <div id="arena-chat-messages" class="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 bg-black/40 rounded-lg border border-[#3e3328] p-2 min-h-[200px]"></div>
                         <div class="flex gap-2 shrink-0">
+                            <select id="arena-chat-share-hero" class="shrink-0 max-w-[110px] bg-black/40 text-stone-300 text-[9px] px-1.5 py-2 rounded-lg border border-[#3e3328] outline-none">
+                                <option value="">分享英雄...</option>
+                            </select>
+                            <button onclick="shareHeroToChat()" class="shrink-0 px-2.5 py-2 bg-amber-900/60 text-amber-300 text-[9px] font-bold rounded-lg border border-amber-700 hover:bg-amber-800 transition"><i class="fa-solid fa-share-nodes"></i></button>
                             <input id="arena-chat-input" type="text" maxlength="200" placeholder="輸入訊息..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[11px] px-3 py-2 rounded-lg border border-[#3e3328] outline-none focus:border-sky-500">
                             <button onclick="sendChatMessage()" class="shrink-0 px-4 py-2 bg-sky-900/60 text-sky-300 text-[10px] font-bold rounded-lg border border-sky-700 hover:bg-sky-800 transition">發送</button>
                         </div>
@@ -1897,16 +1903,16 @@
 
     <!-- 抽卡結果 Modal -->
     <div id="summon-modal"
-        class="fixed inset-0 bg-black/95 z-[60] hidden flex flex-col items-center justify-center p-4 backdrop-blur-md">
-        <h2 class="text-3xl font-bold text-fantasy-gold font-magic mb-6 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]">
+        class="fixed inset-0 bg-black/95 z-[60] hidden flex-col items-center backdrop-blur-md overflow-y-auto custom-scrollbar p-4">
+        <h2 class="text-3xl font-bold text-fantasy-gold font-magic mb-6 mt-4 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)] shrink-0">
             英靈降臨</h2>
         <div id="summon-result-box"
-            class="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-8 w-full max-w-2xl justify-items-center"></div>
-        <div class="flex gap-3">
+            class="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-6 w-full max-w-2xl justify-items-center"></div>
+        <div class="flex gap-3 sticky bottom-4 shrink-0 mt-2 mb-4">
             <button onclick="document.getElementById('summon-modal').classList.add('hidden')"
-                class="px-8 py-3 rounded-lg font-bold text-sm tracking-widest bg-[#2a2118] text-stone-300 border border-[#5a4634] hover:border-fantasy-gold transition active:scale-95">確認收編</button>
+                class="px-8 py-3 rounded-lg font-bold text-sm tracking-widest bg-[#2a2118] text-stone-300 border border-[#5a4634] hover:border-fantasy-gold transition active:scale-95 shadow-lg">確認收編</button>
             <button onclick="performSummon(10, gachaCurrentPool)"
-                class="btn-gold px-8 py-3 rounded-lg font-bold text-sm tracking-widest active:scale-95">再次10連</button>
+                class="btn-gold px-8 py-3 rounded-lg font-bold text-sm tracking-widest active:scale-95 shadow-lg">再次10連</button>
         </div>
     </div>
 
@@ -2676,6 +2682,7 @@
         let chatUnsub = null;
         function listenChat() {
             if (!mpConnected) return;
+            populateChatShareHeroSelect();
             if (chatUnsub) return; // 已經在監聽了，不用重複訂閱
             chatUnsub = fbDb.collection('globalChat').orderBy('sentAt', 'desc').limit(50)
                 .onSnapshot(snap => {
@@ -2686,10 +2693,70 @@
                     msgs.reverse();
                     box.innerHTML = msgs.map(m => {
                         const isMe = m.senderUid === fbUser.uid;
+                        // ★ 新增：分享英雄的訊息改顯示成一張小型數值卡，不是純文字
+                        if (m.type === 'hero_share' && m.heroCard) {
+                            const c = m.heroCard;
+                            return `<div class="text-[10px] ${isMe ? 'text-sky-300' : 'text-stone-300'} mb-1">
+                                <span class="font-bold">${m.senderName || '???'}：</span>分享了英雄
+                                <div class="mt-1 bg-black/40 border border-amber-700/40 rounded-lg p-2 inline-block">
+                                    <div class="text-amber-300 font-bold text-[11px] mb-1">${c.name}（${c.rarity} · Lv.${c.level} · ${c.star}★）</div>
+                                    <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px] text-stone-300">
+                                        <span>⚡戰力 ${c.power.toLocaleString()}</span>
+                                        <span>❤️生命 ${c.hp.toLocaleString()}</span>
+                                        <span>⚔️攻擊 ${c.atk.toLocaleString()}</span>
+                                        <span>🛡️防禦 ${c.def.toLocaleString()}</span>
+                                        <span>💥暴擊 ${c.crit}%</span>
+                                        <span>🔨聖物 ${c.artifactTier}階</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }
                         return `<div class="text-[10px] ${isMe ? 'text-sky-300' : 'text-stone-300'}"><span class="font-bold">${m.senderName || '???'}：</span>${m.text}</div>`;
                     }).join('');
                     box.scrollTop = box.scrollHeight;
                 }, err => console.warn('讀取聊天室失敗：', err));
+        }
+
+        // 填滿分享用的英雄下拉選單
+        function populateChatShareHeroSelect() {
+            const sel = document.getElementById('arena-chat-share-hero');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">分享英雄...</option>';
+            Object.keys(GAME_STATE.roster || {}).forEach(id => {
+                const db = HERO_DATABASE.find(h => h.id === id);
+                if (!db) return;
+                const opt = document.createElement('option');
+                opt.value = id; opt.innerText = db.name;
+                sel.appendChild(opt);
+            });
+        }
+
+        // ★ 新增：把選中的英雄目前完整數值（等級/星級/戰力/生命/攻擊/防禦/暴擊/聖物階級）分享到聊天室，
+        // 讓其他玩家可以直接看到，不用截圖
+        async function shareHeroToChat() {
+            ToneAudioEngine.playClick();
+            const heroId = document.getElementById('arena-chat-share-hero').value;
+            if (!heroId) {showToast('請先選擇要分享的英雄'); return;}
+            if (!mpConnected) {showToast('尚未連線'); return;}
+            const db = HERO_DATABASE.find(h => h.id === heroId);
+            const r = GAME_STATE.roster[heroId];
+            const h = getEffectiveHero(db);
+            if (!db || !r || !h) return;
+            const heroCard = {
+                name: db.name, rarity: db.rarity, level: r.level, star: r.star || 1,
+                power: Math.floor(h.maxHp * 0.5 + h.atk * 2 + h.def * 1.5 + h.crit * 10),
+                hp: h.maxHp, atk: h.atk, def: h.def, crit: h.crit, artifactTier: r.artifactTier || 0
+            };
+            try {
+                await fbDb.collection('globalChat').add({
+                    senderUid: fbUser.uid,
+                    senderName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`,
+                    type: 'hero_share', heroCard,
+                    text: `分享了 ${db.name}`,
+                    sentAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('arena-chat-share-hero').value = '';
+            } catch (err) {console.warn('分享失敗：', err); showToast('分享失敗：' + (err.code || err.message || '未知錯誤'));}
         }
 
         async function sendChatMessage() {
@@ -3168,7 +3235,7 @@
             shardIds.forEach(id => {
                 const dbHero = HERO_DATABASE.find(h => h.id === id);
                 if (!dbHero) return;
-                const custom = GAME_STATE.customHeroes[id];
+                const custom = getHeroImageSrc(id);
                 const rarityTextClass = dbHero.rarity === 'GR' ? 'text-red-400' : (dbHero.rarity === 'LR' ? 'text-amber-300' : (dbHero.rarity === 'UR' ? 'text-rose-400' : (dbHero.rarity === 'SSR' ? 'text-yellow-400' : (dbHero.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400'))));
                 const card = document.createElement('div');
                 card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center gap-2';
@@ -3772,47 +3839,75 @@
 
 
 
+        /* ============================================================
+           ★★★ 素材總管理區 ★★★
+           所有「要自己貼圖片/音樂」的地方都整理在這一個區塊裡，照下面的分類找對應的英雄/怪物/章節，
+           把 Base64 字串（data:image/png;base64,.... 或 data:audio/mp3;base64,....）或是相對路徑
+           （例如 ./images/xxx.png）貼進引號裡面就好，貼完存檔重新整理頁面即可看到效果。
+
+           ★ 重要：這裡的內容「不會」被寫進玩家的存檔，每次都是直接從這裡即時讀取最新版本，
+           所以之後想換圖、換音樂，直接改這裡、重新整理頁面就會全部套用，不用擔心舊存檔卡住舊版本。
+           ============================================================ */
         const BUILT_IN_ASSETS = {
             // 如果你希望有一張「永遠覆蓋全局」的背景再填這裡，否則留空
             bgOverride: '',
 
-            // ★ 在這裡貼上各章節與模式的背景 Base64 代碼
+            // ============================================================
+            // 【一、章節/模式背景圖】跟 chapterBGVideos 用同一組 key
+            // ============================================================
             chapterBGs: {
                 1: './images/1.jpg', // 第1章背景：草原
                 2: './images/2.jpg', // 第2章背景：洞穴
                 3: './images/3.jpg', // 第3章背景：地下城
                 4: './images/4.jpg', // 第4章背景：迷霧森林
                 5: './images/5.jpg', // 第5章背景：荒蕪沙漠
-                6: '', // 第6章背景：冰封雪山
-                7: '', // 第7章背景：魔王城
-                8: '', // 第8章背景：龍脈裂谷 (S4)
-                9: '', // 第9章背景：機械廢土 (S5)
-                10: '', // 第10章背景：拂曉聖殿 (S6)
+                6: './images/6.jpg', // 第6章背景：冰封雪山
+                7: './images/7.jpg', // 第7章背景：魔王城
+                8: './images/8.jpg', // 第8章背景：龍脈裂谷 (S4)
+                9: './images/9.jpg', // 第9章背景：機械廢土 (S5)
+                10: './images/10.jpg', // 第10章背景：拂曉聖殿 (S6)
+                // 第11章起沿用第1~10章同一套背景循環（見 getChapterName 的說明），不用另外準備
                 'tower': './images/tower.jpg',   // 無限之塔專屬背景
                 'dungeon': './images/dungeon.jpg', // 物資秘境專屬背景
-                'rift': '',    // S3深淵迷宮專屬背景
-                'festival': '', // S6光輝迴廊專屬背景
-                'season': './images/season.jpg'   // 賽季首領討伐專屬背景
+                'rift': './images/rift.jpg',    // S3深淵迷宮專屬背景
+                'festival': './images/festival.jpg', // S6光輝迴廊專屬背景
+                'season': './images/season.jpg',  // 賽季首領討伐專屬背景
+                'worldboss': './images/worldboss.jpg' // 全服首領討伐專屬背景
             },
 
-            // ★ 新增：會動的背景「影片」版本，跟 chapterBGs 用同一組 key。
-            // 貼 mp4/webm 的路徑或 Base64 (data:video/mp4;base64,....) 進去，哪個章節/模式有填影片，
-            // 畫面就會自動優先播放影片、蓋掉底下的靜態圖；沒填的維持原本的靜態圖（+ Ken Burns 動畫）。
-            // 建議影片盡量小（幾秒鐘的無縫循環片段即可），檔案太大會拖慢載入速度。
+            // ============================================================
+            // 【二、章節/模式背景「影片」】跟 chapterBGs 用同一組 key，哪個有填影片就優先播影片
+            // 建議影片盡量小（幾秒鐘無縫循環片段即可），檔案太大會拖慢載入速度
+            // ============================================================
             chapterBGVideos: {
-                1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '',
-                'tower': '', 'dungeon': '', 'rift': '', 'festival': '', 'season': './video/season.mp4'
+                1: './video/1.mp4', 2: './video/2.mp4', 3: './video/3.mp4', 4: './video/4.mp4', 5: './video/5.mp4', 6: './video/6.mp4', 7: './video/7.mp4', 8: './video/8.mp4', 9: './video/9.mp4', 10: './video/10.mp4',
+                'tower': './video/tower.mp4', 'dungeon': './video/dungeon.mp4', 'rift': './video/rift.mp4', 'festival': './video/festival.mp4', 'season': './video/season.mp4', 'worldboss': './video/worldboss.mp4'
             },
 
-            // ★ 各個英雄的 Base64 去背圖 (完整版)
+            // ============================================================
+            // 【三、背景音樂 BGM】★ 新增。跟章節背景用同一組 key（加上 'menu' 選單/主畫面），
+            // 貼 mp3/ogg 路徑或 Base64 (data:audio/mp3;base64,....) 進去，切換章節/模式時會自動換播；
+            // 沒填的分類會沿用 'default' 這一首當預設背景音樂，'default' 也沒填就完全靜音。
+            // ============================================================
+            bgm: {
+                'default': './audio/default.mp3', // 沒有個別設定音樂的章節/模式，都會播這首
+                'menu': './audio/menu.mp3',    // 主選單/非戰鬥畫面
+                'battle': './audio/battle.mp3',  // 一般戰鬥（遠征/試煉塔等）
+                1: './audio/1.mp3', 2: './audio/2.mp3', 3: './audio/3.mp3', 4: './audio/4.mp3', 5: './audio/5.mp3', 6: './audio/6.mp3', 7: './audio/7.mp3', 8: './audio/8.mp3', 9: './audio/9.mp3', 10: './audio/10.mp3', // 各章節可以個別指定
+                'tower': './audio/tower.mp3', 'dungeon': './audio/dungeon.mp3', 'rift': './audio/rift.mp3', 'festival': './audio/festival.mp3',
+                'season': './audio/season.mp3', 'worldboss': './audio/worldboss.mp3', 'arena': './audio/arena.mp3'
+            },
+
+            // ============================================================
+            // 【四、英雄圖片】依稀有度分類，GR > LR > UR > SSR > SR > R
+            // ============================================================
             heroes: {
-                // --- GR---
-                'h_gr_bahamut':'./images/h_gr_bahamut.png',// 「滅世災炎」巴哈姆特
-
-
-
-
-
+                // --- GR 神話（只能靠擊殺全服首領取得） ---
+                'h_gr_bahamut': './images/h_gr_bahamut.png',   // 「滅世災炎」巴哈姆特
+                'h_gr_alexander': './images/h_gr_alexander.png', // 「曙光初王」亞歷山大
+                'h_gr_astraea': './images/h_gr_astraea.png',   // 「星軌秘法」阿斯特萊雅
+                'h_gr_kage': './images/h_gr_kage.png',      // 「虛空殘影」暗刃·影
+                'h_gr_evelynn': './images/h_gr_evelynn.png',   // 「不朽靈木」伊芙琳
 
                 // --- 常駐 SSR ---
                 'h_reina': './images/h_reina.png',      // 烈焰騎士·蕾娜
@@ -3838,28 +3933,28 @@
                 'h_s2_ssr2': './images/h_s2_ssr2.png',    // 龍鱗衛士
 
                 // --- S3 限定 ---
-                'h_jeanne': '',     // [UR] 裁決聖女·貞德
-                'h_s3_lr': '',      // [LR] 命運織者·諾恩
-                'h_s3_ssr1': '',    // 異端審判官
-                'h_s3_ssr2': '',    // 聖光狂熱者
+                'h_jeanne': './images/h_jeanne.png',     // [UR] 裁決聖女·貞德
+                'h_s3_lr': './images/h_s3_lr.png',      // [LR] 命運織者·諾恩
+                'h_s3_ssr1': './images/h_s3_ssr1.png',    // 異端審判官
+                'h_s3_ssr2': './images/h_s3_ssr2.png',    // 聖光狂熱者
 
                 // --- S4 限定 ---
-                'h_s4_ur': '',      // [UR] 巨龍之巔限定英雄
-                'h_s4_lr': '',      // [LR] 熔火霸主·瑟拉克斯
-                'h_s4_ssr1': '',    // S4 限定 SSR·1
-                'h_s4_ssr2': '',    // S4 限定 SSR·2
+                'h_s4_ur': './images/h_s4_ur.png',      // [UR] 巨龍之巔限定英雄
+                'h_s4_lr': './images/h_s4_lr.png',      // [LR] 熔火霸主·瑟拉克斯
+                'h_s4_ssr1': './images/h_s4_ssr1.png',    // S4 限定 SSR·1
+                'h_s4_ssr2': './images/h_s4_ssr2.png',    // S4 限定 SSR·2
 
                 // --- S5 限定 ---
-                'h_s5_ur': '',      // [UR] 機械紀元限定英雄
-                'h_s5_lr': '',      // [LR] 奇點指揮官·諾娃
-                'h_s5_ssr1': '',    // S5 限定 SSR·1
-                'h_s5_ssr2': '',    // S5 限定 SSR·2
+                'h_s5_ur': './images/h_s5_ur.png',      // [UR] 機械紀元限定英雄
+                'h_s5_lr': './images/h_s5_lr.png',      // [LR] 奇點指揮官·諾娃
+                'h_s5_ssr1': './images/h_s5_ssr1.png',    // S5 限定 SSR·1
+                'h_s5_ssr2': './images/h_s5_ssr2.png',    // S5 限定 SSR·2
 
                 // --- S6 限定 ---
-                'h_s6_ur': '',      // [UR] 拂曉盛典限定英雄
-                'h_s6_lr': '',      // [LR] 永晝女王·奧蘿拉
-                'h_s6_ssr1': '',    // S6 限定 SSR·1
-                'h_s6_ssr2': '',    // S6 限定 SSR·2
+                'h_s6_ur': './images/h_s6_ur.png',      // [UR] 拂曉盛典限定英雄
+                'h_s6_lr': './images/h_s6_lr.png',      // [LR] 永晝女王·奧蘿拉
+                'h_s6_ssr1': './images/h_s6_ssr1.png',    // S6 限定 SSR·1
+                'h_s6_ssr2': './images/h_s6_ssr2.png',    // S6 限定 SSR·2
 
                 // --- 常駐 SR 史詩 ---
                 'h_arthur': './images/h_arthur.png',     // 重裝鐵衛·亞瑟
@@ -3881,15 +3976,17 @@
                 'h_monk': './images/h_monk.png'        // 苦行僧
             },
 
-            // ★ 新增：怪物與首領的圖片設定
+            // ============================================================
+            // 【五、怪物與首領圖片】
+            // ============================================================
             monsters: {
-                // --- 賽季世界首領 ---
-                'boss_lich': './images/boss_lich.png',    // 巫妖王
-                'boss_dragon': './images/boss_dragon.png',  // 災厄紅龍
-                'boss_lucifer': '', // 墮落聖王
-                'boss_worldender': '', // 滅世魔龍 (S4)
-                'boss_core': '', // 核心機甲 (S5)
-                'boss_dawn': '', // 曙光女皇 (S6)
+                // --- 賽季世界首領（全服首領討伐也會沿用這些身分） ---
+                'boss_lich': './images/boss_lich.png',    // 巫妖王 (S1)
+                'boss_dragon': './images/boss_dragon.png',  // 災厄紅龍 (S2)
+                'boss_lucifer': './images/boss_lucifer.png', // 墮落聖王 (S3)
+                'boss_worldender': './images/boss_worldender.png', // 滅世魔龍 (S4)
+                'boss_core': './images/boss_core.png', // 核心機甲 (S5)
+                'boss_dawn': './images/boss_dawn.png', // 曙光女皇 (S6)
 
                 // --- 深淵迷宮與物資秘境 ---
                 'm_void': './images/m_void.png',       // 深淵魔影 (迷宮)
@@ -3903,15 +4000,16 @@
                 'm7': './images/m7.png', 'm8': './images/m8.png', 'm9': './images/m9.png', // 地下城 (劣魔, 邪教徒, 地牢守衛)
 
                 // --- 4~7 章主線魔物 ---
-                'm10': '', 'm11': '', 'm12': '', // 迷霧森林
-                'm13': '', 'm14': '', 'm15': '', // 荒蕪沙漠
-                'm16': '', 'm17': '', 'm18': '', // 冰封雪山
-                'm19': '', 'm20': '', 'm21': '',  // 魔王城
+                'm10': './images/m10.png', 'm11': './images/m11.png', 'm12': './images/m12.png', // 迷霧森林
+                'm13': './images/m13.png', 'm14': './images/m14.png', 'm15': './images/m15.png', // 荒蕪沙漠
+                'm16': './images/m16.png', 'm17': './images/m17.png', 'm18': './images/m18.png', // 冰封雪山
+                'm19': './images/m19.png', 'm20': './images/m20.png', 'm21': './images/m21.png',  // 魔王城
 
                 // --- 8~10 章主線魔物 (S4/S5/S6 新章節) ---
-                'm22': '', 'm23': '', 'm24': '', // 龍脈裂谷 (龍脈守衛/熔岩蜥蜴/龍鱗巨獸)
-                'm25': '', 'm26': '', 'm27': '', // 機械廢土 (偵查機兵/重裝戰車/護盾核心殘骸)
-                'm28': '', 'm29': '', 'm30': ''  // 拂曉聖殿 (禮讚聖騎士/煙火傀儡/聖殿守衛長)
+                'm22': './images/m22.png', 'm23': './images/m23.png', 'm24': './images/m24.png', // 龍脈裂谷 (龍脈守衛/熔岩蜥蜴/龍鱗巨獸)
+                'm25': './images/m25.png', 'm26': './images/m26.png', 'm27': './images/m27.png', // 機械廢土 (偵查機兵/重裝戰車/護盾核心殘骸)
+                'm28': './images/m28.png', 'm29': './images/m29.png', 'm30': './images/m30.png'  // 拂曉聖殿 (禮讚聖騎士/煙火傀儡/聖殿守衛長)
+                // 第11~100章的怪物直接循環沿用 m1~m30（見 getChapterName 附近的說明），不用另外準備
             }
         };
 
@@ -3928,8 +4026,10 @@
             gridSlots: ['h_militia', null, null, null, null, null],
             roster: {'h_militia': {level: 1, star: 1, artifactTier: 0, equips: [0, 0, 0, 0]}},
 
-            // ★ 讓系統自動載入你上方填寫的內建圖庫
-            customHeroes: JSON.parse(JSON.stringify(BUILT_IN_ASSETS.heroes)),
+            // ★ 修正：不再把整個內建圖庫複製進 DEFAULT_STATE——這是「舊照片凍結、更新圖庫玩家看不到」
+            // 這個 bug 真正的源頭。現在 customHeroes 只用來放「玩家自己上傳覆蓋的圖片」（目前沒有對應的
+            // 上傳介面，所以預設就是空的），內建圖庫一律即時從 BUILT_IN_ASSETS 讀，見 getHeroImageSrc()。
+            customHeroes: {},
             customBG: BUILT_IN_ASSETS.bgOverride,
             heroShards: {}, // ★ 英雄碎片 (per-hero)，召喚抽到重複英雄或賽季商店兌換取得，用來手動升星
 
@@ -3983,6 +4083,8 @@
                 else if (GAME_STATE.currentMode === 'rift') bgKey = 'rift';
                 else if (GAME_STATE.currentMode === 'festival') bgKey = 'festival';
                 else if (GAME_STATE.currentMode === 'season') bgKey = 'season';
+                else if (GAME_STATE.currentMode === 'worldboss') bgKey = 'worldboss';
+                else if (GAME_STATE.currentMode === 'arena' || GAME_STATE.currentMode === 'arena_guest') bgKey = 'arena';
                 else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon')) bgKey = 'dungeon';
                 else bgKey = GAME_STATE.stage.chapter; // 主線對應章節
             } else {
@@ -4016,6 +4118,30 @@
             } else {
                 bgContainer.style.backgroundImage = "url('https://placehold.co/1920x1080/1a120c/1a120c')";
             }
+
+            // 5. ★ 新增：切換自訂背景音樂，用同一組 bgKey；不在戰鬥畫面時播 'menu'
+            playBGM(isCombatTab ? bgKey : 'menu');
+        }
+
+        // ★ 新增：自訂 BGM 播放——這裡故意跟原本 Tone.js 合成的背景旋律各自獨立運作，不互相干涉，
+        // 避免深入修改 Tone.js 的播放時序反而搞壞原本已經穩定運作的音效系統。
+        // 如果你貼了自訂音樂，畫面切換時可能會聽到兩者疊在一起，可以自行用靜音鍵切掉其中一個。
+        let currentBGMKey = null;
+        function playBGM(key) {
+            const player = document.getElementById('bgm-player');
+            if (!player) return;
+            const track = (BUILT_IN_ASSETS.bgm && BUILT_IN_ASSETS.bgm[key]) || (BUILT_IN_ASSETS.bgm && BUILT_IN_ASSETS.bgm['default']) || '';
+            if (!track || track.trim() === '') {
+                if (currentBGMKey !== null) {player.pause(); player.removeAttribute('src'); currentBGMKey = null;}
+                return;
+            }
+            if (currentBGMKey === key) return; // 已經在播同一首，不用重新載入
+            currentBGMKey = key;
+            player.src = track;
+            player.volume = 0.4;
+            if (typeof ToneAudioEngine === 'undefined' || !ToneAudioEngine.isBGMMuted()) {
+                player.play().catch(() => {}); // 部分瀏覽器要求使用者先互動過一次才能自動播放，失敗就靜默略過
+            }
         }
 
         let GAME_STATE = JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -4040,6 +4166,12 @@
         let eventBossCurrentHp = 99999999;
         let eventTotalDamage = 0;
         let customImgCache = {};
+        // ★ 新增：統一的英雄圖片來源判斷——玩家自己上傳的優先，沒有的話 fallback 用內建圖庫，
+        // 內建圖庫「不會」被寫進存檔（見 loadGame 的說明），所以任何要顯示英雄圖片的地方都該呼叫這個，
+        // 不要直接讀 getHeroImageSrc(id)，不然只會看到玩家自己上傳的圖，內建圖庫的圖會消失不見。
+        function getHeroImageSrc(id) {
+            return (GAME_STATE.customHeroes && GAME_STATE.customHeroes[id]) || (BUILT_IN_ASSETS.heroes && BUILT_IN_ASSETS.heroes[id]) || null;
+        }
         let codexCurrentTab = 'hero';
         let codexCurrentFilter = 'all';
         let maxUnlockedSeason = 1;
@@ -4235,18 +4367,20 @@
         };
 
         // 基礎通行證獎勵結構
+        // ★ 修改：賽季通行證本來就已經是「累積勳章、任意順序兌換」的商城設計（不是照順序解鎖的傳統
+        // 戰鬥通行證），這裡只需要把兌換消耗量提高，讓整輪兌換完的門檻拉長。全部調整為約 2.5 倍。
         const BASE_PASS_REWARDS = [
-            {cost: 1000, type: 'gold', amount: 10000, icon: 'fa-coins', color: 'text-yellow-500', name: '大量金幣'},
-            {cost: 2500, type: 'exp', amount: 5000, icon: 'fa-flask', color: 'text-emerald-500', name: '大量經驗'},
-            {cost: 5000, type: 'diamonds', amount: 300, icon: 'fa-gem', color: 'text-sky-400', name: '寶石包'},
-            {cost: 8000, type: 'tickets', amount: 5, icon: 'fa-scroll', color: 'text-indigo-400', name: '召喚卷軸'},
-            {cost: 12000, type: 'stones', amount: 200, icon: 'fa-hammer', color: 'text-stone-400', name: '鍛造石包'},
-            {cost: 18000, type: 'gold', amount: 30000, icon: 'fa-coins', color: 'text-yellow-500', name: '巨量金幣'},
-            {cost: 25000, type: 'exp', amount: 15000, icon: 'fa-flask', color: 'text-emerald-500', name: '巨量經驗'},
-            {cost: 35000, type: 'diamonds', amount: 800, icon: 'fa-gem', color: 'text-sky-400', special: true, name: '璀璨寶石'},
-            {cost: 50000, type: 'tickets', amount: 15, icon: 'fa-scroll', color: 'text-indigo-400', special: true, name: '大量卷軸'},
-            {cost: 70000, type: 'stones', amount: 600, icon: 'fa-hammer', color: 'text-stone-400', special: true, name: '神鑄之石'},
-            {cost: 100000, type: 'hero', name: '賽季專屬限定騎士', icon: 'fa-star', special: true, final: true}
+            {cost: 2500, type: 'gold', amount: 10000, icon: 'fa-coins', color: 'text-yellow-500', name: '大量金幣'},
+            {cost: 6250, type: 'exp', amount: 5000, icon: 'fa-flask', color: 'text-emerald-500', name: '大量經驗'},
+            {cost: 12500, type: 'diamonds', amount: 300, icon: 'fa-gem', color: 'text-sky-400', name: '寶石包'},
+            {cost: 20000, type: 'tickets', amount: 5, icon: 'fa-scroll', color: 'text-indigo-400', name: '召喚卷軸'},
+            {cost: 30000, type: 'stones', amount: 200, icon: 'fa-hammer', color: 'text-stone-400', name: '鍛造石包'},
+            {cost: 45000, type: 'gold', amount: 30000, icon: 'fa-coins', color: 'text-yellow-500', name: '巨量金幣'},
+            {cost: 62500, type: 'exp', amount: 15000, icon: 'fa-flask', color: 'text-emerald-500', name: '巨量經驗'},
+            {cost: 87500, type: 'diamonds', amount: 800, icon: 'fa-gem', color: 'text-sky-400', special: true, name: '璀璨寶石'},
+            {cost: 125000, type: 'tickets', amount: 15, icon: 'fa-scroll', color: 'text-indigo-400', special: true, name: '大量卷軸'},
+            {cost: 175000, type: 'stones', amount: 600, icon: 'fa-hammer', color: 'text-stone-400', special: true, name: '神鑄之石'},
+            {cost: 250000, type: 'hero', name: '賽季專屬限定騎士', icon: 'fa-star', special: true, final: true}
         ];
 
         // --- 英雄資料庫 (含賽季標籤，全面奇幻化) ---
@@ -4484,17 +4618,21 @@
                     if (!initialized) await ToneAudioEngine.init();
                     isMuted = !isMuted;
                     const icon = document.getElementById('bgm-icon');
+                    const customPlayer = document.getElementById('bgm-player');
                     if (!isMuted) {
                         icon.classList.replace('fa-volume-xmark', 'fa-volume-high'); icon.classList.add('text-fantasy-gold');
                         if (!bgmStarted) {Tone.Transport.start(); bgmStarted = true;}
                         Tone.Destination.mute = false;
+                        if (customPlayer && customPlayer.src) customPlayer.play().catch(() => {});
                         showToast("音樂與音效已開啟");
                     } else {
                         icon.classList.replace('fa-volume-high', 'fa-volume-xmark'); icon.classList.remove('text-fantasy-gold');
                         Tone.Destination.mute = true;
+                        if (customPlayer) customPlayer.pause();
                         showToast("已靜音");
                     }
                 },
+                isBGMMuted: () => isMuted, // ★ 新增：讓自訂 BGM 播放器 (playBGM) 可以跟這裡共用同一個靜音狀態
                 playClick: () => {if (initialized && !isMuted) clickSynth.triggerAttackRelease("C5", "32n");},
                 playHit: () => {if (initialized && !isMuted) hitSynth.triggerAttackRelease("C2", "8n");},
                 playMagic: () => {if (initialized && !isMuted) magicSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n");},
@@ -4607,23 +4745,30 @@
             if (typeof updateDynamicBackground === 'function') updateDynamicBackground();
             if (typeof updateBgMotionUI === 'function') updateBgMotionUI();
 
-            // === 新增：自動將程式碼裡的新圖片同步進舊存檔中 ===
-            if (BUILT_IN_ASSETS.heroes) {
-                Object.keys(BUILT_IN_ASSETS.heroes).forEach(id => {
-                    const builtInImg = BUILT_IN_ASSETS.heroes[id];
-                    // 如果內建圖庫有圖，而且舊存檔裡面沒有這張圖，就自動幫玩家補上
-                    if (builtInImg && builtInImg.trim() !== '' && !GAME_STATE.customHeroes[id]) {
-                        GAME_STATE.customHeroes[id] = builtInImg;
+            // ★ 一次性清理：既有玩家的存檔裡可能還殘留著舊版邏輯凍結進去的內建圖庫副本，
+            // 把這些「跟現在的 id 重疊」的舊副本清掉，之後一律即時讀 BUILT_IN_ASSETS，不會再卡住舊版本，
+            // 存檔也會跟著瘦身（只留玩家真正自己上傳、BUILT_IN_ASSETS 裡沒有對應 id 的部分）。
+            if (GAME_STATE.customHeroes) {
+                Object.keys(GAME_STATE.customHeroes).forEach(id => {
+                    if (BUILT_IN_ASSETS.heroes && Object.prototype.hasOwnProperty.call(BUILT_IN_ASSETS.heroes, id)) {
+                        delete GAME_STATE.customHeroes[id];
                     }
                 });
             }
 
+            // ★ 修正真正的 bug：舊邏輯會把內建圖庫的圖片「複製一份」寫進玩家存檔 (GAME_STATE.customHeroes)，
+            // 但只有「存檔裡完全沒有才補」，之後即使程式碼裡的內建圖庫更新了，玩家存檔裡凍結的舊版本
+            // 永遠不會跟著更新——這就是「以前的賽季首領照片讀不到」的真正原因，而且這份複製會一直
+            // 佔用 localStorage 空間，英雄越多，存檔越肥大，讀取也跟著越來越慢。
+            // 現在改成：內建圖庫永遠即時從程式碼讀最新版，只有「玩家自己上傳的客製化圖片」才會寫進存檔，
+            // 兩者在載入時才合併（玩家上傳的優先），不會互相污染。
             customImgCache = {};
 
-            // 1. 載入英雄圖片 (從存檔中讀取)
-            Object.keys(GAME_STATE.customHeroes).forEach(id => {
-                const b64 = GAME_STATE.customHeroes[id];
-                if (b64) {
+            // 1. 載入英雄圖片：玩家自己上傳的優先，沒有的話用內建圖庫（內建圖庫不寫回存檔）
+            const allHeroImgIds = new Set([...Object.keys(BUILT_IN_ASSETS.heroes || {}), ...Object.keys(GAME_STATE.customHeroes || {})]);
+            allHeroImgIds.forEach(id => {
+                const b64 = (GAME_STATE.customHeroes && GAME_STATE.customHeroes[id]) || (BUILT_IN_ASSETS.heroes && BUILT_IN_ASSETS.heroes[id]);
+                if (b64 && b64.trim() !== '') {
                     const img = new Image(); img.onload = () => {customImgCache[id] = img;}; img.src = b64;
                 }
             });
@@ -5869,7 +6014,7 @@
                     <div class="flex items-center gap-2 md:gap-3">
                         <div class="reward-icon w-8 h-8 md:w-10 md:h-10 rounded-lg bg-black/60 border border-[#5a4634] flex items-center justify-center text-lg md:text-xl ${reward.color} shadow-inner-dark shrink-0"><i class="fa-solid ${reward.icon}"></i></div>
                         <div>
-                            <div class="text-[9px] md:text-[10px] text-stone-400 font-bold">累積 <span class="${config.colorClass.text}">${actualCost.toLocaleString()}</span> 勳章</div>
+                            <div class="text-[9px] md:text-[10px] text-stone-400 font-bold">兌換需要 <span class="${config.colorClass.text}">${actualCost.toLocaleString()}</span> 勳章</div>
                             <div class="text-[10px] md:text-xs font-bold text-stone-200">${rewardText}</div>
                         </div>
                     </div>
@@ -5973,7 +6118,7 @@
                     const exclusiveBadge = h.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1.5 py-0.5 rounded-br-lg text-[8px] font-bold border-b border-r border-rose-500 text-rose-200 z-10 shadow">S${h.seasonId} 限定</div>` : '';
 
                     // 【重點修復】：判斷是否有自訂圖片
-                    const customImg = GAME_STATE.customHeroes[h.id];
+                    const customImg = getHeroImageSrc(h.id);
                     const iconHtml = customImg
                         ? `<img src="${customImg}" class="w-12 h-12 rounded-full object-cover shadow-lg group-hover:scale-110 transition ${isHas ? '' : 'opacity-30 grayscale'}">`
                         : `<i class="fa-solid ${h.avatarIcon} text-4xl drop-shadow-md transition group-hover:scale-110" style="color:${isHas ? h.color : '#57534e'}"></i>`;
@@ -6052,7 +6197,7 @@
             const iconContainer = document.getElementById('codex-detail-icon');
             iconContainer.className = `w-full h-52 flex justify-center items-center relative rounded-xl mb-4 bg-gradient-to-b ${rarityBg} to-[#0a0705] border border-[#3e3328] shadow-inner-dark`;
 
-            const customImg = GAME_STATE.customHeroes[id];
+            const customImg = getHeroImageSrc(id);
             if (customImg) {
                 // 使用 object-contain 讓全身立繪完整呈現，並加上強烈的陰影讓角色浮出來
                 iconContainer.innerHTML = `<img src="${customImg}" class="h-[120%] object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.8)] scale-110 translate-y-2">`;
@@ -6178,7 +6323,7 @@
                 cell.className = `aspect-square rounded-xl flex flex-col items-center justify-center cursor-pointer relative grid-cell overflow-hidden transition-transform ${selectedGridIndex === i ? 'selected' : ''}`;
                 const hid = GAME_STATE.gridSlots[i];
                 if (hid) {
-                    const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === hid)); const custom = GAME_STATE.customHeroes[h.id];
+                    const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === hid)); const custom = getHeroImageSrc(h.id);
                     const rRing = h.rarity === 'GR' ? 'border-red-400 shadow-[inset_0_0_16px_rgba(248,113,113,0.7)]' : (h.rarity === 'LR' ? 'border-amber-300 shadow-[inset_0_0_14px_rgba(253,224,71,0.6)]' : (h.rarity === 'UR' ? 'border-rose-500/90 shadow-[inset_0_0_10px_rgba(244,63,94,0.4)]' : (h.rarity === 'SSR' ? 'border-fantasy-gold/80 shadow-[inset_0_0_10px_rgba(212,175,55,0.4)]' : (h.rarity === 'SR' ? 'border-purple-500/70' : 'border-stone-500/50'))));
                     cell.classList.add('bg-gradient-to-b', 'from-[#241b12]', 'to-[#120d08]');
                     cell.innerHTML = `
@@ -6204,7 +6349,7 @@
                 const dName = h.name.includes('·') ? h.name.split('·')[1] : h.name;
                 c.innerHTML = `
                     <span class="absolute top-1 right-1 text-[7px] font-bold ${rColor}">${h.rarity}</span>
-                    ${GAME_STATE.customHeroes[h.id] ? `<img src="${GAME_STATE.customHeroes[h.id]}" class="w-9 h-9 rounded-full object-cover mb-1 border border-[#5a4634]">` : `<i class="fa-solid ${h.avatarIcon} text-2xl mb-1 drop-shadow" style="color:${h.color}"></i>`}
+                    ${getHeroImageSrc(h.id) ? `<img src="${getHeroImageSrc(h.id)}" class="w-9 h-9 rounded-full object-cover mb-1 border border-[#5a4634]">` : `<i class="fa-solid ${h.avatarIcon} text-2xl mb-1 drop-shadow" style="color:${h.color}"></i>`}
                     <span class="text-[8px] text-stone-300 w-full text-center truncate">${dName}</span>
                     ${isDep ? `<span class="text-[7px] text-emerald-400 font-bold mt-0.5"><i class="fa-solid fa-check mr-0.5"></i>陣中</span>` : ''}`;
                 c.onclick = () => handleRosterClick(h.id); rosterFragment.appendChild(c);
@@ -6292,7 +6437,7 @@
             const fragment = document.createDocumentFragment();
             filtered.forEach(id => {
                 const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === id));
-                const custom = GAME_STATE.customHeroes[h.id]; const dName = h.name.includes('·') ? h.name.split('·')[1] : h.name;
+                const custom = getHeroImageSrc(h.id); const dName = h.name.includes('·') ? h.name.split('·')[1] : h.name;
                 const exclusiveBadge = h.isExclusive ? `<div class="absolute top-0 left-0 bg-rose-900/90 px-1.5 py-0.5 rounded-br-lg text-[8px] font-bold border-b border-r border-rose-500 text-rose-200 z-10 shadow">S${h.seasonId} 限定</div>` : '';
                 const rarityClass = ['GR', 'LR', 'UR', 'SSR', 'SR'].includes(h.rarity) ? `rarity-${h.rarity}` : '';
                 const rarityTextClass = h.rarity === 'LR' ? 'text-amber-300' : (h.rarity === 'UR' ? 'text-rose-400' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400')));
@@ -6334,7 +6479,7 @@
             if (minorStatsLine) statsHtml += `<span class="block mt-1 text-sky-400 font-bold">小技能數值：${minorStatsLine}</span>`;
             document.getElementById('modal-skill-desc').innerHTML = `${h.skill.desc}${statsHtml}`;
 
-            const custom = GAME_STATE.customHeroes[h.id];
+            const custom = getHeroImageSrc(h.id);
             document.getElementById('modal-hero-avatar').innerHTML = custom ? `<img src="${custom}" class="w-full h-full object-cover">` : `<i class="fa-solid ${h.avatarIcon}" style="color:${h.color}"></i>`;
 
             const costLvl = getHeroLevelUpCost(h.level);
