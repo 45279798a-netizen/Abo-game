@@ -2637,6 +2637,7 @@
         function startArenaLiveMatchAsGuest(matchId, invite) {
             arenaGuestOpponentData = invite;
             arenaLastEventIndex = 0;
+            arenaGuestAnimQueue = [];
             snapshotCurrentBattleIfNeeded();
             switchTab('battle', {internal: true});
             GAME_STATE.currentMode = 'arena_guest';
@@ -2665,13 +2666,42 @@
         // ★ 把主控端傳來的每一次命中，套用到觀戰端「自己這台裝置上」實際存在的 combatEntities，
         // 直接重用戰鬥引擎既有的視覺元素 (floatingTexts / screenShake)，讓觀戰端看到的也是同一套
         // 戰鬥畫布（sprite、血條、傷害飄字），而不是另外做一個簡化的清單畫面。
+        // ★ 觀戰端專用的簡易「衝上去打一下再退回來」動畫佇列，跟主控端的完整回合狀態機完全分開、
+        // 各自獨立運作，不會互相影響。每次收到事件就排一個動畫任務，用自己的計時器驅動位移，
+        // 傷害/飄字則立刻套用，不等動畫播完（觀戰用途，抓个大概節奏即可，不用跟主控端影格對影格同步）。
+        let arenaGuestAnimQueue = [];
         function applyArenaLiveEvent(ev) {
-            const findEntity = (side, heroId) => combatEntities.find(e => e.baseId === heroId && e.team === (side === 'my' ? 'player' : 'enemy'));
+            // ★ 修正真正的 bug：ev.targetSide 的 'my'/'opp' 是從「主控端」的視角記錄的（'my' = 主控端自己），
+            // 但在「觀戰端」的畫面裡，主控端的隊伍是顯示成敵方 (team:'enemy')，不是我方——
+            // 原本這裡的對應寫反了，導致每一個事件都去找錯的陣營，永遠找不到目標，畫面才會完全沒反應，
+            // 靜靜卡著直到最後 status 變成 done 才突然跳出勝負結果。
+            const findEntity = (side, heroId) => combatEntities.find(e => e.baseId === heroId && e.team === (side === 'my' ? 'enemy' : 'player'));
+            const attacker = findEntity(ev.attackerSide, ev.attackerHeroId);
             const target = findEntity(ev.targetSide, ev.targetHeroId);
             if (!target) return;
+
+            if (attacker) {
+                arenaGuestAnimQueue.push({attacker, startTime: performance.now(), fromX: attacker.startX, fromY: attacker.startY, toX: target.startX, toY: target.startY});
+            }
             target.hp = Math.max(0, target.hp - ev.damage);
             floatingTexts.push({x: target.x + (Math.random() * 20 - 10), y: target.y - 60 + (Math.random() * 10 - 5), text: ev.damage, isCrit: ev.isCrit, color: ev.isCrit ? '#ffd54f' : '#fff', life: 45});
             if (ev.isCrit) screenShake = 6;
+        }
+
+        // 每影格推進一次觀戰端的簡易攻擊動畫：前半段衝向目標、後半段退回原本站位，用三角波處理，
+        // 不需要 easeInOutQuad 之類額外的緩動函式依賴，簡單但足夠表達「有衝上去打人」的感覺。
+        function tickArenaGuestAnimations() {
+            if (arenaGuestAnimQueue.length === 0) return;
+            const now = performance.now();
+            const DURATION = 450;
+            arenaGuestAnimQueue = arenaGuestAnimQueue.filter(anim => {
+                const t = Math.min(1, (now - anim.startTime) / DURATION);
+                const phase = t < 0.5 ? (t * 2) : (1 - (t - 0.5) * 2); // 0 → 1 → 0 的三角波
+                anim.attacker.x = anim.fromX + (anim.toX - anim.fromX) * phase * 0.55; // 只衝到目標方向 55% 的距離，不要真的疊到對方身上
+                anim.attacker.y = anim.fromY + (anim.toY - anim.fromY) * phase * 0.55;
+                if (t >= 1) {anim.attacker.x = anim.fromX; anim.attacker.y = anim.fromY; return false;} // 動畫結束，強制歸位並從佇列移除
+                return true;
+            });
         }
 
         function closeArenaLiveViewer() {
@@ -7812,9 +7842,11 @@
         function gameLoop() {
             // ★ 觀戰端 (arena_guest) 不跑正常的回合決策邏輯 (updateCombatLogic)，因為它不自己決定
             // 誰攻擊誰、造成多少傷害——那些結果全部來自主控端透過 Firestore 傳來的事件 (見 applyArenaLiveEvent)。
-            // 但畫面還是要正常持續繪製 (drawCanvas)，這樣飄字/受擊特效才會正常播放跟消失。
+            // 改成推進自己專屬的簡易攻擊動畫佇列 (tickArenaGuestAnimations)，畫面還是持續繪製 (drawCanvas)，
+            // 這樣飄字/受擊特效/衝上去打人的動畫都會正常播放。
             if (isCombatTabVisible()) {
                 if (GAME_STATE.currentMode !== 'arena_guest') updateCombatLogic();
+                else tickArenaGuestAnimations();
                 drawCanvas();
             }
 
