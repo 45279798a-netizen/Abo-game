@@ -2630,7 +2630,7 @@
                 arenaMatchId = matchRef.id;
                 startArenaLiveMatchAsGuest(matchRef.id, currentIncomingInvite);
                 currentIncomingInvite = null;
-            } catch (err) {console.warn('接受邀請失敗：', err); showToast('接受邀請失敗，請檢查網路連線');}
+            } catch (err) {console.warn('接受邀請失敗：', err); showToast('接受邀請失敗：' + (err.code || err.message || '未知錯誤'));}
         }
 
         // ★ 主控端：跟以前的「即時挑戰」完全同一套戰鬥流程，只是額外記住 arenaMatchId，
@@ -3291,7 +3291,7 @@
 
                 // --- S1 限定 ---
                 'h_uther': './images/h_uther.png',      // [UR] 聖光使者·烏瑟
-                'h_s1_lr': './images/h_s1_lr.png',      // [LR] 夜魘收割者·莫瑟斯
+                'h_s1_lr': '',      // [LR] 夜魘收割者·莫瑟斯
                 'h_s1_ssr1': './images/h_s1_ssr1.png',    // 亡靈督軍
                 'h_s1_ssr2': './images/h_s1_ssr2.png',    // 瘟疫使者
 
