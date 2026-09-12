@@ -7566,6 +7566,7 @@
         function startDungeonBattle() {
             snapshotCurrentBattleIfNeeded(); // 經過秘境也不會把還沒打完的遠征/賽季戰鬥沖掉
             switchTab('battle', {internal: true}); GAME_STATE.currentMode = 'dungeon'; combatEntities = [];
+            dungeonLastRewardCheckpoint = 0; // ★ 新的一場開始，重置中途結算進度
             document.getElementById('battle-stage-title').innerText = `深淵秘境`; setTimeout(initCombatUnits, 100);
             refreshNavHighlightForMode();
             updateDynamicBackground();
@@ -7637,16 +7638,33 @@
         }
 
         // 秘境獎勵：直接把這場累積造成的總傷害換算成三種資源，不再看階層或機制加成
-        function resolveDungeonSessionReward(totalDamage) {
-            ensureDungeonAutoFarmState();
-            const goldGain = Math.floor(totalDamage * 0.5);
-            const expGain = Math.floor(totalDamage * 0.35);
-            const stoneGain = Math.floor(totalDamage * 0.06);
+        // ★ 修正：手動戰鬥現在會中途分批結算（見下方 DUNGEON_REWARD_CHECKPOINT_INTERVAL 的說明），
+        // 這裡改成可以指定「已經透過中途結算領過多少」，避免最終結算時重複發放。
+        // 高分紀錄一律看這場的「總傷害」，不受中途分批發放影響。
+        function grantDungeonResources(damageAmount) {
+            const goldGain = Math.floor(damageAmount * 0.5);
+            const expGain = Math.floor(damageAmount * 0.35);
+            const stoneGain = Math.floor(damageAmount * 0.06);
             GAME_STATE.gold += goldGain; GAME_STATE.heroExp += expGain; GAME_STATE.forgeStones += stoneGain;
+            return {goldGain, expGain, stoneGain};
+        }
+
+        function resolveDungeonSessionReward(totalDamage, alreadyGranted = 0) {
+            ensureDungeonAutoFarmState();
+            const remaining = Math.max(0, totalDamage - alreadyGranted);
+            const {goldGain, expGain, stoneGain} = grantDungeonResources(remaining);
             if (totalDamage > GAME_STATE.dungeonHighScore) GAME_STATE.dungeonHighScore = Math.floor(totalDamage);
             const rewardText = `${goldGain} 金幣／${expGain} 經驗／${stoneGain} 鍛造石`;
             return {goldGain, expGain, stoneGain, rewardText};
         }
+
+        // ★ 新增：手動秘境戰鬥現在改成打到一定傷害量就中途結算一次資源，不用死等全軍覆沒才領一次。
+        // 因為現在英雄可以無限升星、等級上限也拉高很多，玩家戰力大幅膨脹之後，
+        // 秘境怪物血量/攻擊雖然也跟著累積傷害往上漲，但玩家的生存力漲得更快，導致單場能撐超級久，
+        // 死等到全軍覆沒才發獎勵變得要打非常久才能領一次東西。改成中途分批結算後，
+        // 不管這場最後打多久，都能持續拿到獎勵，不用整場耗到底才有收穫。
+        const DUNGEON_REWARD_CHECKPOINT_INTERVAL = 5000; // 每累積 5000 點傷害中途結算一次
+        let dungeonLastRewardCheckpoint = 0; // 這場已經透過中途結算領過的傷害量
 
         // 開關秘境的背景刷本
         function toggleDungeonAutoFarm() {
@@ -7907,6 +7925,15 @@
                 if (attacker.team === 'player' && (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon' || GAME_STATE.currentMode === 'worldboss')) {
                     eventTotalDamage += Math.floor(damage);
                     if (GAME_STATE.currentMode === 'season') eventBossCurrentHp -= damage;
+                    // ★ 秘境中途分批結算：每跨過一個 5000 傷害的門檻就立刻發一次資源，不用等全軍覆沒
+                    if (GAME_STATE.currentMode === 'dungeon') {
+                        while (eventTotalDamage - dungeonLastRewardCheckpoint >= DUNGEON_REWARD_CHECKPOINT_INTERVAL) {
+                            dungeonLastRewardCheckpoint += DUNGEON_REWARD_CHECKPOINT_INTERVAL;
+                            const {goldGain, expGain, stoneGain} = grantDungeonResources(DUNGEON_REWARD_CHECKPOINT_INTERVAL);
+                            updateHUD();
+                            showToast(`💰 秘境中途結算：+${goldGain} 金幣／+${expGain} 經驗／+${stoneGain} 鍛造石`);
+                        }
+                    }
                 }
                 bumpAnalytics('tank', target.team, target.name, damage);
                 updateAnalyticsUI();
@@ -8889,7 +8916,8 @@
             } else if (GAME_STATE.currentMode === 'dungeon') {
                 // ★ 再次重做：秘境不再有階層/深淵祝福，怪物死一隻補一隻打到全軍覆沒為止，
                 // 這場累積造成的總傷害直接換算成三種資源獎勵（跟賽季討伐同一套精神）。
-                const result = resolveDungeonSessionReward(eventTotalDamage);
+                // ★ 傳入 dungeonLastRewardCheckpoint，避免中途已經分批結算過的部分被重複發放一次
+                const result = resolveDungeonSessionReward(eventTotalDamage, dungeonLastRewardCheckpoint);
                 const descHtml = `這場總共造成了 <span class="text-amber-400 font-bold">${eventTotalDamage.toLocaleString()}</span> 點傷害<br>獲得 ${result.rewardText}`;
                 document.getElementById('overlay-desc').innerHTML = descHtml;
                 document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-box-open text-amber-500 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]"></i>'; document.getElementById('overlay-title').innerText = '討伐結束';
