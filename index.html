@@ -1387,7 +1387,7 @@
                         <div id="worldboss-open-content" class="hidden flex-col gap-3">
                             <div class="glass-panel p-4 rounded-xl border border-rose-700/50">
                                 <div class="flex justify-between items-center mb-2">
-                                    <span class="text-rose-400 font-bold text-xs"><i class="fa-solid fa-dragon mr-1"></i><span id="worldboss-name">全服首領</span></span>
+                                    <span class="text-rose-400 font-bold text-xs"><i id="worldboss-icon" class="fa-solid fa-dragon mr-1"></i><span id="worldboss-name">全服首領</span></span>
                                     <span class="text-[10px] text-stone-400">剩餘血量</span>
                                 </div>
                                 <div class="w-full bg-black/50 rounded-full h-3 border border-[#3e3328] overflow-hidden mb-2">
@@ -1467,7 +1467,10 @@
                         <div class="glass-panel p-3 rounded-xl border border-red-700/40 flex flex-col gap-2">
                             <p class="text-[10px] text-red-300 font-bold"><i class="fa-solid fa-dragon mr-1"></i>全服首領活動控制</p>
                             <p id="admin-boss-current-status" class="text-[9px] text-stone-500">尚未讀取狀態</p>
-                            <input id="admin-boss-name" type="text" placeholder="首領名稱（例如：深淵吞噬者）" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                            <div>
+                                <label class="text-[9px] text-stone-500 block mb-1">選擇本次首領（沿用各賽季的世界首領）</label>
+                                <select id="admin-boss-select" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                            </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="text-[9px] text-stone-500 block mb-1">首領血量</label>
@@ -1476,6 +1479,14 @@
                                 <div>
                                     <label class="text-[9px] text-stone-500 block mb-1">每點傷害換金幣</label>
                                     <input id="admin-boss-goldrate" type="number" step="0.01" placeholder="0.05" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">每點傷害換寶石</label>
+                                    <input id="admin-boss-diamondrate" type="number" step="0.001" placeholder="0" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">每點傷害換鍛造石</label>
+                                    <input id="admin-boss-stonerate" type="number" step="0.001" placeholder="0" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 </div>
                             </div>
                             <button onclick="openAdminWorldBoss()" class="w-full py-2 bg-red-800/70 text-red-200 text-[11px] font-bold rounded border border-red-600 hover:bg-red-700 transition">開啟本次活動（重置血量與排行榜）</button>
@@ -2827,6 +2838,8 @@
                 if (openBox) {openBox.classList.remove('hidden'); openBox.classList.add('flex');}
 
                 document.getElementById('worldboss-name').innerText = data.bossName || '全服首領';
+                const iconEl = document.getElementById('worldboss-icon');
+                if (iconEl) {iconEl.className = `fa-solid ${data.bossIcon || 'fa-dragon'} mr-1`; iconEl.style.color = data.bossColor || '';}
                 const pct = Math.max(0, Math.min(100, (data.currentHp / data.maxHp) * 100));
                 document.getElementById('worldboss-hp-bar').style.width = `${pct}%`;
                 document.getElementById('worldboss-hp-text').innerText = `${Math.max(0, Math.floor(data.currentHp)).toLocaleString()} / ${data.maxHp.toLocaleString()}`;
@@ -3082,17 +3095,40 @@
         }
 
         // 顯示目前全服首領的狀態，並把輸入框預填成現在的設定值，方便管理員微調後再次開啟
+        // 填滿「選擇本次首領」下拉選單，直接沿用各賽季 SEASON_CONFIG 裡定義的世界首領（名稱/圖示/顏色都不用重畫）
+        function populateAdminBossSelect() {
+            const sel = document.getElementById('admin-boss-select');
+            if (!sel || sel.options.length > 0) return;
+            Object.keys(SEASON_CONFIG).forEach(id => {
+                const boss = SEASON_CONFIG[id].boss;
+                if (!boss) return;
+                const opt = document.createElement('option');
+                opt.value = boss.id; opt.innerText = `${SEASON_CONFIG[id].name}：${boss.name}`;
+                sel.appendChild(opt);
+            });
+        }
+
+        function getBossConfigById(bossId) {
+            for (const sid in SEASON_CONFIG) {
+                if (SEASON_CONFIG[sid].boss && SEASON_CONFIG[sid].boss.id === bossId) return SEASON_CONFIG[sid].boss;
+            }
+            return null;
+        }
+
         async function refreshAdminBossStatus() {
             if (!isCurrentUserAdmin() || !mpConnected) return;
+            populateAdminBossSelect();
             try {
                 const snap = await fbDb.collection('worldBoss').doc('current').get();
                 const statusEl = document.getElementById('admin-boss-current-status');
                 if (!snap.exists) {statusEl.innerText = '目前沒有任何首領資料，尚未開啟過活動'; return;}
                 const d = snap.data();
                 statusEl.innerText = `目前狀態：${d.status === 'active' ? '啟用中' : '已關閉'}，${d.bossName || '???'}，血量 ${Math.max(0, Math.floor(d.currentHp || 0)).toLocaleString()} / ${(d.maxHp || 0).toLocaleString()}`;
-                document.getElementById('admin-boss-name').value = d.bossName || '';
+                if (d.bossId) document.getElementById('admin-boss-select').value = d.bossId;
                 document.getElementById('admin-boss-maxhp').value = d.maxHp || '';
                 document.getElementById('admin-boss-goldrate').value = d.goldPerDamage || 0.05;
+                document.getElementById('admin-boss-diamondrate').value = d.diamondPerDamage || 0;
+                document.getElementById('admin-boss-stonerate').value = d.stonePerDamage || 0;
             } catch (err) {console.warn(err);}
         }
 
@@ -3101,9 +3137,13 @@
         async function openAdminWorldBoss() {
             ToneAudioEngine.playClick();
             if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); return;}
-            const bossName = document.getElementById('admin-boss-name').value.trim() || '全服首領';
+            const bossId = document.getElementById('admin-boss-select').value;
+            const bossDef = getBossConfigById(bossId);
+            if (!bossDef) {showToast('請選擇要用哪一位首領'); return;}
             const maxHp = parseInt(document.getElementById('admin-boss-maxhp').value) || 100000000;
             const goldPerDamage = parseFloat(document.getElementById('admin-boss-goldrate').value) || 0.05;
+            const diamondPerDamage = parseFloat(document.getElementById('admin-boss-diamondrate').value) || 0;
+            const stonePerDamage = parseFloat(document.getElementById('admin-boss-stonerate').value) || 0;
             try {
                 const ref = fbDb.collection('worldBoss').doc('current');
                 // 清空舊的排行榜紀錄，讓這次活動重新統計
@@ -3112,12 +3152,13 @@
                 await Promise.all(deletions);
 
                 await ref.set({
-                    bossName, maxHp, currentHp: maxHp, goldPerDamage,
+                    bossId: bossDef.id, bossName: bossDef.name, bossColor: bossDef.color, bossIcon: bossDef.icon,
+                    maxHp, currentHp: maxHp, goldPerDamage, diamondPerDamage, stonePerDamage,
                     status: 'active',
                     openedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     openedBy: GAME_STATE.mpDisplayName || fbUser.email
                 });
-                showToast(`已開啟全服首領活動：${bossName}`);
+                showToast(`已開啟全服首領活動：${bossDef.name}`);
                 refreshAdminBossStatus();
                 refreshWorldBossUI();
             } catch (err) {console.warn('開啟首領活動失敗：', err); showToast('開啟失敗：' + (err.code || err.message || '未知錯誤'));}
@@ -3540,6 +3581,14 @@
                             if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
                         }
                     }
+                }
+                // ★ 新增：管理員設定的「目前賽季」現在會即時同步給所有玩家（原本只有新註冊帳號會套用），
+                // 直接改掉玩家本地瀏覽的賽季通行證/抽卡分頁，讓大家看到的是同一個賽季內容
+                if (adminGameConfig && adminGameConfig.currentSeasonId && SEASON_CONFIG[adminGameConfig.currentSeasonId] && GAME_STATE.season.id !== adminGameConfig.currentSeasonId) {
+                    GAME_STATE.season.id = adminGameConfig.currentSeasonId;
+                    saveGame();
+                    if (typeof renderPassUI === 'function' && !document.getElementById('tab-season').classList.contains('hidden')) renderPassUI();
+                    if (typeof applySeasonTheme === 'function') applySeasonTheme();
                 }
                 refreshSeasonModeNavButton();
                 if (typeof checkSeasonModeUnlock === 'function' && !document.getElementById('tab-season-mode').classList.contains('hidden')) checkSeasonModeUnlock();
@@ -4295,6 +4344,17 @@
         function checkSeasonModeUnlock() {
             const info = getExclusiveModeInfo();
             if (!info) return; // 沒有任何賽季定義專屬模式，按鈕已隱藏，這裡不用做事
+
+            // ★ 修正：管理員如果有明確指定「限時活動」，代表管理員主動開放，這裡就不該再套用帳號時間的倒數鎖定
+            // （原本這裡完全沒管 adminGameConfig，導致管理員選了活動、畫面上卻還是卡在倒數計時的鎖定畫面）。
+            // 只有在完全沒有 adminGameConfig（沒連線 / 管理員還沒設定過）時，才退回原本帳號時間解鎖的判斷。
+            const isAdminControlled = adminGameConfig && adminGameConfig.hasOwnProperty('activeEventSeasonId');
+            if (isAdminControlled) {
+                document.getElementById('rift-locked-view').classList.add('hidden');
+                document.getElementById('rift-unlocked-view').classList.remove('hidden');
+                renderSeasonExclusiveMode(info);
+                return;
+            }
 
             const now = Date.now();
             const SEASON_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
@@ -6649,10 +6709,12 @@
                 }
             } else if (GAME_STATE.currentMode === 'worldboss') {
                 // ★ 全服首領：跟賽季討伐同一種「無限血量、打到全軍覆沒為止」設計，血量本身只是本地顯示用的假血條，
-                // 真正共用的血量存在 Firestore，戰鬥結束時才把這場造成的傷害一次性提交上去扣血（見 handleCombatEnd）
+                // 真正共用的血量存在 Firestore，戰鬥結束時才把這場造成的傷害一次性提交上去扣血（見 handleCombatEnd）。
+                // ★ 修正：首領的身分（名稱/圖示/顏色）現在改成沿用管理員這次選定的賽季首領，不再寫死「深淵吞噬者」
                 document.getElementById('btn-auto-battle').style.display = 'block';
                 eventBossTotalHp = 99999999; eventBossCurrentHp = eventBossTotalHp;
-                combatEntities.push({baseId: 'm_worldboss', name: '深淵吞噬者', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: 260, def: 90, role: 'boss', color: '#a21caf', icon: 'fa-dragon', row: 1, col: 1, skill: {type: 'aoe'}});
+                const wb = currentWorldBossConfig || {};
+                combatEntities.push({baseId: wb.bossId || 'm_worldboss', name: wb.bossName || '全服首領', team: 'enemy', x: 0, y: 0, hp: eventBossTotalHp, maxHp: eventBossTotalHp, atk: 260, def: 90, role: 'boss', color: wb.bossColor || '#a21caf', icon: wb.bossIcon || 'fa-dragon', row: 1, col: 1, skill: {type: 'aoe'}});
                 // ★ 首領專屬聖物的詞條加成，只在這個模式下套用到玩家陣容上
                 applyWorldBossRelicBonus(combatEntities);
             } else if (GAME_STATE.currentMode === 'season') {
@@ -7842,21 +7904,32 @@
                 btnNext.innerText = "返回競技場"; btnNext.onclick = () => switchTab('arena');
                 saveGame();
             } else if (GAME_STATE.currentMode === 'worldboss') {
-                // ★ 全服首領：不管輸贏，這場造成的傷害都會提交上去扣共用血量；金幣獎勵套用聖物「討伐金幣加成」詞條，
+                // ★ 全服首領：不管輸贏，這場造成的傷害都會提交上去扣共用血量；獎勵套用管理員設定的倍率
+                // (金幣/寶石/鍛造石都可以個別設定，設 0 就代表這場不發那個資源) + 聖物「討伐金幣加成」詞條，
                 // 速度還原成玩家原本選的（進場時被強制夾到 5 倍以內）
                 submitWorldBossDamage(eventTotalDamage);
                 if (worldBossPrevBattleSpeed !== null) {battleSpeed = worldBossPrevBattleSpeed; worldBossPrevBattleSpeed = null;}
 
                 const goldFindBonus = (GAME_STATE.worldBossRelic && GAME_STATE.worldBossRelic.affixes)
                     ? GAME_STATE.worldBossRelic.affixes.filter(a => a.stat === 'goldFind').reduce((s, a) => s + a.value, 0) : 0;
-                // ★ 改成由管理員設定的獎勵倍率 (goldPerDamage)，不再是寫死的公式
-                const goldRate = (currentWorldBossConfig && currentWorldBossConfig.goldPerDamage) || 0.05;
+                const wbCfg = currentWorldBossConfig || {};
+                const goldRate = wbCfg.goldPerDamage || 0.05;
+                const diamondRate = wbCfg.diamondPerDamage || 0;
+                const stoneRate = wbCfg.stonePerDamage || 0;
                 const bossGold = Math.floor(Math.max(50, eventTotalDamage * goldRate) * (1 + goldFindBonus / 100));
+                const bossDiamonds = Math.floor(eventTotalDamage * diamondRate);
+                const bossStones = Math.floor(eventTotalDamage * stoneRate);
                 GAME_STATE.gold += bossGold;
+                if (bossDiamonds > 0) GAME_STATE.diamonds += bossDiamonds;
+                if (bossStones > 0) GAME_STATE.forgeStones += bossStones;
+
+                let rewardText = `獲得 <span class="text-fantasy-gold font-bold">${bossGold.toLocaleString()}</span> 金幣`;
+                if (bossDiamonds > 0) rewardText += `、<span class="text-sky-400 font-bold">${bossDiamonds.toLocaleString()}</span> 寶石`;
+                if (bossStones > 0) rewardText += `、<span class="text-stone-300 font-bold">${bossStones.toLocaleString()}</span> 鍛造石`;
 
                 document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-dragon text-rose-500 drop-shadow-[0_0_15px_rgba(244,63,94,0.8)]"></i>';
                 document.getElementById('overlay-title').innerText = '討伐結束';
-                document.getElementById('overlay-desc').innerHTML = `對全服首領造成了 <span class="text-rose-400 font-bold">${eventTotalDamage.toLocaleString()}</span> 點傷害<br>獲得 <span class="text-fantasy-gold font-bold">${bossGold.toLocaleString()}</span> 金幣<br>已提交到全服排行榜！`;
+                document.getElementById('overlay-desc').innerHTML = `對全服首領造成了 <span class="text-rose-400 font-bold">${eventTotalDamage.toLocaleString()}</span> 點傷害<br>${rewardText}<br>已提交到全服排行榜！`;
                 btnNext.innerText = "返回競技場"; btnNext.onclick = () => switchTab('arena');
                 saveGame();
                 if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
