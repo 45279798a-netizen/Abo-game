@@ -1679,11 +1679,12 @@
                             <div id="admin-player-list" class="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar"></div>
                         </div>
 
-                        <!-- ★ 新增：角色數值公式更新後，把所有玩家快取的戰力數字校正回現版本的算法 -->
-                        <div class="glass-panel p-3 rounded-xl border border-[#3e3328] flex flex-col gap-2">
-                            <span class="text-[10px] text-stone-400"><i class="fa-solid fa-arrows-rotate mr-1"></i>角色數值校正</span>
-                            <p class="text-[9px] text-stone-500 leading-relaxed">調整過角色數值公式（例如升星幅度）後，離線玩家的戰力欄位會停留在舊公式，要等他們自己上線才會覆蓋。這裡會讀出所有人的雲端存檔，依照目前版本的公式重新算一次戰力並寫回，不會動到任何人實際的等級／星級／裝備。</p>
-                            <button onclick="adminResyncAllPlayerPower()" id="admin-resync-power-btn" class="w-full py-2 bg-sky-800/70 text-sky-200 text-[11px] font-bold rounded border border-sky-600 hover:bg-sky-700 transition">重新計算所有玩家戰力</button>
+                        <!-- ★ 危險操作：把所有玩家的雲端存檔直接覆蓋回全新玩家的初始狀態，沒有復原機制 -->
+                        <div class="glass-panel p-3 rounded-xl border border-rose-700/60 flex flex-col gap-2">
+                            <span class="text-[10px] text-rose-400 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>重置所有玩家進度（危險操作，無法復原）</span>
+                            <p class="text-[9px] text-stone-500 leading-relaxed">會把「每一位」玩家的雲端存檔直接覆蓋回全新玩家的初始狀態——等級／星級／裝備／英雄／金幣／寶石／賽季進度全部清空，戰力也會一併歸零。沒有復原機制，請只在真的要讓所有人重新開始時使用。</p>
+                            <input id="admin-reset-all-confirm-input" type="text" placeholder="輸入「重置所有人」以解鎖按鈕" oninput="document.getElementById('admin-reset-all-btn').disabled = (this.value !== '重置所有人')" class="w-full bg-black/40 text-rose-200 text-[10px] px-2 py-1.5 rounded border border-rose-700/60 outline-none">
+                            <button onclick="adminResetAllPlayerProgress()" id="admin-reset-all-btn" disabled class="w-full py-2 bg-rose-900/70 text-rose-200 text-[11px] font-bold rounded border border-rose-600 hover:bg-rose-800 transition disabled:opacity-40 disabled:cursor-not-allowed">重置所有玩家進度到初始狀態</button>
                         </div>
             </div>
 
@@ -4081,44 +4082,41 @@
             }
         }
 
-        // ★ 新增：管理員專用——調整角色數值公式（例如升星幅度）後，玩家存檔本身沒問題
-        // （等級/星級/裝備都是原始資料，實際數值永遠即時算出來），唯一會卡住舊數值的是
-        // players/{uid} 裡快取的 power 欄位：只有玩家自己上線廣播陣容時才會覆蓋，離線玩家的
-        // 排行榜/戰力顯示會停留在舊公式算出來的數字。這裡讀出每個人的雲端存檔（saves），
-        // 借用 GAME_STATE.roster/gridSlots 暫時代入現有的 getMyArenaPower() 算一次，
-        // 算完立刻寫回 players/{uid}.power，讓所有人的戰力立刻跟上新版本，不用等各自上線。
-        // ★ 需要 Firestore 規則額外開放管理員讀取 saves collection（預設只有本人能讀自己的存檔）。
-        async function adminResyncAllPlayerPower() {
+        // ★ 危險操作：管理員專用——把「每一位」玩家的雲端存檔直接覆蓋回 DEFAULT_STATE（全新玩家的初始狀態），
+        // 等級/星級/裝備/英雄/金幣/寶石/賽季進度全部清空，power 也一併歸零。沒有復原機制。
+        // 前面有兩層防呆：(1) 必須先在輸入框打對確認文字才會解鎖按鈕 (2) 點下去還會再跳一次原生 confirm。
+        // ★ 需要 Firestore 規則開放管理員讀寫 saves collection（預設只有本人能讀寫自己的存檔）。
+        async function adminResetAllPlayerProgress() {
             if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); return;}
-            if (!confirm('確定要用目前版本的數值公式，重新計算並覆蓋「所有」玩家的戰力欄位嗎？')) return;
-            const btn = document.getElementById('admin-resync-power-btn');
-            if (btn) {btn.disabled = true; btn.innerText = '計算中...';}
+            const confirmInput = document.getElementById('admin-reset-all-confirm-input');
+            if (!confirmInput || confirmInput.value !== '重置所有人') {showToast('請先輸入正確的確認文字'); return;}
+            if (!confirm('真的要把「所有玩家」的進度重置回初始狀態嗎？\n金幣／寶石／英雄／星級／裝備／賽季進度全部會清空，這個動作沒有復原機制！')) return;
+            const btn = document.getElementById('admin-reset-all-btn');
+            if (btn) {btn.disabled = true; btn.innerText = '重置中...';}
             let success = 0, failed = 0;
-            const savedRoster = GAME_STATE.roster, savedGridSlots = GAME_STATE.gridSlots; // 借位算完要還原，不能動到管理員自己的存檔
             try {
                 const savesSnap = await fbDb.collection('saves').get();
+                const freshStateJson = JSON.stringify(DEFAULT_STATE);
                 for (const doc of savesSnap.docs) {
                     try {
-                        const raw = doc.data();
-                        if (!raw || !raw.data) continue;
-                        const state = JSON.parse(raw.data);
-                        GAME_STATE.roster = state.roster || {};
-                        GAME_STATE.gridSlots = state.gridSlots || [];
-                        const newPower = getMyArenaPower();
-                        await fbDb.collection('players').doc(doc.id).set({power: newPower}, {merge: true});
+                        await fbDb.collection('saves').doc(doc.id).set({
+                            data: freshStateJson, plausible: true,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        await fbDb.collection('players').doc(doc.id).set({power: 0}, {merge: true});
                         success++;
                     } catch (err) {
-                        console.warn('重新計算戰力失敗：', doc.id, err); failed++;
+                        console.warn('重置失敗：', doc.id, err); failed++;
                     }
                 }
-                showToast(`✅ 戰力校正完成：成功 ${success} 位，失敗 ${failed} 位`);
+                showToast(`✅ 重置完成：成功 ${success} 位，失敗 ${failed} 位`);
                 loadAdminPlayerList();
             } catch (err) {
                 console.warn('讀取存檔清單失敗：', err);
-                showToast('讀取失敗：' + (err.code || err.message || '未知錯誤') + '（可能是 Firestore 規則還沒開放管理員讀取 saves）');
+                showToast('讀取失敗：' + (err.code || err.message || '未知錯誤') + '（可能是 Firestore 規則還沒開放管理員讀寫 saves）');
             } finally {
-                GAME_STATE.roster = savedRoster; GAME_STATE.gridSlots = savedGridSlots; // 還原成管理員自己的資料
-                if (btn) {btn.disabled = false; btn.innerText = '重新計算所有玩家戰力';}
+                if (btn) {btn.disabled = true; btn.innerText = '重置所有玩家進度到初始狀態';}
+                if (confirmInput) confirmInput.value = ''; // 用完清空，下次要再重新輸入一次確認文字才能按
             }
         }
 
