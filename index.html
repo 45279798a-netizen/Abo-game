@@ -481,8 +481,12 @@
         </div>
         <div class="nav-inner flex-1 flex w-full h-full">
             <!-- 導覽列 -->
-            <button onclick="switchTab('battle')" class="nav-item active" data-target="battle"><i
-                    class="fa-solid fa-khanda text-lg mb-1"></i><span class="text-[10px] font-bold">遠征</span></button>
+            <button onclick="switchTab('battle')" class="nav-item active relative" data-target="battle"><i
+                    class="fa-solid fa-khanda text-lg mb-1"></i><span class="text-[10px] font-bold">遠征</span>
+                <div id="nav-campaign-farm-dot"
+                    class="absolute top-0 right-2 w-2 h-2 bg-emerald-400 rounded-full animate-pulse hidden border border-black"
+                    title="背景刷本進行中"></div>
+            </button>
             <button onclick="switchTab('dungeon')" class="nav-item relative" data-target="dungeon"><i
                     class="fa-solid fa-dungeon text-lg mb-1 text-amber-500"></i><span
                     class="text-[10px] font-bold text-amber-500">秘境</span>
@@ -601,7 +605,7 @@
                     <i class="fa-solid fa-chevron-up text-[10px]"></i>
                 </button>
 
-                <div class="absolute top-16 left-3 right-3 z-20 flex flex-col items-center gap-1.5">
+                <div id="battle-toolbar-wrap" class="absolute top-16 left-3 right-3 z-20 flex flex-col items-center gap-1.5">
                     <div id="battle-toolbar-content"
                         class="flex flex-col items-center gap-1.5 pointer-events-none w-full">
                         <!-- 第一列：主線進度徽章，獨立且更醒目 -->
@@ -637,6 +641,11 @@
                             <button onclick="switchTab('formation')"
                                 class="flex flex-col items-center justify-center w-14 py-1 rounded-lg text-[9px] font-bold text-stone-300 hover:text-white transition active:scale-95">
                                 <i class="fa-solid fa-chess-board text-xs mb-0.5"></i>佈陣
+                            </button>
+                            <div class="w-[1px] bg-[#3e3328] my-1"></div>
+                            <button onclick="toggleCampaignAutoFarm()" id="btn-campaign-autofarm"
+                                class="flex flex-col items-center justify-center w-14 py-1 rounded-lg text-[9px] font-bold text-stone-400 border border-transparent transition active:scale-95">
+                                <i class="fa-solid fa-clock-rotate-left text-xs mb-0.5"></i>刷本: 關
                             </button>
                         </div>
                     </div>
@@ -676,6 +685,15 @@
                                 class="btn-gold px-8 py-2.5 rounded-lg font-bold shadow-xl text-xs md:text-sm"
                                 id="btn-next-battle"><i class="fa-solid fa-play mr-1"></i>繼續挑戰</button>
                         </div>
+                    </div>
+
+                    <!-- ★ 新增：競技場邀請對戰改成「先演算好再回放展示」，這是主控端隱藏演算時蓋在畫面上的遮罩，
+                         玩家看不到底下真正的戰鬥怎麼跑，等演算完會自動切換成雙方都看得到的回放畫面 -->
+                    <div id="arena-compute-overlay"
+                        class="hidden absolute inset-0 bg-black/90 z-[55] flex-col items-center justify-center gap-3 backdrop-blur-sm">
+                        <i class="fa-solid fa-dice-d20 text-4xl text-fantasy-gold animate-spin"></i>
+                        <p class="text-stone-300 text-xs font-bold">對戰演算中...</p>
+                        <p class="text-stone-500 text-[9px]">正在計算戰鬥結果，稍後將與對手同步觀看回放</p>
                     </div>
                 </div>
             </div>
@@ -1474,7 +1492,7 @@
                     <!-- 信件子頁 -->
                     <div id="arena-mail-panel" class="hidden flex-col gap-2">
                         <p class="text-[9px] text-stone-500">管理員可能會透過信件發放資源，記得來這裡領取。</p>
-                        <div id="arena-mail-list" class="space-y-2"></div>
+                        <div id="arena-mail-list" class="space-y-2 max-h-[420px] overflow-y-auto custom-scrollbar pr-0.5"></div>
                     </div>
 
                 </div>
@@ -1640,6 +1658,13 @@
                             </div>
                             <div id="admin-player-list" class="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar"></div>
                         </div>
+
+                        <!-- ★ 新增：角色數值公式更新後，把所有玩家快取的戰力數字校正回現版本的算法 -->
+                        <div class="glass-panel p-3 rounded-xl border border-[#3e3328] flex flex-col gap-2">
+                            <span class="text-[10px] text-stone-400"><i class="fa-solid fa-arrows-rotate mr-1"></i>角色數值校正</span>
+                            <p class="text-[9px] text-stone-500 leading-relaxed">調整過角色數值公式（例如升星幅度）後，離線玩家的戰力欄位會停留在舊公式，要等他們自己上線才會覆蓋。這裡會讀出所有人的雲端存檔，依照目前版本的公式重新算一次戰力並寫回，不會動到任何人實際的等級／星級／裝備。</p>
+                            <button onclick="adminResyncAllPlayerPower()" id="admin-resync-power-btn" class="w-full py-2 bg-sky-800/70 text-sky-200 text-[11px] font-bold rounded border border-sky-600 hover:bg-sky-700 transition">重新計算所有玩家戰力</button>
+                        </div>
             </div>
 
             <!-- ★ 新增：背包，查看目前擁有的英雄碎片 -->
@@ -1665,7 +1690,7 @@
                         <span class="text-[10px] text-stone-400"><i class="fa-solid fa-coins text-purple-400 mr-1"></i>黑市貨幣</span>
                         <span id="bm-currency-display" class="text-purple-300 font-bold text-sm">0</span>
                     </div>
-                    <p class="text-[8px] text-stone-500">匯率：1 寶石 = 500 黑市貨幣，雙向都能換</p>
+                    <p class="text-[8px] text-stone-500">匯率：1 寶石 = 10000 黑市貨幣，雙向都能換</p>
                     <div class="flex gap-2">
                         <input id="bm-exchange-amount" type="number" placeholder="輸入數量" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                         <button onclick="exchangeDiamondToBMC()" class="shrink-0 px-2 py-1.5 bg-sky-900/60 text-sky-300 text-[9px] font-bold rounded border border-sky-700 hover:bg-sky-800 transition">寶石→黑市幣</button>
@@ -1753,7 +1778,7 @@
                     </h4>
                     <div class="grid grid-cols-4 gap-2" id="modal-equip-slots"></div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 gap-3">
                     <div
                         class="bg-[#1f1610] p-3 rounded-xl border border-[#3e3328] shadow-inner-dark flex flex-col">
                         <h4 class="font-bold text-stone-200 text-[10px] mb-1.5 border-b border-[#3e3328] pb-1">專屬技能（小技能／大招）
@@ -1775,9 +1800,9 @@
             </div>
             <div class="p-3 bg-[#0a0806] border-t border-[#5a4634] flex gap-3 shrink-0 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]"
                 id="modal-hero-actions">
-                <button onmousedown="startLevelUpHold()" onmouseup="stopLevelUpHold()"
-                    onmouseleave="cancelLevelUpHold()" ontouchstart="startLevelUpHold()"
-                    ontouchend="stopLevelUpHold()" ontouchcancel="cancelLevelUpHold()" id="btn-upgrade-lvl"
+                <button onmousedown="levelUpLongPresser.start()" onmouseup="levelUpLongPresser.stop()"
+                    onmouseleave="levelUpLongPresser.cancel()" ontouchstart="levelUpLongPresser.start()"
+                    ontouchend="levelUpLongPresser.stop()" ontouchcancel="levelUpLongPresser.cancel()" id="btn-upgrade-lvl"
                     class="flex-1 py-2 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs flex flex-col items-center justify-center transition active:scale-95 hover:border-fantasy-gold">升級</button>
                 <button onmousedown="starLongPresser.start()" onmouseup="starLongPresser.stop()" onmouseleave="starLongPresser.cancel()" ontouchstart="starLongPresser.start()" ontouchend="starLongPresser.stop()" ontouchcancel="starLongPresser.cancel()" id="btn-upgrade-star"
                     class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">覺醒</button>
@@ -2543,7 +2568,7 @@
             const maxLevelMult = 1 + (MAX_HERO_LEVEL - 1) * 0.12;
             // ★ 星級現在無上限，這裡不能直接用 MAX_STAR_LEVEL (Infinity) 算，不然這個合理性檢查會直接失效。
             // 改用一個「夠寬鬆但還是有限」的估計值，只用在這個粗略防呆檢查上，跟遊戲實際的星級上限脫鉤。
-            const maxStarMult = 1 + (PLAUSIBLE_MAX_STAR_ESTIMATE - 1) * 0.15;
+            const maxStarMult = 1 + (PLAUSIBLE_MAX_STAR_ESTIMATE - 1) * 0.007; // ★ 同步 getEffectiveHero 改過的星級加成幅度
             const maxArtifactMult = 1 + (ALTAR_MAX_ARTIFACT_TIER * 0.10); // 聖物強化滿階 10 階 (+100%)
             const maxEquipMult = 1.6; // 4 件裝備都滿 20 級的粗估加成上限
             const totalMult = maxLevelMult * maxStarMult * maxArtifactMult * maxEquipMult;
@@ -2680,41 +2705,103 @@
            全域聊天室：所有玩家共用同一個聊天頻道，即時同步（onSnapshot），只保留最近 50 則訊息。
            ============================================================ */
         let chatUnsub = null;
+        let chatLiveDocs = []; // 即時監聽目前拿到的最新 50 筆（Firestore DocumentSnapshot 陣列，由新到舊）
+        let chatOlderMessages = []; // 手動「載入更早的訊息」累積的歷史訊息資料（一樣由新到舊存放）
+        let chatOldestDocSnapshot = null; // 目前已知最舊一筆訊息的 DocumentSnapshot，當作下一次載入更早訊息的分頁游標
+        let chatHasMoreHistory = true;
+        let chatLoadingMoreHistory = false;
         function listenChat() {
             if (!mpConnected) return;
             populateChatShareHeroSelect();
             if (chatUnsub) return; // 已經在監聽了，不用重複訂閱
             chatUnsub = fbDb.collection('globalChat').orderBy('sentAt', 'desc').limit(50)
                 .onSnapshot(snap => {
-                    const box = document.getElementById('arena-chat-messages');
-                    if (!box) return;
-                    const msgs = [];
-                    snap.forEach(doc => msgs.push(doc.data()));
-                    msgs.reverse();
-                    box.innerHTML = msgs.map(m => {
-                        const isMe = m.senderUid === fbUser.uid;
-                        // ★ 新增：分享英雄的訊息改顯示成一張小型數值卡，不是純文字
-                        if (m.type === 'hero_share' && m.heroCard) {
-                            const c = m.heroCard;
-                            return `<div class="text-[10px] ${isMe ? 'text-sky-300' : 'text-stone-300'} mb-1">
-                                <span class="font-bold">${m.senderName || '???'}：</span>分享了英雄
-                                <div class="mt-1 bg-black/40 border border-amber-700/40 rounded-lg p-2 inline-block">
-                                    <div class="text-amber-300 font-bold text-[11px] mb-1">${c.name}（${c.rarity} · Lv.${c.level} · ${c.star}★）</div>
-                                    <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px] text-stone-300">
-                                        <span>⚡戰力 ${c.power.toLocaleString()}</span>
-                                        <span>❤️生命 ${c.hp.toLocaleString()}</span>
-                                        <span>⚔️攻擊 ${c.atk.toLocaleString()}</span>
-                                        <span>🛡️防禦 ${c.def.toLocaleString()}</span>
-                                        <span>💥暴擊 ${c.crit}%</span>
-                                        <span>🔨聖物 ${c.artifactTier}階</span>
-                                    </div>
-                                </div>
-                            </div>`;
-                        }
-                        return `<div class="text-[10px] ${isMe ? 'text-sky-300' : 'text-stone-300'}"><span class="font-bold">${m.senderName || '???'}：</span>${m.text}</div>`;
-                    }).join('');
-                    box.scrollTop = box.scrollHeight;
+                    chatLiveDocs = snap.docs; // 由新到舊
+                    if (chatOldestDocSnapshot === null && chatLiveDocs.length > 0) {
+                        chatOldestDocSnapshot = chatLiveDocs[chatLiveDocs.length - 1];
+                    }
+                    renderChatMessages();
                 }, err => console.warn('讀取聊天室失敗：', err));
+        }
+
+        // ★ 新增：聊天室原本只能看到最新 50 筆，沒辦法往前翻。這裡加上「載入更早的訊息」，
+        // 用 Firestore 的分頁游標(startAfter)在即時監聽的 50 筆之外，另外一批一批往前抓歷史訊息，
+        // 不用把即時監聽的 limit 一次拉超大（那樣每次有人發言，全部人都要重新下載整段歷史，流量會爆量）。
+        async function loadEarlierChatMessages() {
+            if (chatLoadingMoreHistory || !chatHasMoreHistory) return;
+            const cursor = chatOldestDocSnapshot;
+            if (!cursor) return;
+            chatLoadingMoreHistory = true;
+            renderChatMessages(); // 先重畫一次，把按鈕換成「讀取中」
+            try {
+                const snap = await fbDb.collection('globalChat').orderBy('sentAt', 'desc').startAfter(cursor).limit(30).get();
+                if (snap.empty) {
+                    chatHasMoreHistory = false;
+                } else {
+                    chatOlderMessages = chatOlderMessages.concat(snap.docs.map(d => d.data()));
+                    chatOldestDocSnapshot = snap.docs[snap.docs.length - 1];
+                    if (snap.docs.length < 30) chatHasMoreHistory = false;
+                }
+            } catch (err) {
+                console.warn('載入更早的聊天訊息失敗：', err);
+                showToast('載入更早的訊息失敗，請稍後再試');
+            } finally {
+                chatLoadingMoreHistory = false;
+                renderChatMessages();
+            }
+        }
+
+        // ★ 把聊天訊息的實際繪製邏輯抽出來，即時監聽收到新訊息、或按下「載入更早的訊息」都呼叫這裡。
+        // 會盡量維持捲動位置：本來在最底部（看最新訊息）的話畫完還是貼底；往前翻歷史訊息時則盡量維持
+        // 原本畫面看到的內容，不會因為前面塞了新內容而整個跳掉。
+        function renderChatMessages() {
+            const box = document.getElementById('arena-chat-messages');
+            if (!box || !fbUser) return;
+            const liveMsgs = chatLiveDocs.map(d => d.data()).slice().reverse(); // 轉成舊到新
+            const olderMsgsAsc = chatOlderMessages.slice().reverse(); // chatOlderMessages 內部也是新到舊存放，同樣要反轉
+            const allMsgs = olderMsgsAsc.concat(liveMsgs);
+
+            const prevScrollHeight = box.scrollHeight;
+            const prevScrollTop = box.scrollTop;
+            const wasNearBottom = prevScrollHeight - prevScrollTop - box.clientHeight < 60;
+
+            let html = '';
+            if (chatHasMoreHistory) {
+                html += `<div class="text-center mb-2"><button id="chat-load-earlier-btn" class="text-[9px] text-stone-400 hover:text-stone-200 border border-[#3e3328] rounded-full px-3 py-1 transition">${chatLoadingMoreHistory ? '讀取中...' : '載入更早的訊息'}</button></div>`;
+            }
+            html += allMsgs.map(m => {
+                const isMe = m.senderUid === fbUser.uid;
+                // ★ 分享英雄的訊息改顯示成一張小型數值卡，不是純文字
+                if (m.type === 'hero_share' && m.heroCard) {
+                    const c = m.heroCard;
+                    return `<div class="text-[10px] ${isMe ? 'text-sky-300' : 'text-stone-300'} mb-1">
+                        <span class="font-bold">${m.senderName || '???'}：</span>分享了英雄
+                        <div class="mt-1 bg-black/40 border border-amber-700/40 rounded-lg p-2 inline-block">
+                            <div class="text-amber-300 font-bold text-[11px] mb-1">${c.name}（${c.rarity} · Lv.${c.level} · ${c.star}★）</div>
+                            <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px] text-stone-300">
+                                <span>⚡戰力 ${c.power.toLocaleString()}</span>
+                                <span>❤️生命 ${c.hp.toLocaleString()}</span>
+                                <span>⚔️攻擊 ${c.atk.toLocaleString()}</span>
+                                <span>🛡️防禦 ${c.def.toLocaleString()}</span>
+                                <span>💥暴擊 ${c.crit}%</span>
+                                <span>🔨聖物 ${c.artifactTier}階</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+                return `<div class="text-[10px] ${isMe ? 'text-sky-300' : 'text-stone-300'}"><span class="font-bold">${m.senderName || '???'}：</span>${m.text}</div>`;
+            }).join('');
+            box.innerHTML = html;
+
+            const loadBtn = document.getElementById('chat-load-earlier-btn');
+            if (loadBtn) loadBtn.onclick = loadEarlierChatMessages;
+
+            if (wasNearBottom) {
+                box.scrollTop = box.scrollHeight;
+            } else {
+                // 往前翻歷史訊息：維持原本看到的相對位置，不要讓畫面因為前面多塞了內容而跳走
+                box.scrollTop = prevScrollTop + (box.scrollHeight - prevScrollHeight);
+            }
         }
 
         // 填滿分享用的英雄下拉選單
@@ -2786,7 +2873,11 @@
             GAME_STATE.currentMode = 'arena';
             combatEntities = [];
             document.getElementById('battle-stage-title').innerText = `競技場：挑戰 ${opponent.displayName || '???'}`;
-            setTimeout(initCombatUnits, 100);
+            setTimeout(() => {
+                initCombatUnits();
+                // ★ 只有主控端需要這份「開戰當下」的快照：演算完之後要把畫面重置回滿血，重新播一次給玩家看
+                if (isArenaHost) arenaInitialEntitiesSnapshot = JSON.parse(JSON.stringify(combatEntities));
+            }, 100);
             refreshNavHighlightForMode();
             updateDynamicBackground();
         }
@@ -2807,7 +2898,21 @@
         let arenaMatchId = null;
         let isArenaHost = false;
         let arenaMatchUnsub = null;
-        let arenaLastEventIndex = 0;
+
+        /* ★ 改版：競技場對戰改成「先演算好，再回傳雙方裝置演示」。
+           主控端還是用完整的正式戰鬥引擎跑一次真正的戰鬥（規則完全沒變），但這次是「隱藏」在
+           遮罩畫面後面用最快速度默默跑完，玩家看不到；跑完之後把完整的事件紀錄連同勝負結果
+           一次性寫回 Firestore，接著主控端跟觀戰端才「同時」開始播放同一份紀錄，
+           兩邊看到的是一模一樣的一場演出，不再是主控端即時打、觀戰端另外做一個大略同步的畫面。 */
+        const ARENA_HOST_COMPUTE_SPEED = 30; // 隱藏演算階段用的內部速度，反正玩家看不到，直接拉到很快
+        let arenaHostEventLog = []; // 主控端本機累積的完整事件紀錄，演算完才一次性寫回 Firestore
+        let arenaHostComputing = false; // true = 主控端正在「隱藏演算」，遮罩蓋著畫面，還沒到要展示給玩家看的時候
+        let arenaInitialEntitiesSnapshot = null; // 開戰當下（尚未有任何命中）的完整陣容快照，回放前用來把畫面重置回滿血
+        let arenaReplayActive = false; // true 時 gameLoop 改成播放回放動畫，不會真的跑回合決策邏輯
+        let arenaReplayEvents = []; // 目前要依序播放的完整事件序列
+        let arenaReplayIndex = 0;
+        let arenaReplayTimerId = null;
+        let arenaReplayPendingResult = null; // {isWin} 回放播完之後才真正呼叫 handleCombatEnd 顯示結果
 
         // 開始監聽有沒有人邀請自己對戰（在競技場畫面時持續監聽，離開畫面就取消）
         let notifiedInviteIds = new Set(); // 記住已經跳過通知的邀請 id，避免同一則邀請因為畫面重新整理又跳一次
@@ -2923,53 +3028,112 @@
             } catch (err) {console.warn('接受邀請失敗：', err); showToast('接受邀請失敗：' + (err.code || err.message || '未知錯誤'));}
         }
 
-        // ★ 主控端：跟以前的「即時挑戰」完全同一套戰鬥流程，只是額外記住 arenaMatchId，
-        // 讓 executeHit 命中時可以順便把結果廣播出去（見 pushArenaLiveEvent 呼叫點）。
-        // 速度固定 5 倍，戰鬥結束後會還原成玩家原本選的速度。
+        // ★ 主控端：跟以前的「即時挑戰」完全同一套戰鬥流程（規則完全沒變），
+        // 差別是這次整場戰鬥都在「隱藏演算」遮罩後面用最快速度默默跑完，玩家看不到，
+        // 每次命中先累積進 arenaHostEventLog（見 pushArenaLiveEvent），等真正打完才一次性寫回 Firestore
+        // 並切換成雙方都看得到的「回放」畫面（見 finishArenaHostComputation / startArenaReplay）。
         let arenaPrevBattleSpeed = null;
         function startArenaLiveMatchAsHost(opponent, matchId) {
-            arenaPrevBattleSpeed = battleSpeed; battleSpeed = 5; // ★ 固定 5 倍速
+            arenaPrevBattleSpeed = battleSpeed; battleSpeed = ARENA_HOST_COMPUTE_SPEED; // ★ 隱藏演算，玩家看不到，直接拉到最快
             arenaMatchId = matchId;
+            arenaHostEventLog = [];
+            arenaHostComputing = true;
+            const overlay = document.getElementById('arena-compute-overlay');
+            if (overlay) {overlay.classList.remove('hidden'); overlay.classList.add('flex');}
+            const toolbarWrap = document.getElementById('battle-toolbar-wrap');
+            const toolbarToggleBtn = document.getElementById('btn-toggle-toolbar');
+            if (toolbarWrap) toolbarWrap.classList.add('hidden');
+            if (toolbarToggleBtn) toolbarToggleBtn.classList.add('hidden');
             startArenaBattle(opponent);
         }
 
-        // 把一次命中結果廣播給觀戰端；用 arrayUnion 附加，不需要先讀取，減少一來一回
+        // 主控端這場戰鬥的每一次命中，先在本機累積，等真正打完才一次性寫回 Firestore（見 finishArenaHostComputation），
+        // 不再像以前那樣每命中一次就寫一次資料庫。
         function pushArenaLiveEvent(ev) {
-            if (!arenaMatchId || !mpConnected) return;
-            fbDb.collection('arenaMatches').doc(arenaMatchId).update({
-                events: firebase.firestore.FieldValue.arrayUnion(ev)
-            }).catch(err => console.warn('廣播對戰事件失敗：', err));
+            arenaHostEventLog.push(ev);
+        }
+
+        // ★ 隱藏演算完全結束的那一刻（真正的戰鬥已經跑完一次，含所有技能/暴擊判定，但玩家還沒看到任何畫面）：
+        // 把完整事件紀錄＋勝負結果一次性寫回 Firestore，讓觀戰端跟自己接下來都改成播放這同一份紀錄。
+        function finishArenaHostComputation(isWin) {
+            arenaHostComputing = false;
+            const winnerUid = isWin ? fbUser.uid : (arenaOpponentSnapshot ? arenaOpponentSnapshot.uid : null);
+            if (arenaMatchId) {
+                fbDb.collection('arenaMatches').doc(arenaMatchId).update({
+                    status: 'done', winnerUid, events: arenaHostEventLog
+                }).catch(err => console.warn('提交對戰結果失敗：', err));
+            }
+            if (arenaPrevBattleSpeed !== null) {battleSpeed = arenaPrevBattleSpeed; arenaPrevBattleSpeed = null;}
+            const overlay = document.getElementById('arena-compute-overlay');
+            if (overlay) {overlay.classList.add('hidden'); overlay.classList.remove('flex');}
+            const toolbarWrap = document.getElementById('battle-toolbar-wrap');
+            const toolbarToggleBtn = document.getElementById('btn-toggle-toolbar');
+            if (toolbarWrap) toolbarWrap.classList.remove('hidden');
+            if (toolbarToggleBtn) toolbarToggleBtn.classList.remove('hidden');
+            startArenaReplay(arenaHostEventLog, isWin, 'player'); // 'player'：主控端自己這份 combatEntities 裡，自己就是 player 陣營
         }
 
         // ★ 觀戰端：不使用主要的戰鬥引擎/canvas，改成簡化的「血條＋文字戰報」直播畫面，即時監聽主控端的戰鬥結果
         let arenaGuestOpponentData = null; // 觀戰端專用：對手（主控端）的隊伍資料，initCombatUnits 的 'arena_guest' 分支會用到
         function startArenaLiveMatchAsGuest(matchId, invite) {
             arenaGuestOpponentData = invite;
-            arenaLastEventIndex = 0;
             arenaGuestAnimQueue = [];
             snapshotCurrentBattleIfNeeded();
             switchTab('battle', {internal: true});
             GAME_STATE.currentMode = 'arena_guest';
             combatEntities = [];
             document.getElementById('battle-stage-title').innerText = `競技場觀戰：對戰 ${invite.fromName || '???'}`;
-            setTimeout(initCombatUnits, 100);
+            setTimeout(() => {
+                initCombatUnits();
+                arenaInitialEntitiesSnapshot = JSON.parse(JSON.stringify(combatEntities)); // 回放前重置畫面用
+            }, 100);
             refreshNavHighlightForMode();
             updateDynamicBackground();
 
+            // ★ 主控端現在只會寫「一次」完整結果（不再一筆一筆增量廣播），
+            // 這裡收到 status:'done' 就直接拿完整的 events 開始播放同一份回放，不用再自己一路累積讀取進度
             if (arenaMatchUnsub) arenaMatchUnsub();
             arenaMatchUnsub = fbDb.collection('arenaMatches').doc(matchId).onSnapshot(doc => {
                 if (!doc.exists) return;
                 const data = doc.data();
-                const events = data.events || [];
-                for (; arenaLastEventIndex < events.length; arenaLastEventIndex++) {
-                    applyArenaLiveEvent(events[arenaLastEventIndex]);
-                }
                 if (data.status === 'done') {
-                    const iWon = data.winnerUid === fbUser.uid;
                     if (arenaMatchUnsub) {arenaMatchUnsub(); arenaMatchUnsub = null;}
-                    handleCombatEnd(iWon);
+                    const iWon = data.winnerUid === fbUser.uid;
+                    startArenaReplay(data.events || [], iWon); // 預設 'enemy' 視角：觀戰端畫面裡主控端＝敵方
                 }
             }, err => console.warn('監聽對戰結果失敗：', err));
+        }
+
+        // ★ 共用的競技場「回放展示」：不管是主控端剛演算完、還是觀戰端收到主控端寫回的完整紀錄，
+        // 兩邊都走這裡——先把畫面重置回開戰當下的滿血佈陣，再依序播放同一份事件紀錄，
+        // 兩邊看到的是完全相同的一場「演示」，播完才真正呼叫 handleCombatEnd 顯示結果。
+        // myTeamLabel: 'player' 用在主控端回放自己這場（自己＝player 陣營）；不傳則預設 'enemy'（觀戰端視角，主控端＝敵方）。
+        function startArenaReplay(events, isWin, myTeamLabel) {
+            arenaReplayActive = true;
+            arenaReplayEvents = events || [];
+            arenaReplayIndex = 0;
+            arenaReplayPendingResult = {isWin, myTeamLabel};
+            arenaGuestAnimQueue = [];
+            floatingTexts = []; visualEffects = []; screenShake = 0;
+            if (arenaInitialEntitiesSnapshot) {
+                combatEntities = JSON.parse(JSON.stringify(arenaInitialEntitiesSnapshot));
+                forceRepositionUnits();
+            }
+            DOM_CACHE.battleStateOverlay.style.opacity = '0'; DOM_CACHE.battleStateOverlay.style.pointerEvents = 'none';
+            if (arenaReplayTimerId) clearInterval(arenaReplayTimerId);
+            arenaReplayTimerId = setInterval(stepArenaReplay, 400); // 每 0.4 秒播放一次事件，速度可觀賞、不用等太久
+        }
+
+        function stepArenaReplay() {
+            if (arenaReplayIndex >= arenaReplayEvents.length) {
+                clearInterval(arenaReplayTimerId); arenaReplayTimerId = null;
+                arenaReplayActive = false;
+                const pending = arenaReplayPendingResult; arenaReplayPendingResult = null;
+                if (pending) handleCombatEnd(pending.isWin); // ★ 回放播完，這次才是真的要顯示結果
+                return;
+            }
+            applyArenaLiveEvent(arenaReplayEvents[arenaReplayIndex], arenaReplayPendingResult && arenaReplayPendingResult.myTeamLabel);
+            arenaReplayIndex++;
         }
 
         // ★ 把主控端傳來的每一次命中，套用到觀戰端「自己這台裝置上」實際存在的 combatEntities，
@@ -2979,12 +3143,14 @@
         // 各自獨立運作，不會互相影響。每次收到事件就排一個動畫任務，用自己的計時器驅動位移，
         // 傷害/飄字則立刻套用，不等動畫播完（觀戰用途，抓个大概節奏即可，不用跟主控端影格對影格同步）。
         let arenaGuestAnimQueue = [];
-        function applyArenaLiveEvent(ev) {
-            // ★ 修正真正的 bug：ev.targetSide 的 'my'/'opp' 是從「主控端」的視角記錄的（'my' = 主控端自己），
-            // 但在「觀戰端」的畫面裡，主控端的隊伍是顯示成敵方 (team:'enemy')，不是我方——
-            // 原本這裡的對應寫反了，導致每一個事件都去找錯的陣營，永遠找不到目標，畫面才會完全沒反應，
-            // 靜靜卡著直到最後 status 變成 done 才突然跳出勝負結果。
-            const findEntity = (side, heroId) => combatEntities.find(e => e.baseId === heroId && e.team === (side === 'my' ? 'enemy' : 'player'));
+        function applyArenaLiveEvent(ev, myTeamLabel) {
+            // ★ ev.attackerSide/targetSide 的 'my'/'opp' 是從「主控端」視角記錄的（'my' = 主控端自己）。
+            // myTeamLabel 決定「主控端自己」在目前這台裝置的 combatEntities 裡對應到哪個陣營：
+            // - 觀戰端畫面：主控端＝敵方，預設不傳 myTeamLabel，'my' 對應 'enemy'
+            // - 主控端自己回放：自己＝player 陣營，呼叫時會傳 'player'，'my' 對應 'player'
+            const myLabel = myTeamLabel || 'enemy';
+            const oppLabel = myLabel === 'enemy' ? 'player' : 'enemy';
+            const findEntity = (side, heroId) => combatEntities.find(e => e.baseId === heroId && e.team === (side === 'my' ? myLabel : oppLabel));
             const attacker = findEntity(ev.attackerSide, ev.attackerHeroId);
             const target = findEntity(ev.targetSide, ev.targetHeroId);
             if (!target) return;
@@ -3251,14 +3417,14 @@
         }
 
         /* ============================================================
-           黑市：玩家對玩家交易英雄碎片，用「黑市貨幣」計價（1 寶石 = 500 黑市貨幣，雙向可換）。
+           黑市：玩家對玩家交易英雄碎片，用「黑市貨幣」計價（1 寶石 = 10000 黑市貨幣，雙向可換）。
            賣家上架時碎片立刻從背包扣除、進入「寄售中」；買家付款後，碎片直接進買家背包，
            賣家收到的錢會先扣 10% 手續費，用信件系統匯過去（因為買家的裝置沒有權限直接修改賣家的
            本地存檔，透過雙方都能存取的信箱來完成款項交割，是這個架構下最穩妥的做法）。
            ★ 跟其他多人功能一樣的老實提醒：這是「client 端互相信任」的交易系統，沒有真正的伺服器
            裁判在中間驗證每一步，本質上跟這整個遊戲的其他資源一樣沒辦法做到滴水不漏的防作弊。
            ============================================================ */
-        const BLACK_MARKET_DIAMOND_RATE = 500; // 1 寶石 = 500 黑市貨幣
+        const BLACK_MARKET_DIAMOND_RATE = 10000; // ★ 匯率調整：1 寶石 = 10000 黑市貨幣
         const BLACK_MARKET_FEE_RATE = 0.10; // 10% 交易手續費
         let bmBrowseUnsub = null, bmMineUnsub = null;
         let currentBMSubTab = 'browse';
@@ -3473,11 +3639,12 @@
         let arenaMailUnsub = null;
         let mailNotifyInitialized = false; // 用來分辨「第一次載入的舊信件」跟「之後真的新收到的信件」，避免一進遊戲就狂跳通知
         let lastMailCount = 0;
+        let lastMailMessages = []; // ★ 快取最新一次收到的完整信件陣列，「載入更多」按鈕靠這份資料重新畫，不用重新訂閱
+        let mailRenderLimit = 20; // ★ 新增：信件分頁式顯示，一次只畫這麼多筆，避免信件越存越多、頁面被撐得越來越長
         function listenPlayerMail() {
             if (!mpConnected) return;
             if (arenaMailUnsub) arenaMailUnsub();
             arenaMailUnsub = fbDb.collection('mail').doc(fbUser.uid).onSnapshot(doc => {
-                const list = document.getElementById('arena-mail-list');
                 const dot = document.getElementById('arena-mail-dot');
                 const messages = (doc.exists && doc.data().messages) || [];
                 // ★ 新增：真的收到新信件時跳提示通知（不是每次分頁重整都跳，只有信件數量比上次多才算）
@@ -3488,42 +3655,61 @@
                     const newest = messages[messages.length - 1];
                     showToast(`📬 收到新信件：${newest.title || '無標題'}`);
                     lastMailCount = messages.length;
+                    mailRenderLimit = 20; // 有新信件時，分頁重置回第一頁，確保新信件一定看得到
                 } else {
                     lastMailCount = messages.length;
                 }
-                if (!list) return;
                 const unclaimedCount = messages.filter(m => !m.claimed).length;
                 if (dot) dot.classList.toggle('hidden', unclaimedCount === 0 || !document.getElementById('arena-mail-panel').classList.contains('hidden'));
-                if (messages.length === 0) {
-                    list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-6">信箱空空如也</div>`;
-                    return;
-                }
-                list.innerHTML = '';
-                [...messages].reverse().forEach(msg => {
-                    const rewardLabels = {gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', specialTickets: '特急招募卷', honorPoints: '榮譽點數', starCoins: '賽季勳章', transcendCrystals: '超越結晶', blackMarketCurrency: '黑市貨幣'};
-                    let rewardText = Object.entries(msg.rewards || {}).filter(([k, v]) => v > 0 && rewardLabels[k])
-                        .map(([k, v]) => `${rewardLabels[k]} +${v}`).join('／');
-                    if (msg.rewards && msg.rewards.heroId) {
-                        const dbHero = HERO_DATABASE.find(h => h.id === msg.rewards.heroId);
-                        if (dbHero) {
-                            const heroText = msg.rewards.heroGrantType === 'hero' ? `${dbHero.name}（角色）` : `${dbHero.name} 碎片 x${msg.rewards.heroShardAmount || 10}`;
-                            rewardText = rewardText ? `${rewardText}／${heroText}` : heroText;
-                        }
-                    }
-                    const card = document.createElement('div');
-                    card.className = `glass-panel p-3 rounded-xl border ${msg.claimed ? 'border-[#3e3328] opacity-60' : 'border-emerald-600/50'}`;
-                    card.innerHTML = `
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-[11px] font-bold text-stone-200">${msg.title || '無標題'}</span>
-                            ${msg.claimed ? '<span class="text-[9px] text-stone-500">已領取</span>' : ''}
-                        </div>
-                        <p class="text-[10px] text-stone-400 mb-2">${msg.body || ''}</p>
-                        ${rewardText ? `<p class="text-[9px] text-amber-400 mb-2">${rewardText}</p>` : ''}
-                        ${msg.claimed ? '' : `<button class="w-full py-1.5 bg-emerald-900/60 text-emerald-300 text-[10px] font-bold rounded border border-emerald-700 hover:bg-emerald-800 transition">領取</button>`}`;
-                    if (!msg.claimed) card.querySelector('button').onclick = () => claimMailReward(msg.id);
-                    list.appendChild(card);
-                });
+                lastMailMessages = messages;
+                renderMailList();
             }, err => console.warn('信箱監聽失敗：', err));
+        }
+
+        // ★ 新增：把信件清單的實際繪製邏輯抽出來，「載入更多」按鈕跟收到新信件時都呼叫這裡，
+        // 依 mailRenderLimit 只畫最新的一部分，其餘用按鈕觸發載入，不會一次把所有信件塞進畫面撐高頁面。
+        function renderMailList() {
+            const list = document.getElementById('arena-mail-list');
+            if (!list) return;
+            const messages = lastMailMessages;
+            if (messages.length === 0) {
+                list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-6">信箱空空如也</div>`;
+                return;
+            }
+            const reversed = [...messages].reverse(); // 新的在前面
+            const visible = reversed.slice(0, mailRenderLimit);
+            list.innerHTML = '';
+            visible.forEach(msg => {
+                const rewardLabels = {gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', specialTickets: '特急招募卷', honorPoints: '榮譽點數', starCoins: '賽季勳章', transcendCrystals: '超越結晶', blackMarketCurrency: '黑市貨幣'};
+                let rewardText = Object.entries(msg.rewards || {}).filter(([k, v]) => v > 0 && rewardLabels[k])
+                    .map(([k, v]) => `${rewardLabels[k]} +${v}`).join('／');
+                if (msg.rewards && msg.rewards.heroId) {
+                    const dbHero = HERO_DATABASE.find(h => h.id === msg.rewards.heroId);
+                    if (dbHero) {
+                        const heroText = msg.rewards.heroGrantType === 'hero' ? `${dbHero.name}（角色）` : `${dbHero.name} 碎片 x${msg.rewards.heroShardAmount || 10}`;
+                        rewardText = rewardText ? `${rewardText}／${heroText}` : heroText;
+                    }
+                }
+                const card = document.createElement('div');
+                card.className = `glass-panel p-3 rounded-xl border ${msg.claimed ? 'border-[#3e3328] opacity-60' : 'border-emerald-600/50'}`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[11px] font-bold text-stone-200">${msg.title || '無標題'}</span>
+                        ${msg.claimed ? '<span class="text-[9px] text-stone-500">已領取</span>' : ''}
+                    </div>
+                    <p class="text-[10px] text-stone-400 mb-2">${msg.body || ''}</p>
+                    ${rewardText ? `<p class="text-[9px] text-amber-400 mb-2">${rewardText}</p>` : ''}
+                    ${msg.claimed ? '' : `<button class="w-full py-1.5 bg-emerald-900/60 text-emerald-300 text-[10px] font-bold rounded border border-emerald-700 hover:bg-emerald-800 transition">領取</button>`}`;
+                if (!msg.claimed) card.querySelector('button').onclick = () => claimMailReward(msg.id);
+                list.appendChild(card);
+            });
+            if (reversed.length > visible.length) {
+                const moreBtn = document.createElement('button');
+                moreBtn.className = 'w-full py-2 text-[10px] font-bold text-stone-400 hover:text-stone-200 border border-[#3e3328] rounded-lg transition';
+                moreBtn.innerText = `載入更多（還有 ${reversed.length - visible.length} 封）`;
+                moreBtn.onclick = () => {ToneAudioEngine.playClick(); mailRenderLimit += 20; renderMailList();};
+                list.appendChild(moreBtn);
+            }
         }
 
         async function claimMailReward(msgId) {
@@ -3834,6 +4020,47 @@
             } catch (err) {
                 list.innerHTML = `<div class="text-center text-[10px] text-rose-400 py-3">讀取失敗，請檢查網路連線</div>`;
                 console.warn(err);
+            }
+        }
+
+        // ★ 新增：管理員專用——調整角色數值公式（例如升星幅度）後，玩家存檔本身沒問題
+        // （等級/星級/裝備都是原始資料，實際數值永遠即時算出來），唯一會卡住舊數值的是
+        // players/{uid} 裡快取的 power 欄位：只有玩家自己上線廣播陣容時才會覆蓋，離線玩家的
+        // 排行榜/戰力顯示會停留在舊公式算出來的數字。這裡讀出每個人的雲端存檔（saves），
+        // 借用 GAME_STATE.roster/gridSlots 暫時代入現有的 getMyArenaPower() 算一次，
+        // 算完立刻寫回 players/{uid}.power，讓所有人的戰力立刻跟上新版本，不用等各自上線。
+        // ★ 需要 Firestore 規則額外開放管理員讀取 saves collection（預設只有本人能讀自己的存檔）。
+        async function adminResyncAllPlayerPower() {
+            if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); return;}
+            if (!confirm('確定要用目前版本的數值公式，重新計算並覆蓋「所有」玩家的戰力欄位嗎？')) return;
+            const btn = document.getElementById('admin-resync-power-btn');
+            if (btn) {btn.disabled = true; btn.innerText = '計算中...';}
+            let success = 0, failed = 0;
+            const savedRoster = GAME_STATE.roster, savedGridSlots = GAME_STATE.gridSlots; // 借位算完要還原，不能動到管理員自己的存檔
+            try {
+                const savesSnap = await fbDb.collection('saves').get();
+                for (const doc of savesSnap.docs) {
+                    try {
+                        const raw = doc.data();
+                        if (!raw || !raw.data) continue;
+                        const state = JSON.parse(raw.data);
+                        GAME_STATE.roster = state.roster || {};
+                        GAME_STATE.gridSlots = state.gridSlots || [];
+                        const newPower = getMyArenaPower();
+                        await fbDb.collection('players').doc(doc.id).set({power: newPower}, {merge: true});
+                        success++;
+                    } catch (err) {
+                        console.warn('重新計算戰力失敗：', doc.id, err); failed++;
+                    }
+                }
+                showToast(`✅ 戰力校正完成：成功 ${success} 位，失敗 ${failed} 位`);
+                loadAdminPlayerList();
+            } catch (err) {
+                console.warn('讀取存檔清單失敗：', err);
+                showToast('讀取失敗：' + (err.code || err.message || '未知錯誤') + '（可能是 Firestore 規則還沒開放管理員讀取 saves）');
+            } finally {
+                GAME_STATE.roster = savedRoster; GAME_STATE.gridSlots = savedGridSlots; // 還原成管理員自己的資料
+                if (btn) {btn.disabled = false; btn.innerText = '重新計算所有玩家戰力';}
             }
         }
 
@@ -5740,9 +5967,17 @@
             const eq = r.equips || [0, 0, 0, 0];
             // 聖物強化 (artifactTier, 祭壇強化)：每階 +10% 全屬性，最高 10 階 (+100%，維持跟原本 100 階版本一樣的滿階上限)
             const artifactMult = 1 + ((r.artifactTier || 0) * 0.10);
-            const hp = Math.floor((db.baseHp * (1 + (l - 1) * 0.12) * (1 + (r.star - 1) * 0.15) + eq[2] * 80) * artifactMult);
-            const atk = Math.floor((db.baseAtk * (1 + (l - 1) * 0.12) * (1 + (r.star - 1) * 0.15) + eq[0] * 15) * artifactMult);
-            const def = Math.floor((db.baseDef * (1 + (l - 1) * 0.12) + eq[1] * 8) * artifactMult);
+            // ★ 數值重新調整：星級無上限之後，原本每星 +15% 幅度太誇張——R 級隨便升到 50 星
+            // 就已經遠遠超過 SR 級 1 星的數值，稀有度反而變得不重要。改成每星只 +0.7%，
+            // 校準依據是目前 R 與 SR 平均基礎數值大約差 1.3 倍，49 次升星（1★→50★）疊出的
+            // 1+49*0.007≈1.34 倍恰好對齊一個稀有度級距，所以「R 級 1 等 50 星」大致等同
+            // 「SR 級 1 星 1 等」，星級變成同稀有度內的漸進養成，不會直接蓋過稀有度差距。
+            // 同時修正防禦力原本完全不吃星級加成的疏漏，現在三圍（生命／攻擊／防禦）都用
+            // 同一套小幅度加成，星級越高數值依然穩定提升，只是不再爆炸性成長。
+            const starMult = 1 + (r.star - 1) * 0.007;
+            const hp = Math.floor((db.baseHp * (1 + (l - 1) * 0.12) * starMult + eq[2] * 80) * artifactMult);
+            const atk = Math.floor((db.baseAtk * (1 + (l - 1) * 0.12) * starMult + eq[0] * 15) * artifactMult);
+            const def = Math.floor((db.baseDef * (1 + (l - 1) * 0.12) * starMult + eq[1] * 8) * artifactMult);
             const crit = (db.crit || 0) + (eq[3] * 2);
 
             // ★ 升星現在也會讓專屬技能一起變強，不再只是單純的數值倍率：
@@ -6591,11 +6826,31 @@
 
         // ★ 通用長按升級小工具：包一層 mousedown/touchstart 事件，讓任何「升級」按鈕都能長按連續觸發，
         // 不用每個升級系統各自寫一份幾乎一樣的長按邏輯（裝備強化、聖物強化都共用這個）。
-        // upgradeFn(silent) 要回傳 true/false（有沒有真的升級成功），失敗（例如資源不夠/已封頂）就自動停止連按。
+        // upgradeFn(silent) 要回傳 true/false（有沒有真的升級成功），失敗（例如資源不夠/已封頂）就自動停止。
+        // ★ 改版：長按放開後不再要求手指持續按著才會連續升級，而是直接進入「自動升級」模式，
+        // 背景每 90ms 自動升一次，直到升級失敗（封頂/資源不足）或玩家再點一下同一顆按鈕為止才停止。
+        // 放得夠快（沒撐過 350ms 長按判定）維持原本行為，當一般單次點擊。
         function createLongPressUpgrader(upgradeFn) {
             let holdTimer = null, holdCount = 0, holdFired = false;
+            let autoTimer = null, autoRunning = false, autoCount = 0;
             function clearHoldTimer() {if (holdTimer) {clearTimeout(holdTimer); holdTimer = null;}}
+            function clearAutoTimer() {if (autoTimer) {clearInterval(autoTimer); autoTimer = null;}}
+            function stopAuto(announce) {
+                if (!autoRunning) return;
+                clearAutoTimer(); autoRunning = false;
+                if (announce) {ToneAudioEngine.playClick(); showToast(`自動升級已停止，本次共升級 ${autoCount} 次`);}
+                autoCount = 0;
+            }
+            function startAuto() {
+                autoRunning = true; autoCount = holdCount;
+                clearAutoTimer();
+                autoTimer = setInterval(() => {
+                    if (upgradeFn(true)) {autoCount++;} else {stopAuto(true);}
+                }, 90);
+            }
             function start() {
+                // 目前正在自動升級中：這一下按下只是準備「再點一次停止」，不要另外再判定長按
+                if (autoRunning) return;
                 clearHoldTimer();
                 holdCount = 0; holdFired = false;
                 holdTimer = setTimeout(function tick() {
@@ -6609,15 +6864,24 @@
                 }, 350);
             }
             function stop() {
+                if (autoRunning) {stopAuto(true); return;} // 自動升級中再點一次＝停止
                 clearHoldTimer();
                 if (holdFired) {
-                    if (holdCount > 0) {ToneAudioEngine.playClick(); showToast(`連續升級 ${holdCount} 次！`);}
+                    // 長按放開：不再要求繼續按著，直接轉成背景自動升級，直到失敗或再點一次為止
+                    if (holdCount > 0) {
+                        ToneAudioEngine.playClick();
+                        showToast(`已進入自動升級模式（目前 ${holdCount} 次），再點一下可停止`);
+                        startAuto();
+                    }
                 } else {
                     upgradeFn(false); // 放得夠快，當一般單次點擊
                 }
                 holdFired = false; holdCount = 0;
             }
-            function cancel() {clearHoldTimer(); holdFired = false; holdCount = 0;}
+            function cancel() {
+                if (autoRunning) return; // 自動模式跟手指是否還按著無關，滑出範圍不應該打斷
+                clearHoldTimer(); holdFired = false; holdCount = 0;
+            }
             return {start, stop, cancel};
         }
         // 每個裝備欄位各自要有自己的長按狀態，不然同時按兩個欄位的計次會互相干擾，用陣列各自存一份
@@ -6677,41 +6941,9 @@
             }
         }
 
-        // ★ 新增：長按「升級」按鈕連續升級，不用一級一級點到手痠。
-        // 按住 350ms 後開始每 90ms 自動升一級一次，直到放開、等級封頂、或資源不夠為止。
-        // 放開得夠快（沒滿 350ms）就當作一般單次點擊處理，只會升一級；長按放開則統一顯示一次「連續升級 N 次」，
-        // 不會在放開的瞬間又多觸發一次點擊事件（因為按鈕本身沒有掛 onclick，全部由 mousedown/up 自己控制）。
-        let levelUpHoldTimer = null, levelUpHoldCount = 0, levelUpHoldFired = false;
-        function startLevelUpHold() {
-            clearLevelUpHoldTimer();
-            levelUpHoldCount = 0; levelUpHoldFired = false;
-            levelUpHoldTimer = setTimeout(function tick() {
-                levelUpHoldFired = true;
-                if (upgradeSelectedHeroLevel(true)) {
-                    levelUpHoldCount++;
-                    levelUpHoldTimer = setTimeout(tick, 90);
-                } else {
-                    clearLevelUpHoldTimer();
-                }
-            }, 350);
-        }
-        function clearLevelUpHoldTimer() {
-            if (levelUpHoldTimer) {clearTimeout(levelUpHoldTimer); levelUpHoldTimer = null;}
-        }
-        function stopLevelUpHold() {
-            clearLevelUpHoldTimer();
-            if (levelUpHoldFired) {
-                if (levelUpHoldCount > 0) {ToneAudioEngine.playClick(); showToast(`連續升級 ${levelUpHoldCount} 次！`);}
-            } else {
-                upgradeSelectedHeroLevel(); // 放得夠快，視為一般單次點擊
-            }
-            levelUpHoldFired = false; levelUpHoldCount = 0;
-        }
-        function cancelLevelUpHold() {
-            // 手指/滑鼠滑出按鈕範圍：只清掉計時器，不補點一次，避免滑走還誤觸發升級
-            clearLevelUpHoldTimer();
-            levelUpHoldFired = false; levelUpHoldCount = 0;
-        }
+        // ★ 升級按鈕改用跟星級/裝備/聖物共用的長按升級元件（見 createLongPressUpgrader）：
+        // 長按放開後會自動持續升級，不用整段時間手指按著，直到封頂/資源不足或再點一次才停止。
+        const levelUpLongPresser = createLongPressUpgrader((silent) => upgradeSelectedHeroLevel(silent));
 
         // ============ 英雄潛能覺醒 (升星) 邏輯 ============
         // ★ 改用英雄碎片升星，不再直接花寶石。碎片來源：召喚抽到重複英雄、賽季商店兌換。
@@ -7566,7 +7798,6 @@
         function startDungeonBattle() {
             snapshotCurrentBattleIfNeeded(); // 經過秘境也不會把還沒打完的遠征/賽季戰鬥沖掉
             switchTab('battle', {internal: true}); GAME_STATE.currentMode = 'dungeon'; combatEntities = [];
-            dungeonLastRewardCheckpoint = 0; // ★ 新的一場開始，重置中途結算進度
             document.getElementById('battle-stage-title').innerText = `深淵秘境`; setTimeout(initCombatUnits, 100);
             refreshNavHighlightForMode();
             updateDynamicBackground();
@@ -7638,9 +7869,7 @@
         }
 
         // 秘境獎勵：直接把這場累積造成的總傷害換算成三種資源，不再看階層或機制加成
-        // ★ 修正：手動戰鬥現在會中途分批結算（見下方 DUNGEON_REWARD_CHECKPOINT_INTERVAL 的說明），
-        // 這裡改成可以指定「已經透過中途結算領過多少」，避免最終結算時重複發放。
-        // 高分紀錄一律看這場的「總傷害」，不受中途分批發放影響。
+        // ★ 改回：秘境重新變成「全軍覆沒才結算一次」，不再中途分批發放。
         function grantDungeonResources(damageAmount) {
             const goldGain = Math.floor(damageAmount * 0.5);
             const expGain = Math.floor(damageAmount * 0.35);
@@ -7649,22 +7878,13 @@
             return {goldGain, expGain, stoneGain};
         }
 
-        function resolveDungeonSessionReward(totalDamage, alreadyGranted = 0) {
+        function resolveDungeonSessionReward(totalDamage) {
             ensureDungeonAutoFarmState();
-            const remaining = Math.max(0, totalDamage - alreadyGranted);
-            const {goldGain, expGain, stoneGain} = grantDungeonResources(remaining);
+            const {goldGain, expGain, stoneGain} = grantDungeonResources(totalDamage);
             if (totalDamage > GAME_STATE.dungeonHighScore) GAME_STATE.dungeonHighScore = Math.floor(totalDamage);
             const rewardText = `${goldGain} 金幣／${expGain} 經驗／${stoneGain} 鍛造石`;
             return {goldGain, expGain, stoneGain, rewardText};
         }
-
-        // ★ 新增：手動秘境戰鬥現在改成打到一定傷害量就中途結算一次資源，不用死等全軍覆沒才領一次。
-        // 因為現在英雄可以無限升星、等級上限也拉高很多，玩家戰力大幅膨脹之後，
-        // 秘境怪物血量/攻擊雖然也跟著累積傷害往上漲，但玩家的生存力漲得更快，導致單場能撐超級久，
-        // 死等到全軍覆沒才發獎勵變得要打非常久才能領一次東西。改成中途分批結算後，
-        // 不管這場最後打多久，都能持續拿到獎勵，不用整場耗到底才有收穫。
-        const DUNGEON_REWARD_CHECKPOINT_INTERVAL = 5000; // 每累積 5000 點傷害中途結算一次
-        let dungeonLastRewardCheckpoint = 0; // 這場已經透過中途結算領過的傷害量
 
         // 開關秘境的背景刷本
         function toggleDungeonAutoFarm() {
@@ -7696,6 +7916,15 @@
             ensureDungeonAutoFarmState();
             if (!GAME_STATE.dungeonAutoFarm) return;
             const now = Date.now();
+            // ★ 修正：玩家正在秘境手動戰鬥中（currentMode === 'dungeon'）時，背景刷本原本還是
+            // 會照樣每 8 秒 tick 一次、額外多發一份資源，等於跟手動戰鬥的中途結算重複領獎勵
+            // （見 initCombatUnits 呼叫處的傷害結算 while 迴圈）。這裡改成手動戰鬥期間直接跳過
+            // 結算，並把基準時間往前推到現在，離開/打完之後背景刷本再繼續正常累積，
+            // 不會因為手動戰鬥花的這段時間，反而在結束後「補」出一堆背景收益。
+            if (GAME_STATE.currentMode === 'dungeon') {
+                GAME_STATE.dungeonAutoFarmLastTick = now;
+                return;
+            }
             let elapsed = now - (GAME_STATE.dungeonAutoFarmLastTick || now);
             if (elapsed > DUNGEON_AUTO_FARM_MAX_OFFLINE_MS) elapsed = DUNGEON_AUTO_FARM_MAX_OFFLINE_MS;
             if (elapsed < 0) elapsed = 0;
@@ -7739,6 +7968,113 @@
             const dot = document.getElementById('nav-dungeon-farm-dot');
             if (!dot) return;
             dot.classList.toggle('hidden', !GAME_STATE.dungeonAutoFarm);
+        }
+
+        /* ============================================================
+           遠征背景刷本 (Background Campaign Auto-Farm)
+           ★ 新增：讓遠征也能跟秘境一樣掛在背景刷，機制（真實經過時間 + setInterval 瞬間結算、
+           離線上限 12 小時、手動戰鬥中暫停避免重複發放）完全比照秘境背景刷本。
+           跟秘境不同的地方：遠征有明確的章節/關卡進度，為了不讓玩家完全不用手動打
+           就能把整條 5000 關主線躺著推完，這裡背景刷本「只重複刷目前這一關」，不會自動
+           推進到下一關/下一章，領到的資源公式跟手動打贏目前這一關完全一樣（含低機率 GR 碎片掉落），
+           要真的推進關卡還是得自己手動打贏一次。
+           ============================================================ */
+        const CAMPAIGN_AUTO_FARM_INTERVAL_MS = 8000; // 每 8 秒（真實時間）結算一次，跟秘境一致
+        const CAMPAIGN_AUTO_FARM_MAX_OFFLINE_MS = 12 * 60 * 60 * 1000; // 離線累積上限 12 小時
+        let campaignAutoFarmIntervalId = null;
+
+        function ensureCampaignAutoFarmState() {
+            if (typeof GAME_STATE.campaignAutoFarm !== 'boolean') GAME_STATE.campaignAutoFarm = false;
+            if (typeof GAME_STATE.campaignAutoFarmLastTick !== 'number') GAME_STATE.campaignAutoFarmLastTick = 0;
+        }
+
+        // 背景刷本重複清一次「目前這一關」，公式完全比照 handleCombatEnd 裡遠征勝利分支，
+        // 但刻意不會推進 stage.chapter/level，避免玩家躺著就把整條主線推完。
+        function resolveOneCampaignAutoClear() {
+            const totalStage = (GAME_STATE.stage.chapter - 1) * 10 + GAME_STATE.stage.level;
+            const stageMult = 1 + totalStage * 0.035;
+            const gReward = Math.floor((80 + GAME_STATE.stage.chapter * 40) * stageMult);
+            const eReward = Math.floor((40 + GAME_STATE.stage.chapter * 20) * stageMult);
+            const diamondBonus = Math.min(8, Math.floor(totalStage / 500));
+            const stoneBonus = Math.min(6, Math.floor(totalStage / 600));
+            const extraDiamonds = Math.random() < 0.45 ? (3 + diamondBonus) : 0;
+            const extraStones = Math.random() < 0.35 ? (2 + stoneBonus) : 0;
+            GAME_STATE.gold += gReward; GAME_STATE.heroExp += eReward; GAME_STATE.diamonds += extraDiamonds; GAME_STATE.forgeStones += extraStones;
+            // 跟手動遠征勝利一樣，有低機率額外掉落一枚 GR 角色碎片
+            if (Math.random() < 0.015) {
+                const grPool = HERO_DATABASE.filter(h => h.rarity === 'GR');
+                if (grPool.length > 0) {
+                    const pickedGr = grPool[Math.floor(Math.random() * grPool.length)];
+                    grantHeroShards(pickedGr.id, 1);
+                }
+            }
+        }
+
+        // 開關遠征的背景刷本
+        function toggleCampaignAutoFarm() {
+            ensureCampaignAutoFarmState();
+            ToneAudioEngine.playClick();
+            GAME_STATE.campaignAutoFarm = !GAME_STATE.campaignAutoFarm;
+            if (GAME_STATE.campaignAutoFarm) {
+                GAME_STATE.campaignAutoFarmLastTick = Date.now();
+                showToast('已開啟遠征背景刷本（只重複刷目前這一關，不會自動推進關卡）');
+            } else {
+                showToast('已關閉遠征背景刷本');
+            }
+            saveGame();
+            renderCampaignAutoFarmButton();
+            updateNavCampaignFarmDot();
+        }
+
+        // 檢查遠征背景刷本累積的時間，達到間隔就結算對應次數；離開頁面很久後回來也會依離線時間一次補齊
+        function processCampaignAutoFarmTicks() {
+            ensureCampaignAutoFarmState();
+            if (!GAME_STATE.campaignAutoFarm) return;
+            const now = Date.now();
+            // ★ 玩家正在手動打遠征戰鬥時暫停，避免跟手動戰鬥的獎勵重複（跟秘境背景刷本的處理方式一致）
+            if (GAME_STATE.currentMode === 'battle') {
+                GAME_STATE.campaignAutoFarmLastTick = now;
+                return;
+            }
+            let elapsed = now - (GAME_STATE.campaignAutoFarmLastTick || now);
+            if (elapsed > CAMPAIGN_AUTO_FARM_MAX_OFFLINE_MS) elapsed = CAMPAIGN_AUTO_FARM_MAX_OFFLINE_MS;
+            if (elapsed < 0) elapsed = 0;
+            const ticks = Math.floor(elapsed / CAMPAIGN_AUTO_FARM_INTERVAL_MS);
+            if (ticks > 0) {
+                for (let i = 0; i < ticks; i++) resolveOneCampaignAutoClear();
+                GAME_STATE.campaignAutoFarmLastTick += ticks * CAMPAIGN_AUTO_FARM_INTERVAL_MS;
+                saveGame(); updateHUD();
+            }
+        }
+
+        // 啟動遠征背景刷本的持續檢查，只需要在遊戲啟動時呼叫一次
+        function initCampaignAutoFarm() {
+            ensureCampaignAutoFarmState();
+            processCampaignAutoFarmTicks(); // 先補齊上次關閉遊戲到現在離線期間累積的量
+            updateNavCampaignFarmDot();
+            renderCampaignAutoFarmButton();
+            if (campaignAutoFarmIntervalId) clearInterval(campaignAutoFarmIntervalId);
+            campaignAutoFarmIntervalId = setInterval(processCampaignAutoFarmTicks, 2000);
+        }
+
+        // 遠征戰鬥工具列上「刷本：開/關」按鈕的顯示狀態
+        function renderCampaignAutoFarmButton() {
+            ensureCampaignAutoFarmState();
+            const btn = document.getElementById('btn-campaign-autofarm');
+            if (btn) {
+                const active = GAME_STATE.campaignAutoFarm;
+                btn.innerHTML = `<i class="fa-solid fa-clock-rotate-left text-xs mb-0.5"></i>刷本: ${active ? '開' : '關'}`;
+                btn.classList.toggle('text-emerald-400', active);
+                btn.classList.toggle('border-emerald-500/50', active);
+            }
+        }
+
+        // 導覽列「遠征」按鈕上的小綠點：正在背景刷本時顯示
+        function updateNavCampaignFarmDot() {
+            ensureCampaignAutoFarmState();
+            const dot = document.getElementById('nav-campaign-farm-dot');
+            if (!dot) return;
+            dot.classList.toggle('hidden', !GAME_STATE.campaignAutoFarm);
         }
 
         function updateCombatLogic() {
@@ -7925,20 +8261,12 @@
                 if (attacker.team === 'player' && (GAME_STATE.currentMode === 'season' || GAME_STATE.currentMode === 'dungeon' || GAME_STATE.currentMode === 'worldboss')) {
                     eventTotalDamage += Math.floor(damage);
                     if (GAME_STATE.currentMode === 'season') eventBossCurrentHp -= damage;
-                    // ★ 秘境中途分批結算：每跨過一個 5000 傷害的門檻就立刻發一次資源，不用等全軍覆沒
-                    if (GAME_STATE.currentMode === 'dungeon') {
-                        while (eventTotalDamage - dungeonLastRewardCheckpoint >= DUNGEON_REWARD_CHECKPOINT_INTERVAL) {
-                            dungeonLastRewardCheckpoint += DUNGEON_REWARD_CHECKPOINT_INTERVAL;
-                            const {goldGain, expGain, stoneGain} = grantDungeonResources(DUNGEON_REWARD_CHECKPOINT_INTERVAL);
-                            updateHUD();
-                            showToast(`💰 秘境中途結算：+${goldGain} 金幣／+${expGain} 經驗／+${stoneGain} 鍛造石`);
-                        }
-                    }
+                    // ★ 秘境改回全軍覆沒才結算一次，這裡只單純累積傷害，獎勵留到 handleCombatEnd 才發放
                 }
                 bumpAnalytics('tank', target.team, target.name, damage);
                 updateAnalyticsUI();
 
-                // ★ 邀請制競技場：主控端每次命中都順便把結果廣播出去，讓觀戰端能同步顯示（見 pushArenaLiveEvent）
+                // ★ 邀請制競技場：主控端每次命中先在本機累積事件紀錄，演算完才一次性寫回 Firestore（見 pushArenaLiveEvent／finishArenaHostComputation）
                 if (GAME_STATE.currentMode === 'arena' && isArenaHost && arenaMatchId) {
                     pushArenaLiveEvent({
                         attackerSide: attacker.team === 'player' ? 'my' : 'opp',
@@ -8821,13 +9149,14 @@
         }
 
         function gameLoop() {
-            // ★ 觀戰端 (arena_guest) 不跑正常的回合決策邏輯 (updateCombatLogic)，因為它不自己決定
-            // 誰攻擊誰、造成多少傷害——那些結果全部來自主控端透過 Firestore 傳來的事件 (見 applyArenaLiveEvent)。
-            // 改成推進自己專屬的簡易攻擊動畫佇列 (tickArenaGuestAnimations)，畫面還是持續繪製 (drawCanvas)，
-            // 這樣飄字/受擊特效/衝上去打人的動畫都會正常播放。
+            // ★ 觀戰端 (arena_guest)，以及主控端/觀戰端正在播放競技場「回放」(arenaReplayActive) 時，
+            // 都不跑正常的回合決策邏輯 (updateCombatLogic)——這兩種情況下傷害/勝負早就已經算好了
+            // (分別來自主控端隱藏演算的結果、或是 Firestore 讀到的完整事件紀錄)，這裡只是把已經算好的
+            // 結果依序「演出」出來。改成推進簡易攻擊動畫佇列 (tickArenaGuestAnimations)，
+            // 畫面還是持續繪製 (drawCanvas)，飄字/受擊特效/衝上去打人的動畫都正常播放。
             if (isCombatTabVisible()) {
-                if (GAME_STATE.currentMode !== 'arena_guest') updateCombatLogic();
-                else tickArenaGuestAnimations();
+                if (arenaReplayActive || GAME_STATE.currentMode === 'arena_guest') tickArenaGuestAnimations();
+                else updateCombatLogic();
                 drawCanvas();
             }
 
@@ -8836,6 +9165,15 @@
         }
 
         function handleCombatEnd(isWin) {
+            // ★ 邀請制競技場主控端的「隱藏演算」階段結束時會先呼叫到這裡：這代表真正的戰鬥已經跑完一次
+            // （含所有技能/暴擊判定），但玩家從頭到尾都被遮罩蓋著、根本還沒看到任何畫面。
+            // 這時候還不是要顯示結果的時機，直接轉去處理「把紀錄寫回去、切換成雙方都看得到的回放」，
+            // 不要往下走正常流程（不然音效/次數統計/勝負畫面會在玩家還沒看到演出前就先跑一次，
+            // 等回放播完後再呼叫一次 handleCombatEnd 時又會重複跑一次）。
+            if (GAME_STATE.currentMode === 'arena' && isArenaHost && arenaHostComputing) {
+                finishArenaHostComputation(isWin);
+                return;
+            }
             currentState = CSTATE.IDLE_WIN; DOM_CACHE.battleStateOverlay.style.opacity = '1'; DOM_CACHE.battleStateOverlay.style.pointerEvents = 'auto';
             if (isWin) ToneAudioEngine.playVictory(); else ToneAudioEngine.playDefeat();
             // 每次戰鬥結束增加次數 (用來解賽季任務)
@@ -8845,16 +9183,10 @@
             const btnNext = document.getElementById('btn-next-battle');
 
             if (GAME_STATE.currentMode === 'arena') {
-                // ★ 邀請制競技場：如果這是主控端跑的一場「邀請對戰」，把最終結果寫回共用的對戰紀錄，
-                // 觀戰端會透過監聽同步看到一樣的結果；同時把速度還原成玩家原本選的（進場時被強制設成 5 倍）
-                if (isArenaHost && arenaMatchId) {
-                    fbDb.collection('arenaMatches').doc(arenaMatchId).update({
-                        status: 'done',
-                        winnerUid: isWin ? fbUser.uid : (arenaOpponentSnapshot ? arenaOpponentSnapshot.uid : null)
-                    }).catch(err => console.warn('提交對戰結果失敗：', err));
-                    isArenaHost = false; arenaMatchId = null;
-                }
-                if (arenaPrevBattleSpeed !== null) {battleSpeed = arenaPrevBattleSpeed; arenaPrevBattleSpeed = null;}
+                // ★ 執行到這裡，代表競技場的回放已經播完（見 finishArenaHostComputation → startArenaReplay →
+                // stepArenaReplay），真正把結果寫回 Firestore 的動作在演算剛結束、回放開始前就已經做過了，
+                // 這裡只需要重置狀態旗標、顯示結果畫面即可。
+                if (isArenaHost) {isArenaHost = false; arenaMatchId = null;}
 
                 // ★ 競技場結果只在本地端算輸贏（跟對手即時廣播的資料模擬戰鬥），不會影響對手任何資料，
                 // 只更新自己的勝敗紀錄；雲端存的只有「目前在線的陣容資料」，不是戰鬥結果
@@ -8916,8 +9248,7 @@
             } else if (GAME_STATE.currentMode === 'dungeon') {
                 // ★ 再次重做：秘境不再有階層/深淵祝福，怪物死一隻補一隻打到全軍覆沒為止，
                 // 這場累積造成的總傷害直接換算成三種資源獎勵（跟賽季討伐同一套精神）。
-                // ★ 傳入 dungeonLastRewardCheckpoint，避免中途已經分批結算過的部分被重複發放一次
-                const result = resolveDungeonSessionReward(eventTotalDamage, dungeonLastRewardCheckpoint);
+                const result = resolveDungeonSessionReward(eventTotalDamage);
                 const descHtml = `這場總共造成了 <span class="text-amber-400 font-bold">${eventTotalDamage.toLocaleString()}</span> 點傷害<br>獲得 ${result.rewardText}`;
                 document.getElementById('overlay-desc').innerHTML = descHtml;
                 document.getElementById('overlay-icon').innerHTML = '<i class="fa-solid fa-box-open text-amber-500 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]"></i>'; document.getElementById('overlay-title').innerText = '討伐結束';
@@ -8971,6 +9302,18 @@
                     let extraStones = Math.random() < 0.35 ? (2 + stoneBonus) : 0;
                     GAME_STATE.gold += gReward; GAME_STATE.heroExp += eReward; GAME_STATE.diamonds += extraDiamonds; GAME_STATE.forgeStones += extraStones;
 
+                    // ★ 新增：遠征勝利現在有低機率（1.5%）額外掉落一枚 GR 角色碎片，隨機從目前所有 GR 英雄中抽一位，
+                    // 作為遠征長期刷關的驚喜獎勵；機率刻意壓得很低，避免遠征變成 GR 英雄的穩定刷取管道。
+                    let grShardText = '';
+                    if (Math.random() < 0.015) {
+                        const grPool = HERO_DATABASE.filter(h => h.rarity === 'GR');
+                        if (grPool.length > 0) {
+                            const pickedGr = grPool[Math.floor(Math.random() * grPool.length)];
+                            grantHeroShards(pickedGr.id, 1);
+                            grShardText = ` <span class="text-rose-400 bg-black/40 px-2 py-0.5 rounded ml-1"><i class="fa-solid fa-star-of-life mr-1"></i>${pickedGr.name} 碎片 x1</span>`;
+                        }
+                    }
+
                     let chapterBlocked = false;
                     if (GAME_STATE.stage.chapter === GAME_STATE.highestStage.chapter && GAME_STATE.stage.level === GAME_STATE.highestStage.level) {
                         if (GAME_STATE.stage.level >= CAMPAIGN_LEVELS_PER_CHAPTER) {
@@ -8985,7 +9328,7 @@
                         else {GAME_STATE.stage.level++; GAME_STATE.highestStage.level++;}
                     }
 
-                    let dropText = ''; if (extraDiamonds > 0) dropText += ` <span class="text-sky-400 bg-black/40 px-2 py-0.5 rounded ml-1"><i class="fa-solid fa-gem mr-1"></i>${extraDiamonds}</span>`; if (extraStones > 0) dropText += ` <span class="text-stone-400 bg-black/40 px-2 py-0.5 rounded ml-1"><i class="fa-solid fa-hammer mr-1"></i>${extraStones}</span>`;
+                    let dropText = ''; if (extraDiamonds > 0) dropText += ` <span class="text-sky-400 bg-black/40 px-2 py-0.5 rounded ml-1"><i class="fa-solid fa-gem mr-1"></i>${extraDiamonds}</span>`; if (extraStones > 0) dropText += ` <span class="text-stone-400 bg-black/40 px-2 py-0.5 rounded ml-1"><i class="fa-solid fa-hammer mr-1"></i>${extraStones}</span>`; if (grShardText) dropText += grShardText;
                     let descHtml = `取得勝利！獲得 ${gReward} 金幣，${eReward} 經驗。<br>${dropText ? '<div class="mt-2 text-[9px] text-stone-400">額外掉落:' + dropText + '</div>' : ''}`;
                     if (chapterBlocked) descHtml += `<div class="mt-2 text-[10px] font-bold text-fantasy-gold border-t border-amber-900/50 pt-1"><i class="fa-solid fa-flag-checkered mr-1"></i>恭喜通關遠征全部 ${CAMPAIGN_TOTAL_CHAPTERS} 章內容！</div>`;
                     document.getElementById('overlay-desc').innerHTML = descHtml;
@@ -9036,7 +9379,7 @@
 
         // 真正開始載入遊戲（原本 window.onload 的內容整段搬到這裡），統一由「單機」或「登入成功」兩條路徑呼叫
         function startGameAfterAuth() {
-            loadGame(); initAutoSave(); initSeasonTimer(); initDungeonAutoFarm();
+            loadGame(); initAutoSave(); initSeasonTimer(); initDungeonAutoFarm(); initCampaignAutoFarm();
             applySeasonTheme();
             refreshSeasonModeNavButton();
             switchTab('battle');
