@@ -1550,32 +1550,6 @@
         </main>
     </div>
 
-    <!-- ★ 新增：競技場即時觀戰畫面。點兩邊「接受」邀請後，雙方會一起進到這個畫面。
-         發出挑戰的那方是「主控端」，實際用現有的完整戰鬥引擎跑一場正常戰鬥（跟以前邏輯一樣，沒有改動）；
-         接受邀請的那方是「觀戰端」，畫面改成簡化版的血條 + 戰鬥紀錄文字直播，跟著主控端即時同步結果。
-         這樣設計是因為要讓兩邊畫面「逐幀動畫完全同步」需要大改整個戰鬥引擎，風險太高（會影響到所有單機模式），
-         改成這種「文字/血條直播」的簡化版本，雖然沒有主控端那麼華麗，但至少能做到雙方看到一致、即時的結果。 -->
-    <div id="arena-live-viewer" class="fixed inset-0 bg-black z-[95] hidden flex-col p-4">
-        <h2 class="text-center text-fantasy-gold font-magic text-base mb-1 shrink-0">競技場對戰直播</h2>
-        <p class="text-center text-[9px] text-stone-500 mb-3 shrink-0">固定 5 倍速．觀戰模式</p>
-        <div class="flex justify-between items-start gap-3 mb-3 shrink-0">
-            <div class="flex-1 min-w-0">
-                <div id="arena-live-my-name" class="text-xs font-bold text-sky-300 mb-1.5 truncate">我方</div>
-                <div id="arena-live-my-team" class="space-y-1.5"></div>
-            </div>
-            <div class="text-lg text-stone-600 font-magic pt-4 shrink-0">VS</div>
-            <div class="flex-1 min-w-0 text-right">
-                <div id="arena-live-opp-name" class="text-xs font-bold text-rose-300 mb-1.5 truncate">對方</div>
-                <div id="arena-live-opp-team" class="space-y-1.5"></div>
-            </div>
-        </div>
-        <div id="arena-live-log" class="flex-1 overflow-y-auto bg-black/50 rounded-lg border border-[#3e3328] p-3 space-y-1 text-[10px] text-stone-300 custom-scrollbar"></div>
-        <div id="arena-live-result" class="hidden flex-col items-center py-4 shrink-0">
-            <div id="arena-live-result-text" class="text-lg font-bold mb-3"></div>
-            <button onclick="closeArenaLiveViewer()" class="px-6 py-2 btn-gold rounded-lg font-bold text-sm">返回競技場</button>
-        </div>
-    </div>
-
     <!-- 英雄詳細 Modal：改成跟圖鑑一樣「置中卡片、頭像置頂、內容單欄捲動」的樣式 -->
     <div id="hero-modal"
         class="fixed inset-0 bg-black/95 z-50 hidden flex-col p-4 sm:p-8 backdrop-blur-md opacity-0 transition-opacity duration-300 items-center justify-center">
@@ -2531,7 +2505,6 @@
         let isArenaHost = false;
         let arenaMatchUnsub = null;
         let arenaLastEventIndex = 0;
-        let arenaLiveTeams = {my: [], opp: []}; // 觀戰端專用：雙方隊伍目前血量，畫面顯示用
 
         // 開始監聽有沒有人邀請自己對戰（在競技場畫面時持續監聽，離開畫面就取消）
         function listenIncomingArenaInvites() {
@@ -2660,32 +2633,18 @@
         }
 
         // ★ 觀戰端：不使用主要的戰鬥引擎/canvas，改成簡化的「血條＋文字戰報」直播畫面，即時監聽主控端的戰鬥結果
+        let arenaGuestOpponentData = null; // 觀戰端專用：對手（主控端）的隊伍資料，initCombatUnits 的 'arena_guest' 分支會用到
         function startArenaLiveMatchAsGuest(matchId, invite) {
-            const viewer = document.getElementById('arena-live-viewer');
-            viewer.classList.remove('hidden'); viewer.classList.add('flex');
-            document.getElementById('arena-live-result').classList.add('hidden');
-            document.getElementById('arena-live-result').classList.remove('flex');
-            document.getElementById('arena-live-log').innerHTML = '';
-            document.getElementById('arena-live-my-name').innerText = (GAME_STATE.mpDisplayName || '我方') + '（我方）';
-            document.getElementById('arena-live-opp-name').innerText = (invite.fromName || '對方') + '（對方）';
+            arenaGuestOpponentData = invite;
             arenaLastEventIndex = 0;
-
-            const buildTeamDisplay = (team) => team.map(slot => {
-                const db = HERO_DATABASE.find(h => h.id === slot.heroId);
-                const originalRoster = GAME_STATE.roster[slot.heroId];
-                GAME_STATE.roster[slot.heroId] = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equips: slot.equips};
-                const h = getEffectiveHero(db);
-                if (originalRoster === undefined) delete GAME_STATE.roster[slot.heroId]; else GAME_STATE.roster[slot.heroId] = originalRoster;
-                return {heroId: slot.heroId, name: db ? db.name : '???', maxHp: h ? h.maxHp : 1, hp: h ? h.maxHp : 1};
-            });
-            const myTeamData = (GAME_STATE.gridSlots || []).map((id, idx) => {
-                if (!id || !GAME_STATE.roster[id]) return null;
-                const r = GAME_STATE.roster[id];
-                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equips: r.equips || [0, 0, 0, 0]};
-            }).filter(Boolean);
-            arenaLiveTeams.my = buildTeamDisplay(myTeamData);
-            arenaLiveTeams.opp = buildTeamDisplay(invite.fromTeam);
-            renderArenaLiveTeams();
+            snapshotCurrentBattleIfNeeded();
+            switchTab('battle', {internal: true});
+            GAME_STATE.currentMode = 'arena_guest';
+            combatEntities = [];
+            document.getElementById('battle-stage-title').innerText = `競技場觀戰：對戰 ${invite.fromName || '???'}`;
+            setTimeout(initCombatUnits, 100);
+            refreshNavHighlightForMode();
+            updateDynamicBackground();
 
             if (arenaMatchUnsub) arenaMatchUnsub();
             arenaMatchUnsub = fbDb.collection('arenaMatches').doc(matchId).onSnapshot(doc => {
@@ -2697,53 +2656,26 @@
                 }
                 if (data.status === 'done') {
                     const iWon = data.winnerUid === fbUser.uid;
-                    if (!GAME_STATE.arenaRecord) GAME_STATE.arenaRecord = {win: 0, loss: 0};
-                    if (iWon) GAME_STATE.arenaRecord.win++; else GAME_STATE.arenaRecord.loss++;
-                    const honorGain = grantArenaHonorReward(iWon);
-                    saveGame(); updateHUD();
-                    document.getElementById('arena-live-result-text').innerHTML = iWon
-                        ? `<i class="fa-solid fa-trophy text-fantasy-gold mr-1"></i>對戰勝利！獲得 ${honorGain} 榮譽點數`
-                        : `<i class="fa-solid fa-skull-crossbones text-red-500 mr-1"></i>對戰落敗，獲得 ${honorGain} 榮譽點數`;
-                    document.getElementById('arena-live-result').classList.remove('hidden');
-                    document.getElementById('arena-live-result').classList.add('flex');
                     if (arenaMatchUnsub) {arenaMatchUnsub(); arenaMatchUnsub = null;}
+                    handleCombatEnd(iWon);
                 }
             }, err => console.warn('監聽對戰結果失敗：', err));
         }
 
-        function renderArenaLiveTeams() {
-            const renderSide = (containerId, team) => {
-                document.getElementById(containerId).innerHTML = team.map(h => {
-                    const pct = Math.max(0, Math.min(100, (h.hp / h.maxHp) * 100));
-                    return `<div class="text-[9px]"><div class="flex justify-between text-stone-400 mb-0.5"><span class="truncate">${h.name}</span></div><div class="w-full bg-black/60 rounded-full h-1.5 border border-[#3e3328] overflow-hidden"><div class="h-full transition-all duration-300 ${pct > 0 ? 'bg-emerald-600' : 'bg-red-900'}" style="width:${pct}%"></div></div></div>`;
-                }).join('');
-            };
-            renderSide('arena-live-my-team', arenaLiveTeams.my);
-            renderSide('arena-live-opp-team', arenaLiveTeams.opp);
-        }
-
+        // ★ 把主控端傳來的每一次命中，套用到觀戰端「自己這台裝置上」實際存在的 combatEntities，
+        // 直接重用戰鬥引擎既有的視覺元素 (floatingTexts / screenShake)，讓觀戰端看到的也是同一套
+        // 戰鬥畫布（sprite、血條、傷害飄字），而不是另外做一個簡化的清單畫面。
         function applyArenaLiveEvent(ev) {
-            // ev: {attackerSide, attackerName, targetSide, targetName, targetHeroId, damage, isCrit, targetHpAfter}
-            const log = document.getElementById('arena-live-log');
-            const line = document.createElement('div');
-            line.innerHTML = `<span class="${ev.attackerSide === 'my' ? 'text-sky-400' : 'text-rose-400'}">${ev.attackerName}</span> 對 <span class="${ev.targetSide === 'my' ? 'text-sky-400' : 'text-rose-400'}">${ev.targetName}</span> 造成 <span class="${ev.isCrit ? 'text-yellow-400 font-bold' : 'text-stone-300'}">${ev.damage}</span> 點傷害${ev.isCrit ? '（暴擊！）' : ''}`;
-            log.appendChild(line);
-            log.scrollTop = log.scrollHeight;
-
-            // ★ 這裡的血條是「觀戰端自己粗略估算」，用受擊方陣營的所有隊員平均扣血（因為完整命中對象追蹤
-            // 需要更複雜的資料結構），數字上不見得跟主控端逐一角色的真實血量分毫不差，但趨勢/勝負結果一致，
-            // 純粹顯示用，不影響任何獎勵或勝負判定（那些都是主控端算出來、寫進 events/status 的結果）。
-            const targetTeam = ev.targetSide === 'my' ? arenaLiveTeams.my : arenaLiveTeams.opp;
-            const targetHero = targetTeam.find(h => h.heroId === ev.targetHeroId) || targetTeam.find(h => h.hp > 0);
-            if (targetHero) {targetHero.hp = Math.max(0, targetHero.hp - ev.damage); renderArenaLiveTeams();}
+            const findEntity = (side, heroId) => combatEntities.find(e => e.baseId === heroId && e.team === (side === 'my' ? 'player' : 'enemy'));
+            const target = findEntity(ev.targetSide, ev.targetHeroId);
+            if (!target) return;
+            target.hp = Math.max(0, target.hp - ev.damage);
+            floatingTexts.push({x: target.x + (Math.random() * 20 - 10), y: target.y - 60 + (Math.random() * 10 - 5), text: ev.damage, isCrit: ev.isCrit, color: ev.isCrit ? '#ffd54f' : '#fff', life: 45});
+            if (ev.isCrit) screenShake = 6;
         }
 
         function closeArenaLiveViewer() {
             ToneAudioEngine.playClick();
-            document.getElementById('arena-live-viewer').classList.add('hidden');
-            document.getElementById('arena-live-viewer').classList.remove('flex');
-            if (arenaMatchUnsub) {arenaMatchUnsub(); arenaMatchUnsub = null;}
-            arenaMatchId = null;
             switchTab('arena');
         }
 
@@ -5100,6 +5032,7 @@
                     document.getElementById('battle-stage-title').innerText = `深淵秘境`;
                 } else if (GAME_STATE.currentMode === 'season') document.getElementById('battle-stage-title').innerText = `賽季討伐`;
                 else if (GAME_STATE.currentMode === 'arena') document.getElementById('battle-stage-title').innerText = `競技場：挑戰 ${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}`;
+                else if (GAME_STATE.currentMode === 'arena_guest') document.getElementById('battle-stage-title').innerText = `競技場觀戰：對戰 ${arenaGuestOpponentData ? arenaGuestOpponentData.fromName : '???'}`;
                 else if (GAME_STATE.currentMode === 'worldboss') document.getElementById('battle-stage-title').innerText = `全服首領討伐`;
                 else document.getElementById('battle-stage-title').innerText = `${GAME_STATE.stage.chapter}-${GAME_STATE.stage.level}`;
             }
@@ -5720,12 +5653,13 @@
                 const rarityTextClass = h.rarity === 'LR' ? 'text-amber-300' : (h.rarity === 'UR' ? 'text-rose-400' : (h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400')));
                 const card = document.createElement('div');
                 card.innerHTML = `
-                <div onclick="openHeroModal('${h.id}')" class="hero-card ${rarityClass} bg-[#140e0a] border border-[#3e3328] rounded-xl p-3 flex flex-col items-center cursor-pointer h-[110px] justify-center hover:border-[#8b6f4e] transition shadow-inner-dark relative overflow-hidden group">
+                <div onclick="openHeroModal('${h.id}')" class="hero-card ${rarityClass} bg-[#140e0a] border border-[#3e3328] rounded-xl p-3 flex flex-col items-center cursor-pointer min-h-[136px] justify-center hover:border-[#8b6f4e] transition shadow-inner-dark relative overflow-hidden group">
                     ${exclusiveBadge}
                     <div class="absolute top-0 right-0 bg-black/60 px-1.5 py-0.5 rounded-bl-lg text-[8px] font-bold border-b border-l border-[#3e3328] ${rarityTextClass}">${h.rarity}</div>
                     ${custom ? `<img src="${custom}" class="w-12 h-12 rounded-full object-cover shadow-lg group-hover:scale-110 transition">` : `<i class="fa-solid ${h.avatarIcon} text-4xl drop-shadow-md group-hover:scale-110 transition" style="color:${h.color}"></i>`}
                     <span class="text-[10px] font-bold text-stone-200 mt-2 truncate w-full text-center">${dName}</span>
-                    <span class="text-[9px] text-yellow-500 font-bold mt-0.5 flex items-center gap-1 max-w-full"><i class="fa-solid fa-bolt text-[8px] shrink-0"></i><span class="truncate">${formatCompactNumber(h.combatPower)}</span><span class="text-amber-300 shrink-0 flex items-center gap-0.5 ml-0.5"><i class="fa-solid fa-star text-[8px]"></i>${h.star || 1}</span></span>
+                    <span class="text-[9px] text-yellow-500 font-bold mt-0.5 flex items-center justify-center gap-0.5 w-full"><i class="fa-solid fa-bolt text-[8px] shrink-0"></i><span class="truncate">${formatCompactNumber(h.combatPower)}</span></span>
+                    <span class="text-[9px] text-amber-300 font-bold flex items-center justify-center gap-0.5 w-full"><i class="fa-solid fa-star text-[8px]"></i>${h.star || 1}</span>
                 </div>`;
                 fragment.appendChild(card.firstElementChild);
             });
@@ -6695,6 +6629,26 @@
                         combatEntities.push({...h, baseId: h.id, hp: h.maxHp, maxHp: h.maxHp, atk: h.atk, def: h.def, team: 'enemy', row: slot.row, col: slot.col, x: 0, y: 0, tx: 0, ty: 0, actionTimer: 0, stunned: false, shield: 0, damageText: []});
                     });
                 }
+            } else if (GAME_STATE.currentMode === 'arena_guest') {
+                // ★ 觀戰端：跟主控端的 'arena' 分支同一招，只是這次重建的是「主控端」的隊伍當敵方，
+                // 用同一份 HERO_DATABASE + getEffectiveHero() 算出實際戰鬥數值。這裡不顯示任何操作按鈕
+                // （不能攻擊、不能加速——觀戰端純粹是被動接收主控端算出的結果），最後強制重新定位一次，
+                // 因為觀戰端不會跑正常的回合狀態機，需要手動呼叫 forceRepositionUnits() 才會出現在正確站位上。
+                document.getElementById('btn-auto-battle').style.display = 'none';
+                if (arenaGuestOpponentData && arenaGuestOpponentData.fromTeam) {
+                    arenaGuestOpponentData.fromTeam.forEach(slot => {
+                        const db = HERO_DATABASE.find(h => h.id === slot.heroId);
+                        if (!db) return;
+                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equips: slot.equips};
+                        const originalRoster = GAME_STATE.roster[slot.heroId];
+                        GAME_STATE.roster[slot.heroId] = fakeRoster;
+                        const h = getEffectiveHero(db);
+                        if (originalRoster === undefined) delete GAME_STATE.roster[slot.heroId]; else GAME_STATE.roster[slot.heroId] = originalRoster;
+                        if (!h) return;
+                        combatEntities.push({...h, baseId: h.id, hp: h.maxHp, maxHp: h.maxHp, atk: h.atk, def: h.def, team: 'enemy', row: slot.row, col: slot.col, x: 0, y: 0, tx: 0, ty: 0, actionTimer: 0, stunned: false, shield: 0, damageText: []});
+                    });
+                }
+                setTimeout(forceRepositionUnits, 50);
             } else if (GAME_STATE.currentMode === 'worldboss') {
                 // ★ 全服首領：跟賽季討伐同一種「無限血量、打到全軍覆沒為止」設計，血量本身只是本地顯示用的假血條，
                 // 真正共用的血量存在 Firestore，戰鬥結束時才把這場造成的傷害一次性提交上去扣血（見 handleCombatEnd）。
@@ -6809,7 +6763,7 @@
             else if (mode === 'season') target = 'season';
             else if (mode === 'rift' || mode === 'festival') target = 'season-mode';
             else if (mode === 'dungeon') target = 'dungeon';
-            else if (mode === 'arena' || mode === 'worldboss') target = 'arena';
+            else if (mode === 'arena' || mode === 'arena_guest' || mode === 'worldboss') target = 'arena';
 
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             const navBtn = document.querySelector(`.nav-item[data-target="${target}"]`);
@@ -7130,6 +7084,7 @@
                     pushArenaLiveEvent({
                         attackerSide: attacker.team === 'player' ? 'my' : 'opp',
                         attackerName: attacker.name,
+                        attackerHeroId: attacker.baseId,
                         targetSide: target.team === 'player' ? 'my' : 'opp',
                         targetName: target.name,
                         targetHeroId: target.baseId,
@@ -7855,7 +7810,13 @@
         }
 
         function gameLoop() {
-            if (isCombatTabVisible()) {updateCombatLogic(); drawCanvas();}
+            // ★ 觀戰端 (arena_guest) 不跑正常的回合決策邏輯 (updateCombatLogic)，因為它不自己決定
+            // 誰攻擊誰、造成多少傷害——那些結果全部來自主控端透過 Firestore 傳來的事件 (見 applyArenaLiveEvent)。
+            // 但畫面還是要正常持續繪製 (drawCanvas)，這樣飄字/受擊特效才會正常播放跟消失。
+            if (isCombatTabVisible()) {
+                if (GAME_STATE.currentMode !== 'arena_guest') updateCombatLogic();
+                drawCanvas();
+            }
 
             animationFrameId = requestAnimationFrame(gameLoop);
 
@@ -7890,6 +7851,17 @@
                 document.getElementById('overlay-icon').innerHTML = isWin ? '<i class="fa-solid fa-trophy text-fantasy-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.8)]"></i>' : '<i class="fa-solid fa-skull-crossbones text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]"></i>';
                 document.getElementById('overlay-title').innerText = isWin ? '挑戰勝利' : '挑戰失敗';
                 document.getElementById('overlay-desc').innerHTML = `對手：<span class="text-sky-400 font-bold">${arenaOpponentSnapshot ? arenaOpponentSnapshot.displayName : '???'}</span><br>獲得 <span class="text-amber-400 font-bold">${honorGain}</span> 榮譽點數<br>目前戰績：<span class="text-fantasy-gold font-bold">${GAME_STATE.arenaRecord.win}勝${GAME_STATE.arenaRecord.loss}敗</span>`;
+                btnNext.innerText = "返回競技場"; btnNext.onclick = () => switchTab('arena');
+                saveGame();
+            } else if (GAME_STATE.currentMode === 'arena_guest') {
+                // ★ 觀戰端：這裡不用自己算輸贏或傷害，主控端已經把最終結果 (winnerUid) 寫進 arenaMatches 了，
+                // 呼叫這裡的時候 isWin 就是從那份結果直接判斷出來的（見 startArenaLiveMatchAsGuest 的 onSnapshot）
+                if (!GAME_STATE.arenaRecord) GAME_STATE.arenaRecord = {win: 0, loss: 0};
+                if (isWin) GAME_STATE.arenaRecord.win++; else GAME_STATE.arenaRecord.loss++;
+                const honorGain = grantArenaHonorReward(isWin);
+                document.getElementById('overlay-icon').innerHTML = isWin ? '<i class="fa-solid fa-trophy text-fantasy-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.8)]"></i>' : '<i class="fa-solid fa-skull-crossbones text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]"></i>';
+                document.getElementById('overlay-title').innerText = isWin ? '對戰勝利' : '對戰落敗';
+                document.getElementById('overlay-desc').innerHTML = `對手：<span class="text-rose-400 font-bold">${arenaGuestOpponentData ? arenaGuestOpponentData.fromName : '???'}</span><br>獲得 <span class="text-amber-400 font-bold">${honorGain}</span> 榮譽點數<br>目前戰績：<span class="text-fantasy-gold font-bold">${GAME_STATE.arenaRecord.win}勝${GAME_STATE.arenaRecord.loss}敗</span>`;
                 btnNext.innerText = "返回競技場"; btnNext.onclick = () => switchTab('arena');
                 saveGame();
             } else if (GAME_STATE.currentMode === 'worldboss') {
