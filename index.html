@@ -629,7 +629,7 @@
                                 class="flex flex-col items-center justify-center w-14 py-1 rounded-lg text-[9px] font-bold text-stone-400 border border-transparent transition active:scale-95">
                                 <i class="fa-solid fa-robot text-xs mb-0.5"></i>自動: 關
                             </button>
-                            <button onclick="cycleBattleSpeed()" id="btn-battle-speed"
+                            <button onclick="toggleBattleSpeed()" id="btn-battle-speed"
                                 class="flex flex-col items-center justify-center w-14 py-1 rounded-lg text-[9px] font-bold text-stone-400 border border-transparent transition active:scale-95">
                                 <i class="fa-solid fa-forward text-xs mb-0.5"></i>倍速: x1
                             </button>
@@ -1521,7 +1521,7 @@
                                     <option value="">關閉（不開放任何限時活動）</option>
                                 </select>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <div>
                                     <label class="text-[9px] text-stone-500 block mb-1">英雄等級上限</label>
                                     <input id="admin-max-hero-level" type="number" min="1" placeholder="100" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
@@ -1530,8 +1530,27 @@
                                     <label class="text-[9px] text-stone-500 block mb-1">聖物強化上限（階）</label>
                                     <input id="admin-max-artifact-tier" type="number" min="1" placeholder="10" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 </div>
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">賽季天數</label>
+                                    <input id="admin-season-duration-days" type="number" min="1" placeholder="4" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
                             </div>
                             <p class="text-[8px] text-amber-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>只往上調整才安全；往下調會讓已經超過新上限的玩家進度顯示異常，目前沒有自動修正機制。</p>
+
+                            <div class="border-t border-[#3e3328] pt-2 flex flex-col gap-1.5">
+                                <label class="flex items-center gap-2 text-[10px] text-stone-300 cursor-pointer">
+                                    <input id="admin-toggle-unlimited-speed" type="checkbox" class="w-3.5 h-3.5 accent-amber-600">
+                                    解除倍速上限（目前已開放到 1000x，此開關保留供未來調整）
+                                </label>
+                                <label class="flex items-center gap-2 text-[10px] text-stone-300 cursor-pointer">
+                                    <input id="admin-toggle-unlimited-boss" type="checkbox" class="w-3.5 h-3.5 accent-amber-600">
+                                    解除世界首領每日次數限制（目前本來就沒有限打，此開關保留供未來調整）
+                                </label>
+                                <label class="flex items-center gap-2 text-[10px] text-stone-300 cursor-pointer">
+                                    <input id="admin-toggle-free-market" type="checkbox" class="w-3.5 h-3.5 accent-amber-600">
+                                    黑市免手續費（開啟後上架交易 0% 抽成，原本固定 10%）
+                                </label>
+                            </div>
 
                             <p class="text-[9px] text-red-300 font-bold border-t border-[#3e3328] pt-2"><i class="fa-solid fa-chess-king mr-1"></i>賽季首領數值調整（防止英雄無限升星後數值跟不上）</p>
                             <div class="grid grid-cols-3 gap-2">
@@ -1562,7 +1581,8 @@
                             <p id="admin-boss-current-status" class="text-[9px] text-stone-500">尚未讀取狀態</p>
                             <div>
                                 <label class="text-[9px] text-stone-500 block mb-1">選擇本次首領（沿用各賽季的世界首領）</label>
-                                <select id="admin-boss-select" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                                <select id="admin-boss-select" onchange="applyWorldBossStatPreset()" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                                <p class="text-[8px] text-stone-500 mt-1">選好首領後會自動帶入企劃書建議數值，欄位仍可手動覆蓋。</p>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
@@ -2565,15 +2585,20 @@
         function getPlausibleMaxHeroPower(heroId) {
             const db = HERO_DATABASE.find(h => h.id === heroId);
             if (!db) return 0;
-            const maxLevelMult = 1 + (MAX_HERO_LEVEL - 1) * 0.12;
+            // ★ 同步 getEffectiveHero 改用的「稀有度倍率 × 職業基礎三圍」公式，不然這裡的合理性上限
+            // 還停留在舊的每英雄個別數值，會比新公式實際算出來的數值低很多，害正常玩家被誤判成數值異常。
+            const rarityMult = RARITY_BASE_MULT[db.rarity] || 1.0;
+            const classBase = CLASS_BASE_STATS[db.role] || CLASS_BASE_STATS['戰士'];
+            const maxLevelMult = getLevelMultiplier(MAX_HERO_LEVEL);
             // ★ 星級現在無上限，這裡不能直接用 MAX_STAR_LEVEL (Infinity) 算，不然這個合理性檢查會直接失效。
             // 改用一個「夠寬鬆但還是有限」的估計值，只用在這個粗略防呆檢查上，跟遊戲實際的星級上限脫鉤。
-            const maxStarMult = 1 + (PLAUSIBLE_MAX_STAR_ESTIMATE - 1) * 0.007; // ★ 同步 getEffectiveHero 改過的星級加成幅度
-            const maxArtifactMult = 1 + (ALTAR_MAX_ARTIFACT_TIER * 0.10); // 聖物強化滿階 10 階 (+100%)
-            const maxEquipMult = 1.6; // 4 件裝備都滿 20 級的粗估加成上限
-            const totalMult = maxLevelMult * maxStarMult * maxArtifactMult * maxEquipMult;
-            const maxHp = db.baseHp * totalMult, maxAtk = db.baseAtk * totalMult, maxDef = db.baseDef * totalMult;
-            return maxHp * 0.5 + maxAtk * 2 + maxDef * 1.5 + (db.crit || 0) * 10 * 1.5;
+            const maxTotalBonus = 1 + getStarBonusRatio(PLAUSIBLE_MAX_STAR_ESTIMATE) + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER);
+            const maxEquipFlat = {hp: 20 * 80, atk: 20 * 15, def: 20 * 8}; // 4 件裝備都強化滿 20 級的粗估加算數值上限
+            const maxHp = classBase.hp * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.hp;
+            const maxAtk = classBase.atk * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.atk;
+            const maxDef = classBase.def * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.def;
+            const maxCrit = (db.crit || 0) + 20 * 2;
+            return maxHp * 0.5 + maxAtk * 2 + maxDef * 1.5 + maxCrit * 10;
         }
 
         async function broadcastArenaPresence() {
@@ -3425,7 +3450,8 @@
            裁判在中間驗證每一步，本質上跟這整個遊戲的其他資源一樣沒辦法做到滴水不漏的防作弊。
            ============================================================ */
         const BLACK_MARKET_DIAMOND_RATE = 10000; // ★ 匯率調整：1 寶石 = 10000 黑市貨幣
-        const BLACK_MARKET_FEE_RATE = 0.10; // 10% 交易手續費
+        const BLACK_MARKET_FEE_RATE_DEFAULT = 0.10; // 10% 交易手續費（預設值，管理員開啟「免手續費」時會被覆蓋成 0）
+        let BLACK_MARKET_FEE_RATE = BLACK_MARKET_FEE_RATE_DEFAULT; // ★ 改成 let：管理員可以在後台即時調整（見 listenAdminGameConfig 的 freeMarket 開關）
         let bmBrowseUnsub = null, bmMineUnsub = null;
         let currentBMSubTab = 'browse';
 
@@ -3796,6 +3822,10 @@
             }
             document.getElementById('admin-max-hero-level').value = (adminGameConfig && adminGameConfig.maxHeroLevel) || MAX_HERO_LEVEL;
             document.getElementById('admin-max-artifact-tier').value = (adminGameConfig && adminGameConfig.maxArtifactTier) || ALTAR_MAX_ARTIFACT_TIER;
+            document.getElementById('admin-season-duration-days').value = (adminGameConfig && adminGameConfig.seasonDurationDays) || SEASON_DURATION_DAYS;
+            document.getElementById('admin-toggle-unlimited-speed').checked = !!(adminGameConfig && adminGameConfig.unlimitedSpeed);
+            document.getElementById('admin-toggle-unlimited-boss').checked = !!(adminGameConfig && adminGameConfig.unlimitedBossAttempts);
+            document.getElementById('admin-toggle-free-market').checked = !!(adminGameConfig && adminGameConfig.freeMarket);
             document.getElementById('admin-season-boss-atkmult').value = (adminGameConfig && adminGameConfig.seasonBossAtkMult) || 1.0;
             document.getElementById('admin-season-boss-defmult').value = (adminGameConfig && adminGameConfig.seasonBossDefMult) || 1.0;
             document.getElementById('admin-season-boss-crit').value = (adminGameConfig && adminGameConfig.seasonBossCrit) || 15;
@@ -3810,6 +3840,10 @@
             const eventSeasonId = eventVal ? parseInt(eventVal) : null;
             const maxHeroLevel = parseInt(document.getElementById('admin-max-hero-level').value) || MAX_HERO_LEVEL;
             const maxArtifactTier = parseInt(document.getElementById('admin-max-artifact-tier').value) || ALTAR_MAX_ARTIFACT_TIER;
+            const seasonDurationDays = parseInt(document.getElementById('admin-season-duration-days').value) || SEASON_DURATION_DAYS;
+            const unlimitedSpeed = document.getElementById('admin-toggle-unlimited-speed').checked;
+            const unlimitedBossAttempts = document.getElementById('admin-toggle-unlimited-boss').checked;
+            const freeMarket = document.getElementById('admin-toggle-free-market').checked;
             const seasonBossAtkMult = parseFloat(document.getElementById('admin-season-boss-atkmult').value) || 1.0;
             const seasonBossDefMult = parseFloat(document.getElementById('admin-season-boss-defmult').value) || 1.0;
             const seasonBossCrit = parseFloat(document.getElementById('admin-season-boss-crit').value) || 15;
@@ -3818,12 +3852,13 @@
                 await fbDb.collection('gameConfig').doc('current').set({
                     currentSeasonId: seasonId,
                     activeEventSeasonId: eventSeasonId,
-                    maxHeroLevel, maxArtifactTier,
+                    maxHeroLevel, maxArtifactTier, seasonDurationDays,
+                    unlimitedSpeed, unlimitedBossAttempts, freeMarket,
                     seasonBossAtkMult, seasonBossDefMult, seasonBossCrit, seasonBossSkillMult,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: GAME_STATE.mpDisplayName || fbUser.email
                 }, {merge: true});
-                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階，賽季首領攻/防倍率 ${seasonBossAtkMult}/${seasonBossDefMult}，暴擊 ${seasonBossCrit}%，技能倍率 ${seasonBossSkillMult}`;
+                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階，賽季天數 ${seasonDurationDays} 天，賽季首領攻/防倍率 ${seasonBossAtkMult}/${seasonBossDefMult}，暴擊 ${seasonBossCrit}%，技能倍率 ${seasonBossSkillMult}`;
                 showToast('全域設定已同步給所有玩家');
             } catch (err) {console.warn('儲存全域設定失敗：', err); showToast('儲存失敗：' + (err.code || err.message || '未知錯誤'));}
         }
@@ -3847,6 +3882,29 @@
                 if (SEASON_CONFIG[sid].boss && SEASON_CONFIG[sid].boss.id === bossId) return SEASON_CONFIG[sid].boss;
             }
             return null;
+        }
+
+        // ★ 新增：企劃書附件的「世界首領三圍精確梯度」建議值，選擇首領時自動帶入，
+        // 管理員仍可以在送出前手動覆蓋，這裡只是省去每次都要照表手動輸入的麻煩。
+        const WORLD_BOSS_STAT_PRESETS = {
+            1: {maxHp: 3500000,   atk: 12000,  def: 800},
+            2: {maxHp: 7000000,   atk: 28000,  def: 2000},
+            3: {maxHp: 12000000,  atk: 55000,  def: 4500},
+            4: {maxHp: 25000000,  atk: 95000,  def: 8000},
+            5: {maxHp: 50000000,  atk: 180000, def: 15000},
+            6: {maxHp: 100000000, atk: 350000, def: 25000},
+        };
+        function applyWorldBossStatPreset() {
+            const bossId = document.getElementById('admin-boss-select').value;
+            let seasonId = null;
+            for (const sid in SEASON_CONFIG) {
+                if (SEASON_CONFIG[sid].boss && SEASON_CONFIG[sid].boss.id === bossId) {seasonId = parseInt(sid); break;}
+            }
+            const preset = seasonId && WORLD_BOSS_STAT_PRESETS[seasonId];
+            if (!preset) return;
+            document.getElementById('admin-boss-maxhp').value = preset.maxHp;
+            document.getElementById('admin-boss-atk').value = preset.atk;
+            document.getElementById('admin-boss-def').value = preset.def;
         }
 
         async function refreshAdminBossStatus() {
@@ -4424,7 +4482,7 @@
         function getCurrentEra() {
             if (devModeAllUnlock) return 999;
             const now = Date.now();
-            const SEASON_DURATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 小時
+            const SEASON_DURATION_MS = getSeasonDurationMs();
             return Math.floor((now - GAME_STATE.accountCreateTime) / SEASON_DURATION_MS) + 1;
         }
 
@@ -4446,6 +4504,9 @@
                 if (adminGameConfig) {
                     if (adminGameConfig.maxHeroLevel) MAX_HERO_LEVEL = adminGameConfig.maxHeroLevel;
                     if (adminGameConfig.maxArtifactTier) ALTAR_MAX_ARTIFACT_TIER = adminGameConfig.maxArtifactTier;
+                    if (adminGameConfig.seasonDurationDays) SEASON_DURATION_DAYS = adminGameConfig.seasonDurationDays;
+                    // ★ 新增：管理員可以開關「黑市免手續費」，即時套用給所有玩家（見 exchangeDiamondToBMC 等黑市函式）
+                    BLACK_MARKET_FEE_RATE = adminGameConfig.freeMarket ? 0 : BLACK_MARKET_FEE_RATE_DEFAULT;
                     // ★ 管理員如果在玩家正在遊玩時把上限往下調，這裡立刻套用保護機制，不用等下次重新整理頁面
                     if (typeof enforceProgressionCaps === 'function') {
                         const wasClamped = enforceProgressionCaps();
@@ -5046,7 +5107,7 @@
             list.innerHTML = '';
 
             const now = Date.now();
-            const SEASON_DURATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 小時
+            const SEASON_DURATION_MS = getSeasonDurationMs();
             maxUnlockedSeason = getCurrentEra();
 
             Object.keys(SEASON_CONFIG).forEach(sId => {
@@ -5140,7 +5201,7 @@
             if (GAME_STATE.season.id === targetId) return;
 
             const now = Date.now();
-            const SEASON_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
+            const SEASON_DURATION_MS = getSeasonDurationMs();
             maxUnlockedSeason = getCurrentEra();
 
             if (targetId > maxUnlockedSeason) {
@@ -5276,7 +5337,7 @@
             }
 
             const now = Date.now();
-            const SEASON_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
+            const SEASON_DURATION_MS = getSeasonDurationMs();
             maxUnlockedSeason = getCurrentEra();
 
             if (maxUnlockedSeason < info.seasonId) {
@@ -5775,7 +5836,7 @@
             const updateTimer = () => {
                 if (!GAME_STATE.accountCreateTime) return;
                 const now = Date.now();
-                const SEASON_DURATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 小時
+                const SEASON_DURATION_MS = getSeasonDurationMs();
                 const currentSeasonNum = getCurrentEra();
                 const nextUnlockTime = GAME_STATE.accountCreateTime + currentSeasonNum * SEASON_DURATION_MS;
                 maxUnlockedSeason = currentSeasonNum;
@@ -5958,27 +6019,134 @@
         // ★ 營地掛機系統已移除：遠征現在有自動戰鬥＋倍速可以掛著持續刷關卡與資源，
         // 加上關卡越高獎勵越好的曲線調整，功能上已經取代了原本純被動、需要手動領取的營地掛機。
 
+        // ============ 【企劃書】稀有度基礎倍率與天賦 (Rarity Base Multipliers & Passives) ============
+        // ★ 玩家已確認可接受：改成職業基礎值 × 稀有度倍率，會覆蓋掉每個英雄原本個別調校的
+        // baseHp/baseAtk/baseDef，現有玩家的英雄數值也會直接套用新公式重算，不特別做相容轉換。
+        const RARITY_BASE_MULT = {R: 1.0, SR: 1.2, SSR: 1.5, UR: 1.8, LR: 2.2, GR: 3.0};
+        const RARITY_PASSIVES = {
+            R:   {spd: 0,  energyStart: 0,  dmgReduce: 0,    dmgBonus: 0,    cheatDeath: false},
+            SR:  {spd: 5,  energyStart: 0,  dmgReduce: 0,    dmgBonus: 0,    cheatDeath: false},
+            SSR: {spd: 10, energyStart: 10, dmgReduce: 0,    dmgBonus: 0,    cheatDeath: false},
+            UR:  {spd: 15, energyStart: 15, dmgReduce: 0.05, dmgBonus: 0,    cheatDeath: false},
+            LR:  {spd: 20, energyStart: 20, dmgReduce: 0.10, dmgBonus: 0.10, cheatDeath: false},
+            GR:  {spd: 30, energyStart: 30, dmgReduce: 0.15, dmgBonus: 0.15, cheatDeath: true}, // GR 免死 1 次，鎖血 1 點（見 executeHit）
+        };
+
+        // ============ 【企劃書】職業定位基礎三圍 (Class Base Stats by Role) ============
+        const CLASS_BASE_STATS = {
+            '坦克': {hp: 5000, atk: 150, def: 300, spd: 90},
+            '戰士': {hp: 4000, atk: 250, def: 200, spd: 100},
+            '刺客': {hp: 2800, atk: 350, def: 120, spd: 120},
+            '法師': {hp: 2500, atk: 380, def: 100, spd: 95},
+            '輔助': {hp: 3500, atk: 200, def: 180, spd: 110},
+        };
+        // 職業特例加成：坦克天生格擋、戰士天生吸血、刺客基礎暴傷 180%（其他職業 150%）、法師初始能量+10、輔助效果抵抗+15%
+        const CLASS_PASSIVES = {
+            '坦克': {blockRate: 0.10, critDmgBase: 1.5, energyStartBonus: 0,  effRes: 0,    lifestealBase: 0},
+            '戰士': {blockRate: 0,    critDmgBase: 1.5, energyStartBonus: 0,  effRes: 0,    lifestealBase: 0.05},
+            '刺客': {blockRate: 0,    critDmgBase: 1.8, energyStartBonus: 0,  effRes: 0,    lifestealBase: 0},
+            '法師': {blockRate: 0,    critDmgBase: 1.5, energyStartBonus: 10, effRes: 0,    lifestealBase: 0},
+            '輔助': {blockRate: 0,    critDmgBase: 1.5, energyStartBonus: 0,  effRes: 0.15, lifestealBase: 0},
+        };
+
+        // 等級成長倍率：分段公式，Lv1~30 每級 +8%、Lv31~70 每級 +5%、Lv71~100 每級 +3%、Lv101+ 每級 +2%
+        function getLevelMultiplier(level) {
+            const l = Math.max(1, level || 1);
+            let mult = 1 + (Math.min(l, 30) - 1) * 0.08;
+            if (l > 30) mult += (Math.min(l, 70) - 30) * 0.05;
+            if (l > 70) mult += (Math.min(l, 100) - 70) * 0.03;
+            if (l > 100) mult += (l - 100) * 0.02;
+            return mult;
+        }
+
+        // 星級加成：對數公式 0.8 * ln(1 + 0.25 * (Star-1))，取代原本線性每星 +0.7% 的算法
+        function getStarBonusRatio(star) {
+            const s = Math.max(1, star || 1);
+            return 0.8 * Math.log(1 + 0.25 * (s - 1));
+        }
+
+        // 聖物加成：1~100 階每階 +0.5%（逢 10 階額外 +2%）；101 階起每階 +0.25%
+        function getArtifactBonusRatio(tier) {
+            const t = Math.max(0, tier || 0);
+            const firstPhase = Math.min(t, 100);
+            let bonus = firstPhase * 0.005 + Math.floor(firstPhase / 10) * 0.02;
+            if (t > 100) bonus += (t - 100) * 0.0025;
+            return bonus;
+        }
+        // 聖物 101 階起，逢 5 階額外 +1% 免傷（跟數值加成分開算，屬於防禦池而不是攻擊池）
+        function getArtifactDmgReduceRatio(tier) {
+            const t = Math.max(0, tier || 0);
+            if (t <= 100) return 0;
+            return Math.floor((t - 100) / 5) * 0.01;
+        }
+
+        // ============ 【企劃書】攻擊判定：命中/閃避 → 暴擊(封頂300%) → 防禦減免 → 真傷保護 ============
+        // ★ 目前只套用在「普攻」與「小技能」這兩個最常觸發的傷害路徑（見 updateCombatLogic 呼叫處）；
+        // GR 專屬大招與少數帶特殊機制的技能（斬殺鏈、引爆、機率反擊等）暫時維持各自原本的獨立公式，
+        // 還沒套用這份新公式，避免一次牽動過多既有機制、增加不必要的回歸風險。
+        function resolveAttackRoll(attacker, target, atkMultiplier) {
+            const hitRate = Math.max(0.2, (typeof attacker.hitRate === 'number' ? attacker.hitRate : 1) - (target.dodgeRate || 0));
+            if (Math.random() > hitRate) return {damage: 0, isCrit: false, isEvaded: true};
+
+            let isCrit = false, critMult = 1;
+            if (Math.random() * 100 < (attacker.crit || 0)) {
+                isCrit = true;
+                critMult = Math.min(3.0, attacker.critDmgMult || 1.5); // 暴傷硬上限 300%
+            }
+
+            const atkValue = typeof attacker.activeAtk === 'number' ? attacker.activeAtk : attacker.atk;
+            const rawDamage = atkValue * atkMultiplier * critMult;
+            const defenderLevel = target.effectiveLevel || target.level || 1;
+            const dmgReduction = target.def / (target.def + (50 * defenderLevel + 300)); // 雙曲線防禦減免公式
+            const extraDmgReduce = Math.min(0.6, target.dmgReduce || 0); // 稀有度/聖物高階帶來的額外免傷，設個上限避免堆到接近無敵
+            const dmgBonus = attacker.dmgBonus || 0; // 稀有度天賦帶來的全傷害加成 (LR/GR)
+
+            const finalDamage = rawDamage * (1 - dmgReduction) * (1 - extraDmgReduce) * (1 + dmgBonus);
+            return {damage: Math.max(1, Math.floor(finalDamage)), isCrit, isEvaded: false};
+        }
+
         function getEffectiveHero(db) {
             if (!db) return null;
             const r = GAME_STATE.roster[db.id] || {level: 1, star: db.star || 1, artifactTier: 0, equips: [0, 0, 0, 0]};
             const l = r.level; // ★ 庇護等級移除：不再跟最高等級英雄同步，就是自己實際的等級
             const star = r.star || 1;
-
             const eq = r.equips || [0, 0, 0, 0];
-            // 聖物強化 (artifactTier, 祭壇強化)：每階 +10% 全屬性，最高 10 階 (+100%，維持跟原本 100 階版本一樣的滿階上限)
-            const artifactMult = 1 + ((r.artifactTier || 0) * 0.10);
-            // ★ 數值重新調整：星級無上限之後，原本每星 +15% 幅度太誇張——R 級隨便升到 50 星
-            // 就已經遠遠超過 SR 級 1 星的數值，稀有度反而變得不重要。改成每星只 +0.7%，
-            // 校準依據是目前 R 與 SR 平均基礎數值大約差 1.3 倍，49 次升星（1★→50★）疊出的
-            // 1+49*0.007≈1.34 倍恰好對齊一個稀有度級距，所以「R 級 1 等 50 星」大致等同
-            // 「SR 級 1 星 1 等」，星級變成同稀有度內的漸進養成，不會直接蓋過稀有度差距。
-            // 同時修正防禦力原本完全不吃星級加成的疏漏，現在三圍（生命／攻擊／防禦）都用
-            // 同一套小幅度加成，星級越高數值依然穩定提升，只是不再爆炸性成長。
-            const starMult = 1 + (r.star - 1) * 0.007;
-            const hp = Math.floor((db.baseHp * (1 + (l - 1) * 0.12) * starMult + eq[2] * 80) * artifactMult);
-            const atk = Math.floor((db.baseAtk * (1 + (l - 1) * 0.12) * starMult + eq[0] * 15) * artifactMult);
-            const def = Math.floor((db.baseDef * (1 + (l - 1) * 0.12) * starMult + eq[1] * 8) * artifactMult);
+
+            const rarityMult = RARITY_BASE_MULT[db.rarity] || 1.0;
+            const passive = RARITY_PASSIVES[db.rarity] || RARITY_PASSIVES.R;
+            const classBase = CLASS_BASE_STATS[db.role] || CLASS_BASE_STATS['戰士'];
+            const classPassive = CLASS_PASSIVES[db.role] || CLASS_PASSIVES['戰士'];
+
+            // 1. 稀有度放大 Lv.1 白字（職業基礎三圍 × 稀有度倍率）
+            const baseHp = classBase.hp * rarityMult;
+            const baseAtk = classBase.atk * rarityMult;
+            const baseDef = classBase.def * rarityMult;
+
+            // 2. 等級成長倍率（分段公式）
+            const lvlMult = getLevelMultiplier(l);
+
+            // 3. 加算加成池：星級（對數）+ 聖物（分段）。裝備目前仍是舊的 4 格直接加算數值，
+            //    尚未併入這個比例池——8 部位裝備／套裝系統是後續階段，這次不動裝備數值結構。
+            const totalBonus = 1 + getStarBonusRatio(star) + getArtifactBonusRatio(r.artifactTier || 0);
+            const artifactDmgReduce = getArtifactDmgReduceRatio(r.artifactTier || 0);
+
+            // 4. 現有 4 格裝備系統的直接加算數值（維持相容）
+            const eqHp = eq[2] * 80, eqAtk = eq[0] * 15, eqDef = eq[1] * 8;
+
+            const hp = Math.floor(baseHp * lvlMult * totalBonus + eqHp);
+            const atk = Math.floor(baseAtk * lvlMult * totalBonus + eqAtk);
+            const def = Math.floor(baseDef * lvlMult * totalBonus + eqDef);
             const crit = (db.crit || 0) + (eq[3] * 2);
+
+            // 稀有度天賦：速度、初始能量加成、受傷減免（+聖物高階免傷）、全傷害加成、GR 免死
+            const spd = (classBase.spd || 100) + (passive.spd || 0);
+            const dmgReduce = Math.min(0.6, (passive.dmgReduce || 0) + artifactDmgReduce);
+            const dmgBonus = passive.dmgBonus || 0;
+            const cheatDeath = !!passive.cheatDeath;
+            const critDmgMult = classPassive.critDmgBase || 1.5; // 基礎暴傷：刺客 180%，其他職業 150%（暴擊時再套用 300% 硬上限）
+            const energyStartBonus = (passive.energyStart || 0) + (classPassive.energyStartBonus || 0);
+            const hitRate = 1; // ★ 目前沒有專門的命中率數值來源，先給滿命中；之後可接裝備/天賦提供額外命中
+            const dodgeRate = 0; // ★ 同上，閃避率之後可以接裝備/天賦來源，目前預設 0
 
             // ★ 升星現在也會讓專屬技能一起變強，不再只是單純的數值倍率：
             // 技能的「數值型」欄位 (value/傷害或治療幅度) 每星 +5%，「機率型」欄位 (chance) 每星 +1.5% 並封頂 95%，
@@ -5993,7 +6161,11 @@
                 if (typeof effSkill.duration === 'number') effSkill.duration = effSkill.duration + Math.floor((star - 1) / 5);
             }
 
-            return {...db, ...r, effectiveLevel: l, maxHp: hp, atk, def, crit, skill: effSkill, combatPower: Math.floor(hp * 0.5 + atk * 2 + def * 1.5 + crit * 10)};
+            return {
+                ...db, ...r, effectiveLevel: l, maxHp: hp, atk, def, crit, skill: effSkill,
+                spd, dmgReduce, dmgBonus, cheatDeath, critDmgMult, energyStartBonus, hitRate, dodgeRate,
+                combatPower: Math.floor(hp * 0.5 + atk * 2 + def * 1.5 + crit * 10)
+            };
         }
 
         // ★ 把技能物件裡的機率/幅度/持續回合換算成一行文字，讓「升星後技能變強了」這件事看得到、不用自己猜
@@ -6195,22 +6367,65 @@
             }
         }
 
-        // 戰鬥倍速：依序循環 1x -> 2x -> 3x -> 5x -> 10x -> 1x，影響動畫播放速度與自動連戰間隔
-        // ★ 秘境／賽季這類需要重複刷的模式常常嫌動畫太慢，把上限從 x3 拉高到 x10
-        function cycleBattleSpeed() {
-            ToneAudioEngine.playClick();
-            // ★ 全服首領現在改成血量越低越兇猛來平衡高倍速秒殺的問題，不用再額外限制速度上限，
-            // 這個模式跟其他模式一樣最高可以開到 20 倍速
-            const SPEED_STEPS = [1, 2, 3, 10, 20, 50, 100, 1000];
-            const idx = SPEED_STEPS.indexOf(battleSpeed);
-            battleSpeed = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
+        // ★ 改版：戰鬥倍速改成「依模式設定可用倍速清單」，不再是所有模式共用同一份無上限清單。
+        // 遠征/試煉塔上限 4x，秘境 6x，世界首領 8x（血量越低越兇猛已經有平衡機制，可以給高一點），
+        // 競技場固定 5x 不給玩家調（開場一律隱藏演算＋回放展示，調速度沒有意義）。
+        // 管理員開啟「解除倍速上限」時，直接覆蓋成 [1,2,4,8,10,20]，不分模式。
+        const MODE_SPEED_CONFIG = {
+            battle: [1, 2, 4],      // 遠征
+            tower: [1, 2, 4],       // 試煉塔
+            season: [1, 2, 4],      // 賽季討伐
+            rift: [1, 2, 4],        // 深淵迷宮
+            festival: [1, 2, 4],    // 光輝迴廊
+            dungeon: [1, 2, 4, 6],  // 秘境
+            worldboss: [1, 2, 4, 8],// 全服首領
+            arena: [5],             // 競技場：固定 5x，不可調整
+            arena_guest: [5],       // 競技場觀戰：同上
+        };
+
+        // 取得目前模式可用的倍速清單；管理員開啟「解除倍速上限」時全模式一律覆蓋成這份最高清單
+        function getAvailableSpeeds(mode) {
+            if (adminGameConfig && adminGameConfig.unlimitedSpeed) return [1, 2, 4, 8, 10, 20];
+            return MODE_SPEED_CONFIG[mode] || [1, 2];
+        }
+
+        // 依目前模式重新整理倍速按鈕的顯示文字與樣式，不實際切換速度數值
+        function updateBattleSpeedButtonUI() {
             const btn = document.getElementById('btn-battle-speed');
+            if (!btn) return;
             btn.innerHTML = `<i class="fa-solid fa-forward mr-1"></i>倍速: x${battleSpeed}`;
             if (battleSpeed > 1) {
-                btn.classList.replace('text-stone-400', 'text-sky-400'); btn.classList.replace('border-transparent', 'border-sky-500/50');
+                btn.classList.remove('text-stone-400', 'border-transparent'); btn.classList.add('text-sky-400', 'border-sky-500/50');
             } else {
-                btn.classList.replace('text-sky-400', 'text-stone-400'); btn.classList.replace('border-sky-500/50', 'border-transparent');
+                btn.classList.remove('text-sky-400', 'border-sky-500/50'); btn.classList.add('text-stone-400', 'border-transparent');
             }
+        }
+
+        // ★ 新增：每次切換戰鬥模式（見 initCombatUnits）都呼叫這裡一次，確保 battleSpeed 落在
+        // 目前模式允許的清單內——例如玩家在世界首領開到 8x，之後進秘境（上限 6x）就會被拉回合法值，
+        // 不會殘留一個「這個模式選不到、但數值還卡著」的倍速。
+        function reconcileBattleSpeedForMode() {
+            const speeds = getAvailableSpeeds(GAME_STATE.currentMode);
+            if (!speeds.includes(battleSpeed)) battleSpeed = speeds[0];
+            updateBattleSpeedButtonUI();
+        }
+
+        function toggleBattleSpeed() {
+            ToneAudioEngine.playClick();
+            const availableSpeeds = getAvailableSpeeds(GAME_STATE.currentMode);
+
+            // 如果目前模式只有一種倍速（例如競技場固定 5x），按了也不會有反應
+            if (availableSpeeds.length === 1) {
+                showToast(`此模式固定 x${availableSpeeds[0]} 倍速`);
+                return;
+            }
+
+            let currentIndex = availableSpeeds.indexOf(battleSpeed);
+            if (currentIndex === -1) currentIndex = 0;
+            const nextIndex = (currentIndex + 1) % availableSpeeds.length;
+            battleSpeed = availableSpeeds[nextIndex];
+
+            updateBattleSpeedButtonUI();
             showToast(`戰鬥速度已切換為 x${battleSpeed}`);
         }
 
@@ -6453,9 +6668,14 @@
             if (h.isExclusive) badgesHtml += `<span class="bg-rose-950/80 text-[10px] px-3 py-1 rounded border border-rose-500/50 text-rose-300 shadow-sm">S${h.seasonId} 限定</span>`;
             badgesContainer.innerHTML = badgesHtml;
 
-            // 4. 寫入屬性數據
-            document.getElementById('codex-stat-hp').innerText = h.baseHp; document.getElementById('codex-stat-atk').innerText = h.baseAtk;
-            document.getElementById('codex-stat-def').innerText = h.baseDef; document.getElementById('codex-stat-crit').innerText = (h.crit || 0) + '%';
+            // 4. 寫入屬性數據（★ 改用新公式：職業基礎三圍 × 稀有度倍率，這是「Lv.1 / 1★ / 無裝備」的基準值，
+            //    跟英雄個別的 db.baseHp/baseAtk/baseDef 已經脫鉤——那組舊欄位不再影響實際戰鬥數值）
+            const codexClassBase = CLASS_BASE_STATS[h.role] || CLASS_BASE_STATS['戰士'];
+            const codexRarityMult = RARITY_BASE_MULT[h.rarity] || 1.0;
+            document.getElementById('codex-stat-hp').innerText = Math.floor(codexClassBase.hp * codexRarityMult);
+            document.getElementById('codex-stat-atk').innerText = Math.floor(codexClassBase.atk * codexRarityMult);
+            document.getElementById('codex-stat-def').innerText = Math.floor(codexClassBase.def * codexRarityMult);
+            document.getElementById('codex-stat-crit').innerText = (h.crit || 0) + '%';
 
             // 5. 升級敘述區塊 (改成精緻的獨立區塊與圖示)
             document.getElementById('codex-detail-desc').innerHTML = `
@@ -6892,6 +7112,10 @@
         // 導致金幣/經驗越後期越用不完)。公式：實測 1→200 級總花費約 241 萬金幣、125 萬經驗，
         // 對應目前的資源取得速度大約是數小時的專注遊玩量，作為長期目標而不是瞬間就能刷滿。
         let MAX_HERO_LEVEL = 100; // ★ 改成 let：管理員可以在後台調整這個上限（見 listenAdminGameConfig）
+        // ★ 新增：賽季天數改成管理員可調整（原本每處都寫死 48 小時），預設 4 天，符合企劃書的
+        // 「4 天極速賽季」設計。所有原本各自寫死 SEASON_DURATION_MS 的地方，現在統一呼叫這個函式取得。
+        let SEASON_DURATION_DAYS = 4;
+        function getSeasonDurationMs() { return SEASON_DURATION_DAYS * 24 * 60 * 60 * 1000; }
         // ★ 星級無上限之後，反作弊的「理論最大戰力」估算不能再直接用星級上限（因為根本沒有上限了），
         // 這裡另外訂一個「夠寬鬆但還是有限」的估計值，只用在合理性檢查上，跟遊戲實際的星級系統脫鉤，
         // 不會因為玩家真的推到很高星級就被誤判成異常。
@@ -7521,6 +7745,7 @@
         const CSTATE = {INIT: 0, NEXT_TURN: 1, MOVING_FWD: 2, ACTION: 3, ACTION_DELAY: 4, MOVING_BACK: 5, CHECK_WIN: 6, IDLE_WIN: 7};
         let currentState = CSTATE.INIT, currentActor = null, currentTarget = null;
         let animProgress = 0, turnQueue = [], floatingTexts = [], visualEffects = [], screenShake = 0;
+        let combatRoundCount = 0; // ★ 新增：這場戰鬥目前打了幾輪（每次 turnQueue 補滿一輪算一次），供「戰鬥超時狂暴」判斷
         function easeInOutQuad(t) {return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;}
 
         function resizeCanvas() {
@@ -7579,7 +7804,11 @@
         window.addEventListener('resize', debounce(() => {if (resizeCanvas()) forceRepositionUnits();}, 150));
 
         function initCombatUnits() {
-            cancelAnimationFrame(animationFrameId); resizeCanvas(); combatEntities = []; floatingTexts = []; visualEffects = []; screenShake = 0; eventTotalDamage = 0;
+            cancelAnimationFrame(animationFrameId); resizeCanvas(); combatEntities = []; floatingTexts = []; visualEffects = []; screenShake = 0; eventTotalDamage = 0; combatRoundCount = 0;
+            // ★ 依目前模式校正倍速（見 reconcileBattleSpeedForMode）——但競技場主控端「隱藏演算」階段
+            // 例外：那個階段的 battleSpeed 被刻意拉到 ARENA_HOST_COMPUTE_SPEED（30x）加速背景計算，
+            // 玩家看不到，不能被這裡拉回競技場正常顯示用的 5x，不然隱藏演算會變慢。
+            if (!arenaHostComputing) reconcileBattleSpeedForMode();
             // ★ 修正重大 bug：battleAnalytics（傷害/承受/治療排行）從來沒有在開戰時重置過，
             // 也沒有幫每個英雄的欄位初始化成 0。第一次 += 的時候是 undefined + 數字 = NaN，
             // 從那之後這個英雄的數據就永遠是 NaN，連帶讓整個排行榜的百分比計算、數字顯示全部壞掉
@@ -7605,9 +7834,10 @@
                         team: 'player',
                         row: Math.floor(idx / 2),
                         col: (idx % 2) * 2,
-                        // ★ 大招改用累積能量啟動：每個玩家英雄從 0 能量開始，滿了 (maxEnergy) 就會在自己的回合
+                        // ★ 大招改用累積能量啟動：每個玩家英雄從 0 能量開始（额外套用稀有度/職業天賦的
+                        // 初始能量加成 energyStartBonus，見 getEffectiveHero），滿了 (maxEnergy) 就會在自己的回合
                         // 保證施放大招（見 updateCombatLogic 裡 isUlt 的判定），不再是每回合固定機率隨機觸發
-                        energy: 0, maxEnergy: 100,
+                        energy: h.energyStartBonus || 0, maxEnergy: 100,
                         x: 0, y: 0, tx: 0, ty: 0, actionTimer: 0, stunned: false, shield: 0, damageText: []
                     });
                 }
@@ -8084,6 +8314,12 @@
             const executeHit = (attacker, target, damage, isCrit, skillType, fxCol) => {
                 if (target.hp <= 0) return;
 
+                // ★ 新增：戰鬥超時狂暴 (Sudden Death)——超過第 10 回合後，全體造成的傷害 +15%，
+                // 強制阻斷純坦補隊伍靠互相消耗打成無限平局的可能性。
+                // （治療/護盾降低的另一半，因為治療/護盾是分散在各技能分支各自套用、沒有共用的
+                // 結算函式，這次先不動，留待之後有共用治療結算時再一併套用，避免這次改動範圍過大。）
+                if (combatRoundCount > 10) damage = Math.floor(damage * 1.15);
+
                 // 判定：隱身閃避
                 if (target.stealth) {
                     floatingTexts.push({x: target.x, y: target.y - 60, text: `閃避`, isCrit: false, color: '#94a3b8', life: 45});
@@ -8123,6 +8359,15 @@
                 if (target.role !== 'boss') {
                     target.x += (attacker.team === 'player' ? 10 : -10);
                     setTimeout(() => target.x = target.startX, 150);
+                }
+
+                // ★ 新增：GR 稀有度天賦「免死」——血量歸零時，若這個角色帶有 cheatDeath（見 getEffectiveHero
+                // 的 RARITY_PASSIVES.GR）且本場還沒用過，鎖血在 1 點存活，每場戰鬥限一次。
+                // 放在「復活/不死鳥」判定之前，讓 hp 先被救回來，後面兩個判定的 hp<=0 條件才不會誤判。
+                if (target.hp <= 0 && target.cheatDeath && !target.hasCheatDeathUsed) {
+                    target.hasCheatDeathUsed = true;
+                    target.hp = 1;
+                    floatingTexts.push({x: target.x, y: target.y - 100, text: `不朽庇護！`, isCrit: true, color: '#fbbf24', life: 60});
                 }
 
                 // 判定：復活 (revive)——血量歸零時，檢查同隊是否有尚未使用過復活技能的角色
@@ -8174,14 +8419,15 @@
                 }
 
                 // 判定：暈眩 (大招)
-                if (skillType === 'stun' && Math.random() < (attacker.skill.chance || 0.4)) {
+                // ★ 新增：世界首領韌性保護——強制免疫暈眩等硬控，避免被鎖死無法行動
+                if (skillType === 'stun' && Math.random() < (attacker.skill.chance || 0.4) && !(GAME_STATE.currentMode === 'worldboss' && target.team === 'enemy')) {
                     target.stunned = true;
                     floatingTexts.push({x: target.x, y: target.y - 80, text: `暈眩`, isCrit: false, color: '#fbbf24', life: 45});
                     visualEffects.push({type: 'stun', x: target.x, y: target.y, color: '#fbbf24', life: 40, maxLife: 40});
                 }
 
                 // 判定：附帶暈眩 (smite)——普通攻擊也會觸發，跟大招限定的 stun 不同
-                if (skillType === 'basic' && attacker.skill && attacker.skill.type === 'smite' && Math.random() < (attacker.skill.chance || 0.3)) {
+                if (skillType === 'basic' && attacker.skill && attacker.skill.type === 'smite' && Math.random() < (attacker.skill.chance || 0.3) && !(GAME_STATE.currentMode === 'worldboss' && target.team === 'enemy')) {
                     target.stunned = true;
                     floatingTexts.push({x: target.x, y: target.y - 80, text: `暈眩`, isCrit: false, color: '#fbbf24', life: 45});
                     visualEffects.push({type: 'stun', x: target.x, y: target.y, color: '#fbbf24', life: 40, maxLife: 40});
@@ -8320,7 +8566,15 @@
                     const en = combatEntities.filter(e => e.hp > 0 && e.team === 'enemy');
                     if (p.length === 0) {handleCombatEnd(false); return;}
                     if (en.length === 0 || (GAME_STATE.currentMode === 'season' && eventBossCurrentHp <= 0)) {handleCombatEnd(true); return;}
-                    turnQueue = combatEntities.filter(e => e.hp > 0).sort((a, b) => (a.role === '刺客' ? 0 : 1) - (b.role === '刺客' ? 0 : 1));
+                    // ★ 新增：回合順序改用「速度(SPD) ± 5% 隨機微調」排序，取代原本「刺客一律絕對先手」的
+                    // 固定規則——刺客職業基礎 SPD 仍然最高，大部分時候還是會先手，但不再是 100% 必然，
+                    // 高稀有度的其他職業（SPD 天賦加成）偶爾也能搶到先手，PvP 也不會被固定站位完全看穿。
+                    combatRoundCount++; // 每次 turnQueue 補滿代表新的一輪開始
+                    turnQueue = combatEntities.filter(e => e.hp > 0).map(e => {
+                        const baseSpd = e.spd || (e.role === '刺客' ? 120 : 100);
+                        e._turnRoll = baseSpd * (1 + (Math.random() * 0.1 - 0.05));
+                        return e;
+                    }).sort((a, b) => b._turnRoll - a._turnRoll);
                 }
 
                 currentActor = turnQueue.shift(); if (currentActor.hp <= 0) return;
@@ -8720,7 +8974,8 @@
 
                             // ★ 新增：眩目煙火 (dazzle_aoe，煙火使者專屬)——AOE 命中的敵人都有機率被閃光暈眩，
                             // 跟「熔岩巨匠」純粹全體灼燒 DOT 的路線不同，走的是範圍控場
-                            if (sType === 'dazzle_aoe' && t.hp > 0 && Math.random() < (currentActor.skill.dazzleChance || 0.35)) {
+                            // ★ 世界首領韌性保護：強制免疫暈眩等硬控
+                            if (sType === 'dazzle_aoe' && t.hp > 0 && Math.random() < (currentActor.skill.dazzleChance || 0.35) && !(GAME_STATE.currentMode === 'worldboss' && t.team === 'enemy')) {
                                 t.stunned = true;
                                 floatingTexts.push({x: t.x, y: t.y - 100, text: `目眩`, isCrit: false, color: '#f0abfc', life: 45});
                                 visualEffects.push({type: 'stun', x: t.x, y: t.y, color: '#f0abfc', life: 40, maxLife: 40});
@@ -8735,7 +8990,7 @@
                             for (let j = 0; j < empCount && others.length > 0; j++) {
                                 const idx = Math.floor(Math.random() * others.length);
                                 const victim = others[idx]; others.splice(idx, 1);
-                                if (Math.random() < (currentActor.skill.chance || 0.5)) {
+                                if (Math.random() < (currentActor.skill.chance || 0.5) && !(GAME_STATE.currentMode === 'worldboss' && victim.team === 'enemy')) {
                                     victim.stunned = true;
                                     floatingTexts.push({x: victim.x, y: victim.y - 90, text: `EMP 干擾`, isCrit: false, color: '#38bdf8', life: 45});
                                     visualEffects.push({type: 'stun', x: victim.x, y: victim.y, color: '#38bdf8', life: 40, maxLife: 40});
@@ -8842,10 +9097,16 @@
                         }
 
                         targets.forEach((t, tIdx) => {
-                            let dmg = Math.max(5, currentActor.activeAtk * minorMult - (t.def * 0.35));
-                            if (sType === 'splash' && tIdx > 0) dmg = Math.max(5, currentActor.activeAtk * minorMult * (currentActor.skill.splashValue || 0.5) - (t.def * 0.3));
-                            let isCrit = false;
-                            if (Math.random() * 100 < currentActor.crit) {dmg *= 1.5; isCrit = true; if (tIdx === 0) screenShake = 4;}
+                            const isSplashSecondary = sType === 'splash' && tIdx > 0;
+                            const mult = isSplashSecondary ? minorMult * (currentActor.skill.splashValue || 0.5) : minorMult;
+                            const roll = resolveAttackRoll(currentActor, t, mult);
+                            if (roll.isEvaded) {
+                                floatingTexts.push({x: t.x, y: t.y - 60, text: 'MISS', isCrit: false, color: '#9ca3af', life: 40});
+                                return;
+                            }
+                            let dmg = roll.damage;
+                            const isCrit = roll.isCrit;
+                            if (isCrit && tIdx === 0) screenShake = 4;
 
                             // 斬殺類小技能：保留斬殺判定，但門檻砍半，比大招更難觸發，仍保有這個流派的特色
                             if (['execute', 'divine_judgment'].includes(sType) && (t.hp / t.maxHp) <= (currentActor.skill.threshold || 0.3) * 0.5) {
@@ -8866,18 +9127,23 @@
                         bumpAnalytics('heal', currentActor.team, currentActor.name, healAmount); updateAnalyticsUI();
                     } else {
                         ToneAudioEngine.playHit();
-                        let dmg = Math.max(5, currentActor.activeAtk - (currentTarget.def * 0.4));
-                        let isCrit = false; let fxColor = '#ffffff';
+                        const roll = resolveAttackRoll(currentActor, currentTarget, 1.0);
+                        let fxColor = '#ffffff';
+                        if (roll.isEvaded) {
+                            floatingTexts.push({x: currentTarget.x, y: currentTarget.y - 60, text: 'MISS', isCrit: false, color: '#9ca3af', life: 40});
+                        } else {
+                            let dmg = roll.damage;
+                            const isCrit = roll.isCrit;
+                            if (isCrit) {screenShake = 5; fxColor = '#ffd54f'; ToneAudioEngine.playCrit();}
 
-                        if (Math.random() * 100 < currentActor.crit) {dmg *= 1.5; isCrit = true; screenShake = 5; fxColor = '#ffd54f'; ToneAudioEngine.playCrit();}
+                            executeHit(currentActor, currentTarget, dmg, isCrit, 'basic', fxColor);
 
-                        executeHit(currentActor, currentTarget, dmg, isCrit, 'basic', fxColor);
-
-                        // 多重射擊判定 (額外打一下)
-                        if (currentActor.skill && currentActor.skill.type === 'multi_shot' && Math.random() < (currentActor.skill.chance || 0.4)) {
-                            setTimeout(() => {
-                                if (currentTarget.hp > 0) executeHit(currentActor, currentTarget, dmg * (currentActor.skill.value || 0.8), false, 'basic', fxColor);
-                            }, 200 / battleSpeed);
+                            // 多重射擊判定 (額外打一下)
+                            if (currentActor.skill && currentActor.skill.type === 'multi_shot' && Math.random() < (currentActor.skill.chance || 0.4)) {
+                                setTimeout(() => {
+                                    if (currentTarget.hp > 0) executeHit(currentActor, currentTarget, dmg * (currentActor.skill.value || 0.8), false, 'basic', fxColor);
+                                }, 200 / battleSpeed);
+                            }
                         }
                     }
                 }
