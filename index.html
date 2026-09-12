@@ -3078,7 +3078,7 @@
                 }, {merge: true});
                 document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階`;
                 showToast('全域設定已同步給所有玩家');
-            } catch (err) {console.warn('儲存全域設定失敗：', err); showToast('儲存失敗，請檢查網路連線或安全規則設定');}
+            } catch (err) {console.warn('儲存全域設定失敗：', err); showToast('儲存失敗：' + (err.code || err.message || '未知錯誤'));}
         }
 
         // 顯示目前全服首領的狀態，並把輸入框預填成現在的設定值，方便管理員微調後再次開啟
@@ -3120,7 +3120,7 @@
                 showToast(`已開啟全服首領活動：${bossName}`);
                 refreshAdminBossStatus();
                 refreshWorldBossUI();
-            } catch (err) {console.warn('開啟首領活動失敗：', err); showToast('開啟失敗，請檢查網路連線或安全規則設定');}
+            } catch (err) {console.warn('開啟首領活動失敗：', err); showToast('開啟失敗：' + (err.code || err.message || '未知錯誤'));}
         }
 
         async function closeAdminWorldBoss() {
@@ -3131,7 +3131,7 @@
                 showToast('已關閉全服首領活動');
                 refreshAdminBossStatus();
                 refreshWorldBossUI();
-            } catch (err) {console.warn('關閉首領活動失敗：', err); showToast('操作失敗，請檢查網路連線');}
+            } catch (err) {console.warn('關閉首領活動失敗：', err); showToast('關閉失敗：' + (err.code || err.message || '未知錯誤'));}
         }
 
         async function sendAdminMail() {
@@ -3271,7 +3271,7 @@
 
                 // --- S1 限定 ---
                 'h_uther': './images/h_uther.png',      // [UR] 聖光使者·烏瑟
-                'h_s1_lr': './images/h_s1_lr.png',      // [LR] 夜魘收割者·莫瑟斯
+                'h_s1_lr': '',      // [LR] 夜魘收割者·莫瑟斯
                 'h_s1_ssr1': './images/h_s1_ssr1.png',    // 亡靈督軍
                 'h_s1_ssr2': './images/h_s1_ssr2.png',    // 瘟疫使者
 
