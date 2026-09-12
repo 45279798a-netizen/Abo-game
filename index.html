@@ -2612,6 +2612,14 @@
         async function acceptArenaInvite() {
             ToneAudioEngine.playClick();
             if (!currentIncomingInvite) return;
+            // ★ 修正真正的 bug：這裡原本一路用共用變數 currentIncomingInvite，但下面的 await 期間，
+            // 「監聽有沒有人邀請自己」那個即時監聽器（listenIncomingArenaInvites）會因為這則邀請的
+            // status 被自己改成 accepted 而幾乎同時被觸發，把 currentIncomingInvite 設回 null——
+            // 等 await 結束、程式碼繼續往下跑到 startArenaLiveMatchAsGuest(...) 時，
+            // 傳進去的就已經是 null 了，导致 invite.fromName 直接噴錯，被外層 catch 接住，
+            // 顯示成看似「連線失敗」的訊息，其實跟安全規則完全無關。
+            // 解法：一開始就把這次要用到的邀請資料複製一份到本地變數，後面全部改用這份本地副本。
+            const inviteSnapshot = {...currentIncomingInvite};
             const myTeam = (GAME_STATE.gridSlots || []).map((id, idx) => {
                 if (!id || !GAME_STATE.roster[id]) return null;
                 const r = GAME_STATE.roster[id];
@@ -2620,15 +2628,15 @@
             if (myTeam.length === 0) {showToast('請先到佈陣頁面上陣至少一位英雄'); return;}
             try {
                 const matchRef = await fbDb.collection('arenaMatches').add({
-                    hostUid: currentIncomingInvite.fromUid, hostName: currentIncomingInvite.fromName, hostTeam: currentIncomingInvite.fromTeam,
+                    hostUid: inviteSnapshot.fromUid, hostName: inviteSnapshot.fromName, hostTeam: inviteSnapshot.fromTeam,
                     guestUid: fbUser.uid, guestName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`, guestTeam: myTeam,
                     status: 'active', events: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                await fbDb.collection('arenaInvites').doc(currentIncomingInvite.id).update({status: 'accepted', matchId: matchRef.id});
+                await fbDb.collection('arenaInvites').doc(inviteSnapshot.id).update({status: 'accepted', matchId: matchRef.id});
                 document.getElementById('arena-incoming-invite').classList.add('hidden');
                 isArenaHost = false;
                 arenaMatchId = matchRef.id;
-                startArenaLiveMatchAsGuest(matchRef.id, currentIncomingInvite);
+                startArenaLiveMatchAsGuest(matchRef.id, inviteSnapshot);
                 currentIncomingInvite = null;
             } catch (err) {console.warn('接受邀請失敗：', err); showToast('接受邀請失敗：' + (err.code || err.message || '未知錯誤'));}
         }
