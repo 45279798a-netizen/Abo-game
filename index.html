@@ -511,6 +511,12 @@
             <button onclick="switchTab('arena')" class="nav-item" data-target="arena"><i
                     class="fa-solid fa-people-group text-lg mb-1 text-sky-400"></i><span
                     class="text-[10px] font-bold text-sky-400">競技場</span></button>
+            <button onclick="switchTab('inventory')" class="nav-item" data-target="inventory"><i
+                    class="fa-solid fa-sack text-lg mb-1 text-amber-500"></i><span
+                    class="text-[10px] font-bold text-amber-500">背包</span></button>
+            <button onclick="switchTab('blackmarket')" class="nav-item" data-target="blackmarket"><i
+                    class="fa-solid fa-user-secret text-lg mb-1 text-purple-400"></i><span
+                    class="text-[10px] font-bold text-purple-400">黑市</span></button>
         </div>
     </nav>
 
@@ -1518,6 +1524,7 @@
                                 <input id="admin-mail-honor" type="number" placeholder="榮譽點數" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 <input id="admin-mail-starcoins" type="number" placeholder="賽季勳章" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 <input id="admin-mail-crystal" type="number" placeholder="超越結晶" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-bmc" type="number" placeholder="黑市貨幣" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                             </div>
                             <div class="border-t border-[#3e3328] pt-2 mt-1">
                                 <p class="text-[9px] text-stone-500 mb-1.5">額外附贈英雄／碎片（選填）</p>
@@ -1543,6 +1550,63 @@
                             </div>
                             <div id="admin-player-list" class="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar"></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ★ 新增：背包，查看目前擁有的英雄碎片 -->
+            <div id="tab-inventory"
+                class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/80 backdrop-blur-md overflow-y-auto custom-scrollbar">
+                <h2 class="font-bold text-amber-500 font-magic text-lg flex items-center shrink-0 border-b border-[#3e3328] pb-2 mb-3">
+                    <i class="fa-solid fa-sack mr-2"></i>背包
+                </h2>
+                <p class="text-[9px] text-stone-500 mb-3">目前擁有的英雄碎片，可以到英雄詳情頁用碎片升星，或是拿去黑市上架賣給其他玩家。</p>
+                <div id="inventory-shard-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                <p id="inventory-empty-text" class="hidden text-center text-stone-500 text-[10px] py-10">目前沒有任何英雄碎片</p>
+            </div>
+
+            <!-- ★ 新增：黑市，玩家對玩家交易英雄碎片 -->
+            <div id="tab-blackmarket"
+                class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/80 backdrop-blur-md overflow-y-auto custom-scrollbar flex flex-col gap-3">
+                <h2 class="font-bold text-purple-400 font-magic text-lg flex items-center shrink-0 border-b border-[#3e3328] pb-2">
+                    <i class="fa-solid fa-user-secret mr-2"></i>黑市
+                </h2>
+
+                <div class="glass-panel p-3 rounded-xl border border-purple-700/40 flex flex-col gap-2 shrink-0">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] text-stone-400"><i class="fa-solid fa-coins text-purple-400 mr-1"></i>黑市貨幣</span>
+                        <span id="bm-currency-display" class="text-purple-300 font-bold text-sm">0</span>
+                    </div>
+                    <p class="text-[8px] text-stone-500">匯率：1 寶石 = 500 黑市貨幣，雙向都能換</p>
+                    <div class="flex gap-2">
+                        <input id="bm-exchange-amount" type="number" placeholder="輸入數量" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                        <button onclick="exchangeDiamondToBMC()" class="shrink-0 px-2 py-1.5 bg-sky-900/60 text-sky-300 text-[9px] font-bold rounded border border-sky-700 hover:bg-sky-800 transition">寶石→黑市幣</button>
+                        <button onclick="exchangeBMCToDiamond()" class="shrink-0 px-2 py-1.5 bg-purple-900/60 text-purple-300 text-[9px] font-bold rounded border border-purple-700 hover:bg-purple-800 transition">黑市幣→寶石</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 shrink-0">
+                    <button onclick="switchBlackMarketSubTab('browse')" id="btn-bm-browse" class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-purple-900/60 text-purple-300 border border-purple-600">市場</button>
+                    <button onclick="switchBlackMarketSubTab('mine')" id="btn-bm-mine" class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">我的上架</button>
+                    <button onclick="switchBlackMarketSubTab('sell')" id="btn-bm-sell" class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">上架碎片</button>
+                </div>
+
+                <div id="bm-browse-panel" class="flex flex-col gap-2">
+                    <p class="text-[9px] text-stone-500">其他玩家上架的英雄碎片，即時更新。10% 交易手續費會從成交價扣除。</p>
+                    <div id="bm-browse-list" class="space-y-2"></div>
+                </div>
+                <div id="bm-mine-panel" class="hidden flex-col gap-2">
+                    <div id="bm-mine-list" class="space-y-2"></div>
+                </div>
+                <div id="bm-sell-panel" class="hidden flex-col gap-2">
+                    <div class="glass-panel p-3 rounded-xl border border-[#3e3328] flex flex-col gap-2">
+                        <p class="text-[9px] text-stone-500">上架後碎片會立刻從背包扣除（進入寄售中），賣出後對方付的黑市幣會扣 10% 手續費後匯給你。</p>
+                        <select id="bm-sell-hero" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input id="bm-sell-amount" type="number" placeholder="碎片數量" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                            <input id="bm-sell-price" type="number" placeholder="總價(黑市幣)" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                        </div>
+                        <button onclick="createBlackMarketListing()" class="w-full py-2 bg-purple-800/70 text-purple-200 text-[11px] font-bold rounded border border-purple-600 hover:bg-purple-700 transition">上架</button>
                     </div>
                 </div>
             </div>
@@ -2169,7 +2233,7 @@
             for (const heroId in (state.roster || {})) {
                 const r = state.roster[heroId];
                 if (!r) continue;
-                if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > MAX_STAR_LEVEL || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
+                if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > PLAUSIBLE_MAX_STAR_ESTIMATE || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
             }
             if ((state.gold || 0) > 999999999999 || (state.diamonds || 0) > 999999999 || (state.forgeStones || 0) > 999999999) return false;
             return true;
@@ -2379,7 +2443,9 @@
             const db = HERO_DATABASE.find(h => h.id === heroId);
             if (!db) return 0;
             const maxLevelMult = 1 + (MAX_HERO_LEVEL - 1) * 0.12;
-            const maxStarMult = 1 + (MAX_STAR_LEVEL - 1) * 0.15;
+            // ★ 星級現在無上限，這裡不能直接用 MAX_STAR_LEVEL (Infinity) 算，不然這個合理性檢查會直接失效。
+            // 改用一個「夠寬鬆但還是有限」的估計值，只用在這個粗略防呆檢查上，跟遊戲實際的星級上限脫鉤。
+            const maxStarMult = 1 + (PLAUSIBLE_MAX_STAR_ESTIMATE - 1) * 0.15;
             const maxArtifactMult = 1 + (ALTAR_MAX_ARTIFACT_TIER * 0.10); // 聖物強化滿階 10 階 (+100%)
             const maxEquipMult = 1.6; // 4 件裝備都滿 20 級的粗估加成上限
             const totalMult = maxLevelMult * maxStarMult * maxArtifactMult * maxEquipMult;
@@ -2873,6 +2939,238 @@
         }
 
         /* ============================================================
+           背包：純顯示目前擁有的英雄碎片，不用連線也能看（本地端資料，不像競技場/黑市需要多人功能）
+           ============================================================ */
+        function renderInventoryUI() {
+            const list = document.getElementById('inventory-shard-list');
+            const emptyText = document.getElementById('inventory-empty-text');
+            list.innerHTML = '';
+            const shardIds = Object.keys(GAME_STATE.heroShards || {}).filter(id => (GAME_STATE.heroShards[id] || 0) > 0);
+            emptyText.classList.toggle('hidden', shardIds.length > 0);
+            const order = {LR: 0, UR: 1, SSR: 2, SR: 3, R: 4};
+            shardIds.sort((a, b) => {
+                const ha = HERO_DATABASE.find(h => h.id === a), hb = HERO_DATABASE.find(h => h.id === b);
+                return (order[ha ? ha.rarity : 'R'] ?? 9) - (order[hb ? hb.rarity : 'R'] ?? 9);
+            });
+            shardIds.forEach(id => {
+                const dbHero = HERO_DATABASE.find(h => h.id === id);
+                if (!dbHero) return;
+                const custom = GAME_STATE.customHeroes[id];
+                const rarityTextClass = dbHero.rarity === 'LR' ? 'text-amber-300' : (dbHero.rarity === 'UR' ? 'text-rose-400' : (dbHero.rarity === 'SSR' ? 'text-yellow-400' : (dbHero.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400')));
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center gap-2';
+                card.innerHTML = `
+                    ${custom ? `<img src="${custom}" class="w-9 h-9 rounded-full object-cover shrink-0">` : `<i class="fa-solid ${dbHero.avatarIcon} text-2xl shrink-0" style="color:${dbHero.color}"></i>`}
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[10px] font-bold text-stone-200 truncate">${dbHero.name}</div>
+                        <div class="text-[8px] ${rarityTextClass}">${dbHero.rarity}</div>
+                    </div>
+                    <div class="text-amber-300 font-bold text-xs shrink-0"><i class="fa-solid fa-gem text-[10px] mr-0.5"></i>${GAME_STATE.heroShards[id]}</div>`;
+                list.appendChild(card);
+            });
+        }
+
+        /* ============================================================
+           黑市：玩家對玩家交易英雄碎片，用「黑市貨幣」計價（1 寶石 = 500 黑市貨幣，雙向可換）。
+           賣家上架時碎片立刻從背包扣除、進入「寄售中」；買家付款後，碎片直接進買家背包，
+           賣家收到的錢會先扣 10% 手續費，用信件系統匯過去（因為買家的裝置沒有權限直接修改賣家的
+           本地存檔，透過雙方都能存取的信箱來完成款項交割，是這個架構下最穩妥的做法）。
+           ★ 跟其他多人功能一樣的老實提醒：這是「client 端互相信任」的交易系統，沒有真正的伺服器
+           裁判在中間驗證每一步，本質上跟這整個遊戲的其他資源一樣沒辦法做到滴水不漏的防作弊。
+           ============================================================ */
+        const BLACK_MARKET_DIAMOND_RATE = 500; // 1 寶石 = 500 黑市貨幣
+        const BLACK_MARKET_FEE_RATE = 0.10; // 10% 交易手續費
+        let bmBrowseUnsub = null, bmMineUnsub = null;
+        let currentBMSubTab = 'browse';
+
+        function switchBlackMarketSubTab(sub) {
+            ToneAudioEngine.playClick();
+            currentBMSubTab = sub;
+            const panels = {browse: 'bm-browse-panel', mine: 'bm-mine-panel', sell: 'bm-sell-panel'};
+            Object.keys(panels).forEach(key => {
+                const el = document.getElementById(panels[key]);
+                el.classList.toggle('hidden', key !== sub);
+                el.classList.toggle('flex', key === sub);
+                const btn = document.getElementById('btn-bm-' + key);
+                btn.className = `flex-1 py-2 rounded-lg text-[10px] font-bold border ${key === sub ? 'bg-purple-900/60 text-purple-300 border-purple-600' : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
+            });
+            if (sub === 'sell') populateBlackMarketSellSelect();
+        }
+
+        function refreshBlackMarketUI() {
+            document.getElementById('bm-currency-display').innerText = (GAME_STATE.blackMarketCurrency || 0).toLocaleString();
+            if (!mpConnected) return;
+            listenBlackMarketBrowse();
+            listenBlackMarketMine();
+        }
+
+        function exchangeDiamondToBMC() {
+            ToneAudioEngine.playClick();
+            const amount = parseInt(document.getElementById('bm-exchange-amount').value);
+            if (!amount || amount <= 0) {showToast('請輸入要兌換的寶石數量'); return;}
+            if (GAME_STATE.diamonds < amount) {showToast('寶石不足'); return;}
+            GAME_STATE.diamonds -= amount;
+            GAME_STATE.blackMarketCurrency = (GAME_STATE.blackMarketCurrency || 0) + amount * BLACK_MARKET_DIAMOND_RATE;
+            saveGame(); updateHUD();
+            document.getElementById('bm-currency-display').innerText = GAME_STATE.blackMarketCurrency.toLocaleString();
+            showToast(`兌換成功：${amount} 寶石 → ${(amount * BLACK_MARKET_DIAMOND_RATE).toLocaleString()} 黑市貨幣`);
+        }
+
+        function exchangeBMCToDiamond() {
+            ToneAudioEngine.playClick();
+            const amount = parseInt(document.getElementById('bm-exchange-amount').value);
+            if (!amount || amount <= 0) {showToast('請輸入要兌換的黑市貨幣數量'); return;}
+            const diamonds = Math.floor(amount / BLACK_MARKET_DIAMOND_RATE);
+            if (diamonds <= 0) {showToast(`數量太少，至少要 ${BLACK_MARKET_DIAMOND_RATE} 黑市貨幣才能換 1 顆寶石`); return;}
+            const actualCost = diamonds * BLACK_MARKET_DIAMOND_RATE;
+            if ((GAME_STATE.blackMarketCurrency || 0) < actualCost) {showToast('黑市貨幣不足'); return;}
+            GAME_STATE.blackMarketCurrency -= actualCost;
+            GAME_STATE.diamonds += diamonds;
+            saveGame(); updateHUD();
+            document.getElementById('bm-currency-display').innerText = GAME_STATE.blackMarketCurrency.toLocaleString();
+            showToast(`兌換成功：${actualCost.toLocaleString()} 黑市貨幣 → ${diamonds} 寶石`);
+        }
+
+        function populateBlackMarketSellSelect() {
+            const sel = document.getElementById('bm-sell-hero');
+            sel.innerHTML = '<option value="">選擇要上架的英雄碎片</option>';
+            const shardIds = Object.keys(GAME_STATE.heroShards || {}).filter(id => (GAME_STATE.heroShards[id] || 0) > 0);
+            shardIds.forEach(id => {
+                const dbHero = HERO_DATABASE.find(h => h.id === id);
+                if (!dbHero) return;
+                const opt = document.createElement('option');
+                opt.value = id; opt.innerText = `${dbHero.name}（持有 ${GAME_STATE.heroShards[id]} 個）`;
+                sel.appendChild(opt);
+            });
+        }
+
+        async function createBlackMarketListing() {
+            ToneAudioEngine.playClick();
+            if (!mpConnected) {showToast('尚未連線'); return;}
+            const heroId = document.getElementById('bm-sell-hero').value;
+            const amount = parseInt(document.getElementById('bm-sell-amount').value);
+            const price = parseInt(document.getElementById('bm-sell-price').value);
+            if (!heroId) {showToast('請選擇要上架的英雄'); return;}
+            if (!amount || amount <= 0) {showToast('請輸入正確的碎片數量'); return;}
+            if (!price || price <= 0) {showToast('請輸入正確的總價'); return;}
+            if ((GAME_STATE.heroShards[heroId] || 0) < amount) {showToast('碎片數量不足'); return;}
+
+            const dbHero = HERO_DATABASE.find(h => h.id === heroId);
+            try {
+                // 上架的同時立刻把碎片從背包扣掉（進入寄售中），避免同一批碎片被重複上架或繼續拿去升星
+                GAME_STATE.heroShards[heroId] -= amount;
+                saveGame(); updateHUD();
+
+                await fbDb.collection('blackMarketListings').add({
+                    sellerUid: fbUser.uid, sellerName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`,
+                    heroId, heroName: dbHero ? dbHero.name : '???',
+                    shardAmount: amount, price, status: 'active',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast('上架成功！');
+                document.getElementById('bm-sell-amount').value = '';
+                document.getElementById('bm-sell-price').value = '';
+                populateBlackMarketSellSelect();
+                renderInventoryUI();
+            } catch (err) {
+                // 上架失敗要把扣掉的碎片退回來，不能讓玩家平白損失
+                GAME_STATE.heroShards[heroId] = (GAME_STATE.heroShards[heroId] || 0) + amount;
+                saveGame(); updateHUD();
+                console.warn('上架失敗：', err); showToast('上架失敗：' + (err.code || err.message || '未知錯誤'));
+            }
+        }
+
+        async function cancelBlackMarketListing(listing) {
+            ToneAudioEngine.playClick();
+            try {
+                const ref = fbDb.collection('blackMarketListings').doc(listing.id);
+                await fbDb.runTransaction(async (tx) => {
+                    const doc = await tx.get(ref);
+                    if (!doc.exists || doc.data().status !== 'active') throw new Error('這筆上架已經不存在或已成交');
+                    tx.update(ref, {status: 'cancelled'});
+                });
+                // 退還碎片到自己背包
+                GAME_STATE.heroShards[listing.heroId] = (GAME_STATE.heroShards[listing.heroId] || 0) + listing.shardAmount;
+                saveGame(); updateHUD(); renderInventoryUI();
+                showToast('已下架，碎片已退回背包');
+            } catch (err) {console.warn('下架失敗：', err); showToast('下架失敗：' + (err.message || '未知錯誤'));}
+        }
+
+        async function buyBlackMarketListing(listing) {
+            ToneAudioEngine.playClick();
+            if (listing.sellerUid === fbUser.uid) {showToast('不能購買自己上架的商品'); return;}
+            if ((GAME_STATE.blackMarketCurrency || 0) < listing.price) {showToast('黑市貨幣不足'); return;}
+            try {
+                const ref = fbDb.collection('blackMarketListings').doc(listing.id);
+                // 用 transaction 原子性地「搶購」這筆上架，確保同一筆商品不會被兩個人同時買走
+                await fbDb.runTransaction(async (tx) => {
+                    const doc = await tx.get(ref);
+                    if (!doc.exists || doc.data().status !== 'active') throw new Error('這筆商品已經被買走或下架了');
+                    tx.update(ref, {status: 'sold', buyerUid: fbUser.uid});
+                });
+
+                // 買家：扣黑市幣、加碎片
+                GAME_STATE.blackMarketCurrency -= listing.price;
+                GAME_STATE.heroShards[listing.heroId] = (GAME_STATE.heroShards[listing.heroId] || 0) + listing.shardAmount;
+                saveGame(); updateHUD();
+                document.getElementById('bm-currency-display').innerText = GAME_STATE.blackMarketCurrency.toLocaleString();
+
+                // 賣家：扣 10% 手續費後，用信件把黑市幣匯給對方（買家的裝置沒有權限直接改賣家的本地存檔）
+                const proceeds = Math.floor(listing.price * (1 - BLACK_MARKET_FEE_RATE));
+                await sendMailToUid(listing.sellerUid, {
+                    id: `bm_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+                    title: '黑市交易成功',
+                    body: `你上架的 ${listing.heroName} 碎片 x${listing.shardAmount} 已賣出（扣除 10% 手續費後入帳）`,
+                    rewards: {blackMarketCurrency: proceeds},
+                    sentAt: Date.now(), claimed: false
+                });
+
+                showToast(`購買成功！獲得 ${listing.heroName} 碎片 x${listing.shardAmount}`);
+                renderInventoryUI();
+            } catch (err) {console.warn('購買失敗：', err); showToast('購買失敗：' + (err.message || '未知錯誤'));}
+        }
+
+        function listenBlackMarketBrowse() {
+            if (bmBrowseUnsub) bmBrowseUnsub();
+            bmBrowseUnsub = fbDb.collection('blackMarketListings').where('status', '==', 'active').orderBy('createdAt', 'desc').limit(30)
+                .onSnapshot(snap => {
+                    const list = document.getElementById('bm-browse-list');
+                    if (!list) return;
+                    const listings = [];
+                    snap.forEach(doc => {if (doc.data().sellerUid !== fbUser.uid) listings.push({id: doc.id, ...doc.data()});});
+                    if (listings.length === 0) {list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-4">目前市場上沒有商品</div>`; return;}
+                    list.innerHTML = '';
+                    listings.forEach(l => {
+                        const card = document.createElement('div');
+                        card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
+                        card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200">${l.heroName} 碎片 x${l.shardAmount}</div><div class="text-[9px] text-stone-500">賣家：${l.sellerName || '???'}</div></div><button class="px-3 py-1.5 bg-purple-900/60 text-purple-300 text-[10px] font-bold rounded border border-purple-700 hover:bg-purple-800 transition">${l.price.toLocaleString()} 黑市幣</button>`;
+                        card.querySelector('button').onclick = () => buyBlackMarketListing(l);
+                        list.appendChild(card);
+                    });
+                }, err => console.warn('讀取市場失敗：', err));
+        }
+
+        function listenBlackMarketMine() {
+            if (bmMineUnsub) bmMineUnsub();
+            bmMineUnsub = fbDb.collection('blackMarketListings').where('sellerUid', '==', fbUser.uid).orderBy('createdAt', 'desc').limit(30)
+                .onSnapshot(snap => {
+                    const list = document.getElementById('bm-mine-list');
+                    if (!list) return;
+                    if (snap.empty) {list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-4">你還沒有上架任何商品</div>`; return;}
+                    list.innerHTML = '';
+                    snap.forEach(doc => {
+                        const l = {id: doc.id, ...doc.data()};
+                        const statusLabel = {active: '<span class="text-emerald-400">寄售中</span>', sold: '<span class="text-amber-400">已售出</span>', cancelled: '<span class="text-stone-500">已下架</span>'}[l.status] || l.status;
+                        const card = document.createElement('div');
+                        card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
+                        card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200">${l.heroName} 碎片 x${l.shardAmount}</div><div class="text-[9px] text-stone-500">${l.price.toLocaleString()} 黑市幣．${statusLabel}</div></div>${l.status === 'active' ? '<button class="px-3 py-1.5 bg-black/50 text-stone-400 text-[10px] font-bold rounded border border-[#3e3328] hover:bg-black/70 transition">下架</button>' : ''}`;
+                        if (l.status === 'active') card.querySelector('button').onclick = () => cancelBlackMarketListing(l);
+                        list.appendChild(card);
+                    });
+                }, err => console.warn('讀取我的上架失敗：', err));
+        }
+
+        /* ============================================================
            信件系統 + 管理員發放資源
            mail/{uid} 這份文件底下存一個 messages 陣列，每封信有 rewards 物件（各種資源的數量）。
            一般玩家：只能讀自己的信、領取獎勵（獎勵直接加進本地存檔，然後把那封信標記為已領取）。
@@ -2909,7 +3207,7 @@
                 }
                 list.innerHTML = '';
                 [...messages].reverse().forEach(msg => {
-                    const rewardLabels = {gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', specialTickets: '特急招募卷', honorPoints: '榮譽點數', starCoins: '賽季勳章', transcendCrystals: '超越結晶'};
+                    const rewardLabels = {gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', specialTickets: '特急招募卷', honorPoints: '榮譽點數', starCoins: '賽季勳章', transcendCrystals: '超越結晶', blackMarketCurrency: '黑市貨幣'};
                     let rewardText = Object.entries(msg.rewards || {}).filter(([k, v]) => v > 0 && rewardLabels[k])
                         .map(([k, v]) => `${rewardLabels[k]} +${v}`).join('／');
                     if (msg.rewards && msg.rewards.heroId) {
@@ -2956,6 +3254,7 @@
                 if (r.honorPoints) GAME_STATE.honorPoints = (GAME_STATE.honorPoints || 0) + r.honorPoints;
                 if (r.starCoins) GAME_STATE.starCoins = (GAME_STATE.starCoins || 0) + r.starCoins;
                 if (r.transcendCrystals) GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + r.transcendCrystals;
+                if (r.blackMarketCurrency) GAME_STATE.blackMarketCurrency = (GAME_STATE.blackMarketCurrency || 0) + r.blackMarketCurrency;
                 // ★ 新增：信件附贈的英雄／碎片。已經擁有的角色再收到「直接贈送角色」，會改成用 grantHeroShards
                 // 走碎片路線（避免把等級/星級蓋掉），滿星的話會自動轉化超越結晶，邏輯跟其他碎片來源一致。
                 if (r.heroId) {
@@ -3139,7 +3438,8 @@
                 specialTickets: parseInt(document.getElementById('admin-mail-sptickets').value) || 0,
                 honorPoints: parseInt(document.getElementById('admin-mail-honor').value) || 0,
                 starCoins: parseInt(document.getElementById('admin-mail-starcoins').value) || 0,
-                transcendCrystals: parseInt(document.getElementById('admin-mail-crystal').value) || 0
+                transcendCrystals: parseInt(document.getElementById('admin-mail-crystal').value) || 0,
+                blackMarketCurrency: parseInt(document.getElementById('admin-mail-bmc').value) || 0
             };
             // ★ 新增：信件附贈英雄／碎片
             const heroId = document.getElementById('admin-mail-hero').value;
@@ -3168,7 +3468,7 @@
                 }
                 document.getElementById('admin-mail-title').value = '';
                 document.getElementById('admin-mail-body').value = '';
-                ['gold', 'exp', 'diamond', 'stone', 'ticket', 'sptickets', 'honor', 'starcoins', 'crystal'].forEach(k => document.getElementById('admin-mail-' + k).value = '');
+                ['gold', 'exp', 'diamond', 'stone', 'ticket', 'sptickets', 'honor', 'starcoins', 'crystal', 'bmc'].forEach(k => document.getElementById('admin-mail-' + k).value = '');
                 document.getElementById('admin-mail-hero').value = '';
             } catch (err) {console.warn('發信失敗：', err); showToast('發信失敗，請檢查網路連線或安全規則設定');}
         }
@@ -3751,10 +4051,12 @@
 
         // 魔物資料庫 (擴充至 7 章節)
         // 各章節的地圖名稱，選關選單跟戰鬥標題都會用到
-        // ★ 遠征章節擴充：改成 20 章、每章 25 關 (原本 10 章 x 10 關)，不再受賽季時間綁定，
+        // ★ 遠征章節大幅擴充：改成 100 章、每章 50 關 (原本 20 章 x 25 關，共 5000 關)，不再受賽季時間綁定，
         // 章節解鎖純粹看玩家自己的進度 (highestStage.chapter)，跟目前是第幾季、有沒有開限時活動完全無關。
-        const CAMPAIGN_TOTAL_CHAPTERS = 20;
-        const CAMPAIGN_LEVELS_PER_CHAPTER = 25;
+        // ★ 因為英雄升星現在無上限，戰力可以一直往上疊，遠征難度曲線也大幅調陡，讓這個系統有意義的挑戰空間
+        // (見下方 initCombatUnits 裡遠征怪物的 sm 公式)。
+        const CAMPAIGN_TOTAL_CHAPTERS = 100;
+        const CAMPAIGN_LEVELS_PER_CHAPTER = 50;
 
         const CHAPTER_NAMES = {
             1: '青翠草原', 2: '幽暗洞穴', 3: '荒廢地下城', 4: '迷霧森林',
@@ -3766,6 +4068,15 @@
             15: '灼熱沙漠', 16: '極寒雪山', 17: '魔王城·核心',
             18: '龍脈裂谷·深層', 19: '機械廢土·禁區', 20: '拂曉聖殿·至聖所'
         };
+        // ★ 第 21~100 章沒有一一手動命名（100 章要手寫太不切實際），改用公式自動組出名稱：
+        // 每 10 章一輪，沿用同一組 10 個基礎地名，並標註「第 N 輪」代表這是第幾次更深、更兇險的版本。
+        const CHAPTER_NAME_BASES = ['草原', '洞穴', '地下城', '森林', '沙漠', '雪山', '魔王城', '裂谷', '廢土', '聖殿'];
+        function getChapterName(n) {
+            if (CHAPTER_NAMES[n]) return CHAPTER_NAMES[n];
+            const baseIdx = ((n - 1) % 10);
+            const cycle = Math.floor((n - 1) / 10) + 1;
+            return `${CHAPTER_NAME_BASES[baseIdx]}秘境·第${cycle}輪`;
+        }
 
         const MONSTER_DB = {
             1: [ // 草原
@@ -5128,6 +5439,10 @@
             opts = opts || {};
             ToneAudioEngine.playClick();
             if (tabId !== 'arena') stopArenaPresenceLoop(); // 離開競技場畫面就停止即時廣播/監聽，避免背景一直耗用連線資源
+            if (tabId !== 'blackmarket') {
+                if (bmBrowseUnsub) {bmBrowseUnsub(); bmBrowseUnsub = null;}
+                if (bmMineUnsub) {bmMineUnsub(); bmMineUnsub = null;}
+            }
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
@@ -5144,6 +5459,8 @@
             if (tabId === 'season-mode') checkSeasonModeUnlock();
             if (tabId === 'dungeon') renderDungeonAutoFarmButtons();
             if (tabId === 'arena') refreshArenaUI();
+            if (tabId === 'inventory') renderInventoryUI();
+            if (tabId === 'blackmarket') refreshBlackMarketUI();
             if (tabId === 'tower') {
                 const nextD = 40 + (GAME_STATE.towerLevel * 8); const nextS = 5 + (GAME_STATE.towerLevel * 2);
                 document.getElementById('tower-reward-preview').innerHTML = `<span class="text-stone-300">通關獎勵預覽：</span><span class="text-sky-400"><i class="fa-solid fa-gem mr-1"></i>+${nextD}</span><span class="text-stone-400"><i class="fa-solid fa-hammer mr-1"></i>+${nextS}</span>`;
@@ -5868,6 +6185,10 @@
         // 導致金幣/經驗越後期越用不完)。公式：實測 1→200 級總花費約 241 萬金幣、125 萬經驗，
         // 對應目前的資源取得速度大約是數小時的專注遊玩量，作為長期目標而不是瞬間就能刷滿。
         let MAX_HERO_LEVEL = 100; // ★ 改成 let：管理員可以在後台調整這個上限（見 listenAdminGameConfig）
+        // ★ 星級無上限之後，反作弊的「理論最大戰力」估算不能再直接用星級上限（因為根本沒有上限了），
+        // 這裡另外訂一個「夠寬鬆但還是有限」的估計值，只用在合理性檢查上，跟遊戲實際的星級系統脫鉤，
+        // 不會因為玩家真的推到很高星級就被誤判成異常。
+        const PLAUSIBLE_MAX_STAR_ESTIMATE = 1000;
         function getHeroLevelUpCost(level) {
             return {
                 gold: Math.floor(150 + level * 40 + level * level * 0.6),
@@ -5951,9 +6272,9 @@
 
         // ============ 英雄潛能覺醒 (升星) 邏輯 ============
         // ★ 改用英雄碎片升星，不再直接花寶石。碎片來源：召喚抽到重複英雄、賽季商店兌換。
-        // 最高 10 星，1→10 星總共需要 275 個碎片（原本 330，平衡調整降低約 17%）；升星除了原本的數值倍率加成，
-        // 現在也會讓該英雄的專屬技能數值一起變強 (見 getEffectiveHero 內的 skillStarMult)。
-        const MAX_STAR_LEVEL = 10;
+        // ★ 移除星級上限：可以無限升星，星級越高消耗的碎片也越多 (5+star*5，線性成長，不會失控)。
+        // 因為現在可以無限堆疊戰力，遠征章節的難度曲線也跟著大幅提高，讓這個系統有意義的成長空間。
+        const MAX_STAR_LEVEL = Infinity;
         function getHeroStarUpCost(star) {
             return 5 + star * 5;
         }
@@ -6340,13 +6661,13 @@
 
                 const btn = document.createElement('button');
                 btn.className = `w-full text-left px-4 py-3 rounded-lg font-bold text-sm border transition-all ${currentChapterView === i ? 'bg-[#3e3328] border-fantasy-gold text-fantasy-gold shadow-inner' : 'bg-black/40 border-[#3e3328] text-stone-400 hover:bg-[#1f1610]'} ${!isUnlockedByProgress ? 'opacity-50 cursor-not-allowed' : ''}`;
-                btn.innerHTML = `第 ${i} 章 <span class="text-[10px] font-normal opacity-70">${CHAPTER_NAMES[i] || ''}</span> ${!isUnlockedByProgress ? '<i class="fa-solid fa-lock float-right text-[10px] mt-1 text-stone-600"></i>' : ''}`;
+                btn.innerHTML = `第 ${i} 章 <span class="text-[10px] font-normal opacity-70">${getChapterName(i)}</span> ${!isUnlockedByProgress ? '<i class="fa-solid fa-lock float-right text-[10px] mt-1 text-stone-600"></i>' : ''}`;
                 if (isUnlockedByProgress) btn.onclick = () => {currentChapterView = i; renderChapterList(); renderStageGrid(i);}; c.appendChild(btn);
             }
         }
 
         function renderStageGrid(chap) {
-            document.getElementById('stage-chapter-title').innerText = `第 ${chap} 章 ${CHAPTER_NAMES[chap] || ''}`; const g = document.getElementById('stage-grid'); g.innerHTML = '';
+            document.getElementById('stage-chapter-title').innerText = `第 ${chap} 章 ${getChapterName(chap)}`; const g = document.getElementById('stage-grid'); g.innerHTML = '';
             for (let i = 1; i <= CAMPAIGN_LEVELS_PER_CHAPTER; i++) {
                 const isUnlocked = (chap < GAME_STATE.highestStage.chapter) || (chap === GAME_STATE.highestStage.chapter && i <= GAME_STATE.highestStage.level);
                 const isCurrent = GAME_STATE.stage.chapter === chap && GAME_STATE.stage.level === i;
@@ -6719,15 +7040,14 @@
                 const chapIdx = ((GAME_STATE.stage.chapter - 1) % 10) + 1;
                 const db = MONSTER_DB[chapIdx.toString()] || MONSTER_DB[1];
                 const totalStage = (GAME_STATE.stage.chapter - 1) * CAMPAIGN_LEVELS_PER_CHAPTER + GAME_STATE.stage.level;
-                // ★ 平衡調整：章節擴充到 20 章 x 25 關（總關卡數 500，原本 100），同時英雄等級上限從 200 降到 100，
-                // 舊的成長率 (0.1/關) 到關卡後期會遠遠超過玩家能達到的戰力上限，這裡重新抓一個温和很多的成長率，
-                // 目標是讓「怪物戰力上限／玩家戰力上限」的比例跟原本設計時差不多（遠征本來就該是能被完全打穿的
-                // 主線內容，真正的無限成長留給試煉塔/秘境/賽季討伐這些後期內容）。實際數值需要之後實測微調。
-                const sm = 0.5 + (totalStage * 0.01);
+                // ★ 平衡調整：章節擴充到 100 章 x 50 關（總關卡數 5000），加上英雄升星現在無上限，
+                // 玩家戰力可以無限疊加，難度曲線改成「線性 + 加速項」，讓後期章節真的能跟上無限升星的成長，
+                // 不會出現「星級推得再高，遠征還是隨便打」的狀況。實際數值需要之後實測微調。
+                const sm = 0.5 + (totalStage * 0.02) + Math.pow(totalStage / 1000, 1.8) * 2;
 
                 // ★ 遠征章節不再跟賽季綁定，原本第 8/9/10 章結尾會出現對應賽季世界首領的「章節魔王戰」機制
                 // 一併移除，章節內容現在完全自成一格，不依賴任何賽季資料
-                const eCount = Math.max(1, Math.min(9, Math.floor(totalStage / 14) + 1));
+                const eCount = Math.max(1, Math.min(9, Math.floor(totalStage / 50) + 1));
                 for (let i = 0; i < eCount; i++) {
                     const m = db[i % db.length]; combatEntities.push({baseId: m.id, name: m.name, team: 'enemy', x: 0, y: 0, hp: Math.floor(m.maxHp * sm), maxHp: Math.floor(m.maxHp * sm), atk: Math.floor(m.atk * sm), def: Math.floor(m.def * (sm * 0.8)), role: m.role, color: m.color, icon: m.icon, row: i % 3, col: Math.floor(i / 3), skill: m.skill || {type: 'basic'}});
                 }
@@ -7982,8 +8302,9 @@
                     // ★ 平衡調整：鍛造石是裝備強化的唯一來源（4 個裝備欄、每欄最高 20 級，總量需求不小），
                     // 跟寶石一起調高掉落機率與數量，避免裝備強化卡關。
                     // ★ 章節擴充到 500 關（原本 100 關）之後，門檻也跟著拉長到 5 倍，不然遠征前幾章就會提早見頂
-                    const diamondBonus = Math.min(8, Math.floor(totalStage / 50)); // 每 50 關 +1，最多 +8
-                    const stoneBonus = Math.min(6, Math.floor(totalStage / 60)); // 每 60 關 +1，最多 +6
+                    // ★ 章節擴充到 5000 關（原本 500 關）之後，門檻也跟著拉長 10 倍，不然遠征前幾章就會提早見頂
+                    const diamondBonus = Math.min(8, Math.floor(totalStage / 500)); // 每 500 關 +1，最多 +8
+                    const stoneBonus = Math.min(6, Math.floor(totalStage / 600)); // 每 600 關 +1，最多 +6
                     let extraDiamonds = Math.random() < 0.45 ? (3 + diamondBonus) : 0;
                     let extraStones = Math.random() < 0.35 ? (2 + stoneBonus) : 0;
                     GAME_STATE.gold += gReward; GAME_STATE.heroExp += eReward; GAME_STATE.diamonds += extraDiamonds; GAME_STATE.forgeStones += extraStones;
