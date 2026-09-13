@@ -1205,7 +1205,7 @@
                     </div>
                 </div>
 
-                <!-- ★ 新增：一鍵升級/一鍵全體升星，跳過逐一點擊/動畫，一次把所有資源夠用的英雄升到不能再升為止 -->
+                <!-- ★ 一鍵升級/一鍵全體解鎖命座，跳過逐一點擊/動畫，一次把所有資源夠用的英雄升到不能再升為止 -->
                 <div class="flex gap-2 mb-3 shrink-0">
                     <button onclick="autoLevelUpAllHeroes()"
                         class="flex-1 py-2 rounded-lg bg-gradient-to-r from-sky-800/70 to-blue-800/70 text-sky-100 text-[11px] font-bold border border-sky-600 hover:from-sky-700 hover:to-blue-700 transition flex items-center justify-center gap-1.5">
@@ -1213,7 +1213,7 @@
                     </button>
                     <button onclick="autoAwakenAllHeroes()"
                         class="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-800/70 to-fuchsia-800/70 text-purple-100 text-[11px] font-bold border border-purple-600 hover:from-purple-700 hover:to-fuchsia-700 transition flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>一鍵全體升星
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>一鍵解鎖命座
                     </button>
                 </div>
 
@@ -1636,13 +1636,7 @@
                                     <input id="admin-season-duration-days" type="number" min="1" placeholder="4" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-[9px] text-stone-500 block mb-1">星級上限（0＝無上限）</label>
-                                    <input id="admin-max-star-level" type="number" min="0" placeholder="0＝無上限" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
-                                </div>
-                            </div>
-                            <p class="text-[8px] text-amber-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>往下調整時，玩家下次讀取存檔會自動把超過新上限的等級/星級/聖物階級拉回上限值（見 enforceProgressionCaps），不會顯示異常，但等於強制降級，請確認清楚再調整。</p>
+                            <p class="text-[8px] text-amber-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>往下調整時，玩家下次讀取存檔會自動把超過新上限的等級/聖物階級拉回上限值（見 enforceProgressionCaps），不會顯示異常，但等於強制降級，請確認清楚再調整。</p>
 
                             <div class="border-t border-[#3e3328] pt-2 flex flex-col gap-1.5">
                                 <label class="flex items-center gap-2 text-[10px] text-stone-300 cursor-pointer">
@@ -1996,6 +1990,14 @@
                             class="w-full py-1.5 mt-auto rounded bg-black/50 border border-[#3e3328] text-stone-600 text-[9px] font-bold opacity-50 cursor-not-allowed">尚未開放</button>
                     </div>
                 </div>
+                <!-- ★ 命之座資訊區塊——取代原本的星級覺醒，顯示目前命座/上限與下一層的解鎖效果描述 -->
+                <div class="bg-[#1f1610] p-3 rounded-xl border border-amber-700/30 shadow-inner-dark">
+                    <h4 class="font-bold text-stone-200 text-[10px] mb-1.5 border-b border-amber-700/30 pb-1 flex justify-between">
+                        <span><i class="fa-solid fa-star-of-life text-amber-400 mr-1"></i>命之座</span>
+                        <span id="constellation-current-display" class="text-amber-300">第 0 命 / 最高 6 命</span>
+                    </h4>
+                    <p id="constellation-next-desc" class="text-[9px] text-stone-400 leading-relaxed">下一層命座解鎖效果</p>
+                </div>
             </div>
             <div class="p-3 bg-[#0a0806] border-t border-[#5a4634] flex gap-3 shrink-0 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]"
                 id="modal-hero-actions">
@@ -2004,7 +2006,7 @@
                     ontouchend="event.preventDefault(); levelUpLongPresser.stop()" ontouchcancel="levelUpLongPresser.cancel()" id="btn-upgrade-lvl"
                     class="flex-1 py-2 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs flex flex-col items-center justify-center transition active:scale-95 hover:border-fantasy-gold">升級</button>
                 <button onmousedown="starLongPresser.start()" onmouseup="starLongPresser.stop()" onmouseleave="starLongPresser.cancel()" ontouchstart="event.preventDefault(); starLongPresser.start()" ontouchend="event.preventDefault(); starLongPresser.stop()" ontouchcancel="starLongPresser.cancel()" id="btn-upgrade-star"
-                    class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">覺醒</button>
+                    class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">解鎖命座</button>
             </div>
         </div>
     </div>
@@ -2597,13 +2599,10 @@
         // 粗略檢查存檔數值有沒有超出遊戲本身數值系統理論上能達到的範圍（等級/星級/聖物階級封頂、
         // 資源多到不合理等），抓得到明顯離譜的竄改，抓不到精心計算過、卡在上限邊緣的造假
         function checkSavePlausible(state) {
-            // ★ 管理員有設定實際的星級上限時，這裡改用真正的上限做檢查（更精準）；
-            // 沒設定（無上限）時才退回原本寬鬆的估計值，避免徹底失去防呆效果
-            const starCapForCheck = Number.isFinite(MAX_STAR_LEVEL) ? MAX_STAR_LEVEL : PLAUSIBLE_MAX_STAR_ESTIMATE;
             for (const heroId in (state.roster || {})) {
                 const r = state.roster[heroId];
                 if (!r) continue;
-                if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > starCapForCheck || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
+                if ((r.level || 1) > MAX_HERO_LEVEL || (r.constellation || 0) > MAX_CONSTELLATION_LEVEL || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
             }
             // ★ 新增：8 部位裝備系統的強化等級也一併檢查，超過上限視為異常存檔
             for (const itemId in (state.equipmentInventory || {})) {
@@ -2864,10 +2863,8 @@
             const rarityMult = RARITY_BASE_MULT[db.rarity] || 1.0;
             const classBase = CLASS_BASE_STATS[db.role] || CLASS_BASE_STATS['戰士'];
             const maxLevelMult = getLevelMultiplier(MAX_HERO_LEVEL);
-            // ★ 管理員如果有設定實際的星級上限，這裡改用真正的上限算（更精準）；
-            // 沒設定（無上限）時才退回一個「夠寬鬆但還是有限」的估計值，只用在這個粗略防呆檢查上。
-            const starCapForCheck = Number.isFinite(MAX_STAR_LEVEL) ? MAX_STAR_LEVEL : PLAUSIBLE_MAX_STAR_ESTIMATE;
-            const maxTotalBonus = 1 + getStarBonusRatio(starCapForCheck) + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER);
+            // ★ 改版：命之座系統不再影響基礎三圍（只影響技能倍率/觸發機率），加成池只剩聖物
+            const maxTotalBonus = 1 + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER);
             // ★ 同步 8 部位裝備系統：8 個部位都強化滿 +20 的粗估加算數值上限（武器/副手/胸甲/頭盔/鞋子/手套/戒指/項鍊各自算一次）
             const maxEquipFlat = {hp: 3500, atk: 400, def: 250, crit: 5};
             // 套裝加成也給一個寬鬆估計（假設 8 件都湊滿同一套裝的最高數值型加成：狂暴 4 件 暴傷+35% 概念上已經算進 critDmgMult，
@@ -2885,7 +2882,7 @@
             const team = (GAME_STATE.gridSlots || []).map((id, idx) => {
                 if (!id || !GAME_STATE.roster[id]) return null;
                 const r = GAME_STATE.roster[id];
-                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
+                return {heroId: id, level: r.level, constellation: r.constellation || 0, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
             }).filter(Boolean);
 
             // 逐一檢查每位上陣英雄是否超出這個遊戲數值系統理論上能達到的合理上限
@@ -3000,7 +2997,7 @@
             if (!playerData.team || playerData.team.length === 0) {showToast('這位玩家目前沒有上陣任何英雄'); return;}
             const names = playerData.team.map(slot => {
                 const db = HERO_DATABASE.find(h => h.id === slot.heroId);
-                return db ? `${db.name} (Lv.${slot.level} ${slot.star}★)` : '???';
+                return db ? `${db.name} (Lv.${slot.level} ${slot.constellation || 0}命)` : '???';
             });
             alert(`${playerData.displayName || '???'} 的陣容：\n\n${names.join('\n')}`);
         }
@@ -3081,7 +3078,7 @@
                     return `<div class="text-[10px] ${isMe ? 'text-sky-300' : 'text-stone-300'} mb-1">
                         <span class="font-bold">${m.senderName || '???'}：</span>分享了英雄
                         <div class="mt-1 bg-black/40 border border-amber-700/40 rounded-lg p-2 inline-block">
-                            <div class="text-amber-300 font-bold text-[11px] mb-1">${c.name}（${c.rarity} · Lv.${c.level} · ${c.star}★）</div>
+                            <div class="text-amber-300 font-bold text-[11px] mb-1">${c.name}（${c.rarity} · Lv.${c.level} · ${c.constellation || 0}命）</div>
                             <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px] text-stone-300">
                                 <span>⚡戰力 ${c.power.toLocaleString()}</span>
                                 <span>❤️生命 ${c.hp.toLocaleString()}</span>
@@ -3134,7 +3131,7 @@
             const h = getEffectiveHero(db);
             if (!db || !r || !h) return;
             const heroCard = {
-                name: db.name, rarity: db.rarity, level: r.level, star: r.star || 1,
+                name: db.name, rarity: db.rarity, level: r.level, constellation: r.constellation || 0,
                 power: Math.floor(h.maxHp * 0.5 + h.atk * 2 + h.def * 1.5 + h.crit * 10),
                 hp: h.maxHp, atk: h.atk, def: h.def, crit: h.crit, artifactTier: r.artifactTier || 0
             };
@@ -3249,7 +3246,7 @@
             const myTeam = (GAME_STATE.gridSlots || []).map((id, idx) => {
                 if (!id || !GAME_STATE.roster[id]) return null;
                 const r = GAME_STATE.roster[id];
-                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
+                return {heroId: id, level: r.level, constellation: r.constellation || 0, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
             }).filter(Boolean);
             if (myTeam.length === 0) {showToast('請先到佈陣頁面上陣至少一位英雄'); return;}
             try {
@@ -3314,7 +3311,7 @@
             const myTeam = (GAME_STATE.gridSlots || []).map((id, idx) => {
                 if (!id || !GAME_STATE.roster[id]) return null;
                 const r = GAME_STATE.roster[id];
-                return {heroId: id, level: r.level, star: r.star || 1, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
+                return {heroId: id, level: r.level, constellation: r.constellation || 0, artifactTier: r.artifactTier || 0, equippedItems: denormalizeEquippedItems(r), row: Math.floor(idx / 2), col: (idx % 2) * 2};
             }).filter(Boolean);
             if (myTeam.length === 0) {showToast('請先到佈陣頁面上陣至少一位英雄'); return;}
             try {
@@ -3640,7 +3637,7 @@
                     (c.team || []).forEach(slot => {
                         const db = HERO_DATABASE.find(h => h.id === slot.heroId);
                         if (!db) return;
-                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
+                        const fakeRoster = {level: slot.level, constellation: slot.constellation, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
                         const originalRoster = GAME_STATE.roster[slot.heroId];
                         GAME_STATE.roster[slot.heroId] = fakeRoster;
                         const h = getEffectiveHero(db);
@@ -3657,7 +3654,7 @@
                     <button onclick="selectMercenary(${idx})" class="w-full py-2 px-3 bg-black/40 rounded-lg border border-[#3e3328] hover:border-fantasy-gold transition flex justify-between items-center text-left">
                         <div class="min-w-0">
                             <div class="text-[10px] font-bold text-stone-200 truncate">${c.fromName}</div>
-                            <div class="text-[9px] text-stone-400 truncate">${c.h.name}（${c.h.rarity}・Lv.${c.h.effectiveLevel}・${c.h.star}★）</div>
+                            <div class="text-[9px] text-stone-400 truncate">${c.h.name}（${c.h.rarity}・Lv.${c.h.effectiveLevel}・${c.h.constellation || 0}命）</div>
                         </div>
                         <span class="text-[10px] text-fantasy-gold font-bold shrink-0 ml-2">⚡${c.power.toLocaleString()}</span>
                     </button>
@@ -4876,7 +4873,7 @@
                     const dbHero = HERO_DATABASE.find(h => h.id === r.heroId);
                     if (dbHero) {
                         if (r.heroGrantType === 'hero' && !GAME_STATE.roster[r.heroId]) {
-                            GAME_STATE.roster[r.heroId] = {level: 1, star: dbHero.star || 1, artifactTier: 0, equippedItems: {}};
+                            GAME_STATE.roster[r.heroId] = {level: 1, constellation: 0, artifactTier: 0, equippedItems: {}};
                             showToast(`🎉 獲得英雄：${dbHero.name}！`);
                         } else {
                             const shardAmt = r.heroGrantType === 'hero' ? 30 : (r.heroShardAmount || 10);
@@ -4933,9 +4930,6 @@
             document.getElementById('admin-max-hero-level').value = (adminGameConfig && adminGameConfig.maxHeroLevel) || MAX_HERO_LEVEL;
             document.getElementById('admin-max-artifact-tier').value = (adminGameConfig && adminGameConfig.maxArtifactTier) || ALTAR_MAX_ARTIFACT_TIER;
             document.getElementById('admin-season-duration-days').value = (adminGameConfig && adminGameConfig.seasonDurationDays) || SEASON_DURATION_DAYS;
-            // ★ 星級上限：Infinity（無上限）時顯示空白，不要真的把 "Infinity" 這個字串塞進輸入框
-            const starLevelForDisplay = (adminGameConfig && adminGameConfig.maxStarLevel) || (Number.isFinite(MAX_STAR_LEVEL) ? MAX_STAR_LEVEL : '');
-            document.getElementById('admin-max-star-level').value = starLevelForDisplay;
             document.getElementById('admin-toggle-unlimited-speed').checked = !!(adminGameConfig && adminGameConfig.unlimitedSpeed);
             document.getElementById('admin-toggle-unlimited-boss').checked = !!(adminGameConfig && adminGameConfig.unlimitedBossAttempts);
             document.getElementById('admin-toggle-free-market').checked = !!(adminGameConfig && adminGameConfig.freeMarket);
@@ -4954,9 +4948,6 @@
             const maxHeroLevel = parseInt(document.getElementById('admin-max-hero-level').value) || MAX_HERO_LEVEL;
             const maxArtifactTier = parseInt(document.getElementById('admin-max-artifact-tier').value) || ALTAR_MAX_ARTIFACT_TIER;
             const seasonDurationDays = parseInt(document.getElementById('admin-season-duration-days').value) || SEASON_DURATION_DAYS;
-            // ★ 星級上限：輸入 0 或留空都代表「無上限」，存成 0，套用時再轉換回 Infinity（見 listenAdminGameConfig）
-            const maxStarLevelInput = document.getElementById('admin-max-star-level').value;
-            const maxStarLevel = maxStarLevelInput ? (parseInt(maxStarLevelInput) || 0) : 0;
             const unlimitedSpeed = document.getElementById('admin-toggle-unlimited-speed').checked;
             const unlimitedBossAttempts = document.getElementById('admin-toggle-unlimited-boss').checked;
             const freeMarket = document.getElementById('admin-toggle-free-market').checked;
@@ -4968,13 +4959,13 @@
                 await fbDb.collection('gameConfig').doc('current').set({
                     currentSeasonId: seasonId,
                     activeEventSeasonId: eventSeasonId,
-                    maxHeroLevel, maxArtifactTier, seasonDurationDays, maxStarLevel,
+                    maxHeroLevel, maxArtifactTier, seasonDurationDays,
                     unlimitedSpeed, unlimitedBossAttempts, freeMarket,
                     seasonBossAtkMult, seasonBossDefMult, seasonBossCrit, seasonBossSkillMult,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: GAME_STATE.mpDisplayName || fbUser.email
                 }, {merge: true});
-                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階，星級上限 ${maxStarLevel > 0 ? maxStarLevel + '★' : '無上限'}，賽季天數 ${seasonDurationDays} 天，賽季首領攻/防倍率 ${seasonBossAtkMult}/${seasonBossDefMult}，暴擊 ${seasonBossCrit}%，技能倍率 ${seasonBossSkillMult}`;
+                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階，賽季天數 ${seasonDurationDays} 天，賽季首領攻/防倍率 ${seasonBossAtkMult}/${seasonBossDefMult}，暴擊 ${seasonBossCrit}%，技能倍率 ${seasonBossSkillMult}`;
                 showToast('全域設定已同步給所有玩家');
             } catch (err) {console.warn('儲存全域設定失敗：', err); showToast('儲存失敗：' + (err.code || err.message || '未知錯誤'));}
         }
@@ -5423,7 +5414,7 @@
             // ★ 保底改成三個卡池各自獨立累計，互不共用（原本三卡池共用同一個 gachaPityCount 是設計錯誤）
             gachaPity: {standard: 0, limited: 0, special: 0},
             gridSlots: ['h_militia', null, null, null, null, null],
-            roster: {'h_militia': {level: 1, star: 1, artifactTier: 0, equippedItems: {}}},
+            roster: {'h_militia': {level: 1, constellation: 0, artifactTier: 0, equippedItems: {}}},
             equipmentInventory: {}, // ★ 8 部位裝備系統的背包：只有「已裝備」或「已強化過(+1以上)」的裝備才會是這裡的獨立 UUID 物件
             resonanceEssence: 0, // ★ 新增：共鳴精華，裝備分解爐的產物，用來洗鍊副詞條
             equipmentStacks: {}, // ★ 新增：計數堆疊防爆存檔——+0 且未裝備的裝備，用 {"slot_setId": 數量} 堆疊計數，不佔用獨立物件空間
@@ -5632,8 +5623,6 @@
                     if (adminGameConfig.maxHeroLevel) MAX_HERO_LEVEL = adminGameConfig.maxHeroLevel;
                     if (adminGameConfig.maxArtifactTier) ALTAR_MAX_ARTIFACT_TIER = adminGameConfig.maxArtifactTier;
                     if (adminGameConfig.seasonDurationDays) SEASON_DURATION_DAYS = adminGameConfig.seasonDurationDays;
-                    // ★ 新增：管理員可以調整升星級數上限，0（或沒設定過）代表維持無上限
-                    MAX_STAR_LEVEL = adminGameConfig.maxStarLevel > 0 ? adminGameConfig.maxStarLevel : Infinity;
                     // ★ 新增：管理員可以開關「黑市免手續費」，即時套用給所有玩家（見 exchangeDiamondToBMC 等黑市函式）
                     BLACK_MARKET_FEE_RATE = adminGameConfig.freeMarket ? 0 : BLACK_MARKET_FEE_RATE_DEFAULT;
                     // ★ 管理員如果在玩家正在遊玩時把上限往下調，這裡立刻套用保護機制，不用等下次重新整理頁面
@@ -5808,6 +5797,17 @@
             // ============================================================
             {id: 'h_gr_bahamut', name: '「滅世災炎」巴哈姆特', role: '戰士', rarity: 'GR', star: 1, baseHp: 433, baseAtk: 72, baseDef: 26, crit: 25, avatarIcon: 'fa-dragon', color: '#ef4444',
                 skill: {type: 'gr_bahamut', value: 2.2, stackAtkPct: 10, stackLifestealPct: 10, maxStacks: 5, defIgnorePerStack: 15, desc: '小技能【狂血撕裂】：對敵方單體造成巨量傷害，並為自身疊加 1 層「逆鱗」（每層 +10% 攻擊力、+10% 吸血率，最高 5 層）。大招【深淵龍息·燼滅】：對敵方全體噴吐烈焰，消耗全部「逆鱗」層數，每層額外無視目標 15% 防禦力；若消耗滿 5 層且成功擊殺任一敵人，將立刻無消耗再次觸發一次【狂血撕裂】。'},
+                // ★ 命之座範例（企劃書步驟1）：單數層是純粹的「技能倍率/觸發機率」通用成長，不需要額外資料；
+                // 雙數層則解鎖專屬質變（customEffect）。目前只有 2 命的 lifesteal_15 已經接上戰鬥（見 executeHit），
+                // 其餘 customEffect 標籤目前只有描述文字，戰鬥分支還沒實作（屬於後續英雄技能重製的範疇）。
+                constellations: [
+                    {level: 1, desc: '技能倍率與觸發機率提升。'},
+                    {level: 2, desc: '小技能觸發時，額外附加 15% 吸血效果。', customEffect: 'lifesteal_15'},
+                    {level: 3, desc: '技能倍率與觸發機率提升。'},
+                    {level: 4, desc: '「逆鱗」層數上限 +2（最高 7 層）。', customEffect: 'bahamut_stack_cap_up'},
+                    {level: 5, desc: '技能倍率與觸發機率提升。'},
+                    {level: 6, desc: '大招擊殺後的免費【狂血撕裂】必定觸發，不再需要消耗滿層逆鱗。', customEffect: 'bahamut_c6_guaranteed_retrigger'},
+                ],
                 lore: '曾統治遠古巨龍巢穴的半龍人戰神，血液中流淌著純粹的毀滅之力。', isExclusive: true},
             {id: 'h_gr_alexander', name: '「曙光初王」亞歷山大', role: '坦克', rarity: 'GR', star: 1, baseHp: 533, baseAtk: 34, baseDef: 42, crit: 10, avatarIcon: 'fa-shield-halved', color: '#fbbf24',
                 skill: {type: 'gr_alexander', value: 3.0, healPct: 1.2, desc: '小技能【耀陽刻印】：舉盾嘲諷，在所有攻擊自己的敵人身上留下無法驅散的「耀陽」印記。大招【王權共鳴·天威】：猛砸地面震盪全場，強制引爆敵方身上所有「耀陽」印記，每個印記對其持有者造成「亞歷山大最大防禦力 300%」的真實傷害，並為我方血量最低的騎士恢復生命。'},
@@ -5869,7 +5869,17 @@
             {id: 'h_s3_ssr2', name: '聖光狂熱者', role: '戰士', rarity: 'SSR', star: 1, baseHp: 167, baseAtk: 26, baseDef: 11, crit: 15, avatarIcon: 'fa-bolt', color: '#9333ea', skill: {type: 'smite', chance: 0.3, desc: '普通攻擊有 30% 機率附帶暈眩，使目標下回合無法行動。'}, lore: '為了信仰不顧一切。', isExclusive: true, seasonId: 3},
 
             // S4 限定 (1 LR, 2 SSR) —「巨龍之巔」通行證最終獎勵與召喚限定
-            {id: 'h_s4_ur', name: '龍裔王者·灼', role: '戰士', rarity: 'UR', star: 1, baseHp: 300, baseAtk: 48, baseDef: 18, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316', skill: {type: 'burn_stack', value: 0.12, duration: 4, maxStacks: 6, desc: '大招附加龍焰詛咒，每命中一次就疊加一層（最多 6 層），燒傷程度隨層數持續攀升，直到戰鬥結束都不會消退。'}, lore: '與滅世魔龍同源的半龍血脈，渾身燃燒著不滅的龍炎。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_ur', name: '龍裔王者·灼', role: '戰士', rarity: 'UR', star: 1, baseHp: 300, baseAtk: 48, baseDef: 18, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316', skill: {type: 'burn_stack', value: 0.12, duration: 4, maxStacks: 6, desc: '大招附加龍焰詛咒，每命中一次就疊加一層（最多 6 層），燒傷程度隨層數持續攀升，直到戰鬥結束都不會消退。'},
+                // ★ 命之座範例（企劃書步驟1）：customEffect 目前只有描述文字，戰鬥分支還沒實作
+                constellations: [
+                    {level: 1, desc: '技能倍率與觸發機率提升。'},
+                    {level: 2, desc: '「龍焰詛咒」疊加上限 +2 層（最高 8 層）。', customEffect: 'zhuo_stack_cap_up'},
+                    {level: 3, desc: '技能倍率與觸發機率提升。'},
+                    {level: 4, desc: '燃燒中的敵人受到的真實傷害提升 20%。', customEffect: 'zhuo_true_dmg_up'},
+                    {level: 5, desc: '技能倍率與觸發機率提升。'},
+                    {level: 6, desc: '大招引爆龍焰詛咒後，若成功擊殺目標，返還自身 50% 大招能量。', customEffect: 'zhuo_c6_energy_refund'},
+                ],
+                lore: '與滅世魔龍同源的半龍血脈，渾身燃燒著不滅的龍炎。', isExclusive: true, seasonId: 4},
             {id: 'h_s4_lr', name: '熔火霸主·瑟拉克斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 354, baseAtk: 57, baseDef: 21, crit: 22, avatarIcon: 'fa-volcano', color: '#fde047', skill: {type: 'wrath_nuke', value: 0.9, desc: '大招造成等同自身攻擊力、再加上「已損失生命值 90%」轉化的真實傷害，血越少打得越痛，是滅世魔龍本尊都忌憚的狂怒化身。'}, lore: '滅世魔龍甦醒前留下的分身，比半龍血脈的灼更接近純粹的毀滅意志。', isExclusive: true, seasonId: 4},
             {id: 'h_s4_ssr1', name: '熔岩巨匠', role: '法師', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 35, baseDef: 8, crit: 15, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn_aoe', value: 0.28, duration: 3, desc: '大招施放熔岩噴發，對敵方全體造成傷害並使其燃燒，每回合造成攻擊力 28% 的灼燒傷害，持續 3 回合。'}, lore: '巨龍巢穴深處鍛造兵器的異能鐵匠。', isExclusive: true, seasonId: 4},
             {id: 'h_s4_ssr2', name: '龍鱗盾衛', role: '坦克', rarity: 'SSR', star: 1, baseHp: 233, baseAtk: 17, baseDef: 19, crit: 5, avatarIcon: 'fa-shield-cat', color: '#c2410c', skill: {type: 'harden', value: 4, desc: '龍鱗會越挨打越堅硬：每次受到攻擊，永久提升 4 點防禦力，戰鬥越久越難被打穿。'}, lore: '以巨龍蛻下的鱗片鍛造出堅不可摧的戰甲。', isExclusive: true, seasonId: 4},
@@ -6206,6 +6216,21 @@
             if (GAME_STATE.gridSlots.length > 6) {
                 GAME_STATE.gridSlots = GAME_STATE.gridSlots.slice(0, 6);
             }
+            // ★ 命之座系統改版：舊存檔的英雄還是用 star（升星）欄位，沒有 constellation 欄位，
+            // 防止壞檔——偵測到舊格式就自動轉換一次（沒有公平的對應關係，單純避免存檔壞掉讀不出來，
+            // 新舊兩個系統本來就是完全不同的機制，星級高不代表命座就該對應多高）。
+            Object.keys(GAME_STATE.roster || {}).forEach(heroId => {
+                const r = GAME_STATE.roster[heroId];
+                if (!r) return;
+                if (r.constellation === undefined) {
+                    if (r.star !== undefined) {
+                        r.constellation = Math.min(MAX_CONSTELLATION_LEVEL, Math.max(0, (r.star || 1) - 1));
+                        delete r.star;
+                    } else {
+                        r.constellation = 0;
+                    }
+                }
+            });
             enforceProgressionCaps(); // ★ 新增：確保沒有英雄的等級/聖物階級超過目前的上限設定
             updateHUD();
         }
@@ -6261,11 +6286,11 @@
                 if (!r) return;
                 if ((r.level || 1) > MAX_HERO_LEVEL) {r.level = MAX_HERO_LEVEL; clamped = true;}
                 if ((r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) {r.artifactTier = ALTAR_MAX_ARTIFACT_TIER; clamped = true;}
-                if (Number.isFinite(MAX_STAR_LEVEL) && (r.star || 1) > MAX_STAR_LEVEL) {r.star = MAX_STAR_LEVEL; clamped = true;}
+                if ((r.constellation || 0) > MAX_CONSTELLATION_LEVEL) {r.constellation = MAX_CONSTELLATION_LEVEL; clamped = true;}
             });
             if (clamped) {
                 saveGame();
-                showToast('部分騎士的等級／星級／聖物階級超過目前上限，已自動調整回上限值');
+                showToast('部分騎士的等級／命座／聖物階級超過目前上限，已自動調整回上限值');
             }
             return clamped;
         }
@@ -6630,7 +6655,7 @@
                     const pickId = pool[Math.floor(Math.random() * pool.length)];
                     const dbHero = HERO_DATABASE.find(h => h.id === pickId);
                     if (!GAME_STATE.roster[pickId]) {
-                        GAME_STATE.roster[pickId] = {level: 1, star: dbHero.star, artifactTier: 0, equippedItems: {}};
+                        GAME_STATE.roster[pickId] = {level: 1, constellation: 0, artifactTier: 0, equippedItems: {}};
                         showToast(`🎉 兌換獲得全新英雄：${dbHero.name}`);
                     } else {
                         // 改成發放英雄碎片，跟召喚重複抽到的規則一致，玩家自己決定何時拿碎片去升星
@@ -7195,6 +7220,18 @@
         // ★ 數值壓縮 (Stat Squish)：原本的倍率梯度太寬(1.0~3.0)，跟等級/星級/聖物疊乘後後期數值直接失控。
         // 收攏成 1.0~2.5，稀有度之間還是有明確差距，但不會跟其他乘區加在一起後直接爆炸。
         const RARITY_BASE_MULT = {R: 1.0, SR: 1.2, SSR: 1.45, UR: 1.75, LR: 2.1, GR: 2.5};
+
+        /* ============================================================
+           【企劃書】命之座系統 (Constellation System)
+           ★ 取代原本的「升星（Awaken）」系統：不再是碎片無限疊加星級、數值線性成長，
+           改成每位英雄最高 6 層命之座（0～6 命），每命座依稀有度取得「通用公式」的技能倍率／
+           觸發機率成長，部分命座層還會解鎖英雄專屬的「質變」機制（見 HERO_DATABASE 的
+           constellations 陣列，desc/customEffect 欄位）。
+           ============================================================ */
+        const CONSTELLATION_RARITY_MULT = {R: 1.0, SR: 1.2, SSR: 1.5, UR: 1.8, LR: 2.0, GR: 2.5};
+        const MAX_CONSTELLATION_LEVEL = 6;
+        const CONSTELLATION_SKILL_MULT_PER_LEVEL = 0.03; // 每命座 +3% 技能倍率（再乘稀有度倍率）
+        const CONSTELLATION_PROB_BONUS_PER_LEVEL = 0.01; // 每命座 +1% 小技能觸發機率（再乘稀有度倍率）
         const RARITY_PASSIVES = {
             R:   {spd: 0,  energyStart: 0,  dmgReduce: 0,    dmgBonus: 0,    cheatDeath: false},
             SR:  {spd: 5,  energyStart: 0,  dmgReduce: 0,    dmgBonus: 0,    cheatDeath: false},
@@ -7509,11 +7546,8 @@
             return mult;
         }
 
-        // 星級加成：對數公式 0.8 * ln(1 + 0.25 * (Star-1))，取代原本線性每星 +0.7% 的算法
-        function getStarBonusRatio(star) {
-            const s = Math.max(1, star || 1);
-            return 0.8 * Math.log(1 + 0.25 * (s - 1));
-        }
+        // ★ 改版：原本的「星級加成」公式已經移除——命之座系統不再直接放大三圍，
+        // 改成動態調整技能倍率／觸發機率（見 getEffectiveHero 裡的 CONSTELLATION_* 相關計算）。
 
         // 聖物加成：1~100 階每階 +0.5%（逢 10 階額外 +2%）；101 階起每階 +0.25%
         function getArtifactBonusRatio(tier) {
@@ -7582,9 +7616,9 @@
 
         function getEffectiveHero(db) {
             if (!db) return null;
-            const r = GAME_STATE.roster[db.id] || {level: 1, star: db.star || 1, artifactTier: 0, equippedItems: {}};
+            const r = GAME_STATE.roster[db.id] || {level: 1, constellation: 0, artifactTier: 0, equippedItems: {}};
             const l = r.level; // ★ 庇護等級移除：不再跟最高等級英雄同步，就是自己實際的等級
-            const star = r.star || 1;
+            const constellation = Math.min(MAX_CONSTELLATION_LEVEL, Math.max(0, r.constellation || 0));
 
             const rarityMult = RARITY_BASE_MULT[db.rarity] || 1.0;
             const passive = RARITY_PASSIVES[db.rarity] || RARITY_PASSIVES.R;
@@ -7599,8 +7633,9 @@
             // 2. 等級成長倍率（分段公式）
             const lvlMult = getLevelMultiplier(l);
 
-            // 3. 加算加成池：星級（對數）+ 聖物（分段）
-            const totalBonus = 1 + getStarBonusRatio(star) + getArtifactBonusRatio(r.artifactTier || 0);
+            // 3. ★ 改版：命之座不再直接放大三圍，加成池只剩聖物（分段）。
+            // 命座對戰鬥的影響改成專門作用在「技能倍率／觸發機率」上（見下方 skill 複製與調整）。
+            const totalBonus = 1 + getArtifactBonusRatio(r.artifactTier || 0);
             const artifactDmgReduce = getArtifactDmgReduceRatio(r.artifactTier || 0);
 
             // 4. ★ 新版 8 部位裝備：把 8 個部位目前裝備的物件數值直接加總（每個部位各自的白字＋強化等級加成）
@@ -7651,17 +7686,30 @@
             const blockRate = (classPassive.blockRate || 0) + (setBonus.blockRate || 0) / 100;
             const energyRegenBonus = (subTotals.energyRegen || 0) / 100; // ★ 新增：副詞條「能量恢復%」，每回合開始多回這個比例的滿能量
 
-            // ★ 升星現在也會讓專屬技能一起變強，不再只是單純的數值倍率：
-            // 技能的「數值型」欄位 (value/傷害或治療幅度) 每星 +5%，「機率型」欄位 (chance) 每星 +1.5% 並封頂 95%，
-            // 「持續回合」則是每 5 星額外 +1 回合，作為高星級的質變獎勵
+            // ★ 改版：命之座系統——技能倍率跟觸發機率不再跟著星級線性成長，改成依【命座層數 × 稀有度倍率】
+            // 動態計算：技能倍率每命座 +3%（乘稀有度倍率），觸發機率每命座 +1%（乘稀有度倍率，封頂 95%）。
+            // 另外讀取 HERO_DATABASE 的 constellations 陣列，把「已解鎖」的命座層專屬質變效果疊加上去
+            // （目前只有少數幾個 customEffect 已經接上戰鬥分支，其餘只有描述文字，見英雄詳情頁說明）。
             let effSkill = db.skill;
             if (db.skill) {
-                const skillStarMult = 1 + (star - 1) * 0.05;
-                const chanceStarMult = 1 + (star - 1) * 0.015;
+                const rMult = CONSTELLATION_RARITY_MULT[db.rarity] || 1;
+                const skillConstMult = 1 + constellation * CONSTELLATION_SKILL_MULT_PER_LEVEL * rMult;
+                const chanceConstBonus = constellation * CONSTELLATION_PROB_BONUS_PER_LEVEL * rMult;
                 effSkill = {...db.skill};
-                if (typeof effSkill.value === 'number') effSkill.value = +(effSkill.value * skillStarMult).toFixed(4);
-                if (typeof effSkill.chance === 'number') effSkill.chance = Math.min(0.95, +(effSkill.chance * chanceStarMult).toFixed(4));
-                if (typeof effSkill.duration === 'number') effSkill.duration = effSkill.duration + Math.floor((star - 1) / 5);
+                if (typeof effSkill.value === 'number') effSkill.value = +(effSkill.value * skillConstMult).toFixed(4);
+                if (typeof effSkill.chance === 'number') effSkill.chance = Math.min(0.95, +(effSkill.chance + chanceConstBonus).toFixed(4));
+
+                if (db.constellations) {
+                    for (let cLv = 1; cLv <= constellation; cLv++) {
+                        const cData = db.constellations[cLv - 1];
+                        if (!cData) continue;
+                        if (typeof cData.skillMultBonus === 'number' && cData.skillMultBonus) effSkill.value = +((effSkill.value || 0) + cData.skillMultBonus).toFixed(4);
+                        if (typeof cData.probBonus === 'number' && cData.probBonus) effSkill.chance = Math.min(0.95, +((effSkill.chance || 0) + cData.probBonus).toFixed(4));
+                        // ★ 目前唯一接上戰鬥的 customEffect 範例（企劃書步驟1給的原始範例）：
+                        // 小技能觸發時額外附加 15% 吸血，見 executeHit 的吸血判定
+                        if (cData.customEffect === 'lifesteal_15') effSkill.constellationLifesteal = (effSkill.constellationLifesteal || 0) + 0.15;
+                    }
+                }
             }
 
             return {
@@ -8010,18 +8058,16 @@
                 const hId = config.exclusiveHero;
                 const dbH = HERO_DATABASE.find(x => x.id === hId);
                 if (!GAME_STATE.roster[hId]) {
-                    GAME_STATE.roster[hId] = {level: 1, star: dbH.star, artifactTier: 0, equippedItems: {}};
+                    GAME_STATE.roster[hId] = {level: 1, constellation: 0, artifactTier: 0, equippedItems: {}};
                     showToast(`🎉 獲得賽季限定英雄：${dbH.name}！`);
-                } else if ((GAME_STATE.roster[hId].star || 1) >= MAX_STAR_LEVEL) {
-                    // ★ 修正：這裡原本不管星級多高都直接 .star++，完全沒檢查上限，
-                    // 導致已經滿星 (10星) 的 LR 英雄再拿到這個獎勵時，星級會被推過封頂值，
-                    // 也完全繞過了「滿星轉化超越結晶」那套邏輯（那套只接在 grantHeroShards 裡，這裡沒呼叫到）。
-                    // 現在滿星時改成跟碎片溢出同一套規則：轉化成超越結晶，不會再讓星級超過 10 星。
+                } else if ((GAME_STATE.roster[hId].constellation || 0) >= MAX_CONSTELLATION_LEVEL) {
+                    // ★ 已滿命座（6命）時，改成跟碎片溢出同一套規則：轉化成超越結晶，不會超過命座上限
                     const crystalGain = 50;
                     GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + crystalGain;
-                    showToast(`🎉 ${dbH.name} 已滿星，轉化為 ${crystalGain} 枚超越結晶！`);
+                    showToast(`🎉 ${dbH.name} 已滿命座，轉化為 ${crystalGain} 枚超越結晶！`);
                 } else {
-                    GAME_STATE.roster[hId].star++; showToast(`🎉 獲得 ${dbH.name} 碎片，角色星級已突破！`);
+                    GAME_STATE.roster[hId].constellation = (GAME_STATE.roster[hId].constellation || 0) + 1;
+                    showToast(`🎉 獲得 ${dbH.name} 碎片，命之座已突破！目前 ${GAME_STATE.roster[hId].constellation} 命`);
                 }
             }
 
@@ -8475,7 +8521,7 @@
                     ${custom ? `<img src="${custom}" class="w-12 h-12 rounded-full object-cover shadow-lg group-hover:scale-110 transition">` : `<i class="fa-solid ${h.avatarIcon} text-4xl drop-shadow-md group-hover:scale-110 transition" style="color:${h.color}"></i>`}
                     <span class="text-[10px] font-bold text-stone-200 mt-2 truncate w-full text-center">${dName}</span>
                     <span class="text-[9px] text-yellow-500 font-bold mt-0.5 flex items-center justify-center gap-0.5 w-full"><i class="fa-solid fa-bolt text-[8px] shrink-0"></i><span class="truncate">${formatCompactNumber(h.combatPower)}</span></span>
-                    <span class="text-[9px] text-amber-300 font-bold flex items-center justify-center gap-0.5 w-full"><i class="fa-solid fa-star text-[8px]"></i>${h.star || 1}</span>
+                    <span class="text-[9px] text-amber-300 font-bold flex items-center justify-center gap-0.5 w-full"><i class="fa-solid fa-star-of-life text-[8px]"></i>${h.constellation || 0}命</span>
                 </div>`;
                 fragment.appendChild(card.firstElementChild);
             });
@@ -8522,20 +8568,31 @@
             }
 
             const shardsOwned = (GAME_STATE.heroShards && GAME_STATE.heroShards[h.id]) || 0;
-            const costStar = getHeroStarUpCost(h.star);
+            const curConstellation = h.constellation || 0;
+            const curDisplayEl = document.getElementById('constellation-current-display');
+            if (curDisplayEl) curDisplayEl.innerText = `第 ${curConstellation} 命 / 最高 ${MAX_CONSTELLATION_LEVEL} 命`;
             const btnStar = document.getElementById('btn-upgrade-star');
-            if (h.star >= MAX_STAR_LEVEL) {
-                // ★ LR 英雄滿星後，再拿到的碎片會自動轉化成「超越結晶」，這裡順便顯示目前結晶庫存，
-                // 不然玩家滿星之後完全看不到碎片轉換去哪了，會以為東西憑空消失
-                const crystalNote = h.rarity === 'LR' ? `<span class="text-[8px] mt-1 text-amber-700 font-bold block">之後再拿到的碎片會自動轉化為超越結晶（目前持有 ${(GAME_STATE.transcendCrystals || 0).toLocaleString()}）</span>` : '';
-                btnStar.innerHTML = `<span><i class="fa-solid fa-star text-[#110c08] mr-1"></i>已達最高星級 ${MAX_STAR_LEVEL}★</span>${crystalNote}`;
+            const nextDescEl = document.getElementById('constellation-next-desc');
+            if (curConstellation >= MAX_CONSTELLATION_LEVEL) {
+                // ★ 命座滿了（6命）之後，再拿到的碎片會自動轉化成「超越結晶」，這裡順便顯示目前結晶庫存，
+                // 不然玩家滿命座之後完全看不到碎片轉換去哪了，會以為東西憑空消失
+                btnStar.innerHTML = `<span><i class="fa-solid fa-star-of-life text-[#110c08] mr-1"></i>已達命座上限 ${MAX_CONSTELLATION_LEVEL} 命</span><span class="text-[8px] mt-1 text-amber-700 font-bold block">之後再拿到的碎片會自動轉化為超越結晶（目前持有 ${(GAME_STATE.transcendCrystals || 0).toLocaleString()}）</span>`;
                 btnStar.disabled = true; btnStar.classList.add('opacity-50'); btnStar.classList.remove('breakthrough-glow');
+                if (nextDescEl) nextDescEl.innerText = '已解鎖全部命座效果';
             } else {
+                const costStar = getConstellationUpCost(curConstellation);
                 const isMajor = costStar.crystals > 0;
                 const affordableStar = shardsOwned >= costStar.shards && GAME_STATE.gold >= costStar.gold && (GAME_STATE.transcendCrystals || 0) >= costStar.crystals;
-                btnStar.innerHTML = `<span><i class="fa-solid ${isMajor ? 'fa-burst' : 'fa-star'} text-[#110c08] mr-1"></i>${isMajor ? '大突破' : '潛能覺醒'} (+${h.star})</span><span class="text-[9px] mt-1 text-[#110c08]/80 font-bold tracking-wide"><i class="fa-solid fa-gem text-purple-900"></i> ${shardsOwned}/${costStar.shards} <i class="fa-solid fa-coins text-yellow-800 ml-1"></i> ${costStar.gold.toLocaleString()}${isMajor ? ` <i class="fa-solid fa-hexagon text-cyan-800 ml-1"></i> ${(GAME_STATE.transcendCrystals || 0)}/${costStar.crystals}` : ''}</span>`;
+                btnStar.innerHTML = `<span><i class="fa-solid ${isMajor ? 'fa-burst' : 'fa-star-of-life'} text-[#110c08] mr-1"></i>解鎖第 ${curConstellation + 1} 命</span><span class="text-[9px] mt-1 text-[#110c08]/80 font-bold tracking-wide"><i class="fa-solid fa-gem text-purple-900"></i> ${shardsOwned}/${costStar.shards} <i class="fa-solid fa-coins text-yellow-800 ml-1"></i> ${costStar.gold.toLocaleString()}${isMajor ? ` <i class="fa-solid fa-hexagon text-cyan-800 ml-1"></i> ${(GAME_STATE.transcendCrystals || 0)}/${costStar.crystals}` : ''}</span>`;
                 btnStar.classList.toggle('breakthrough-glow', isMajor);
                 btnStar.disabled = !affordableStar; if (btnStar.disabled) btnStar.classList.add('opacity-50'); else btnStar.classList.remove('opacity-50');
+                // ★ 顯示下一層命座的解鎖效果描述（讀取 HERO_DATABASE 的 constellations 陣列；
+                // 大部分英雄目前還沒有專屬命座資料，先顯示通用公式說明）
+                if (nextDescEl) {
+                    const dbHero = HERO_DATABASE.find(x => x.id === h.id);
+                    const nextData = dbHero && dbHero.constellations && dbHero.constellations[curConstellation];
+                    nextDescEl.innerText = nextData ? nextData.desc : '技能倍率與小技能觸發機率提升（依稀有度決定成長幅度）。';
+                }
             }
 
             renderEquipments(h); document.getElementById('hero-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('hero-modal').classList.remove('opacity-0'), 10);
@@ -8878,10 +8935,6 @@
         // 「4 天極速賽季」設計。所有原本各自寫死 SEASON_DURATION_MS 的地方，現在統一呼叫這個函式取得。
         let SEASON_DURATION_DAYS = 4;
         function getSeasonDurationMs() { return SEASON_DURATION_DAYS * 24 * 60 * 60 * 1000; }
-        // ★ 星級無上限之後，反作弊的「理論最大戰力」估算不能再直接用星級上限（因為根本沒有上限了），
-        // 這裡另外訂一個「夠寬鬆但還是有限」的估計值，只用在合理性檢查上，跟遊戲實際的星級系統脫鉤，
-        // 不會因為玩家真的推到很高星級就被誤判成異常。
-        const PLAUSIBLE_MAX_STAR_ESTIMATE = 1000;
         // ★ 改用企劃書附件的公式：單級金幣消耗 100 × 1.055^(Lvl-1)（指數成長，取代原本的二次曲線）。
         // 英雄經驗消耗企劃書沒有特別重新規範，維持原本的公式不變。
         function getHeroLevelUpCost(level) {
@@ -8938,36 +8991,31 @@
 
         // ============ 英雄潛能覺醒 (升星) 邏輯 ============
         // ★ 改用英雄碎片升星，不再直接花寶石。碎片來源：召喚抽到重複英雄、賽季商店兌換。
-        // ★ 星級上限預設無限（Infinity），但改成 let：管理員可以在後台設定一個實際數字當上限
-        // （見 listenAdminGameConfig 的 maxStarLevel），不填或填 0 就維持無上限。
-        let MAX_STAR_LEVEL = Infinity;
-        // ★ 改用企劃書附件的分級消耗表：1~5★/6~10★/11~20★ 各自固定碎片+金幣消耗，
-        // 10★與20★是「大突破」，除了更多碎片/金幣，還要額外的超越結晶。
-        // 20★以後企劃書沒有繼續定義——這裡的設計延伸：級距內消耗沿用 20★那一階（30碎片/5000金幣），
-        // 每 10 星一次的大突破則以「前一次大突破 × 1.5」估算成長，讓無限星級系統在企劃書沒寫到的
-        // 範圍內還是有逐漸變貴的曲線，不會憑空停在 20★大突破的數字不變。
-        function getHeroStarUpCost(star) {
-            const target = (star || 1) + 1; // 這是「升到 target 星」需要的花費
-            const isMajorBreakthrough = target % 10 === 0;
-            if (target <= 5) return {shards: 10, gold: 1000, crystals: 0};
-            if (target <= 10) return isMajorBreakthrough ? {shards: 50, gold: 10000, crystals: 2} : {shards: 20, gold: 2000, crystals: 0};
-            if (target <= 20) return isMajorBreakthrough ? {shards: 80, gold: 25000, crystals: 4} : {shards: 30, gold: 5000, crystals: 0};
-            if (!isMajorBreakthrough) return {shards: 30, gold: 5000, crystals: 0};
-            const breakthroughsPast20 = Math.floor(target / 10) - 2; // 30★=1, 40★=2, 50★=3...
-            const scale = Math.pow(1.5, breakthroughsPast20);
-            return {shards: Math.floor(80 * scale), gold: Math.floor(25000 * scale), crystals: Math.floor(4 * scale)};
+        // ★ 命之座消耗表：解鎖第 1~6 命各自固定的碎片＋金幣消耗，第 3 命起額外需要超越結晶，
+        // 作為比較貴重的「大突破」門檻，跟裝備強化/等級突破的手感呼應。
+        function getConstellationUpCost(currentConstellation) {
+            const target = (currentConstellation || 0) + 1; // 這是「解鎖第 target 命」需要的花費
+            const table = {
+                1: {shards: 20,  gold: 5000,   crystals: 0},
+                2: {shards: 35,  gold: 12000,  crystals: 0},
+                3: {shards: 55,  gold: 25000,  crystals: 2},
+                4: {shards: 80,  gold: 50000,  crystals: 4},
+                5: {shards: 110, gold: 100000, crystals: 6},
+                6: {shards: 150, gold: 200000, crystals: 10},
+            };
+            return table[target] || table[6];
         }
 
-        // ★ 新增：英雄碎片統一由這個函式發放，處理「LR 英雄已經滿星 (10星) 還一直拿到碎片」的溢出問題——
-        // 滿星的 LR 英雄碎片已經沒有用途了（沒有更高星可以升），與其讓碎片白白浪費、憑空消失，
-        // 改成自動轉換成新代幣「超越結晶」，留著之後開放新用途時使用。其他稀有度/未滿星的英雄不受影響。
+        // ★ 新增：英雄碎片統一由這個函式發放，處理「英雄已經滿命座 (6命) 還一直拿到碎片」的溢出問題——
+        // 滿命座的英雄碎片已經沒有用途了（沒有更高命座可以解鎖），與其讓碎片白白浪費、憑空消失，
+        // 改成自動轉換成新代幣「超越結晶」，留著給其他英雄的命座/裝備洗鍊使用。
         function grantHeroShards(heroId, amount) {
             const dbHero = HERO_DATABASE.find(h => h.id === heroId);
             const r = GAME_STATE.roster[heroId];
-            const isMaxedLR = dbHero && dbHero.rarity === 'LR' && r && (r.star || 1) >= MAX_STAR_LEVEL;
-            if (isMaxedLR) {
+            const isMaxedConstellation = r && (r.constellation || 0) >= MAX_CONSTELLATION_LEVEL;
+            if (isMaxedConstellation) {
                 GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + amount;
-                showToast(`${dbHero.name} 已滿星，碎片自動轉化為 ${amount} 枚超越結晶`);
+                showToast(`${dbHero ? dbHero.name : '英雄'} 已滿命座，碎片自動轉化為 ${amount} 枚超越結晶`);
                 return true; // 代表這次是轉換成結晶，不是正常拿到碎片
             }
             if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
@@ -8975,21 +9023,25 @@
             return false;
         }
 
+        // ★ 命之座解鎖——取代原本的「潛能覺醒(升星)」。每次解鎖消耗碎片＋金幣（第3命起還要超越結晶），
+        // 命座本身不再直接放大三圍，而是動態提升技能倍率／觸發機率，並可能解鎖英雄專屬質變效果
+        // （見 getEffectiveHero 讀取 HERO_DATABASE.constellations 的部分）。
         function upgradeSelectedHeroStar(silent) {
             if (!silent) ToneAudioEngine.playClick();
             const heroId = GAME_STATE.selectedHeroId;
             if (!heroId) return false;
 
             const hero = GAME_STATE.roster[heroId];
-            if (hero.star >= MAX_STAR_LEVEL) {
-                if (!silent) showToast("已達最大覺醒星級極限！");
+            const curConstellation = hero.constellation || 0;
+            if (curConstellation >= MAX_CONSTELLATION_LEVEL) {
+                if (!silent) showToast(`已達命座上限（${MAX_CONSTELLATION_LEVEL} 命）！`);
                 return false;
             }
 
-            const cost = getHeroStarUpCost(hero.star);
+            const cost = getConstellationUpCost(curConstellation);
 
-            // ★ 大突破（10★/20★/30★...）需要消耗超越結晶，長按連續升星（silent=true）遇到這種等級直接停下，
-            // 避免不小心把結晶燒光，玩家必須自己手動點一下（silent=false）才能真的跨過這個門檻。
+            // ★ 需要超越結晶的命座（第3命起）屬於比較貴重的一次性消耗，長按連續解鎖（silent=true）
+            // 遇到這種門檻直接停下，避免不小心把結晶燒光，玩家必須自己手動點一下（silent=false）才能跨過。
             if (cost.crystals > 0 && silent) return false;
 
             if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
@@ -9004,8 +9056,8 @@
                 GAME_STATE.gold -= cost.gold;
                 if (cost.crystals > 0) GAME_STATE.transcendCrystals -= cost.crystals;
 
-                // 提升星級 (連帶提升專屬技能數值，見 getEffectiveHero)
-                hero.star++;
+                // 解鎖下一層命之座（連帶提升技能倍率／觸發機率，並可能解鎖專屬質變效果，見 getEffectiveHero）
+                hero.constellation = curConstellation + 1;
 
                 saveGame();
                 updateHUD();
@@ -9014,7 +9066,7 @@
                 if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
                 if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
 
-                if (!silent) showToast(`覺醒成功！突破至 ${hero.star} 星！屬性與專屬技能數值一併提升。`);
+                if (!silent) showToast(`命之座解鎖成功！目前第 ${hero.constellation} 命，技能倍率與觸發機率一併提升。`);
                 return true;
             } else {
                 if (!silent) {
@@ -9027,7 +9079,7 @@
                 return false;
             }
         }
-        // 星級升級也套用跟裝備/聖物強化一樣的通用長按小工具，長按可以連續升星
+        // 命座解鎖也套用跟裝備/聖物強化一樣的通用長按小工具，長按可以連續解鎖
         const starLongPresser = createLongPressUpgrader((silent) => upgradeSelectedHeroStar(silent));
 
         // ★ 新增：一鍵升級——依稀有度由高到低排序（GR>LR>UR>SSR>SR>R），逐一升到不能再升為止才換下一位。
@@ -9062,10 +9114,10 @@
             }
         }
 
-        // ★ 新增：一鍵全體升星 (Auto-Awaken All)——依序把「目前擁有的每一位英雄」都升星到不能再升為止，
-        // 跳過逐一點擊/動畫，最後跳一次總結算。大突破（10★/20★/30★...需要超越結晶）本來就設計成
+        // ★ 一鍵全體解鎖命座 (Auto-Awaken All)——依序把「目前擁有的每一位英雄」都解鎖命座到不能再解鎖為止，
+        // 跳過逐一點擊/動畫，最後跳一次總結算。需要超越結晶的命座（第3命起）本來就設計成
         // 只能手動單點才能跨過（見 upgradeSelectedHeroStar 的 silent 攔截），這裡沿用同一套保護，
-        // 不會因為一鍵操作就把結晶燒光，只會升到「免結晶」能升的最高星級為止。
+        // 不會因為一鍵操作就把結晶燒光，只會解鎖到「免結晶」能解鎖的最高命座為止。
         function autoAwakenAllHeroes() {
             ToneAudioEngine.playClick();
             const prevSelected = GAME_STATE.selectedHeroId;
@@ -9081,9 +9133,9 @@
             renderHeroesList();
             if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
             if (totalStarUps === 0) {
-                showToast('目前沒有英雄的碎片／金幣足夠升星');
+                showToast('目前沒有英雄的碎片／金幣足夠解鎖命座');
             } else {
-                showToast(`✨ 一鍵升星完成：${heroesAffected} 位英雄共升了 ${totalStarUps} 次星（需要超越結晶的大突破不會自動執行，要自己手動點）`);
+                showToast(`✨ 一鍵解鎖命座完成：${heroesAffected} 位英雄共解鎖了 ${totalStarUps} 層命座（需要超越結晶的命座不會自動執行，要自己手動點）`);
             }
         }
 
@@ -9324,7 +9376,7 @@
 
                 let isNewHero = false, shardConverted = false, shardAmount = 0;
                 if (!GAME_STATE.roster[hero.id]) {
-                    GAME_STATE.roster[hero.id] = {level: 1, star: hero.star, artifactTier: 0, equippedItems: {}};
+                    GAME_STATE.roster[hero.id] = {level: 1, constellation: 0, artifactTier: 0, equippedItems: {}};
                     isNewHero = true;
                 } else {
                     // 重複英雄改成發放「英雄碎片」，用來在英雄詳情頁手動升星，不再抽到重複就直接自動升星
@@ -9769,7 +9821,7 @@
                     arenaOpponentSnapshot.team.forEach(slot => {
                         const db = HERO_DATABASE.find(h => h.id === slot.heroId);
                         if (!db) return;
-                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
+                        const fakeRoster = {level: slot.level, constellation: slot.constellation, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
                         const originalRoster = GAME_STATE.roster[slot.heroId];
                         GAME_STATE.roster[slot.heroId] = fakeRoster; // 暫時借位算完數值馬上還原，不影響玩家自己的存檔
                         const h = getEffectiveHero(db);
@@ -9788,7 +9840,7 @@
                     arenaGuestOpponentData.fromTeam.forEach(slot => {
                         const db = HERO_DATABASE.find(h => h.id === slot.heroId);
                         if (!db) return;
-                        const fakeRoster = {level: slot.level, star: slot.star, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
+                        const fakeRoster = {level: slot.level, constellation: slot.constellation, artifactTier: slot.artifactTier, equippedItems: slot.equippedItems};
                         const originalRoster = GAME_STATE.roster[slot.heroId];
                         GAME_STATE.roster[slot.heroId] = fakeRoster;
                         const h = getEffectiveHero(db);
@@ -9820,7 +9872,7 @@
                     const merc = GAME_STATE.mercenarySelection;
                     const db = HERO_DATABASE.find(x => x.id === merc.slot.heroId);
                     if (db) {
-                        const fakeRoster = {level: merc.slot.level, star: merc.slot.star, artifactTier: merc.slot.artifactTier, equippedItems: merc.slot.equippedItems};
+                        const fakeRoster = {level: merc.slot.level, constellation: merc.slot.constellation, artifactTier: merc.slot.artifactTier, equippedItems: merc.slot.equippedItems};
                         const originalRoster = GAME_STATE.roster[merc.slot.heroId];
                         GAME_STATE.roster[merc.slot.heroId] = fakeRoster;
                         const h = getEffectiveHero(db);
@@ -10449,6 +10501,15 @@
                     let heal = damage * lifestealRatio;
                     attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
                     floatingTexts.push({x: attacker.x, y: attacker.y - 60, text: `+${Math.floor(heal)}`, isCrit: false, color: '#4ade80', life: 45});
+                }
+
+                // ★ 新增：命之座專屬質變——「小技能觸發時額外附加吸血效果」(constellationLifesteal，
+                // 企劃書步驟1給的原始範例)。判定範圍是「任何非普通攻擊的技能傷害」，不重複套用在
+                // 上面已經算過的 lifesteal/lifesteal_aoe 專屬技能上，避免同一擊疊加兩次吸血判定。
+                if (attacker.skill && attacker.skill.constellationLifesteal > 0 && skillType !== 'normal' && skillType !== 'lifesteal' && skillType !== 'lifesteal_aoe') {
+                    const cHeal = damage * attacker.skill.constellationLifesteal;
+                    attacker.hp = Math.min(attacker.maxHp, attacker.hp + cHeal);
+                    floatingTexts.push({x: attacker.x, y: attacker.y - 45, text: `+${Math.floor(cHeal)}`, isCrit: false, color: '#c084fc', life: 40});
                 }
 
                 // ★ 新增：通用生命偷取——職業天賦（戰士 +5%）與套裝加成（「不滅」2件 +10%）疊加而成，
