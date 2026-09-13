@@ -509,7 +509,7 @@
                     class="absolute top-0 right-2 w-2 h-2 bg-emerald-400 rounded-full animate-pulse hidden border border-black"
                     title="背景刷本進行中"></div>
             </button>
-            <!-- ★ 新增：遠古秘境·八大鍛爐——8座套裝專屬秘境，掉落殘頁去鐵匠鋪鍛造裝備 -->
+            <!-- ★ 新增：遠古秘境·四大鍛爐——4座雙套裝秘境，掉落殘頁去鐵匠鋪鍛造裝備 -->
             <button onclick="switchTab('setdungeon')" class="nav-item" data-target="setdungeon"><i
                     class="fa-solid fa-fire-flame-curved text-lg mb-1"></i><span
                     class="text-[10px] font-bold">套裝秘境</span>
@@ -779,23 +779,28 @@
                 </div>
             </div>
 
-            <!-- ★ 新增：遠古秘境·八大鍛爐——8座套裝專屬秘境，掉落殘頁，鐵匠鋪用殘頁鍛造裝備 -->
+            <!-- ★ 新增：遠古秘境·四大鍛爐——4座雙套裝秘境，掉落殘頁，鐵匠鋪用殘頁鍛造裝備 -->
             <div id="tab-setdungeon"
                 class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/80 backdrop-blur-md overflow-y-auto custom-scrollbar">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="font-bold text-amber-500 font-magic text-lg flex items-center">
-                        <i class="fa-solid fa-fire-flame-curved mr-2"></i>遠古秘境·八大鍛爐
-                    </h2>
+                    <div class="flex items-center gap-2">
+                        <h2 class="font-bold text-amber-500 font-magic text-lg flex items-center">
+                            <i class="fa-solid fa-fire-flame-curved mr-2"></i>遠古秘境·四大鍛爐
+                        </h2>
+                        <button onclick="openEquipmentInfoModal()" class="w-6 h-6 rounded-full bg-black/60 border border-[#5a4634] flex items-center justify-center text-stone-400 text-xs hover:text-amber-400 transition" title="裝備鍛造指南">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </button>
+                    </div>
                     <div class="text-[10px] font-bold text-stone-300 bg-[#2a2118] px-3 py-1.5 rounded-lg border border-[#3e3328] shadow-inner-dark">
                         門票 <span id="setdungeon-tickets" class="text-fantasy-gold">15</span>/15
                     </div>
                 </div>
-                <p class="text-[9px] text-stone-500 mb-3">8 座秘境各自掉落對應套裝的殘頁，每天共用 15 張門票。首次 3 星通關後解鎖「5 連掃蕩」，可以直接消耗門票快速獲得獎勵，不用手動打。</p>
+                <p class="text-[9px] text-stone-500 mb-3">4 座雙套裝秘境，每座各自掉落兩種套裝的殘頁（每片 50/50 隨機分配），每天共用 15 張門票。首次 3 星通關後解鎖「5 連掃蕩」，可以直接消耗門票快速獲得獎勵，不用手動打。</p>
                 <div id="setdungeon-list" class="grid grid-cols-2 gap-2 mb-4"></div>
 
                 <div class="glass-panel p-3 rounded-xl border border-amber-700/40 flex flex-col gap-2">
                     <span class="text-[10px] text-amber-400 font-bold"><i class="fa-solid fa-hammer mr-1"></i>鐵匠鋪：殘頁鍛造</span>
-                    <p class="text-[9px] text-stone-500">用 50 片同套裝殘頁，鍛造該套裝指定部位的裝備一件（+0，數值固定，可以之後再強化）。</p>
+                    <p class="text-[9px] text-stone-500">用 50 片同套裝殘頁，鍛造該套裝指定部位的裝備一件（+0，隨機附帶2~3條副詞條，可以之後再強化）。</p>
                     <div class="grid grid-cols-2 gap-2">
                         <select id="furnace-set-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
                         <select id="furnace-slot-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
@@ -1816,7 +1821,12 @@
                     <button onclick="switchTab('setdungeon')" class="w-full mb-3 py-2 rounded-lg bg-gradient-to-r from-amber-800/70 to-orange-800/70 text-amber-100 text-[11px] font-bold border border-amber-600 hover:from-amber-700 hover:to-orange-700 transition flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-fire-flame-curved"></i>前往「套裝秘境」取得裝備殘頁
                     </button>
-                    <p class="text-[9px] text-stone-500 mb-2">點一件裝備可以查看詳細素質、套裝共鳴效果，並直接在這裡強化。</p>
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-[9px] text-stone-500">點一件裝備可以查看詳細素質、套裝共鳴效果，並直接在這裡強化或洗鍊。</p>
+                        <button onclick="openEquipmentInfoModal()" class="shrink-0 ml-2 px-2 py-1 rounded bg-black/50 border border-[#3e3328] text-[9px] text-stone-400 hover:text-amber-400 transition flex items-center gap-1">
+                            <i class="fa-solid fa-book"></i>裝備指南
+                        </button>
+                    </div>
                     <div id="equipment-inventory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
 
                     <!-- ★ 新增：裝備分解爐——把用不到的裝備分解成共鳴精華(洗鍊用)，強化過的還能退還部分歷史花費 -->
@@ -1985,6 +1995,57 @@
                     class="flex-1 py-2 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs flex flex-col items-center justify-center transition active:scale-95 hover:border-fantasy-gold">升級</button>
                 <button onmousedown="starLongPresser.start()" onmouseup="starLongPresser.stop()" onmouseleave="starLongPresser.cancel()" ontouchstart="event.preventDefault(); starLongPresser.start()" ontouchend="event.preventDefault(); starLongPresser.stop()" ontouchcancel="starLongPresser.cancel()" id="btn-upgrade-star"
                     class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">覺醒</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★ 新增：共鳴裝備與鍛造指南——獨立的裝備系統說明彈窗，從套裝秘境分頁跟裝備背包分頁的資訊按鈕開啟 -->
+    <div id="equipment-info-modal" class="fixed inset-0 bg-black/90 z-[90] hidden flex-col items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div class="glass-panel w-full max-w-md rounded-xl p-5 relative border border-amber-700/50 shadow-[0_0_30px_rgba(217,119,6,0.2)] flex flex-col max-h-[85vh]">
+            <button onclick="closeEquipmentInfoModal()" class="absolute top-3 right-3 text-stone-400 bg-black/50 hover:bg-black w-8 h-8 rounded-full transition z-10 border border-[#3e3328]">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="text-lg font-bold text-amber-500 font-magic mb-3 flex items-center shrink-0 border-b border-[#3e3328] pb-2">
+                <i class="fa-solid fa-book-journal-whills mr-2"></i>大典籍庫：共鳴裝備
+            </h2>
+
+            <div class="overflow-y-auto custom-scrollbar space-y-4 pr-1 text-[10px] text-stone-300 leading-relaxed">
+                <div>
+                    <h3 class="text-amber-400 font-bold text-[11px] mb-1"><i class="fa-solid fa-fire-flame-curved mr-1"></i>一、遠古秘境與殘頁鍛造</h3>
+                    <p class="mb-1">王國的四大鍛爐深處藏著古老的裝備藍圖。如今的秘境充滿變數，每次通關「雙套裝秘境」將隨機掉落兩種專屬套裝殘頁的其中之一。</p>
+                    <ul class="list-disc pl-4 space-y-0.5 text-stone-400">
+                        <li><span class="text-stone-200 font-bold">指定部位打造：</span>集滿 50 片同名套裝殘頁，即可於鐵匠鋪指定部位鍛造出 +0 裝備。</li>
+                        <li><span class="text-stone-200 font-bold">初始潛能：</span>每一件新鍛造的 +0 裝備，出廠時將隨機附帶 <span class="text-emerald-400 font-bold">2 至 3 條不重複的副詞條</span>，且數值皆為隨機浮動。即使是同名裝備，潛能也截然不同。</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-amber-400 font-bold text-[11px] mb-1"><i class="fa-solid fa-hammer mr-1"></i>二、強化與潛能突破</h3>
+                    <p class="mb-1">裝備的極限取決於鍛造石與運氣，最高可強化至 +20。</p>
+                    <ul class="list-disc pl-4 space-y-0.5 text-stone-400">
+                        <li><span class="text-stone-200 font-bold">突破節點：</span>裝備在達到 <span class="text-yellow-400 font-bold">+5、+10、+15、+20</span> 時，將迎來潛能突破。</li>
+                        <li><span class="text-stone-200 font-bold">盲盒開獎：</span>若裝備未滿 4 條副詞條，突破時將隨機解鎖一條全新屬性；若已滿 4 條，則會從現有詞條中隨機挑選一條，大幅疊加其浮動數值。每一次強化，都是見證極品神裝誕生的時刻。</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-amber-400 font-bold text-[11px] mb-1"><i class="fa-solid fa-recycle mr-1"></i>三、裝備分解爐與資源回收</h3>
+                    <p class="mb-1">在追求極致的道路上，沒有任何一件裝備是無用的。背包內的「裝備分解爐」能將淘汰的裝備轉化為核心資源。</p>
+                    <ul class="list-disc pl-4 space-y-0.5 text-stone-400">
+                        <li><span class="text-stone-200 font-bold">共鳴精華：</span>分解任何裝備皆可提煉出珍貴的「共鳴精華」，這是洗鍊極品裝備的唯一材料。</li>
+                        <li><span class="text-stone-200 font-bold">強化止損：</span>若分解已強化的過渡裝備（+1 至 +20），系統除了給予大量共鳴精華外，還將 <span class="text-emerald-400 font-bold">返還 70% ~ 80% 歷史消耗的金幣與鍛造石</span>。大膽強化試錯，隨時可以停損。</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-amber-400 font-bold text-[11px] mb-1"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>四、共鳴洗鍊與鎖定（終局追求）</h3>
+                    <p class="mb-1">當你獲得一件帶有完美詞條，卻混雜著無用屬性的裝備時，洗鍊系統將是你的最終手段。</p>
+                    <ul class="list-disc pl-4 space-y-0.5 text-stone-400">
+                        <li><span class="text-stone-200 font-bold">詞條重鑄：</span>在裝備詳情中消耗「共鳴精華」與金幣，可將未鎖定的副詞條全部重新隨機洗鍊。</li>
+                        <li><span class="text-stone-200 font-bold">精準鎖定：</span>若想保留極品數值，可消耗額外倍率的資源將其「鎖定」（最多鎖定 2 條）。</li>
+                        <li><span class="text-stone-200 font-bold">無損繼承：</span>即使裝備已達 +20，依然可以直接進行洗鍊。系統會在重鑄新詞條後，自動將原本 4 次突破的紅利隨機分配至新詞條上，保證強化投資永不貶值。</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -4126,7 +4187,7 @@
             const lockedCount = subStats.filter(s => s.locked).length;
             document.getElementById('equipment-detail-substats').innerHTML = subStats.length > 0
                 ? subStats.map((s, idx) => {
-                    const def = SUBSTAT_POOL[s.type];
+                    const def = EQUIPMENT_AFFIX_CONFIG[s.type];
                     return `<div class="flex justify-between items-center text-[10px] text-stone-300 bg-black/30 rounded px-2 py-1">
                         <span>${def ? def.name : s.type}</span>
                         <div class="flex items-center gap-2">
@@ -4237,7 +4298,7 @@
             renderEquipmentDetailModal();
             renderEquipmentInventoryList();
             showToast(result.newSubstat
-                ? `裝備強化成功！當前 +${item.level}，副詞條升級：${SUBSTAT_POOL[result.newSubstat.type].name} +${result.newSubstat.value}${SUBSTAT_POOL[result.newSubstat.type].isPct ? '%' : ''}`
+                ? `裝備強化成功！當前 +${item.level}，副詞條升級：${EQUIPMENT_AFFIX_CONFIG[result.newSubstat.type].name} +${result.newSubstat.value}${EQUIPMENT_AFFIX_CONFIG[result.newSubstat.type].isPct ? '%' : ''}`
                 : `裝備強化成功！當前 +${item.level}`);
         }
 
@@ -5337,7 +5398,7 @@
             dailyForgeStoneDate: null, // ★ 上次購買的日期字串，用來每日重置額度
             setDungeonStars: {}, // ★ 套裝秘境：每座秘境目前的最高星級 (0~3)
             setFragments: {}, // ★ 套裝秘境：各套裝殘頁持有量，鐵匠鋪鍛造裝備用
-            setDungeonTickets: 15, // ★ 套裝秘境：今天剩餘門票（8座秘境共用同一組門票）
+            setDungeonTickets: 15, // ★ 套裝秘境：今天剩餘門票（4座雙套裝秘境共用同一組門票）
             setDungeonTicketDate: null, // ★ 上次門票重置的日期字串
             selectedSetDungeonId: null, // ★ 目前正在挑戰的套裝秘境 id
 
@@ -7124,9 +7185,9 @@
            ★ 這是全新的裝備系統，取代原本「每個英雄 4 條抽象強化軌道 (eq[0~3])」的舊設計。
            現在裝備是背包裡的獨立物件（有自己的部位/套裝歸屬/強化等級），可以在不同英雄之間
            拆下來重新裝備，不再永久綁死在單一英雄身上。玩家已確認舊裝備資料可以直接覆蓋重置。
-           ★ 取得方式（暫定）：專屬的「八大鍛爐」秘境還沒做，這裡先開放一個簡化版的「工坊鍛造」，
+           ★ 取得方式（暫定）：專屬的「四大鍛爐」秘境還沒做，這裡先開放一個簡化版的「工坊鍛造」，
            花鍛造石+金幣指定部位/套裝直接鍛造一件 0 強化的裝備，讓這個系統現在就能被使用；
-           之後八大鍛爐上線後，鍛造的角色會自然變成「保底」的其中一種取得管道，不衝突。
+           之後四大鍛爐上線後，鍛造的角色會自然變成「保底」的其中一種取得管道，不衝突。
            ============================================================ */
         const EQUIPMENT_SLOTS = ['weapon', 'offhand', 'armor', 'helmet', 'boots', 'gloves', 'ring', 'necklace'];
         const EQUIPMENT_SLOT_CONFIG = {
@@ -7201,20 +7262,20 @@
            2~3 條不重複的副詞條；強化到 +5/10/15/20 會觸發一次副詞條升級（未滿4條補新的一條，
            滿了就從現有的裡面挑一條再骰一次疊加）。同一件裝備的副詞條類型絕對不會重複。
            ============================================================ */
-        const SUBSTAT_POOL = {
-            hpFlat:      {name: '生命值',   range: [150, 250], isPct: false},
-            atkFlat:     {name: '攻擊力',   range: [15, 25],   isPct: false},
-            defFlat:     {name: '防禦力',   range: [10, 20],   isPct: false},
-            hpPct:       {name: '生命值%', range: [4.0, 6.0], isPct: true},
-            atkPct:      {name: '攻擊力%', range: [4.0, 6.0], isPct: true},
-            defPct:      {name: '防禦力%', range: [4.5, 6.5], isPct: true},
-            critRate:    {name: '暴擊率',   range: [2.5, 4.0], isPct: true},
-            critDmg:     {name: '暴擊傷害', range: [4.0, 7.0], isPct: true},
-            speed:       {name: '速度',     range: [2.0, 4.0], isPct: false},
-            lifesteal:   {name: '吸血率',   range: [1.0, 2.5], isPct: true},
-            energyRegen: {name: '能量恢復', range: [3.0, 5.0], isPct: true},
+        const EQUIPMENT_AFFIX_CONFIG = {
+            hpFlat:      {name: '生命值',       min: 150, max: 250, isPct: false},
+            atkFlat:     {name: '攻擊力',       min: 15,  max: 25,  isPct: false},
+            defFlat:     {name: '防禦力',       min: 10,  max: 20,  isPct: false},
+            hpPct:       {name: '生命值 (%)',   min: 4.0, max: 6.0, isPct: true},
+            atkPct:      {name: '攻擊力 (%)',   min: 4.0, max: 6.0, isPct: true},
+            defPct:      {name: '防禦力 (%)',   min: 4.5, max: 6.5, isPct: true},
+            critRate:    {name: '暴擊率 (%)',   min: 2.5, max: 4.0, isPct: true},
+            critDmg:     {name: '暴擊傷害 (%)', min: 4.0, max: 7.0, isPct: true},
+            speed:       {name: '速度',         min: 2.0, max: 4.0, isPct: false},
+            lifesteal:   {name: '吸血率 (%)',   min: 1.0, max: 2.5, isPct: true},
+            energyRegen: {name: '能量恢復 (%)', min: 3.0, max: 5.0, isPct: true},
         };
-        const SUBSTAT_TYPES = Object.keys(SUBSTAT_POOL);
+        const SUBSTAT_TYPES = Object.keys(EQUIPMENT_AFFIX_CONFIG);
 
         // 從副詞條池子裡隨機骰一個「這件裝備還沒有」的詞條類型；池子被抽光的話回傳 null（理論上不會發生，池子有11種）
         function rollUniqueSubstatType(existingTypes) {
@@ -7225,10 +7286,9 @@
 
         // 依詞條的浮動區間骰一次數值，取到小數第一位
         function rollSubstatValue(type) {
-            const def = SUBSTAT_POOL[type];
-            if (!def) return 0;
-            const val = def.range[0] + Math.random() * (def.range[1] - def.range[0]);
-            return Math.round(val * 10) / 10;
+            const conf = EQUIPMENT_AFFIX_CONFIG[type];
+            if (!conf) return 0;
+            return Math.round((Math.random() * (conf.max - conf.min) + conf.min) * 10) / 10;
         }
 
         // 鍛造 +0 裝備時的初始副詞條：隨機 2~3 條，型態不重複
@@ -8478,7 +8538,7 @@
 
                 if (!silent) {
                     showToast(result.newSubstat
-                        ? `裝備強化成功！當前 +${item.level}，副詞條升級：${SUBSTAT_POOL[result.newSubstat.type].name} +${result.newSubstat.value}${SUBSTAT_POOL[result.newSubstat.type].isPct ? '%' : ''}`
+                        ? `裝備強化成功！當前 +${item.level}，副詞條升級：${EQUIPMENT_AFFIX_CONFIG[result.newSubstat.type].name} +${result.newSubstat.value}${EQUIPMENT_AFFIX_CONFIG[result.newSubstat.type].isPct ? '%' : ''}`
                         : `裝備強化成功！當前 +${item.level}`);
                 }
                 return true;
@@ -8486,6 +8546,27 @@
                 if (!silent) showToast("資源不足！需要更多金幣與鍛造石。");
                 return false;
             }
+        }
+
+        // ============ 裝備系統獨立說明彈窗（大典籍庫：共鳴裝備）============
+        function openEquipmentInfoModal() {
+            ToneAudioEngine.playClick();
+            const modal = document.getElementById('equipment-info-modal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeEquipmentInfoModal() {
+            ToneAudioEngine.playClick();
+            const modal = document.getElementById('equipment-info-modal');
+            if (!modal) return;
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
         }
 
         // ============ 裝備／卸下（選擇清單彈窗）============
