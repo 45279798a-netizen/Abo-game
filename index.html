@@ -509,6 +509,11 @@
                     class="absolute top-0 right-2 w-2 h-2 bg-emerald-400 rounded-full animate-pulse hidden border border-black"
                     title="背景刷本進行中"></div>
             </button>
+            <!-- ★ 新增：遠古秘境·八大鍛爐——8座套裝專屬秘境，掉落殘頁去鐵匠鋪鍛造裝備 -->
+            <button onclick="switchTab('setdungeon')" class="nav-item" data-target="setdungeon"><i
+                    class="fa-solid fa-fire-flame-curved text-lg mb-1"></i><span
+                    class="text-[10px] font-bold">套裝秘境</span>
+            </button>
             <button onclick="switchTab('tower')" class="nav-item" data-target="tower"><i
                     class="fa-brands fa-fort-awesome text-lg mb-1"></i><span
                     class="text-[10px] font-bold">試煉</span></button>
@@ -764,6 +769,31 @@
                         <div><span class="text-orange-400 font-bold">熔岩巨像</span>：大招灼燒目標，每回合持續造成傷害</div>
                     </div>
                     <div class="mt-2 pt-2 border-t border-[#3e3328] text-stone-500">怪物死一隻補一隻、無限持續，血量與攻擊會隨累積傷害越打越強（防禦固定不變），一直打到全軍覆沒為止；造成的總傷害就是這次獎勵的依據。</div>
+                </div>
+            </div>
+
+            <!-- ★ 新增：遠古秘境·八大鍛爐——8座套裝專屬秘境，掉落殘頁，鐵匠鋪用殘頁鍛造裝備 -->
+            <div id="tab-setdungeon"
+                class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/80 backdrop-blur-md overflow-y-auto custom-scrollbar">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-amber-500 font-magic text-lg flex items-center">
+                        <i class="fa-solid fa-fire-flame-curved mr-2"></i>遠古秘境·八大鍛爐
+                    </h2>
+                    <div class="text-[10px] font-bold text-stone-300 bg-[#2a2118] px-3 py-1.5 rounded-lg border border-[#3e3328] shadow-inner-dark">
+                        門票 <span id="setdungeon-tickets" class="text-fantasy-gold">15</span>/15
+                    </div>
+                </div>
+                <p class="text-[9px] text-stone-500 mb-3">8 座秘境各自掉落對應套裝的殘頁，每天共用 15 張門票。首次 3 星通關後解鎖「5 連掃蕩」，可以直接消耗門票快速獲得獎勵，不用手動打。</p>
+                <div id="setdungeon-list" class="grid grid-cols-2 gap-2 mb-4"></div>
+
+                <div class="glass-panel p-3 rounded-xl border border-amber-700/40 flex flex-col gap-2">
+                    <span class="text-[10px] text-amber-400 font-bold"><i class="fa-solid fa-hammer mr-1"></i>鐵匠鋪：殘頁鍛造</span>
+                    <p class="text-[9px] text-stone-500">用 50 片同套裝殘頁，鍛造該套裝指定部位的裝備一件（+0，數值固定，可以之後再強化）。</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="furnace-set-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                        <select id="furnace-slot-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                    </div>
+                    <button onclick="craftSetEquipmentFromFragments()" class="w-full py-2 bg-amber-800/70 text-amber-200 text-[11px] font-bold rounded border border-amber-600 hover:bg-amber-700 transition">鍛造（消耗 50 殘頁）</button>
                 </div>
             </div>
 
@@ -1738,16 +1768,10 @@
                     <button onclick="recycleHeroShards()" class="w-full py-2 bg-fuchsia-900/60 text-fuchsia-200 text-[11px] font-bold rounded border border-fuchsia-700 hover:bg-fuchsia-800 transition">分解成超越結晶</button>
                 </div>
 
-                <!-- ★ 新增：8 部位裝備系統——「八大鍛爐」秘境還沒做，這裡先開放簡化版鍛造當作暫定取得管道 -->
-                <div class="glass-panel p-3 rounded-xl border border-amber-700/40 flex flex-col gap-2 mt-4">
-                    <span class="text-[10px] text-amber-400 font-bold"><i class="fa-solid fa-hammer mr-1"></i>裝備鍛造（暫定取得方式）</span>
-                    <p class="text-[9px] text-stone-500">花費鍛造石與金幣，指定部位與套裝直接鍛造一件全新裝備（+0）。之後「八大鍛爐」秘境上線後會有更多取得管道，兩者不衝突。</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <select id="forge-slot-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
-                        <select id="forge-set-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
-                    </div>
-                    <button onclick="forgeEquipmentItem()" class="w-full py-2 bg-amber-800/70 text-amber-200 text-[11px] font-bold rounded border border-amber-600 hover:bg-amber-700 transition">鍛造（<span id="forge-cost-label"></span>）</button>
-                </div>
+                <!-- ★ 取得裝備改成「套裝秘境」掉落殘頁去鐵匠鋪鍛造，不再是花鍛造石直接做 -->
+                <button onclick="switchTab('setdungeon')" class="w-full mt-4 py-2 rounded-lg bg-gradient-to-r from-amber-800/70 to-orange-800/70 text-amber-100 text-[11px] font-bold border border-amber-600 hover:from-amber-700 hover:to-orange-700 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-fire-flame-curved"></i>前往「套裝秘境」取得裝備殘頁
+                </button>
                 <h3 class="text-[10px] text-stone-400 font-bold mt-4 mb-2"><i class="fa-solid fa-vest mr-1"></i>裝備背包</h3>
                 <div id="equipment-inventory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
             </div>
@@ -1799,14 +1823,25 @@
                     <div id="bm-mine-list" class="space-y-2"></div>
                 </div>
                 <div id="bm-sell-panel" class="hidden flex-col gap-2">
-                    <div class="glass-panel p-3 rounded-xl border border-[#3e3328] flex flex-col gap-2">
-                        <p class="text-[9px] text-stone-500">上架後碎片會立刻從背包扣除（進入寄售中），賣出後對方付的黑市幣會扣 10% 手續費後匯給你。</p>
+                    <div class="flex gap-2">
+                        <button onclick="switchBlackMarketSellMode('shard')" id="btn-bm-sell-shard" class="flex-1 py-1.5 rounded-lg text-[9px] font-bold bg-purple-900/60 text-purple-300 border border-purple-600">碎片</button>
+                        <button onclick="switchBlackMarketSellMode('equip')" id="btn-bm-sell-equip" class="flex-1 py-1.5 rounded-lg text-[9px] font-bold bg-black/40 text-stone-400 border border-[#3e3328]">裝備</button>
+                    </div>
+                    <div id="bm-sell-shard-form" class="glass-panel p-3 rounded-xl border border-[#3e3328] flex flex-col gap-2">
+                        <p class="text-[9px] text-stone-500">上架後碎片會立刻從背包扣除（進入寄售中），賣出後對方付的黑市幣會扣手續費後匯給你。</p>
                         <select id="bm-sell-hero" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
                         <div class="grid grid-cols-2 gap-2">
                             <input id="bm-sell-amount" type="number" placeholder="碎片數量" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                             <input id="bm-sell-price" type="number" placeholder="總價(黑市幣)" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                         </div>
                         <button onclick="createBlackMarketListing()" class="w-full py-2 bg-purple-800/70 text-purple-200 text-[11px] font-bold rounded border border-purple-600 hover:bg-purple-700 transition">上架</button>
+                    </div>
+                    <!-- ★ 新增：黑市支援裝備交易——只能上架「未裝備」的物件，上架時直接從背包移除 -->
+                    <div id="bm-sell-equip-form" class="hidden glass-panel p-3 rounded-xl border border-[#3e3328] flex-col gap-2">
+                        <p class="text-[9px] text-stone-500">只能上架未裝備在任何英雄身上的裝備。上架後會立刻從裝備背包移除，賣出後對方付的黑市幣會扣手續費後匯給你。</p>
+                        <select id="bm-sell-equip-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                        <input id="bm-sell-equip-price" type="number" placeholder="總價(黑市幣)" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                        <button onclick="createEquipmentBlackMarketListing(document.getElementById('bm-sell-equip-select').value)" class="w-full py-2 bg-purple-800/70 text-purple-200 text-[11px] font-bold rounded border border-purple-600 hover:bg-purple-700 transition">上架</button>
                     </div>
                 </div>
             </div>
@@ -3640,7 +3675,6 @@
                     <div class="text-amber-300 font-bold text-xs shrink-0"><i class="fa-solid fa-gem text-[10px] mr-0.5"></i>${GAME_STATE.heroShards[id]}</div>`;
                 list.appendChild(card);
             });
-            populateForgeSelects();
             renderEquipmentInventoryList();
             populateFurnaceHeroSelect(shardIds);
         }
@@ -3686,68 +3720,165 @@
             showToast(`分解成功：${actualShardsUsed} 碎片 → ${crystalsGained} 超越結晶`);
         }
 
-        // ★ 暫定的裝備取得方式：花固定的鍛造石＋金幣，指定部位／套裝直接鍛造一件 +0 裝備。
-        // 「八大鍛爐」秘境（依套裝掉落殘頁、湊滿保底合成）還沒做，這裡先讓裝備系統能被實際使用，
-        // 之後鍛爐上線後，鍛造可以繼續當作其中一種取得管道，不衝突。
-        const EQUIPMENT_FORGE_COST = {gold: 5000, stones: 300};
-        function populateForgeSelects() {
-            const slotSel = document.getElementById('forge-slot-select');
-            const setSel = document.getElementById('forge-set-select');
-            if (!slotSel || !setSel) return;
-            if (slotSel.options.length === 0) {
-                EQUIPMENT_SLOTS.forEach(slot => {
-                    const opt = document.createElement('option'); opt.value = slot; opt.innerText = EQUIPMENT_SLOT_CONFIG[slot].name; slotSel.appendChild(opt);
-                });
+        /* ============================================================
+           【企劃書】遠古秘境·八大鍛爐 (Set Dungeons & Blacksmith)
+           ★ 取代原本「花鍛造石+金幣直接鍛造」的暫定方案：現在裝備要先去挑戰對應套裝的秘境，
+           掉落殘頁，集滿 50 片才能在鐵匠鋪鍛造出一件（+0）指定部位的裝備。
+           8 座秘境共用同一組每日門票；首次 3 星通關解鎖「5 連掃蕩」，可以直接消耗門票批量拿獎勵。
+           ============================================================ */
+        const SET_DUNGEON_DAILY_TICKETS = 15;
+        const SET_DUNGEON_FRAGMENT_COST = 50; // 鍛造一件裝備需要的殘頁數量
+
+        function ensureSetDungeonState() {
+            if (!GAME_STATE.setDungeonStars) GAME_STATE.setDungeonStars = {};
+            if (!GAME_STATE.setFragments) GAME_STATE.setFragments = {};
+            if (GAME_STATE.setDungeonTicketDate !== getTodayDateStr()) {
+                GAME_STATE.setDungeonTicketDate = getTodayDateStr();
+                GAME_STATE.setDungeonTickets = SET_DUNGEON_DAILY_TICKETS;
             }
+            if (typeof GAME_STATE.setDungeonTickets !== 'number') GAME_STATE.setDungeonTickets = SET_DUNGEON_DAILY_TICKETS;
+        }
+
+        // 依星級決定這次通關掉落多少殘頁（星級越高，掉落基準越高）
+        function rollSetDungeonFragmentReward(stars) {
+            const base = {1: 3, 2: 5, 3: 8}[stars] || 3;
+            return base + Math.floor(Math.random() * 3);
+        }
+
+        function renderSetDungeonList() {
+            ensureSetDungeonState();
+            const ticketsEl = document.getElementById('setdungeon-tickets');
+            if (ticketsEl) ticketsEl.innerText = GAME_STATE.setDungeonTickets;
+            const list = document.getElementById('setdungeon-list');
+            if (!list) return;
+            list.innerHTML = Object.keys(EQUIPMENT_SETS).map(setId => {
+                const setDef = EQUIPMENT_SETS[setId];
+                const stars = GAME_STATE.setDungeonStars[setId] || 0;
+                const frags = (GAME_STATE.setFragments && GAME_STATE.setFragments[setId]) || 0;
+                const starHtml = [1, 2, 3].map(n => `<i class="fa-solid fa-star text-[9px] ${n <= stars ? '' : 'text-stone-700'}"></i>`).join('');
+                return `
+                    <div class="glass-panel p-2.5 rounded-xl border flex flex-col gap-1.5" style="border-color:${setDef.color}66">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold" style="color:${setDef.color}">${setDef.name}秘境</span>
+                            <span class="text-[9px]">${starHtml}</span>
+                        </div>
+                        <div class="text-[9px] text-stone-400">殘頁：<span class="text-amber-300 font-bold">${frags}</span> / ${SET_DUNGEON_FRAGMENT_COST}</div>
+                        <button onclick="startSetDungeonBattle('${setId}')" class="w-full py-1.5 rounded text-[9px] font-bold bg-black/40 border hover:brightness-125 transition" style="border-color:${setDef.color}88;color:${setDef.color}">挑戰（1 門票）</button>
+                        ${stars >= 3 ? `<button onclick="sweepSetDungeon('${setId}')" class="w-full py-1.5 rounded text-[9px] font-bold bg-black/60 text-stone-300 border border-[#3e3328] hover:border-fantasy-gold transition">5連掃蕩（5 門票）</button>` : ''}
+                    </div>`;
+            }).join('');
+        }
+
+        function startSetDungeonBattle(setId) {
+            ToneAudioEngine.playClick();
+            ensureSetDungeonState();
+            if (GAME_STATE.setDungeonTickets <= 0) {showToast('今天的門票用完了，明天再來'); return;}
+            GAME_STATE.setDungeonTickets--;
+            GAME_STATE.selectedSetDungeonId = setId;
+            saveGame();
+            renderSetDungeonList();
+            snapshotCurrentBattleIfNeeded();
+            switchTab('battle', {internal: true});
+            GAME_STATE.currentMode = 'setdungeon';
+            combatEntities = [];
+            const setDef = EQUIPMENT_SETS[setId];
+            document.getElementById('battle-stage-title').innerText = `遠古秘境：${setDef.name}`;
+            setTimeout(initCombatUnits, 100);
+            refreshNavHighlightForMode();
+            updateDynamicBackground();
+        }
+
+        // 5 連掃蕩：只有 3 星通關過的秘境才能用，直接消耗 5 門票、瞬間結算 5 次三星獎勵，不用真的打
+        function sweepSetDungeon(setId) {
+            ToneAudioEngine.playClick();
+            ensureSetDungeonState();
+            if ((GAME_STATE.setDungeonStars[setId] || 0) < 3) {showToast('要先 3 星通關才能解鎖掃蕩'); return;}
+            if (GAME_STATE.setDungeonTickets < 5) {showToast('門票不足，5連掃蕩需要 5 張門票'); return;}
+            GAME_STATE.setDungeonTickets -= 5;
+            let fragGain = 0;
+            for (let i = 0; i < 5; i++) fragGain += rollSetDungeonFragmentReward(3);
+            if (!GAME_STATE.setFragments) GAME_STATE.setFragments = {};
+            GAME_STATE.setFragments[setId] = (GAME_STATE.setFragments[setId] || 0) + fragGain;
+            saveGame(); updateHUD();
+            renderSetDungeonList();
+            showToast(`5連掃蕩完成：獲得 ${fragGain} 片${EQUIPMENT_SETS[setId].name}殘頁`);
+        }
+
+        // 鐵匠鋪：用 50 片同套裝殘頁鍛造一件指定部位的裝備（+0，數值固定）
+        function populateFurnaceSelects() {
+            const setSel = document.getElementById('furnace-set-select');
+            const slotSel = document.getElementById('furnace-slot-select');
+            if (!setSel || !slotSel) return;
             if (setSel.options.length === 0) {
                 Object.keys(EQUIPMENT_SETS).forEach(setId => {
                     const opt = document.createElement('option'); opt.value = setId; opt.innerText = EQUIPMENT_SETS[setId].name; setSel.appendChild(opt);
                 });
             }
-            const label = document.getElementById('forge-cost-label');
-            if (label) label.innerText = `${EQUIPMENT_FORGE_COST.gold.toLocaleString()} 金幣／${EQUIPMENT_FORGE_COST.stones} 鍛造石`;
-        }
-
-        function forgeEquipmentItem() {
-            ToneAudioEngine.playClick();
-            const slot = document.getElementById('forge-slot-select').value;
-            const setId = document.getElementById('forge-set-select').value;
-            if (!slot || !setId) return;
-            if (GAME_STATE.gold < EQUIPMENT_FORGE_COST.gold || GAME_STATE.forgeStones < EQUIPMENT_FORGE_COST.stones) {
-                showToast('資源不足！需要更多金幣與鍛造石。'); return;
+            if (slotSel.options.length === 0) {
+                EQUIPMENT_SLOTS.forEach(slot => {
+                    const opt = document.createElement('option'); opt.value = slot; opt.innerText = EQUIPMENT_SLOT_CONFIG[slot].name; slotSel.appendChild(opt);
+                });
             }
-            GAME_STATE.gold -= EQUIPMENT_FORGE_COST.gold;
-            GAME_STATE.forgeStones -= EQUIPMENT_FORGE_COST.stones;
-            if (!GAME_STATE.equipmentInventory) GAME_STATE.equipmentInventory = {};
-            const item = createEquipmentItem(slot, setId);
-            GAME_STATE.equipmentInventory[item.id] = item;
+        }
+        function craftSetEquipmentFromFragments() {
+            ToneAudioEngine.playClick();
+            ensureSetDungeonState();
+            const setId = document.getElementById('furnace-set-select').value;
+            const slot = document.getElementById('furnace-slot-select').value;
+            if (!setId || !slot) return;
+            const owned = (GAME_STATE.setFragments && GAME_STATE.setFragments[setId]) || 0;
+            if (owned < SET_DUNGEON_FRAGMENT_COST) {
+                showToast(`殘頁不足！還差 ${SET_DUNGEON_FRAGMENT_COST - owned} 片${EQUIPMENT_SETS[setId].name}殘頁，去對應秘境刷一刷`);
+                return;
+            }
+            GAME_STATE.setFragments[setId] = owned - SET_DUNGEON_FRAGMENT_COST;
+            // ★ 計數堆疊防爆存檔：新鍛造出來的是 +0 裝備，先進堆疊計數，不會立刻變成獨立物件，
+            // 等玩家真的要裝備上去或強化時才會「升格」（見 promoteStackToItem）
+            addEquipmentToStack(slot, setId, 1);
             saveGame(); updateHUD();
+            renderSetDungeonList();
             renderEquipmentInventoryList();
             showToast(`鍛造成功！獲得 ${EQUIPMENT_SLOT_CONFIG[slot].name}（${EQUIPMENT_SETS[setId].name}）`);
         }
 
-        // 裝備背包清單：顯示所有鍛造出來的裝備物件，包含目前裝備在哪位英雄身上
+        // 裝備背包清單：顯示所有鍛造出來的裝備，包含堆疊計數的 +0 裝備跟已裝備/已強化的獨立物件
         function renderEquipmentInventoryList() {
             const list = document.getElementById('equipment-inventory-list');
             if (!list) return;
             const inv = GAME_STATE.equipmentInventory || {};
             const items = Object.values(inv);
-            if (items.length === 0) {
+            const stacks = GAME_STATE.equipmentStacks || {};
+            const stackKeys = Object.keys(stacks).filter(k => stacks[k] > 0);
+            if (items.length === 0 && stackKeys.length === 0) {
                 list.innerHTML = `<div class="col-span-full text-center text-[10px] text-stone-500 py-6">背包裡沒有任何裝備，上面可以花資源鍛造一件</div>`;
                 return;
             }
-            items.sort((a, b) => b.level - a.level);
-            list.innerHTML = items.map(item => {
+            let html = '';
+            // ★ 計數堆疊的 +0 裝備先顯示（未裝備、共用同一份 slot+套裝的堆在一起，顯示 ×數量）
+            stackKeys.forEach(key => {
+                const stackCount = stacks[key];
+                const [slot, setId] = key.split('_'); // slot/setId 都是不含底線的英文代號，直接切開即可
+                const cfg = EQUIPMENT_SLOT_CONFIG[slot];
+                const setDef = setId && EQUIPMENT_SETS[setId];
+                html += `<div class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center">
+                    <i class="fa-solid ${cfg ? cfg.icon : 'fa-question'} text-lg mb-1" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
+                    <div class="text-[9px] font-bold text-stone-300">${cfg ? cfg.name : '???'} +0 <span class="text-amber-300">×${stackCount}</span></div>
+                    <div class="text-[8px]" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
+                    <div class="text-[8px] text-stone-600 mt-0.5">未裝備（堆疊中）</div>
+                </div>`;
+            });
+            items.sort((a, b) => b.level - a.level).forEach(item => {
                 const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
                 const setDef = item.setId && EQUIPMENT_SETS[item.setId];
                 const equippedHero = item.equippedBy && HERO_DATABASE.find(h => h.id === item.equippedBy);
-                return `<div class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center">
+                html += `<div class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center">
                     <i class="fa-solid ${cfg ? cfg.icon : 'fa-question'} text-lg mb-1" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
                     <div class="text-[9px] font-bold text-stone-300">${cfg ? cfg.name : '???'} +${item.level}</div>
                     <div class="text-[8px]" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
                     ${equippedHero ? `<div class="text-[8px] text-emerald-400 mt-0.5 truncate w-full">裝備於：${equippedHero.name}</div>` : '<div class="text-[8px] text-stone-600 mt-0.5">未裝備</div>'}
                 </div>`;
-            }).join('');
+            });
+            list.innerHTML = html;
         }
 
         /* ============================================================
@@ -3775,7 +3906,22 @@
                 const btn = document.getElementById('btn-bm-' + key);
                 btn.className = `flex-1 py-2 rounded-lg text-[10px] font-bold border ${key === sub ? 'bg-purple-900/60 text-purple-300 border-purple-600' : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
             });
-            if (sub === 'sell') populateBlackMarketSellSelect();
+            if (sub === 'sell') {populateBlackMarketSellSelect(); populateEquipmentSellSelect();}
+        }
+
+        // ★ 新增：上架分頁裡「碎片」／「裝備」兩種子表單切換
+        let currentBMSellMode = 'shard';
+        function switchBlackMarketSellMode(mode) {
+            ToneAudioEngine.playClick();
+            currentBMSellMode = mode;
+            const shardForm = document.getElementById('bm-sell-shard-form');
+            const equipForm = document.getElementById('bm-sell-equip-form');
+            shardForm.classList.toggle('hidden', mode !== 'shard');
+            shardForm.classList.toggle('flex', mode === 'shard');
+            equipForm.classList.toggle('hidden', mode !== 'equip');
+            equipForm.classList.toggle('flex', mode === 'equip');
+            document.getElementById('btn-bm-sell-shard').className = `flex-1 py-1.5 rounded-lg text-[9px] font-bold border ${mode === 'shard' ? 'bg-purple-900/60 text-purple-300 border-purple-600' : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
+            document.getElementById('btn-bm-sell-equip').className = `flex-1 py-1.5 rounded-lg text-[9px] font-bold border ${mode === 'equip' ? 'bg-purple-900/60 text-purple-300 border-purple-600' : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
         }
 
         function refreshBlackMarketUI() {
@@ -3886,6 +4032,7 @@
                 saveGame(); updateHUD();
 
                 await fbDb.collection('blackMarketListings').add({
+                    type: 'shard',
                     sellerUid: fbUser.uid, sellerName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`,
                     heroId, heroName: dbHero ? dbHero.name : '???',
                     shardAmount: amount, price, status: 'active',
@@ -3904,6 +4051,85 @@
             }
         }
 
+        // ★ 新增：黑市支援裝備交易——上架時把裝備從自己的 equipmentInventory 移除（不能是穿在身上的），
+        // 只把「部位/套裝/強化等級」這三個描述性欄位存進 Firestore（裝備物件本身不同步，買家用這三個
+        // 欄位重新在自己的 equipmentInventory 生成一件新物件，等同的強化等級/套裝，只是 id 不同，不影響使用）。
+        async function createEquipmentBlackMarketListing(selectValue) {
+            ToneAudioEngine.playClick();
+            if (!mpConnected) {showToast('尚未連線'); return;}
+            if (!selectValue) {showToast('請選擇要上架的裝備'); return;}
+            const price = parseInt(document.getElementById('bm-sell-equip-price').value);
+            if (!price || price <= 0) {showToast('請輸入正確的總價'); return;}
+
+            let slot, setId, level, itemId = null;
+            if (selectValue.startsWith('stack:')) {
+                // ★ 計數堆疊防爆存檔：從堆疊裡上架一件 +0 裝備，只要扣掉堆疊數量 1，不用真的建立/刪除獨立物件
+                const key = selectValue.slice('stack:'.length);
+                [slot, setId] = key.split('_');
+                level = 0;
+                if ((GAME_STATE.equipmentStacks[key] || 0) <= 0) {showToast('數量不足'); return;}
+                GAME_STATE.equipmentStacks[key]--;
+                if (GAME_STATE.equipmentStacks[key] <= 0) delete GAME_STATE.equipmentStacks[key];
+            } else {
+                itemId = selectValue.startsWith('item:') ? selectValue.slice('item:'.length) : selectValue;
+                const item = GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[itemId];
+                if (!item) {showToast('找不到這件裝備'); return;}
+                if (item.equippedBy) {showToast('請先卸下裝備才能上架'); return;}
+                slot = item.slot; setId = item.setId; level = item.level;
+                delete GAME_STATE.equipmentInventory[itemId]; // 上架的同時立刻從背包移除，避免同一件被重複上架或拿去強化
+            }
+
+            const cfg = EQUIPMENT_SLOT_CONFIG[slot];
+            const setDef = setId && EQUIPMENT_SETS[setId];
+            try {
+                saveGame(); updateHUD(); renderEquipmentInventoryList();
+
+                await fbDb.collection('blackMarketListings').add({
+                    type: 'equipment',
+                    sellerUid: fbUser.uid, sellerName: GAME_STATE.mpDisplayName || `玩家${fbUser.uid.slice(0, 5)}`,
+                    itemSlot: slot, itemSlotName: cfg ? cfg.name : slot,
+                    itemSetId: setId, itemSetName: setDef ? setDef.name : '無套裝',
+                    itemLevel: level, price, status: 'active',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast('上架成功！');
+                populateEquipmentSellSelect();
+                renderEquipmentInventoryList();
+            } catch (err) {
+                // 上架失敗要把裝備還原回背包，不能讓玩家平白損失（+0 的話還原回堆疊，已強化的還原成獨立物件）
+                if (level > 0 && itemId) {
+                    GAME_STATE.equipmentInventory[itemId] = {id: itemId, slot, setId, level, equippedBy: null};
+                } else {
+                    addEquipmentToStack(slot, setId, 1);
+                }
+                saveGame(); updateHUD(); renderEquipmentInventoryList();
+                console.warn('裝備上架失敗：', err); showToast('上架失敗：' + (err.code || err.message || '未知錯誤'));
+            }
+        }
+
+        // 上架裝備下拉選單：堆疊(+0)跟已強化的獨立物件都列出來，分別用 stack:/item: 前綴區分來源
+        function populateEquipmentSellSelect() {
+            const sel = document.getElementById('bm-sell-equip-select');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">選擇要上架的裝備</option>';
+            const stacks = GAME_STATE.equipmentStacks || {};
+            Object.keys(stacks).filter(k => stacks[k] > 0).forEach(key => {
+                const [slot, setId] = key.split('_');
+                const cfg = EQUIPMENT_SLOT_CONFIG[slot];
+                const setDef = setId && EQUIPMENT_SETS[setId];
+                const opt = document.createElement('option');
+                opt.value = `stack:${key}`; opt.innerText = `${cfg ? cfg.name : slot} +0（${setDef ? setDef.name : '無套裝'}）×${stacks[key]}`;
+                sel.appendChild(opt);
+            });
+            Object.values(GAME_STATE.equipmentInventory || {}).filter(it => !it.equippedBy).forEach(item => {
+                const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
+                const setDef = item.setId && EQUIPMENT_SETS[item.setId];
+                const opt = document.createElement('option');
+                opt.value = `item:${item.id}`; opt.innerText = `${cfg ? cfg.name : item.slot} +${item.level}（${setDef ? setDef.name : '無套裝'}）`;
+                sel.appendChild(opt);
+            });
+        }
+
         async function cancelBlackMarketListing(listing) {
             ToneAudioEngine.playClick();
             try {
@@ -3913,10 +4139,24 @@
                     if (!doc.exists || doc.data().status !== 'active') throw new Error('這筆上架已經不存在或已成交');
                     tx.update(ref, {status: 'cancelled'});
                 });
-                // 退還碎片到自己背包
-                GAME_STATE.heroShards[listing.heroId] = (GAME_STATE.heroShards[listing.heroId] || 0) + listing.shardAmount;
-                saveGame(); updateHUD(); renderInventoryUI();
-                showToast('已下架，碎片已退回背包');
+                if (listing.type === 'equipment') {
+                    // 退還裝備：+0 的退回堆疊計數；已強化過的（itemLevel>0）才需要重新生成獨立物件
+                    if ((listing.itemLevel || 0) > 0) {
+                        if (!GAME_STATE.equipmentInventory) GAME_STATE.equipmentInventory = {};
+                        const item = createEquipmentItem(listing.itemSlot, listing.itemSetId);
+                        item.level = listing.itemLevel;
+                        GAME_STATE.equipmentInventory[item.id] = item;
+                    } else {
+                        addEquipmentToStack(listing.itemSlot, listing.itemSetId, 1);
+                    }
+                    saveGame(); updateHUD(); renderEquipmentInventoryList();
+                    showToast('已下架，裝備已退回背包');
+                } else {
+                    // 退還碎片到自己背包
+                    GAME_STATE.heroShards[listing.heroId] = (GAME_STATE.heroShards[listing.heroId] || 0) + listing.shardAmount;
+                    saveGame(); updateHUD(); renderInventoryUI();
+                    showToast('已下架，碎片已退回背包');
+                }
             } catch (err) {console.warn('下架失敗：', err); showToast('下架失敗：' + (err.message || '未知錯誤'));}
         }
 
@@ -3933,23 +4173,37 @@
                     tx.update(ref, {status: 'sold', buyerUid: fbUser.uid});
                 });
 
-                // 買家：扣黑市幣、加碎片
                 GAME_STATE.blackMarketCurrency -= listing.price;
-                GAME_STATE.heroShards[listing.heroId] = (GAME_STATE.heroShards[listing.heroId] || 0) + listing.shardAmount;
+                let itemDesc;
+                if (listing.type === 'equipment') {
+                    // 買家：+0 直接進堆疊計數；已強化過的（itemLevel>0）才需要建立獨立物件
+                    if ((listing.itemLevel || 0) > 0) {
+                        if (!GAME_STATE.equipmentInventory) GAME_STATE.equipmentInventory = {};
+                        const item = createEquipmentItem(listing.itemSlot, listing.itemSetId);
+                        item.level = listing.itemLevel;
+                        GAME_STATE.equipmentInventory[item.id] = item;
+                    } else {
+                        addEquipmentToStack(listing.itemSlot, listing.itemSetId, 1);
+                    }
+                    itemDesc = `${listing.itemSlotName} +${listing.itemLevel}`;
+                } else {
+                    GAME_STATE.heroShards[listing.heroId] = (GAME_STATE.heroShards[listing.heroId] || 0) + listing.shardAmount;
+                    itemDesc = `${listing.heroName} 碎片 x${listing.shardAmount}`;
+                }
                 saveGame(); updateHUD();
                 document.getElementById('bm-currency-display').innerText = GAME_STATE.blackMarketCurrency.toLocaleString();
 
-                // 賣家：扣 10% 手續費後，用信件把黑市幣匯給對方（買家的裝置沒有權限直接改賣家的本地存檔）
+                // 賣家：扣手續費後，用信件把黑市幣匯給對方（買家的裝置沒有權限直接改賣家的本地存檔）
                 const proceeds = Math.floor(listing.price * (1 - BLACK_MARKET_FEE_RATE));
                 await sendMailToUid(listing.sellerUid, {
                     id: `bm_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
                     title: '黑市交易成功',
-                    body: `你上架的 ${listing.heroName} 碎片 x${listing.shardAmount} 已賣出（扣除 10% 手續費後入帳）`,
+                    body: `你上架的 ${itemDesc} 已賣出（扣除手續費後入帳）`,
                     rewards: {blackMarketCurrency: proceeds},
                     sentAt: Date.now(), claimed: false
                 });
 
-                showToast(`購買成功！獲得 ${listing.heroName} 碎片 x${listing.shardAmount}`);
+                showToast(`購買成功！獲得 ${itemDesc}`);
                 renderInventoryUI();
             } catch (err) {console.warn('購買失敗：', err); showToast('購買失敗：' + (err.message || '未知錯誤'));}
         }
@@ -3967,7 +4221,8 @@
                     listings.forEach(l => {
                         const card = document.createElement('div');
                         card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
-                        card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200">${l.heroName} 碎片 x${l.shardAmount}</div><div class="text-[9px] text-stone-500">賣家：${l.sellerName || '???'}</div></div><button class="px-3 py-1.5 bg-purple-900/60 text-purple-300 text-[10px] font-bold rounded border border-purple-700 hover:bg-purple-800 transition">${l.price.toLocaleString()} 黑市幣</button>`;
+                        const title = l.type === 'equipment' ? `${l.itemSlotName} +${l.itemLevel}（${l.itemSetName}）` : `${l.heroName} 碎片 x${l.shardAmount}`;
+                        card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200">${title}</div><div class="text-[9px] text-stone-500">賣家：${l.sellerName || '???'}</div></div><button class="px-3 py-1.5 bg-purple-900/60 text-purple-300 text-[10px] font-bold rounded border border-purple-700 hover:bg-purple-800 transition">${l.price.toLocaleString()} 黑市幣</button>`;
                         card.querySelector('button').onclick = () => buyBlackMarketListing(l);
                         list.appendChild(card);
                     });
@@ -3985,9 +4240,10 @@
                     snap.forEach(doc => {
                         const l = {id: doc.id, ...doc.data()};
                         const statusLabel = {active: '<span class="text-emerald-400">寄售中</span>', sold: '<span class="text-amber-400">已售出</span>', cancelled: '<span class="text-stone-500">已下架</span>'}[l.status] || l.status;
+                        const title = l.type === 'equipment' ? `${l.itemSlotName} +${l.itemLevel}（${l.itemSetName}）` : `${l.heroName} 碎片 x${l.shardAmount}`;
                         const card = document.createElement('div');
                         card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
-                        card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200">${l.heroName} 碎片 x${l.shardAmount}</div><div class="text-[9px] text-stone-500">${l.price.toLocaleString()} 黑市幣．${statusLabel}</div></div>${l.status === 'active' ? '<button class="px-3 py-1.5 bg-black/50 text-stone-400 text-[10px] font-bold rounded border border-[#3e3328] hover:bg-black/70 transition">下架</button>' : ''}`;
+                        card.innerHTML = `<div><div class="text-[11px] font-bold text-stone-200">${title}</div><div class="text-[9px] text-stone-500">${l.price.toLocaleString()} 黑市幣．${statusLabel}</div></div>${l.status === 'active' ? '<button class="px-3 py-1.5 bg-black/50 text-stone-400 text-[10px] font-bold rounded border border-[#3e3328] hover:bg-black/70 transition">下架</button>' : ''}`;
                         if (l.status === 'active') card.querySelector('button').onclick = () => cancelBlackMarketListing(l);
                         list.appendChild(card);
                     });
@@ -4659,7 +4915,8 @@
             gachaPity: {standard: 0, limited: 0, special: 0},
             gridSlots: ['h_militia', null, null, null, null, null],
             roster: {'h_militia': {level: 1, star: 1, artifactTier: 0, equippedItems: {}}},
-            equipmentInventory: {}, // ★ 新增：8 部位裝備系統的背包，key 是裝備物件 id
+            equipmentInventory: {}, // ★ 8 部位裝備系統的背包：只有「已裝備」或「已強化過(+1以上)」的裝備才會是這裡的獨立 UUID 物件
+            equipmentStacks: {}, // ★ 新增：計數堆疊防爆存檔——+0 且未裝備的裝備，用 {"slot_setId": 數量} 堆疊計數，不佔用獨立物件空間
 
             // ★ 修正：不再把整個內建圖庫複製進 DEFAULT_STATE——這是「舊照片凍結、更新圖庫玩家看不到」
             // 這個 bug 真正的源頭。現在 customHeroes 只用來放「玩家自己上傳覆蓋的圖片」（目前沒有對應的
@@ -4672,6 +4929,11 @@
             lastMercenaryDate: null, // ★ 傭兵助戰：上次借用的日期字串，用來限制每日1次
             dailyForgeStonePurchased: 0, // ★ 黑市每日限量鍛造石補給：今天已購買數量
             dailyForgeStoneDate: null, // ★ 上次購買的日期字串，用來每日重置額度
+            setDungeonStars: {}, // ★ 套裝秘境：每座秘境目前的最高星級 (0~3)
+            setFragments: {}, // ★ 套裝秘境：各套裝殘頁持有量，鐵匠鋪鍛造裝備用
+            setDungeonTickets: 15, // ★ 套裝秘境：今天剩餘門票（8座秘境共用同一組門票）
+            setDungeonTicketDate: null, // ★ 上次門票重置的日期字串
+            selectedSetDungeonId: null, // ★ 目前正在挑戰的套裝秘境 id
 
             season: {id: 1, highScore: 0, totalDamage: 0, passRound: 1, lastSwitchTime: 0},
 
@@ -4725,7 +4987,7 @@
                 else if (GAME_STATE.currentMode === 'season') bgKey = 'season';
                 else if (GAME_STATE.currentMode === 'worldboss') bgKey = 'worldboss';
                 else if (GAME_STATE.currentMode === 'arena' || GAME_STATE.currentMode === 'arena_guest') bgKey = 'arena';
-                else if (GAME_STATE.currentMode && GAME_STATE.currentMode.startsWith('dungeon')) bgKey = 'dungeon';
+                else if (GAME_STATE.currentMode && (GAME_STATE.currentMode.startsWith('dungeon') || GAME_STATE.currentMode === 'setdungeon')) bgKey = 'dungeon';
                 else bgKey = GAME_STATE.stage.chapter; // 主線對應章節
             } else {
                 // 如果不在戰鬥畫面 (例如在抽卡、編隊)，預設顯示玩家目前最高進度的章節背景
@@ -6473,50 +6735,50 @@
             berserk:  {name: '狂暴', color: '#ef4444', bonuses: {
                 2: {desc: '暴擊率 +12%', stat: {critRate: 12}},
                 4: {desc: '暴擊傷害 +35%', stat: {critDmgPct: 35}},
-                6: {desc: '暴擊時疊加攻擊力（尚未接上戰鬥）', stat: {}},
-                8: {desc: '暴擊無視 40% 防禦，且擊殺刷新大招（尚未接上戰鬥）', stat: {}},
+                6: {desc: '暴擊時疊加攻擊力（每次暴擊 +3% 攻擊力，最高 10 層）', flag: 'critStackAtk'},
+                8: {desc: '暴擊無視 40% 防禦，且擊殺刷新大招（能量回滿）', flag: 'critIgnoreDefKillRefresh'},
             }},
             breaker:  {name: '破陣', color: '#f97316', bonuses: {
                 2: {desc: '技能傷害 +15%', stat: {skillDmgPct: 15}},
                 4: {desc: '真實傷害倍率 +20%', stat: {trueDmgPct: 20}},
-                6: {desc: '攻擊降低目標防禦（尚未接上戰鬥）', stat: {}},
-                8: {desc: '攻擊高血量目標必觸發 15% 真傷（尚未接上戰鬥）', stat: {}},
+                6: {desc: '攻擊降低目標防禦（每次 -4%，最高 5 層）', flag: 'defReduceOnHit'},
+                8: {desc: '攻擊高血量（≥80%）目標必觸發 15% 真傷', flag: 'highHpTrueDmgProc'},
             }},
             guardian: {name: '守護', color: '#3b82f6', bonuses: {
                 2: {desc: '生命值 +20%', stat: {hpPct: 20}},
-                4: {desc: '殘血時為全隊護盾（尚未接上戰鬥）', stat: {}},
-                6: {desc: '反彈真實傷害（尚未接上戰鬥）', stat: {}},
-                8: {desc: '免控，且能代友軍承受致命傷（尚未接上戰鬥）', stat: {}},
+                4: {desc: '殘血（<30%）時為全隊護盾（每場一次）', flag: 'lowHpShieldAll'},
+                6: {desc: '反彈 20% 真實傷害', flag: 'reflectTrueDmg'},
+                8: {desc: '免控，且能代友軍承受致命傷', flag: 'ccImmuneTankLethal'},
             }},
             swift:    {name: '神速', color: '#22c55e', bonuses: {
                 2: {desc: '開局初始能量 +25', stat: {startEnergy: 25}},
-                4: {desc: '首回合免疫控場，且無法被驅散（尚未接上戰鬥）', stat: {}},
-                6: {desc: '回能速度加快（尚未接上戰鬥）', stat: {}},
-                8: {desc: '開局全員滿能，但前 2 回合大招傷害 -40%（尚未接上戰鬥）', stat: {}},
+                4: {desc: '首回合免疫控場，且無法被驅散', flag: 'firstTurnCcImmune'},
+                6: {desc: '回能速度加快（每回合額外 +8 能量）', flag: 'energyRegenBoost'},
+                8: {desc: '開局全員滿能，但前 2 回合大招傷害 -40%', flag: 'startFullEnergyUltPenalty'},
             }},
             undying:  {name: '不滅', color: '#a855f7', bonuses: {
                 2: {desc: '生命偷取 +10%', stat: {lifesteal: 10}},
-                4: {desc: '免死一次並回滿能量（尚未接上戰鬥）', stat: {}},
-                6: {desc: '死後可復活一次（尚未接上戰鬥）', stat: {}},
-                8: {desc: '傷害轉真傷，血越低打得越痛（尚未接上戰鬥）', stat: {}},
+                4: {desc: '免死一次並回滿能量', flag: 'cheatDeathFullEnergy'},
+                6: {desc: '死後可復活一次（回 30% 血）', flag: 'reviveOnce'},
+                8: {desc: '傷害轉真傷，血越低打得越痛（最多 +50%）', flag: 'dmgToTrueDmgLowHp'},
             }},
             wish:     {name: '祈願', color: '#fbbf24', bonuses: {
                 2: {desc: '治療量 +25%', stat: {healPct: 25}},
-                4: {desc: '治療附帶攻防加成（尚未接上戰鬥）', stat: {}},
-                6: {desc: '全隊被動回血（尚未接上戰鬥）', stat: {}},
-                8: {desc: '溢出治療轉換成護盾（尚未接上戰鬥）', stat: {}},
+                4: {desc: '治療附帶攻防加成（+10%，持續2回合）', flag: 'healBuffAtkDef'},
+                6: {desc: '全隊被動回血（每回合回 2% 生命）', flag: 'passiveTeamRegen'},
+                8: {desc: '溢出治療轉換成護盾', flag: 'overhealToShield'},
             }},
             venom:    {name: '劇毒', color: '#16a34a', bonuses: {
                 2: {desc: '命中率與持續傷害 +15%', stat: {hitPct: 15, dotPct: 15}},
-                4: {desc: '攻擊附加疊加中毒（尚未接上戰鬥）', stat: {}},
-                6: {desc: '中毒目標造成的傷害降低（尚未接上戰鬥）', stat: {}},
-                8: {desc: '大招引爆所有持續傷害效果（尚未接上戰鬥）', stat: {}},
+                4: {desc: '攻擊附加疊加中毒（每層每回合造成攻擊力 15% 傷害，最高 5 層）', flag: 'stackPoisonOnHit'},
+                6: {desc: '中毒目標造成的傷害降低 15%', flag: 'poisonedTargetDmgReduce'},
+                8: {desc: '大招引爆所有持續傷害效果（造成累積層數 x 攻擊力 40% 的傷害）', flag: 'ultDetonateDot'},
             }},
             counter:  {name: '反制', color: '#78716c', bonuses: {
                 2: {desc: '格擋率 +20%', stat: {blockRate: 20}},
-                4: {desc: '格擋成功減傷 70% 並反擊（尚未接上戰鬥）', stat: {}},
-                6: {desc: '反擊時回血回能（尚未接上戰鬥）', stat: {}},
-                8: {desc: '永久嘲諷，受擊時繳械敵方（尚未接上戰鬥）', stat: {}},
+                4: {desc: '格擋成功減傷 70% 並反擊', flag: 'blockDmgReduceCounter'},
+                6: {desc: '反擊時回血回能', flag: 'counterHealEnergy'},
+                8: {desc: '永久嘲諷，受擊時繳械敵方（對方下次攻擊傷害 -50%）', flag: 'permTauntDisarm'},
             }},
         };
 
@@ -6527,6 +6789,45 @@
                 id: `eq_${Date.now()}_${equipmentItemIdCounter}`,
                 slot, setId, level: 0, equippedBy: null,
             };
+        }
+
+        /* ============================================================
+           【企劃書】計數堆疊防爆存檔 (ID: Count)
+           ★ +0 且未裝備的裝備，不會各自變成一個獨立物件佔存檔空間，而是用 {"slot_setId": 數量}
+           這種堆疊計數的方式儲存。只有「裝備上某位英雄」或「強化超過 +0」的裝備，才會真正
+           轉成 equipmentInventory 裡的獨立 UUID 物件（因為只有這兩種情況才需要追蹤「這一件」
+           專屬的強化進度／裝備對象，堆疊計數沒辦法表達這些個體差異）。
+           ============================================================ */
+        function getEquipmentStackKey(slot, setId) { return `${slot}_${setId}`; }
+
+        // 新增 N 件「+0 未裝備」的裝備進堆疊（鍛造/黑市退款用）
+        function addEquipmentToStack(slot, setId, count = 1) {
+            if (!GAME_STATE.equipmentStacks) GAME_STATE.equipmentStacks = {};
+            const key = getEquipmentStackKey(slot, setId);
+            GAME_STATE.equipmentStacks[key] = (GAME_STATE.equipmentStacks[key] || 0) + count;
+        }
+
+        // 把堆疊裡的一件「+0」裝備「升格」成獨立 UUID 物件（要裝備上去或強化時才需要），
+        // 回傳新產生的物件；堆疊數量不足回傳 null
+        function promoteStackToItem(slot, setId) {
+            if (!GAME_STATE.equipmentStacks) GAME_STATE.equipmentStacks = {};
+            const key = getEquipmentStackKey(slot, setId);
+            if ((GAME_STATE.equipmentStacks[key] || 0) <= 0) return null;
+            GAME_STATE.equipmentStacks[key]--;
+            if (GAME_STATE.equipmentStacks[key] <= 0) delete GAME_STATE.equipmentStacks[key];
+            if (!GAME_STATE.equipmentInventory) GAME_STATE.equipmentInventory = {};
+            const item = createEquipmentItem(slot, setId);
+            GAME_STATE.equipmentInventory[item.id] = item;
+            return item;
+        }
+
+        // 把一件「卸下後仍是 +0」的獨立物件「降格」回堆疊，省下存檔空間；已經強化過的不會降格
+        function demoteItemToStackIfPossible(itemId) {
+            const item = GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[itemId];
+            if (!item || item.equippedBy || item.level > 0) return false;
+            delete GAME_STATE.equipmentInventory[itemId];
+            addEquipmentToStack(item.slot, item.setId, 1);
+            return true;
         }
 
         // 算出單一裝備物件目前（含強化等級）提供的白字數值
@@ -6585,15 +6886,17 @@
 
         // 依套裝件數統計，彙總出目前生效的所有「已接上戰鬥」數值加成（2/4/6/8 件門檻，未達門檻不計入）
         function getSetBonusStats(setCounts) {
-            const agg = {critRate: 0, critDmgPct: 0, skillDmgPct: 0, trueDmgPct: 0, hpPct: 0, startEnergy: 0, lifesteal: 0, healPct: 0, hitPct: 0, dotPct: 0, blockRate: 0};
+            const agg = {critRate: 0, critDmgPct: 0, skillDmgPct: 0, trueDmgPct: 0, hpPct: 0, startEnergy: 0, lifesteal: 0, healPct: 0, hitPct: 0, dotPct: 0, blockRate: 0, flags: {}};
             Object.keys(setCounts).forEach(setId => {
                 const setDef = EQUIPMENT_SETS[setId];
                 if (!setDef) return;
                 const count = setCounts[setId];
                 [2, 4, 6, 8].forEach(threshold => {
                     if (count >= threshold && setDef.bonuses[threshold]) {
-                        const stat = setDef.bonuses[threshold].stat || {};
+                        const bonus = setDef.bonuses[threshold];
+                        const stat = bonus.stat || {};
                         Object.keys(stat).forEach(k => {agg[k] = (agg[k] || 0) + stat[k];});
+                        if (bonus.flag) agg.flags[bonus.flag] = true; // ★ 行為型套裝機制標記，見 executeHit / resolveAttackRoll 等戰鬥流程
                     }
                 });
             });
@@ -6646,13 +6949,38 @@
             }
 
             const atkValue = typeof attacker.activeAtk === 'number' ? attacker.activeAtk : attacker.atk;
-            const rawDamage = atkValue * atkMultiplier * critMult;
-            const defenderLevel = target.effectiveLevel || target.level || 1;
-            const dmgReduction = target.def / (target.def + (50 * defenderLevel + 300)); // 雙曲線防禦減免公式
-            const extraDmgReduce = Math.min(0.6, target.dmgReduce || 0); // 稀有度/聖物高階帶來的額外免傷，設個上限避免堆到接近無敵
-            const dmgBonus = attacker.dmgBonus || 0; // 稀有度天賦帶來的全傷害加成 (LR/GR)
+            let rawDamage = atkValue * atkMultiplier * critMult;
 
-            const finalDamage = rawDamage * (1 - dmgReduction) * (1 - extraDmgReduce) * (1 + dmgBonus);
+            // ★ 新增：反制套裝 8 件「繳械」——上一次被反制擁有者命中的攻擊者，這一擊傷害打對折，用完就消耗掉
+            if (attacker.disarmedNextHit) {
+                rawDamage *= 0.5;
+                attacker.disarmedNextHit = false;
+            }
+
+            const defenderLevel = target.effectiveLevel || target.level || 1;
+            let effectiveDef = target.def;
+            // ★ 新增：狂暴套裝 8 件「暴擊無視 40% 防禦」
+            if (isCrit && attacker.setFlags && attacker.setFlags.critIgnoreDefKillRefresh) effectiveDef *= 0.6;
+            const dmgReduction = effectiveDef / (effectiveDef + (50 * defenderLevel + 300)); // 雙曲線防禦減免公式
+            const extraDmgReduce = Math.min(0.6, target.dmgReduce || 0); // 稀有度/聖物高階帶來的額外免傷，設個上限避免堆到接近無敵
+            let dmgBonus = attacker.dmgBonus || 0; // 稀有度天賦帶來的全傷害加成 (LR/GR)
+
+            // ★ 新增：劇毒套裝 6 件「中毒目標造成的傷害降低 15%」——攻擊者自己身上如果背著中毒層數，輸出打折
+            if (attacker.venomStacks > 0) dmgBonus -= 0.15;
+
+            let finalDamage = rawDamage * (1 - dmgReduction) * (1 - extraDmgReduce) * (1 + dmgBonus);
+
+            // ★ 新增：不滅套裝 8 件「傷害轉真傷，血越低打得越痛」——忽略目標防禦，攻擊者血量越低額外加成越高（最多 +50%）
+            if (attacker.setFlags && attacker.setFlags.dmgToTrueDmgLowHp) {
+                const missingHpRatio = attacker.maxHp > 0 ? 1 - (attacker.hp / attacker.maxHp) : 0;
+                finalDamage = rawDamage * (1 + dmgBonus) * (1 + Math.min(0.5, missingHpRatio * 0.5));
+            }
+
+            // ★ 新增：破陣套裝 8 件「攻擊高血量（≥80%）目標必觸發 15% 真傷」——額外疊加一段忽略防禦的真傷
+            if (attacker.setFlags && attacker.setFlags.highHpTrueDmgProc && target.maxHp > 0 && target.hp / target.maxHp >= 0.8) {
+                finalDamage += target.hp * 0.15;
+            }
+
             return {damage: Math.max(1, Math.floor(finalDamage)), isCrit, isEvaded: false};
         }
 
@@ -6734,7 +7062,7 @@
             return {
                 ...db, ...r, effectiveLevel: l, maxHp: hp, atk, def, crit, skill: effSkill,
                 spd, dmgReduce, dmgBonus, cheatDeath, critDmgMult, energyStartBonus, hitRate, dodgeRate,
-                skillDmgBonus, trueDmgBonus, lifestealBonus, healBonus, dotBonus, blockRate, setCounts,
+                skillDmgBonus, trueDmgBonus, lifestealBonus, healBonus, dotBonus, blockRate, setCounts, setFlags: setBonus.flags || {},
                 combatPower: Math.floor(hp * 0.5 + atk * 2 + def * 1.5 + crit * 10)
             };
         }
@@ -6875,6 +7203,7 @@
             if (tabId === 'dungeon') renderDungeonAutoFarmButtons();
             if (tabId === 'arena') refreshArenaUI();
             if (tabId === 'inventory') renderInventoryUI();
+            if (tabId === 'setdungeon') {renderSetDungeonList(); populateFurnaceSelects();}
             if (tabId === 'blackmarket') refreshBlackMarketUI();
             if (tabId === 'admin') {
                 if (!isCurrentUserAdmin()) {showToast('沒有管理員權限'); switchTab('battle'); return;}
@@ -7664,11 +7993,22 @@
             if (currentItemId) {
                 html += `<button onclick="unequipItem('${slot}')" class="w-full py-2 bg-rose-900/50 text-rose-300 text-[10px] font-bold rounded border border-rose-700 hover:bg-rose-800 transition">卸下目前裝備</button>`;
             }
+            // ★ 計數堆疊的 +0 裝備（這個部位、還沒裝備的）也列進來，選了會先「升格」成獨立物件再裝備上去
+            const stacks = GAME_STATE.equipmentStacks || {};
+            const stackEntries = Object.keys(stacks).filter(k => stacks[k] > 0 && k.startsWith(slot + '_'));
             const inv = GAME_STATE.equipmentInventory || {};
             const candidates = Object.values(inv).filter(it => it.slot === slot && !it.equippedBy);
-            if (candidates.length === 0) {
+            if (candidates.length === 0 && stackEntries.length === 0) {
                 html += `<div class="text-center text-[10px] text-stone-500 py-6">背包裡沒有這個部位的裝備，去背包分頁鍛造一件吧</div>`;
             } else {
+                stackEntries.forEach(key => {
+                    const setId = key.slice(slot.length + 1);
+                    const setDef = setId && EQUIPMENT_SETS[setId];
+                    html += `<button onclick="equipFromStack('${slot}', '${setId}')" class="w-full py-2 px-3 bg-black/40 rounded-lg border border-[#3e3328] hover:border-fantasy-gold transition flex justify-between items-center">
+                        <span class="text-[10px] font-bold" style="color:${setDef ? setDef.color : '#94a3b8'}">${setDef ? setDef.name : '無套裝'}</span>
+                        <span class="text-[10px] text-stone-300">+0 <span class="text-amber-300">×${stacks[key]}</span></span>
+                    </button>`;
+                });
                 candidates.sort((a, b) => b.level - a.level).forEach(item => {
                     const setDef = item.setId && EQUIPMENT_SETS[item.setId];
                     html += `<button onclick="equipItem('${item.id}')" class="w-full py-2 px-3 bg-black/40 rounded-lg border border-[#3e3328] hover:border-fantasy-gold transition flex justify-between items-center">
@@ -7679,6 +8019,12 @@
             }
             list.innerHTML = html;
         }
+        // 從堆疊裡選一件 +0 裝備直接裝備上去：先升格成獨立物件，再走一般的裝備流程
+        function equipFromStack(slot, setId) {
+            const item = promoteStackToItem(slot, setId);
+            if (!item) {showToast('數量不足'); return;}
+            equipItem(item.id);
+        }
         function equipItem(itemId) {
             ToneAudioEngine.playClick();
             const heroId = GAME_STATE.selectedHeroId;
@@ -7686,9 +8032,13 @@
             const item = GAME_STATE.equipmentInventory[itemId];
             if (!hero || !item) return;
             if (!hero.equippedItems) hero.equippedItems = {};
-            // 如果這個部位原本已經裝了別的，先卸下（改回未裝備狀態），一個部位只能同時裝一件
+            // 如果這個部位原本已經裝了別的，先卸下（改回未裝備狀態），一個部位只能同時裝一件；
+            // 卸下來的如果還是 +0，順便降格回堆疊，不要留著佔獨立物件空間
             const prevItemId = hero.equippedItems[item.slot];
-            if (prevItemId && GAME_STATE.equipmentInventory[prevItemId]) GAME_STATE.equipmentInventory[prevItemId].equippedBy = null;
+            if (prevItemId && GAME_STATE.equipmentInventory[prevItemId]) {
+                GAME_STATE.equipmentInventory[prevItemId].equippedBy = null;
+                demoteItemToStackIfPossible(prevItemId);
+            }
             hero.equippedItems[item.slot] = itemId;
             item.equippedBy = heroId;
             saveGame(); updateHUD();
@@ -7704,7 +8054,11 @@
             const hero = GAME_STATE.roster[heroId];
             if (!hero || !hero.equippedItems) return;
             const itemId = hero.equippedItems[slot];
-            if (itemId && GAME_STATE.equipmentInventory[itemId]) GAME_STATE.equipmentInventory[itemId].equippedBy = null;
+            if (itemId && GAME_STATE.equipmentInventory[itemId]) {
+                GAME_STATE.equipmentInventory[itemId].equippedBy = null;
+                // ★ 計數堆疊防爆存檔：卸下來如果還是 +0（沒強化過），直接降格回堆疊，不要留著佔獨立物件空間
+                demoteItemToStackIfPossible(itemId);
+            }
             hero.equippedItems[slot] = null;
             saveGame(); updateHUD();
             closeEquipmentPicker();
@@ -8688,6 +9042,12 @@
                 }
             });
 
+            // ★ 新增：神速套裝 8 件「開局全員滿能」——只要上陣的英雄裡有任何一位帶有這個套裝效果，
+            // 整隊（不只是那個人自己）開局就直接滿能量，可以第一回合就發動大招
+            if (combatEntities.some(e => e.team === 'player' && e.setFlags && e.setFlags.startFullEnergyUltPenalty)) {
+                combatEntities.forEach(e => {if (e.team === 'player' && typeof e.energy === 'number') e.energy = e.maxEnergy || 100;});
+            }
+
             if (GAME_STATE.currentMode === 'tower') {
                 document.getElementById('btn-auto-battle').style.display = 'block';
                 const eCount = Math.min(9, 3 + Math.floor(GAME_STATE.towerLevel / 5));
@@ -8829,6 +9189,18 @@
                     const g = DUNGEON_GUARD_TYPES[i % DUNGEON_GUARD_TYPES.length];
                     combatEntities.push({baseId: g.mId, name: g.mName, team: 'enemy', x: 0, y: 0, hp: Math.floor(250 * sm), maxHp: Math.floor(250 * sm), atk: Math.floor(35 * sm), def: 15, role: '戰士', color: g.mColor, icon: g.mIcon, row: i % 3, col: Math.floor(i / 3), skill: {...g.mSkill}});
                 }
+            } else if (GAME_STATE.currentMode === 'setdungeon') {
+                // ★ 新增：遠古秘境·八大鍛爐——6 隻固定守衛，打完全滅就結束（不像深淵秘境那樣無限補位），
+                // 難度沿用跟深淵秘境同一套「依累積傷害推進」倍率公式當基準，套裝秘境守衛顏色跟著套裝主題色走
+                document.getElementById('btn-auto-battle').style.display = 'block';
+                const setId = GAME_STATE.selectedSetDungeonId;
+                const setDef = EQUIPMENT_SETS[setId] || {name: '???', color: '#94a3b8'};
+                const sm = getDungeonEnemyScale();
+                const eCount = 6;
+                for (let i = 0; i < eCount; i++) {
+                    const g = DUNGEON_GUARD_TYPES[i % DUNGEON_GUARD_TYPES.length];
+                    combatEntities.push({baseId: `sd_${setId}_${i}`, name: `${setDef.name}秘境守衛`, team: 'enemy', x: 0, y: 0, hp: Math.floor(300 * sm), maxHp: Math.floor(300 * sm), atk: Math.floor(40 * sm), def: 20, role: '戰士', color: setDef.color, icon: g.mIcon, row: i % 3, col: Math.floor(i / 3), skill: {...g.mSkill}});
+                }
             } else {
                 document.getElementById('btn-auto-battle').style.display = 'block';
                 // ★ 遠征擴充到 20 章：第 11~20 章的怪物直接循環沿用第 1~10 章同一批 MONSTER_DB（跟試煉塔
@@ -8909,6 +9281,7 @@
             else if (mode === 'season') target = 'season';
             else if (mode === 'rift' || mode === 'festival') target = 'season-mode';
             else if (mode === 'dungeon') target = 'dungeon';
+            else if (mode === 'setdungeon') target = 'setdungeon';
             else if (mode === 'arena' || mode === 'arena_guest' || mode === 'worldboss') target = 'arena';
 
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -9177,6 +9550,15 @@
             if (currentState === CSTATE.IDLE_WIN) return;
 
             // 內部函數：處理所有傷害與命中邏輯 (包含護盾、閃避、反彈、吸血、持續傷害、復活等被動技能)
+            // ★ 統一的「這個目標能不能被暈眩」檢查：世界首領韌性保護、守護套裝8件免控、
+            // 神速套裝4件只在第一回合免疫控場，三種條件共用同一個判斷式，四個暈眩觸發點都呼叫這裡。
+            function canBeStunned(target) {
+                if (GAME_STATE.currentMode === 'worldboss' && target.team === 'enemy') return false;
+                if (target.setFlags && target.setFlags.ccImmuneTankLethal) return false;
+                if (target.setFlags && target.setFlags.firstTurnCcImmune && combatRoundCount <= 1) return false;
+                return true;
+            }
+
             const executeHit = (attacker, target, damage, isCrit, skillType, fxCol) => {
                 if (target.hp <= 0) return;
 
@@ -9185,6 +9567,14 @@
                 // （治療/護盾降低的另一半，因為治療/護盾是分散在各技能分支各自套用、沒有共用的
                 // 結算函式，這次先不動，留待之後有共用治療結算時再一併套用，避免這次改動範圍過大。）
                 if (combatRoundCount > 10) damage = Math.floor(damage * 1.15);
+
+                // ★ 新增：神速套裝 8 件「開局全員滿能，但前 2 回合大招傷害 -40%」——由於大招種類太多、
+                // 很多大招走的是各自獨立的傷害計算（不經過這個共用的 executeHit 前置乘算），
+                // 這裡簡化成「前 2 回合，這個攻擊者造成的所有傷害都 -40%」，抓住「前期收斂、後期爆發」
+                // 的精神，但範圍比原文的「只限大招」更寬一點，算是這個機制的簡化版本。
+                if (combatRoundCount <= 2 && attacker.setFlags && attacker.setFlags.startFullEnergyUltPenalty) {
+                    damage = Math.floor(damage * 0.6);
+                }
 
                 // 判定：隱身閃避
                 if (target.stealth) {
@@ -9205,6 +9595,24 @@
                     }
                 }
 
+                // ★ 新增：守護套裝 8 件「代友軍承受致命傷」——如果這次攻擊會讓一位隊友陣亡，
+                // 且隊上還有其他存活、帶有這個套裝效果的守護者，直接把傷害轉嫁到守護者身上頂替
+                if (target.team === 'player' && target.hp - damage <= 0 && target.setFlags && !target.setFlags.ccImmuneTankLethal) {
+                    const guardian = combatEntities.find(e => e.team === target.team && e !== target && e.hp > 0 && e.setFlags && e.setFlags.ccImmuneTankLethal);
+                    if (guardian) {
+                        floatingTexts.push({x: target.x, y: target.y - 90, text: `${guardian.name} 代為承受！`, isCrit: false, color: '#60a5fa', life: 50});
+                        target = guardian;
+                    }
+                }
+
+                // ★ 新增：反制套裝 4 件「格擋成功減傷 70% 並反擊」——先判定格擋，成功的話大幅降低傷害並標記待反擊
+                let counterTriggered = false;
+                if (target.blockRate > 0 && Math.random() < target.blockRate) {
+                    damage = Math.floor(damage * 0.3);
+                    floatingTexts.push({x: target.x, y: target.y - 70, text: `格擋！`, isCrit: false, color: '#a8a29e', life: 45});
+                    if (target.setFlags && target.setFlags.blockDmgReduceCounter) counterTriggered = true;
+                }
+
                 // 扣血
                 target.hp -= damage;
                 // ★ 先制痛擊判定用：記錄這個目標是否已經被打過，first_strike 類技能專用
@@ -9213,6 +9621,69 @@
                 if (target.team === 'player' && typeof target.energy === 'number') {
                     target.energy = Math.min(target.maxEnergy || 100, target.energy + 10);
                 }
+
+                // ★ 新增：守護套裝 6 件「反彈 20% 真實傷害」——被打的時候直接回敬攻擊者一部分傷害，不吃防禦
+                if (target.setFlags && target.setFlags.reflectTrueDmg && attacker.hp > 0 && attacker !== target) {
+                    const reflectDmg = Math.floor(damage * 0.2);
+                    if (reflectDmg > 0) {
+                        attacker.hp = Math.max(0, attacker.hp - reflectDmg);
+                        floatingTexts.push({x: attacker.x, y: attacker.y - 70, text: `反彈 ${reflectDmg}`, isCrit: false, color: '#60a5fa', life: 45});
+                    }
+                }
+
+                // ★ 新增：守護套裝 4 件「殘血時為全隊護盾」——血量掉到 30% 以下時，整隊獲得一次護盾，每場限觸發一次
+                if (target.team === 'player' && target.hp > 0 && target.hp / target.maxHp < 0.3 && target.setFlags && target.setFlags.lowHpShieldAll && !target.guardianShieldUsed) {
+                    target.guardianShieldUsed = true;
+                    const allies = combatEntities.filter(e => e.team === target.team && e.hp > 0);
+                    allies.forEach(a => {
+                        a.shield = (a.shield || 0) + Math.floor(a.maxHp * 0.25);
+                        visualEffects.push({type: 'shield', x: a.x, y: a.y, color: '#60a5fa', life: 35, maxLife: 35});
+                    });
+                    floatingTexts.push({x: target.x, y: target.y - 100, text: `守護結界！`, isCrit: true, color: '#60a5fa', life: 60});
+                }
+
+                // ★ 新增：反制套裝 4/6 件——格擋成功時反擊攻擊者，6 件再額外回血回能
+                if (counterTriggered && attacker.hp > 0 && attacker !== target) {
+                    const counterDmg = Math.floor((target.atk || 0) * 0.8);
+                    attacker.hp = Math.max(0, attacker.hp - counterDmg);
+                    floatingTexts.push({x: attacker.x, y: attacker.y - 60, text: `反擊 ${counterDmg}`, isCrit: false, color: '#e7e5e4', life: 45});
+                    if (target.setFlags && target.setFlags.counterHealEnergy) {
+                        target.hp = Math.min(target.maxHp, target.hp + Math.floor(target.maxHp * 0.05));
+                        if (typeof target.energy === 'number') target.energy = Math.min(target.maxEnergy || 100, target.energy + 15);
+                    }
+                }
+
+                // ★ 新增：反制套裝 8 件「永久嘲諷，受擊時繳械敵方」——攻擊者下一次攻擊傷害打折
+                if (target.setFlags && target.setFlags.permTauntDisarm && attacker.hp > 0 && attacker !== target) {
+                    attacker.disarmedNextHit = true;
+                    floatingTexts.push({x: attacker.x, y: attacker.y - 80, text: `繳械`, isCrit: false, color: '#a8a29e', life: 45});
+                }
+
+                // ★ 新增：狂暴套裝 6 件「暴擊時疊加攻擊力」——每次暴擊 +3% 攻擊力，最多疊 10 層
+                if (isCrit && attacker.setFlags && attacker.setFlags.critStackAtk) {
+                    attacker.berserkStacks = Math.min(10, (attacker.berserkStacks || 0) + 1);
+                    attacker.atk = Math.floor((attacker.baseAtkBeforeBerserk || (attacker.baseAtkBeforeBerserk = attacker.atk)) * (1 + attacker.berserkStacks * 0.03));
+                }
+
+                // ★ 新增：狂暴套裝 8 件「擊殺刷新大招」——只要這次命中造成擊殺，攻擊者能量直接回滿
+                if (target.hp <= 0 && attacker.setFlags && attacker.setFlags.critIgnoreDefKillRefresh && typeof attacker.energy === 'number') {
+                    attacker.energy = attacker.maxEnergy || 100;
+                    floatingTexts.push({x: attacker.x, y: attacker.y - 90, text: `大招就緒！`, isCrit: true, color: '#f87171', life: 50});
+                }
+
+                // ★ 新增：破陣套裝 6 件「攻擊降低目標防禦」——每次命中 -4% 防禦，最多疊 5 層
+                if (attacker.setFlags && attacker.setFlags.defReduceOnHit && target.hp > 0) {
+                    target.breakerDefReduceStacks = Math.min(5, (target.breakerDefReduceStacks || 0) + 1);
+                    target.def = Math.floor((target.baseDefBeforeBreaker || (target.baseDefBeforeBreaker = target.def)) * (1 - target.breakerDefReduceStacks * 0.04));
+                }
+
+                // ★ 新增：劇毒套裝 4 件「攻擊附加疊加中毒」——每層每回合造成攻擊力 15% 傷害，最多疊 5 層
+                if (attacker.setFlags && attacker.setFlags.stackPoisonOnHit && target.hp > 0) {
+                    target.venomStacks = Math.min(5, (target.venomStacks || 0) + 1);
+                    target.venomSourceAtk = attacker.atk;
+                    floatingTexts.push({x: target.x, y: target.y - 50, text: `中毒 x${target.venomStacks}`, isCrit: false, color: '#4ade80', life: 40});
+                }
+
                 floatingTexts.push({x: target.x + (Math.random() * 20 - 10), y: target.y - 60 + (Math.random() * 10 - 5), text: Math.floor(damage), isCrit: isCrit, color: isCrit ? '#ffd54f' : '#fff', life: 45});
 
                 // 視覺特效
@@ -9227,12 +9698,13 @@
                     setTimeout(() => target.x = target.startX, 150);
                 }
 
-                // ★ 新增：GR 稀有度天賦「免死」——血量歸零時，若這個角色帶有 cheatDeath（見 getEffectiveHero
-                // 的 RARITY_PASSIVES.GR）且本場還沒用過，鎖血在 1 點存活，每場戰鬥限一次。
-                // 放在「復活/不死鳥」判定之前，讓 hp 先被救回來，後面兩個判定的 hp<=0 條件才不會誤判。
-                if (target.hp <= 0 && target.cheatDeath && !target.hasCheatDeathUsed) {
+                // ★ 新增：GR 稀有度天賦「免死」（見 getEffectiveHero 的 RARITY_PASSIVES.GR），
+                // 以及不滅套裝 4 件「免死一次並回滿能量」——兩者都是鎖血 1 點存活、每場限一次，
+                // 差別只在後者觸發時能量也會回滿。放在「復活/不死鳥」判定之前，讓 hp 先被救回來。
+                if (target.hp <= 0 && (target.cheatDeath || (target.setFlags && target.setFlags.cheatDeathFullEnergy)) && !target.hasCheatDeathUsed) {
                     target.hasCheatDeathUsed = true;
                     target.hp = 1;
+                    if (target.setFlags && target.setFlags.cheatDeathFullEnergy && typeof target.energy === 'number') target.energy = target.maxEnergy || 100;
                     floatingTexts.push({x: target.x, y: target.y - 100, text: `不朽庇護！`, isCrit: true, color: '#fbbf24', life: 60});
                 }
 
@@ -9245,6 +9717,14 @@
                         floatingTexts.push({x: target.x, y: target.y - 100, text: `復活！`, isCrit: true, color: '#fef08a', life: 60});
                         visualEffects.push({type: 'heal', x: target.x, y: target.y, color: '#fef08a', life: 30, maxLife: 30});
                     }
+                }
+
+                // ★ 新增：不滅套裝 6 件「死後可復活一次」——不需要隊友幫忙，自己死亡時原地滿血 30% 復活，每場限一次
+                if (target.hp <= 0 && target.setFlags && target.setFlags.reviveOnce && !target.hasSetRevivedUsed) {
+                    target.hasSetRevivedUsed = true;
+                    target.hp = Math.floor(target.maxHp * 0.3);
+                    floatingTexts.push({x: target.x, y: target.y - 100, text: `不滅重生！`, isCrit: true, color: '#c084fc', life: 60});
+                    visualEffects.push({type: 'heal', x: target.x, y: target.y, color: '#c084fc', life: 30, maxLife: 30});
                 }
 
                 // ★ 新增判定：不死鳥 (phoenix，LR 永晝女王·奧蘿拉專屬)——跟「revive」不同，
@@ -9293,15 +9773,15 @@
                 }
 
                 // 判定：暈眩 (大招)
-                // ★ 新增：世界首領韌性保護——強制免疫暈眩等硬控，避免被鎖死無法行動
-                if (skillType === 'stun' && Math.random() < (attacker.skill.chance || 0.4) && !(GAME_STATE.currentMode === 'worldboss' && target.team === 'enemy')) {
+                // ★ 統一免疫檢查：世界首領韌性保護／守護套裝8件免控／神速套裝4件只在第一回合免控
+                if (skillType === 'stun' && Math.random() < (attacker.skill.chance || 0.4) && canBeStunned(target)) {
                     target.stunned = true;
                     floatingTexts.push({x: target.x, y: target.y - 80, text: `暈眩`, isCrit: false, color: '#fbbf24', life: 45});
                     visualEffects.push({type: 'stun', x: target.x, y: target.y, color: '#fbbf24', life: 40, maxLife: 40});
                 }
 
                 // 判定：附帶暈眩 (smite)——普通攻擊也會觸發，跟大招限定的 stun 不同
-                if (skillType === 'basic' && attacker.skill && attacker.skill.type === 'smite' && Math.random() < (attacker.skill.chance || 0.3) && !(GAME_STATE.currentMode === 'worldboss' && target.team === 'enemy')) {
+                if (skillType === 'basic' && attacker.skill && attacker.skill.type === 'smite' && Math.random() < (attacker.skill.chance || 0.3) && canBeStunned(target)) {
                     target.stunned = true;
                     floatingTexts.push({x: target.x, y: target.y - 80, text: `暈眩`, isCrit: false, color: '#fbbf24', life: 45});
                     visualEffects.push({type: 'stun', x: target.x, y: target.y, color: '#fbbf24', life: 40, maxLife: 40});
@@ -9418,9 +9898,34 @@
                         if (entity[key].turnsLeft <= 0) entity[key] = null;
                     }
                 });
+                // ★ 新增：劇毒套裝 4 件疊加的中毒層數——每層每回合造成「當初中毒來源攻擊者」攻擊力 15% 的持續傷害，
+                // 不會自然消退，要靠淨化類技能清除（見 cleanse 分支）
+                if (entity.venomStacks > 0 && entity.hp > 0) {
+                    const dmg = (entity.venomSourceAtk || 0) * 0.15 * entity.venomStacks;
+                    entity.hp -= dmg;
+                    floatingTexts.push({x: entity.x, y: entity.y - 70, text: `☠️${Math.floor(dmg)}`, isCrit: false, color: '#4ade80', life: 45});
+                }
+                // ★ 新增：神速套裝 6 件「回能速度加快」——每回合開始額外多回一點能量
+                if (entity.hp > 0 && entity.setFlags && entity.setFlags.energyRegenBoost && typeof entity.energy === 'number') {
+                    entity.energy = Math.min(entity.maxEnergy || 100, entity.energy + 8);
+                }
+                // ★ 新增：祈願套裝 6 件「全隊被動回血」——每回合開始，帶有這個效果的一方全體回一點血
+                if (entity.hp > 0 && entity.setFlags && entity.setFlags.passiveTeamRegen) {
+                    const regen = Math.floor(entity.maxHp * 0.02);
+                    if (regen > 0) {
+                        entity.hp = Math.min(entity.maxHp, entity.hp + regen);
+                        floatingTexts.push({x: entity.x, y: entity.y - 55, text: `+${regen}`, isCrit: false, color: '#86efac', life: 40});
+                    }
+                }
                 if (entity.atkBuffTurns && entity.atkBuffTurns > 0) {
                     entity.atkBuffTurns--;
                     if (entity.atkBuffTurns <= 0) entity.atkBuffValue = 0;
+                }
+                // ★ 新增：祈願套裝 4 件「治療附帶攻防加成」的持續時間遞減，跟原本的 atkBuffTurns 是分開的一組，
+                // 因為這個 buff 是被治療觸發的、跟角色自己的專屬技能 buff_atk 無關，兩者要能同時疊加不互相覆蓋
+                if (entity.wishAtkDefBuffTurns && entity.wishAtkDefBuffTurns > 0) {
+                    entity.wishAtkDefBuffTurns--;
+                    if (entity.wishAtkDefBuffTurns <= 0) entity.wishAtkDefBuff = 0;
                 }
                 // ★ 新增：死亡倒數 (GR 暗刃·影專屬)——每回合開始倒數一次，倒數歸零就自動引爆造成致死傷害
                 if (entity.deathCountdown && entity.deathCountdown > 0) {
@@ -9504,6 +10009,10 @@
                 // 攻擊力增益 (buff_atk 大招效果)：持續回合內每次行動都套用加成
                 if (currentActor.atkBuffValue && currentActor.atkBuffTurns > 0) {
                     activeAtk *= (1 + currentActor.atkBuffValue);
+                }
+                // ★ 新增：祈願套裝 4 件「治療附帶攻防加成」——被治療後短暫的攻擊力加成，跟上面的 atkBuffValue 分開疊加
+                if (currentActor.wishAtkDefBuff && currentActor.wishAtkDefBuffTurns > 0) {
+                    activeAtk *= (1 + currentActor.wishAtkDefBuff);
                 }
                 // ★ 新增：引力坍縮 (GR 阿斯特萊雅專屬)——被標記的敵人攻擊力下降，直到下次被超新星命中重新附加
                 if (currentActor.gravityCollapse && currentActor.atkDebuffPct) {
@@ -9598,6 +10107,18 @@
                         setTimeout(() => document.getElementById('resonance-overlay').classList.add('hidden'), 800 / battleSpeed);
                     }
 
+                    // ★ 新增：劇毒套裝 8 件「大招引爆所有持續傷害效果」——不管這次大招本身是什麼類型，
+                    // 只要施放者帶有這個套裝效果，就對所有背著中毒層數的敵人額外造成引爆傷害，然後清空層數
+                    if (currentActor.setFlags && currentActor.setFlags.ultDetonateDot) {
+                        combatEntities.filter(e => e.team !== currentActor.team && e.hp > 0 && e.venomStacks > 0).forEach(e => {
+                            const detonateDmg = Math.floor((e.venomSourceAtk || currentActor.atk) * 0.4 * e.venomStacks);
+                            e.hp = Math.max(0, e.hp - detonateDmg);
+                            e.venomStacks = 0;
+                            floatingTexts.push({x: e.x, y: e.y - 90, text: `引爆 ${detonateDmg}`, isCrit: true, color: '#22c55e', life: 55});
+                            visualEffects.push({type: 'magic', x: e.x, y: e.y, color: '#22c55e', life: 25, maxLife: 25});
+                        });
+                    }
+
                     const sType = currentActor.skill.type;
 
                     // --- 治療/護盾類大招 ---
@@ -9606,9 +10127,22 @@
                         const healMult = 1 + (currentActor.healBonus || 0); // ★ 套用治療量加成（例如「祈願」套裝2件 +25%）
                         allies.forEach(t => {
                             let healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * healMult;
+                            // ★ 新增：祈願套裝 8 件「溢出治療轉換成護盾」——治療量超過缺少的血量時，多的部分變成護盾
+                            const missingHp = t.maxHp - t.hp;
+                            if (currentActor.setFlags && currentActor.setFlags.overhealToShield && healAmt > missingHp) {
+                                const overheal = healAmt - missingHp;
+                                t.shield = (t.shield || 0) + overheal;
+                                healAmt = missingHp;
+                            }
                             t.hp = Math.min(t.maxHp, t.hp + healAmt);
                             floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
                             visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#4ade80', life: 30, maxLife: 30});
+
+                            // ★ 新增：祈願套裝 4 件「治療附帶攻防加成」——被治療的對象額外獲得短暫的攻防加成
+                            if (currentActor.setFlags && currentActor.setFlags.healBuffAtkDef) {
+                                t.wishAtkDefBuff = 0.1; t.wishAtkDefBuffTurns = 2;
+                                floatingTexts.push({x: t.x, y: t.y - 80, text: `祝福`, isCrit: false, color: '#fde047', life: 45});
+                            }
 
                             if (sType === 'holy_shield') {
                                 t.shield = (t.shield || 0) + currentActor.activeAtk * (currentActor.skill.shieldValue || 5.0);
@@ -9633,7 +10167,7 @@
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                         const healAmt = currentActor.activeAtk * (currentActor.skill.value || 1.0);
                         allies.forEach(t => {
-                            t.burnStacks = null; t.poisonStacks = null; t.stunned = false; t.burnStackCount = 0;
+                            t.burnStacks = null; t.poisonStacks = null; t.stunned = false; t.burnStackCount = 0; t.venomStacks = 0;
                             t.hp = Math.min(t.maxHp, t.hp + healAmt);
                             floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
                             visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#67e8f9', life: 30, maxLife: 30});
@@ -9849,8 +10383,7 @@
 
                             // ★ 新增：眩目煙火 (dazzle_aoe，煙火使者專屬)——AOE 命中的敵人都有機率被閃光暈眩，
                             // 跟「熔岩巨匠」純粹全體灼燒 DOT 的路線不同，走的是範圍控場
-                            // ★ 世界首領韌性保護：強制免疫暈眩等硬控
-                            if (sType === 'dazzle_aoe' && t.hp > 0 && Math.random() < (currentActor.skill.dazzleChance || 0.35) && !(GAME_STATE.currentMode === 'worldboss' && t.team === 'enemy')) {
+                            if (sType === 'dazzle_aoe' && t.hp > 0 && Math.random() < (currentActor.skill.dazzleChance || 0.35) && canBeStunned(t)) {
                                 t.stunned = true;
                                 floatingTexts.push({x: t.x, y: t.y - 100, text: `目眩`, isCrit: false, color: '#f0abfc', life: 45});
                                 visualEffects.push({type: 'stun', x: t.x, y: t.y, color: '#f0abfc', life: 40, maxLife: 40});
@@ -9865,7 +10398,7 @@
                             for (let j = 0; j < empCount && others.length > 0; j++) {
                                 const idx = Math.floor(Math.random() * others.length);
                                 const victim = others[idx]; others.splice(idx, 1);
-                                if (Math.random() < (currentActor.skill.chance || 0.5) && !(GAME_STATE.currentMode === 'worldboss' && victim.team === 'enemy')) {
+                                if (Math.random() < (currentActor.skill.chance || 0.5) && canBeStunned(victim)) {
                                     victim.stunned = true;
                                     floatingTexts.push({x: victim.x, y: victim.y - 90, text: `EMP 干擾`, isCrit: false, color: '#38bdf8', life: 45});
                                     visualEffects.push({type: 'stun', x: victim.x, y: victim.y, color: '#38bdf8', life: 40, maxLife: 40});
@@ -9909,7 +10442,7 @@
                         // 淨化類小技能：只淨化並治療血量比例最低的一位友軍，效果減半
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                         const t = allies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0] || currentActor;
-                        t.burnStacks = null; t.poisonStacks = null; t.stunned = false;
+                        t.burnStacks = null; t.poisonStacks = null; t.stunned = false; t.venomStacks = 0;
                         const healAmt = currentActor.activeAtk * (currentActor.skill.value || 1.0) * 0.5 * (1 + (currentActor.healBonus || 0));
                         t.hp = Math.min(t.maxHp, t.hp + healAmt);
                         floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
@@ -10419,6 +10952,28 @@
                 document.getElementById('overlay-desc').innerText = `光輝迴廊第 ${floor} 層突破！\n獲得 ${tokenReward} 個慶典代幣。`;
                 btnNext.innerHTML = `<i class="fa-solid fa-play mr-1"></i>深入下一層`; btnNext.onclick = () => startNextBattle();
                 if (isAutoBattle) setTimeout(() => startNextBattle(), 2000 / battleSpeed);
+            } else if (isWin && GAME_STATE.currentMode === 'setdungeon') {
+                ensureSetDungeonState();
+                const setId = GAME_STATE.selectedSetDungeonId;
+                const setDef = EQUIPMENT_SETS[setId] || {name: '???', color: '#94a3b8'};
+                // 星級評分：看結束時我方隊伍還剩多少血量比例，血量越高分越高（跟很多手遊的星級評分邏輯一樣）
+                const playerUnits = combatEntities.filter(e => e.team === 'player');
+                const totalMaxHp = playerUnits.reduce((s, e) => s + (e.maxHp || 0), 0);
+                const totalHp = playerUnits.reduce((s, e) => s + Math.max(0, e.hp || 0), 0);
+                const hpRatio = totalMaxHp > 0 ? totalHp / totalMaxHp : 0;
+                const stars = hpRatio >= 0.66 ? 3 : (hpRatio >= 0.33 ? 2 : 1);
+                const prevStars = GAME_STATE.setDungeonStars[setId] || 0;
+                const isFirstThreeStar = stars >= 3 && prevStars < 3;
+                if (stars > prevStars) GAME_STATE.setDungeonStars[setId] = stars;
+                const fragGain = rollSetDungeonFragmentReward(stars);
+                if (!GAME_STATE.setFragments) GAME_STATE.setFragments = {};
+                GAME_STATE.setFragments[setId] = (GAME_STATE.setFragments[setId] || 0) + fragGain;
+
+                const starHtml = [1, 2, 3].map(n => `<i class="fa-solid fa-star ${n <= stars ? 'text-fantasy-gold' : 'text-stone-700'}"></i>`).join(' ');
+                document.getElementById('overlay-icon').innerHTML = `<i class="fa-solid fa-fire-flame-curved" style="color:${setDef.color}"></i>`;
+                document.getElementById('overlay-title').innerText = '秘境通關';
+                document.getElementById('overlay-desc').innerHTML = `${starHtml}<br>獲得 <span class="text-amber-300 font-bold">${fragGain}</span> 片${setDef.name}殘頁${isFirstThreeStar ? '<div class="mt-2 text-[10px] font-bold text-fantasy-gold border-t border-amber-900/50 pt-1"><i class="fa-solid fa-unlock mr-1"></i>首次3星通關！解鎖5連掃蕩</div>' : ''}`;
+                btnNext.innerHTML = `<i class="fa-solid fa-arrow-left mr-1"></i>返回秘境列表`; btnNext.onclick = () => switchTab('setdungeon');
             } else if (isWin) {
                 if (GAME_STATE.currentMode === 'tower') {
                     // ★ 平衡調整：試煉塔是穩定寶石來源之一，獎勵基礎值與成長都調高一些
