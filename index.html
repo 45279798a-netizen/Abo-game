@@ -1144,31 +1144,31 @@
             <!-- 佈陣 (Formation) 標籤 -->
             <div id="tab-formation"
                 class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/70 backdrop-blur-sm overflow-y-auto custom-scrollbar flex flex-col md:flex-row gap-4">
-                <div class="flex-1 flex flex-col w-full md:max-w-[380px]">
-                    <div class="glass-panel rounded-2xl p-4 border border-[#5a4634] shadow-gold-glow">
-                        <div class="flex justify-between items-center mb-3">
-                            <h2 class="font-bold text-fantasy-gold font-magic text-lg tracking-wide"><i
-                                    class="fa-solid fa-chess-board mr-2 text-sm opacity-80"></i>沙盤佈陣</h2>
+                <div class="flex-1 flex flex-col w-full md:max-w-[300px]">
+                    <div class="glass-panel rounded-2xl p-3 border border-[#5a4634] shadow-gold-glow">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="font-bold text-fantasy-gold font-magic text-sm tracking-wide"><i
+                                    class="fa-solid fa-chess-board mr-1.5 text-xs opacity-80"></i>沙盤佈陣</h2>
                             <button onclick="autoRecommendFormation()"
-                                class="px-3 py-1.5 rounded-lg bg-gradient-to-b from-[#3a2e20] to-[#241b12] text-stone-300 border border-[#5a4634] text-[10px] font-bold hover:border-fantasy-gold hover:text-fantasy-gold transition active:scale-95 shadow-inner-dark"><i
+                                class="px-2 py-1 rounded-lg bg-gradient-to-b from-[#3a2e20] to-[#241b12] text-stone-300 border border-[#5a4634] text-[9px] font-bold hover:border-fantasy-gold hover:text-fantasy-gold transition active:scale-95 shadow-inner-dark"><i
                                     class="fa-solid fa-wand-magic-sparkles mr-1"></i>最佳化</button>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 mb-2 text-center">
+                        <div class="grid grid-cols-2 gap-1.5 mb-1.5 text-center">
                             <div
-                                class="text-[9px] font-bold text-stone-400 bg-black/50 rounded-full py-1 border border-[#3e3328] tracking-wider">
+                                class="text-[8px] font-bold text-stone-400 bg-black/50 rounded-full py-0.5 border border-[#3e3328] tracking-wider">
                                 左翼 <span class="text-stone-600 font-normal">前・中・後</span></div>
                             <div
-                                class="text-[9px] font-bold text-stone-400 bg-black/50 rounded-full py-1 border border-[#3e3328] tracking-wider">
+                                class="text-[8px] font-bold text-stone-400 bg-black/50 rounded-full py-0.5 border border-[#3e3328] tracking-wider">
                                 右翼 <span class="text-stone-600 font-normal">前・中・後</span></div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3 bg-black/40 p-4 rounded-xl border border-[#3e3328] shadow-inner-dark aspect-[2/3] w-full max-w-[240px] mx-auto"
+                        <div class="grid grid-cols-2 gap-1.5 bg-black/40 p-2 rounded-lg border border-[#3e3328] shadow-inner-dark aspect-[2/3] w-full max-w-[170px] mx-auto"
                             id="formation-grid-ui"></div>
                         <button onclick="unequipSelectedGrid()" id="btn-unequip"
-                            class="mt-4 w-full py-2.5 rounded-lg bg-gradient-to-b from-red-900/60 to-red-950/60 text-red-300 border border-red-800/60 text-[11px] font-bold disabled:opacity-30 disabled:cursor-not-allowed transition hover:from-red-800/70 hover:to-red-900/70 active:scale-95"
+                            class="mt-2 w-full py-1.5 rounded-lg bg-gradient-to-b from-red-900/60 to-red-950/60 text-red-300 border border-red-800/60 text-[10px] font-bold disabled:opacity-30 disabled:cursor-not-allowed transition hover:from-red-800/70 hover:to-red-900/70 active:scale-95"
                             disabled><i class="fa-solid fa-hand mr-1"></i>卸下選中騎士</button>
                     </div>
                 </div>
-                <div class="flex-1 flex flex-col mt-4 md:mt-0 min-h-0">
+                <div class="flex-1 flex flex-col mt-3 md:mt-0 min-h-0">
                     <h3
                         class="font-bold text-stone-300 text-sm mb-2 pb-2 border-b border-[#3e3328] flex justify-between items-center shrink-0">
                         <span><i class="fa-solid fa-users mr-1.5 text-fantasy-gold"></i>待命名冊</span>
@@ -8280,19 +8280,19 @@
             const gridFragment = document.createDocumentFragment();
             for (let i = 0; i < 6; i++) {
                 const cell = document.createElement('div');
-                cell.className = `aspect-square rounded-xl flex flex-col items-center justify-center cursor-pointer relative grid-cell overflow-hidden transition-transform ${selectedGridIndex === i ? 'selected' : ''}`;
+                cell.className = `aspect-square rounded-lg flex flex-col items-center justify-center cursor-pointer relative grid-cell overflow-hidden transition-transform ${selectedGridIndex === i ? 'selected' : ''}`;
                 const hid = GAME_STATE.gridSlots[i];
                 if (hid) {
                     const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === hid)); const custom = getHeroImageSrc(h.id);
                     const rRing = h.rarity === 'GR' ? 'border-red-400 shadow-[inset_0_0_16px_rgba(248,113,113,0.7)]' : (h.rarity === 'LR' ? 'border-amber-300 shadow-[inset_0_0_14px_rgba(253,224,71,0.6)]' : (h.rarity === 'UR' ? 'border-rose-500/90 shadow-[inset_0_0_10px_rgba(244,63,94,0.4)]' : (h.rarity === 'SSR' ? 'border-fantasy-gold/80 shadow-[inset_0_0_10px_rgba(212,175,55,0.4)]' : (h.rarity === 'SR' ? 'border-purple-500/70' : 'border-stone-500/50'))));
                     cell.classList.add('bg-gradient-to-b', 'from-[#241b12]', 'to-[#120d08]');
                     cell.innerHTML = `
-                        <div class="absolute inset-0 border-2 rounded-xl pointer-events-none z-10 ${rRing}"></div>
-                        ${custom ? `<img src="${custom}" class="absolute inset-0 w-full h-full object-cover">` : `<div class="text-2xl sm:text-3xl drop-shadow-md" style="color:${h.color}"><i class="fa-solid ${h.avatarIcon}"></i></div>`}
-                        <span class="absolute bottom-0 inset-x-0 bg-black/75 text-[8px] leading-tight text-stone-200 text-center py-0.5 truncate px-1 z-10">${h.name.includes('·') ? h.name.split('·')[1] : h.name}</span>`;
+                        <div class="absolute inset-0 border-2 rounded-lg pointer-events-none z-10 ${rRing}"></div>
+                        ${custom ? `<img src="${custom}" class="absolute inset-0 w-full h-full object-cover">` : `<div class="text-lg sm:text-xl drop-shadow-md" style="color:${h.color}"><i class="fa-solid ${h.avatarIcon}"></i></div>`}
+                        <span class="absolute bottom-0 inset-x-0 bg-black/75 text-[7px] leading-tight text-stone-200 text-center py-0.5 truncate px-1 z-10">${h.name.includes('·') ? h.name.split('·')[1] : h.name}</span>`;
                 } else {
                     cell.classList.add('bg-black/30');
-                    cell.innerHTML = `<span class="text-[10px] text-stone-600 font-bold flex flex-col items-center gap-1"><i class="fa-solid fa-plus opacity-40"></i>空位</span>`;
+                    cell.innerHTML = `<span class="text-[9px] text-stone-600 font-bold flex flex-col items-center gap-0.5"><i class="fa-solid fa-plus opacity-40"></i>空位</span>`;
                 }
                 cell.onclick = () => handleGridClick(i); gridFragment.appendChild(cell);
             }
