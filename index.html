@@ -1144,7 +1144,7 @@
             <!-- 佈陣 (Formation) 標籤 -->
             <div id="tab-formation"
                 class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/70 backdrop-blur-sm overflow-y-auto custom-scrollbar flex flex-col md:flex-row gap-4">
-                <div class="flex-1 flex flex-col w-full md:max-w-[300px]">
+                <div class="flex-1 flex flex-col w-full md:max-w-[340px]">
                     <div class="glass-panel rounded-2xl p-3 border border-[#5a4634] shadow-gold-glow">
                         <div class="flex justify-between items-center mb-2">
                             <h2 class="font-bold text-fantasy-gold font-magic text-sm tracking-wide"><i
@@ -1153,15 +1153,14 @@
                                 class="px-2 py-1 rounded-lg bg-gradient-to-b from-[#3a2e20] to-[#241b12] text-stone-300 border border-[#5a4634] text-[9px] font-bold hover:border-fantasy-gold hover:text-fantasy-gold transition active:scale-95 shadow-inner-dark"><i
                                     class="fa-solid fa-wand-magic-sparkles mr-1"></i>最佳化</button>
                         </div>
-                        <div class="grid grid-cols-2 gap-1.5 mb-1.5 text-center">
-                            <div
-                                class="text-[8px] font-bold text-stone-400 bg-black/50 rounded-full py-0.5 border border-[#3e3328] tracking-wider">
-                                左翼 <span class="text-stone-600 font-normal">前・中・後</span></div>
-                            <div
-                                class="text-[8px] font-bold text-stone-400 bg-black/50 rounded-full py-0.5 border border-[#3e3328] tracking-wider">
-                                右翼 <span class="text-stone-600 font-normal">前・中・後</span></div>
+                        <!-- ★ 改版：從橫2直3改成橫3直2，比較不佔版面——第一排＝左翼(前中後)，第二排＝右翼(前中後)，
+                             欄標籤跟著從「左翼/右翼」2欄改成「前/中/後」3欄，每格左上角會標示左/右翼小標籤 -->
+                        <div class="grid grid-cols-3 gap-1.5 mb-1.5 text-center">
+                            <div class="text-[8px] font-bold text-stone-400 bg-black/50 rounded-full py-0.5 border border-[#3e3328]">前排</div>
+                            <div class="text-[8px] font-bold text-stone-400 bg-black/50 rounded-full py-0.5 border border-[#3e3328]">中排</div>
+                            <div class="text-[8px] font-bold text-stone-400 bg-black/50 rounded-full py-0.5 border border-[#3e3328]">後排</div>
                         </div>
-                        <div class="grid grid-cols-2 gap-1.5 bg-black/40 p-2 rounded-lg border border-[#3e3328] shadow-inner-dark aspect-[2/3] w-full max-w-[170px] mx-auto"
+                        <div class="grid grid-cols-3 gap-1.5 bg-black/40 p-2 rounded-lg border border-[#3e3328] shadow-inner-dark aspect-[3/2] w-full max-w-[260px] mx-auto"
                             id="formation-grid-ui"></div>
                         <button onclick="unequipSelectedGrid()" id="btn-unequip"
                             class="mt-2 w-full py-1.5 rounded-lg bg-gradient-to-b from-red-900/60 to-red-950/60 text-red-300 border border-red-800/60 text-[10px] font-bold disabled:opacity-30 disabled:cursor-not-allowed transition hover:from-red-800/70 hover:to-red-900/70 active:scale-95"
@@ -1818,7 +1817,7 @@
                     <!-- ★ 溢出碎片熔爐——手上囤太多用不到的碎片，可以分解成超越結晶，不用讓多餘碎片放著生灰塵 -->
                     <div class="glass-panel p-3 rounded-xl border border-fuchsia-700/40 flex flex-col gap-2 mt-4">
                         <span class="text-[10px] text-fuchsia-300 font-bold"><i class="fa-solid fa-fire mr-1"></i>溢出碎片熔爐</span>
-                        <p class="text-[9px] text-stone-500">用不到的英雄碎片可以分解成超越結晶（20 碎片 = 1 結晶），留著給高星大突破或裝備鍛造使用，不用讓囤積的碎片放著浪費。</p>
+                        <p class="text-[9px] text-stone-500">用不到的英雄碎片可以分解成超越結晶，比例依稀有度而定（R 50片／SR 30片／SSR 15片／UR·LR·GR 5片，皆為1顆結晶），稀有度越高的碎片越好換。留著給升星大突破使用，不用讓囤積的碎片放著浪費。</p>
                         <div class="grid grid-cols-2 gap-2">
                             <select id="furnace-hero-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
                             <input id="furnace-amount" type="number" placeholder="分解數量" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
@@ -3839,11 +3838,15 @@
             populateFurnaceHeroSelect(shardIds);
         }
 
-        // ★ 新增：溢出碎片熔爐——把用不到的碎片分解成超越結晶，固定匯率 20 碎片 = 1 結晶。
-        // 跟企劃書原本設想的「英雄粉塵」中介貨幣不同：這裡簡化成一步到位直接換結晶，
-        // 因為現在星級沒有分季節上限，很難定義「達到當季星級上限」這個觸發點，
-        // 乾脆讓玩家自己決定要不要把暫時用不到的碎片換成更泛用的結晶。
-        const SHARD_FURNACE_RATE = 20; // 20 碎片 = 1 結晶
+        // ★ 改版：溢出碎片熔爐改成「稀有度差異化」折換比例，不再是所有英雄統一20片=1結晶。
+        // 稀有度越高的英雄碎片越珍貴，換算結晶所需的數量就越少：
+        // R 50片、SR 30片、SSR 15片、UR/LR/GR 5片，各自换1顆超越結晶。
+        const SHARD_FURNACE_RATE_BY_RARITY = {R: 50, SR: 30, SSR: 15, UR: 5, LR: 5, GR: 5};
+        function getShardFurnaceRate(heroId) {
+            const dbHero = HERO_DATABASE.find(h => h.id === heroId);
+            const rarity = dbHero ? dbHero.rarity : 'R';
+            return SHARD_FURNACE_RATE_BY_RARITY[rarity] || SHARD_FURNACE_RATE_BY_RARITY.R;
+        }
         function populateFurnaceHeroSelect(shardIds) {
             const sel = document.getElementById('furnace-hero-select');
             if (!sel) return;
@@ -3852,8 +3855,9 @@
             (shardIds || Object.keys(GAME_STATE.heroShards || {})).forEach(id => {
                 const dbHero = HERO_DATABASE.find(h => h.id === id);
                 if (!dbHero || (GAME_STATE.heroShards[id] || 0) <= 0) return;
+                const rate = getShardFurnaceRate(id);
                 const opt = document.createElement('option');
-                opt.value = id; opt.innerText = `${dbHero.name}（持有 ${GAME_STATE.heroShards[id]}）`;
+                opt.value = id; opt.innerText = `${dbHero.name}（${dbHero.rarity}，持有 ${GAME_STATE.heroShards[id]}，${rate}片=1結晶）`;
                 sel.appendChild(opt);
             });
             if (prevValue) sel.value = prevValue;
@@ -3866,9 +3870,10 @@
             if (!amount || amount <= 0) {showToast('請輸入要分解的碎片數量'); return;}
             const owned = (GAME_STATE.heroShards && GAME_STATE.heroShards[heroId]) || 0;
             if (owned < amount) {showToast('碎片數量不足'); return;}
-            if (amount < SHARD_FURNACE_RATE) {showToast(`數量太少，至少要 ${SHARD_FURNACE_RATE} 碎片才能分解成 1 顆結晶`); return;}
-            const crystalsGained = Math.floor(amount / SHARD_FURNACE_RATE);
-            const actualShardsUsed = crystalsGained * SHARD_FURNACE_RATE;
+            const rate = getShardFurnaceRate(heroId);
+            if (amount < rate) {showToast(`數量太少，這位英雄的碎片至少要 ${rate} 片才能分解成 1 顆結晶`); return;}
+            const crystalsGained = Math.floor(amount / rate);
+            const actualShardsUsed = crystalsGained * rate;
             GAME_STATE.heroShards[heroId] = owned - actualShardsUsed;
             if (GAME_STATE.boundHeroShards && GAME_STATE.boundHeroShards[heroId] > GAME_STATE.heroShards[heroId]) {
                 GAME_STATE.boundHeroShards[heroId] = GAME_STATE.heroShards[heroId];
@@ -8278,24 +8283,33 @@
         function renderFormationUI() {
             const gridUI = document.getElementById('formation-grid-ui'); gridUI.innerHTML = '';
             const gridFragment = document.createDocumentFragment();
-            for (let i = 0; i < 6; i++) {
+            // ★ 改版：視覺排列從「橫2直3」改成「橫3直2」，比較不佔版面。
+            // 底層 gridSlots 索引(0~5)在戰鬥裡的意義完全沒變（0=前左/1=前右/2=中左/3=中右/4=後左/5=後右，
+            // 見 initCombatUnits 的 row/col 公式），這裡只是重新安排「顯示順序」：
+            // 第一排＝左翼的前中後(0,2,4)，第二排＝右翼的前中後(1,3,5)，點擊事件仍然綁定原本的索引 i，
+            // 不會影響戰鬥時的實際站位、也不用去動任何戰鬥相關的程式碼。
+            const displayOrder = [0, 2, 4, 1, 3, 5];
+            displayOrder.forEach(i => {
                 const cell = document.createElement('div');
                 cell.className = `aspect-square rounded-lg flex flex-col items-center justify-center cursor-pointer relative grid-cell overflow-hidden transition-transform ${selectedGridIndex === i ? 'selected' : ''}`;
+                const isLeftWing = i % 2 === 0;
+                const wingBadge = `<span class="absolute top-0.5 left-0.5 text-[6px] font-bold ${isLeftWing ? 'text-sky-400' : 'text-rose-400'} bg-black/60 px-1 rounded z-10">${isLeftWing ? '左' : '右'}</span>`;
                 const hid = GAME_STATE.gridSlots[i];
                 if (hid) {
                     const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === hid)); const custom = getHeroImageSrc(h.id);
                     const rRing = h.rarity === 'GR' ? 'border-red-400 shadow-[inset_0_0_16px_rgba(248,113,113,0.7)]' : (h.rarity === 'LR' ? 'border-amber-300 shadow-[inset_0_0_14px_rgba(253,224,71,0.6)]' : (h.rarity === 'UR' ? 'border-rose-500/90 shadow-[inset_0_0_10px_rgba(244,63,94,0.4)]' : (h.rarity === 'SSR' ? 'border-fantasy-gold/80 shadow-[inset_0_0_10px_rgba(212,175,55,0.4)]' : (h.rarity === 'SR' ? 'border-purple-500/70' : 'border-stone-500/50'))));
                     cell.classList.add('bg-gradient-to-b', 'from-[#241b12]', 'to-[#120d08]');
                     cell.innerHTML = `
+                        ${wingBadge}
                         <div class="absolute inset-0 border-2 rounded-lg pointer-events-none z-10 ${rRing}"></div>
                         ${custom ? `<img src="${custom}" class="absolute inset-0 w-full h-full object-cover">` : `<div class="text-lg sm:text-xl drop-shadow-md" style="color:${h.color}"><i class="fa-solid ${h.avatarIcon}"></i></div>`}
                         <span class="absolute bottom-0 inset-x-0 bg-black/75 text-[7px] leading-tight text-stone-200 text-center py-0.5 truncate px-1 z-10">${h.name.includes('·') ? h.name.split('·')[1] : h.name}</span>`;
                 } else {
                     cell.classList.add('bg-black/30');
-                    cell.innerHTML = `<span class="text-[9px] text-stone-600 font-bold flex flex-col items-center gap-0.5"><i class="fa-solid fa-plus opacity-40"></i>空位</span>`;
+                    cell.innerHTML = `${wingBadge}<span class="text-[9px] text-stone-600 font-bold flex flex-col items-center gap-0.5"><i class="fa-solid fa-plus opacity-40"></i>空位</span>`;
                 }
                 cell.onclick = () => handleGridClick(i); gridFragment.appendChild(cell);
-            }
+            });
             gridUI.appendChild(gridFragment);
             document.getElementById('btn-unequip').disabled = (selectedGridIndex === null || !GAME_STATE.gridSlots[selectedGridIndex]);
 
@@ -8495,21 +8509,13 @@
             document.getElementById('modal-hero-avatar').innerHTML = custom ? `<img src="${custom}" class="w-full h-full object-cover">` : `<i class="fa-solid ${h.avatarIcon}" style="color:${h.color}"></i>`;
 
             const costLvl = getHeroLevelUpCost(h.level);
-            const nextLevel = h.level + 1;
-            const lvlBreakthrough = getLevelBreakthroughCost(nextLevel);
             const btnLvl = document.getElementById('btn-upgrade-lvl');
             if (h.level >= MAX_HERO_LEVEL) {
                 btnLvl.innerHTML = `<span><i class="fa-solid fa-level-up text-emerald-500 mr-1"></i>已達最高等級 Lv.${MAX_HERO_LEVEL}</span>`;
                 btnLvl.disabled = true; btnLvl.classList.add('opacity-50'); btnLvl.classList.remove('breakthrough-glow');
-            } else if (lvlBreakthrough) {
-                // ★ 突破檢查點（每 20 級）：切換成特殊光暈樣式，提醒玩家這次要花碎片/結晶，跟一般升級不一樣
-                const shardsOwned = (GAME_STATE.heroShards && GAME_STATE.heroShards[h.id]) || 0;
-                const totalGold = costLvl.gold + lvlBreakthrough.gold;
-                const affordable = GAME_STATE.gold >= totalGold && GAME_STATE.heroExp >= costLvl.exp && shardsOwned >= lvlBreakthrough.shards && (GAME_STATE.transcendCrystals || 0) >= lvlBreakthrough.crystals;
-                btnLvl.innerHTML = `<span><i class="fa-solid fa-burst text-amber-400 mr-1"></i>突破至 Lv.${nextLevel}</span><span class="text-[9px] mt-1 font-normal tracking-wide"><i class="fa-solid fa-coins text-yellow-500"></i> ${totalGold.toLocaleString()} <i class="fa-solid fa-flask text-emerald-500 ml-1"></i> ${costLvl.exp} <i class="fa-solid fa-gem text-purple-300 ml-1"></i> ${shardsOwned}/${lvlBreakthrough.shards}${lvlBreakthrough.crystals > 0 ? ` <i class="fa-solid fa-hexagon text-cyan-300 ml-1"></i> ${(GAME_STATE.transcendCrystals || 0)}/${lvlBreakthrough.crystals}` : ''}</span>`;
-                btnLvl.classList.add('breakthrough-glow');
-                btnLvl.disabled = !affordable; if (btnLvl.disabled) btnLvl.classList.add('opacity-50'); else btnLvl.classList.remove('opacity-50');
             } else {
+                // ★ 改版：等級與碎片徹底解耦，升級只看金幣與英雄經驗，不再需要碎片或超越結晶，
+                // 也沒有「每20級突破」這種需要額外資源的檢查點了
                 btnLvl.innerHTML = `<span><i class="fa-solid fa-level-up text-emerald-500 mr-1"></i>提升等級</span><span class="text-[9px] mt-1 text-stone-400 font-normal tracking-wide"><i class="fa-solid fa-coins text-yellow-500"></i> ${costLvl.gold.toLocaleString()} <i class="fa-solid fa-flask text-emerald-500 ml-1"></i> ${costLvl.exp}</span>`;
                 btnLvl.classList.remove('breakthrough-glow');
                 btnLvl.disabled = (GAME_STATE.gold < costLvl.gold || GAME_STATE.heroExp < costLvl.exp); if (btnLvl.disabled) btnLvl.classList.add('opacity-50'); else btnLvl.classList.remove('opacity-50');
@@ -8885,23 +8891,8 @@
             };
         }
 
-        // ★ 新增：每 20 級一次「突破」，除了上面單級的基礎金幣消耗外，額外需要碎片／金幣（高階再加超越結晶）。
-        // 120 級以後的突破全部沿用 120 級這一階的消耗，不再繼續往上加碼。
-        const LEVEL_BREAKTHROUGH_TABLE = {
-            20:  {shards: 50,  gold: 10000,  crystals: 0},
-            40:  {shards: 100, gold: 50000,  crystals: 0},
-            60:  {shards: 150, gold: 150000, crystals: 0},
-            80:  {shards: 200, gold: 300000, crystals: 2},
-            100: {shards: 250, gold: 500000, crystals: 4},
-            120: {shards: 300, gold: 800000, crystals: 8},
-        };
-        // 傳入「即將升到的等級」，是突破檢查點就回傳額外消耗，不是就回傳 null
-        function getLevelBreakthroughCost(targetLevel) {
-            if (targetLevel % 20 !== 0) return null;
-            if (LEVEL_BREAKTHROUGH_TABLE[targetLevel]) return LEVEL_BREAKTHROUGH_TABLE[targetLevel];
-            if (targetLevel > 120) return LEVEL_BREAKTHROUGH_TABLE[120];
-            return null;
-        }
+        // ★ 改版：等級與碎片徹底解耦，原本「每20級突破需要碎片/金幣/結晶」的機制整個移除，
+        // 等級升級只看金幣與英雄經驗（見 upgradeSelectedHeroLevel），不再有這個消耗表。
 
         function upgradeSelectedHeroLevel(silent) {
             if (!silent) ToneAudioEngine.playClick();
@@ -8912,31 +8903,14 @@
 
             if (hero.level >= MAX_HERO_LEVEL) {if (!silent) showToast(`已達最高等級 Lv.${MAX_HERO_LEVEL}！`); return false;}
 
-            // 這裡的公式必須和 openHeroModal 裡面顯示的費用一致
+            // ★ 改版：等級與碎片徹底解耦——升級只消耗金幣與英雄經驗，不再需要碎片或超越結晶，
+            // 也沒有「每20級突破」這種額外資源檢查點了。角色的稀有度/戰力潛能改由升星（覺醒）系統負責，
+            // 等級單純是資源換取，長按連續升級可以一路暢通升到頂，不會被突破檢查點卡住。
             const cost = getHeroLevelUpCost(hero.level);
-            const targetLevel = hero.level + 1;
-            const breakthrough = getLevelBreakthroughCost(targetLevel);
 
-            // ★ 新增：升到突破檢查點（每 20 級）需要額外的碎片／金幣／超越結晶，屬於比較貴重的一次性消耗。
-            // 長按連續升級（silent=true）遇到突破檢查點時直接停下來，不會不小心把結晶／大量碎片燒光，
-            // 玩家必須自己手動點一下（silent=false）才能真的跨過這個檢查點，見 createLongPressUpgrader。
-            if (breakthrough && silent) return false;
-
-            const shardsOwned = (GAME_STATE.heroShards && GAME_STATE.heroShards[heroId]) || 0;
-            const needGold = cost.gold + (breakthrough ? breakthrough.gold : 0);
-            const needShards = breakthrough ? breakthrough.shards : 0;
-            const needCrystals = breakthrough ? breakthrough.crystals : 0;
-
-            // 檢查資源是否足夠
-            if (GAME_STATE.gold >= needGold && GAME_STATE.heroExp >= cost.exp && shardsOwned >= needShards && (GAME_STATE.transcendCrystals || 0) >= needCrystals) {
-                // 扣除資源
-                GAME_STATE.gold -= needGold;
+            if (GAME_STATE.gold >= cost.gold && GAME_STATE.heroExp >= cost.exp) {
+                GAME_STATE.gold -= cost.gold;
                 GAME_STATE.heroExp -= cost.exp;
-                if (breakthrough) {
-                    if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
-                    GAME_STATE.heroShards[heroId] = shardsOwned - needShards;
-                    GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) - needCrystals;
-                }
 
                 // 提升等級
                 hero.level++;
@@ -8950,13 +8924,10 @@
                 if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
                 if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
 
-                if (!silent) showToast(breakthrough ? `突破成功！當前等級 Lv.${hero.level}` : `升級成功！當前等級 Lv.${hero.level}`);
+                if (!silent) showToast(`升級成功！當前等級 Lv.${hero.level}`);
                 return true;
             } else {
-                if (!silent) {
-                    if (breakthrough) showToast(`突破資源不足！需要 ${needGold.toLocaleString()} 金幣、${needShards} 碎片${needCrystals > 0 ? `、${needCrystals} 超越結晶` : ''}。`);
-                    else showToast("資源不足！需要更多金幣與英雄經驗。");
-                }
+                if (!silent) showToast("資源不足！需要更多金幣與英雄經驗。");
                 return false;
             }
         }
@@ -9087,7 +9058,7 @@
             if (totalLevelUps === 0) {
                 showToast('目前沒有英雄的金幣／經驗足夠升級');
             } else {
-                showToast(`⬆️ 一鍵升級完成：${heroesAffected} 位英雄共升了 ${totalLevelUps} 級（優先升稀有度最高的角色，滿了才輪到下一階；需要碎片/結晶的突破檢查點不會自動執行，要自己手動點）`);
+                showToast(`⬆️ 一鍵升級完成：${heroesAffected} 位英雄共升了 ${totalLevelUps} 級（優先升稀有度最高的角色，資源用完才輪到下一階）`);
             }
         }
 
