@@ -7336,7 +7336,7 @@
         // baseHp/baseAtk/baseDef，現有玩家的英雄數值也會直接套用新公式重算，不特別做相容轉換。
         // ★ 數值壓縮 (Stat Squish)：原本的倍率梯度太寬(1.0~3.0)，跟等級/星級/聖物疊乘後後期數值直接失控。
         // 收攏成 1.0~2.5，稀有度之間還是有明確差距，但不會跟其他乘區加在一起後直接爆炸。
-        const RARITY_BASE_MULT = {R: 1.0, SR: 1.2, SSR: 1.45, UR: 1.75, LR: 2.1, GR: 2.5};
+        const RARITY_BASE_MULT = {R: 1.2, SR: 1.45, SSR: 1.75, UR: 2.1, LR: 2.5, GR: 3.0};
 
         /* ============================================================
            【企劃書】命之座系統 (Constellation System)
@@ -7362,14 +7362,14 @@
         // ★ 數值壓縮：原本的基數（4000~5000 HP 級距）疊上稀有度倍率、等級倍率、星級/聖物加成之後，
         // 後期數值會連環乘出天文數字。改成小一個數量級的基數，戰鬥數值會回到比較好控管的範圍。
         const CLASS_BASE_STATS = {
-            '坦克': {hp: 250, atk: 15, def: 22, spd: 90},
-            '戰士': {hp: 180, atk: 24, def: 12, spd: 100},
-            '刺客': {hp: 140, atk: 32, def: 8,  spd: 120},
-            '法師': {hp: 130, atk: 35, def: 7,  spd: 95},
-            '輔助': {hp: 160, atk: 18, def: 10, spd: 110},
+            '坦克': {hp: 1250, atk: 75, def: 110, spd: 90},
+            '戰士': {hp: 900, atk: 120, def: 60, spd: 100},
+            '刺客': {hp: 700, atk: 160, def: 40,  spd: 120},
+            '法師': {hp: 650, atk: 175, def: 35,  spd: 95},
+            '輔助': {hp: 800, atk: 90, def: 50, spd: 110},
             // ★ 體系二新增：遊俠/射手，敏捷型物理輸出，數值介於戰士跟刺客之間，比刺客稍微耐打但攻速慢一點
-            '遊俠': {hp: 160, atk: 30, def: 10, spd: 110},
-            '射手': {hp: 150, atk: 31, def: 9,  spd: 105},
+            '遊俠': {hp: 800, atk: 150, def: 50, spd: 110},
+            '射手': {hp: 750, atk: 155, def: 45,  spd: 105},
         };
         // 職業特例加成：坦克天生格擋、戰士天生吸血、刺客基礎暴傷 180%（其他職業 150%）、法師初始能量+10、輔助效果抵抗+15%
         const CLASS_PASSIVES = {
@@ -8150,12 +8150,12 @@
         // 競技場固定 5x 不給玩家調（開場一律隱藏演算＋回放展示，調速度沒有意義）。
         // 管理員開啟「解除倍速上限」時，直接覆蓋成 [1,2,4,8,10,20]，不分模式。
         const MODE_SPEED_CONFIG = {
-            battle: [1, 2, 4],      // 遠征
-            tower: [1, 2, 4],       // 試煉塔
-            season: [1, 2, 4],      // 賽季討伐
-            rift: [1, 2, 4],        // 深淵迷宮
-            festival: [1, 2, 4],    // 光輝迴廊
-            dungeon: [1, 2, 4, 6],  // 秘境
+            battle: [1, 2, 4, 8],      // 遠征
+            tower: [1, 2, 4, 8],       // 試煉塔
+            season: [1, 2, 4, 8],      // 賽季討伐
+            rift: [1, 2, 4, 8],        // 深淵迷宮
+            festival: [1, 2, 4, 8],    // 光輝迴廊
+            dungeon: [1, 2, 4, 6, 8],  // 秘境
             worldboss: [1, 2, 4, 8],// 全服首領
             arena: [5],             // 競技場：固定 5x，不可調整
             arena_guest: [5],       // 競技場觀戰：同上
@@ -8164,7 +8164,7 @@
         // 取得目前模式可用的倍速清單；管理員開啟「解除倍速上限」時全模式一律覆蓋成這份最高清單
         function getAvailableSpeeds(mode) {
             if (adminGameConfig && adminGameConfig.unlimitedSpeed) return [1, 2, 4, 8, 10, 20];
-            return MODE_SPEED_CONFIG[mode] || [1, 2];
+            return MODE_SPEED_CONFIG[mode] || [1, 2, 4, 8];
         }
 
         // 依目前模式重新整理倍速按鈕的顯示文字與樣式，不實際切換速度數值
@@ -8282,9 +8282,7 @@
                     showToast(`🎉 獲得賽季限定英雄：${dbH.name}！`);
                 } else if ((GAME_STATE.roster[hId].constellation || 0) >= MAX_CONSTELLATION_LEVEL) {
                     // ★ 已滿命座（6命）時，改成跟碎片溢出同一套規則：轉化成超越結晶，不會超過命座上限
-                    const crystalGain = 50;
-                    GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + crystalGain;
-                    showToast(`🎉 ${dbH.name} 已滿命座，轉化為 ${crystalGain} 枚超越結晶！`);
+                
                 } else {
                     GAME_STATE.roster[hId].constellation = (GAME_STATE.roster[hId].constellation || 0) + 1;
                     showToast(`🎉 獲得 ${dbH.name} 碎片，命之座已突破！目前 ${GAME_STATE.roster[hId].constellation} 命`);
