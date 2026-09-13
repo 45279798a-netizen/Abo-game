@@ -1175,6 +1175,17 @@
                         <span class="text-[10px] font-normal text-stone-500"><i
                                 class="fa-solid fa-hand-pointer mr-1"></i>點擊選擇</span>
                     </h3>
+                    <!-- ★ 新增：職業篩選＋戰力排序＋名稱搜尋，人多的時候更容易快速找到想上陣的角色 -->
+                    <div class="flex gap-1.5 mb-2 shrink-0 overflow-x-auto custom-scrollbar pb-1">
+                        <button onclick="setFormationRosterFilter('all')" id="btn-formation-filter-all" class="shrink-0 px-2.5 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap transition">全部</button>
+                        <button onclick="setFormationRosterFilter('坦克')" id="btn-formation-filter-坦克" class="shrink-0 px-2.5 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap transition">坦克</button>
+                        <button onclick="setFormationRosterFilter('戰士')" id="btn-formation-filter-戰士" class="shrink-0 px-2.5 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap transition">戰士</button>
+                        <button onclick="setFormationRosterFilter('刺客')" id="btn-formation-filter-刺客" class="shrink-0 px-2.5 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap transition">刺客</button>
+                        <button onclick="setFormationRosterFilter('法師')" id="btn-formation-filter-法師" class="shrink-0 px-2.5 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap transition">法師</button>
+                        <button onclick="setFormationRosterFilter('輔助')" id="btn-formation-filter-輔助" class="shrink-0 px-2.5 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap transition">輔助</button>
+                        <button onclick="toggleFormationRosterSort()" id="btn-formation-sort" class="shrink-0 ml-auto px-2.5 py-1 rounded-full text-[9px] font-bold border border-[#3e3328] bg-black/40 text-stone-400 whitespace-nowrap transition"><i class="fa-solid fa-arrow-down-wide-short mr-1"></i>依戰力排序</button>
+                    </div>
+                    <input id="formation-roster-search" type="text" placeholder="搜尋英雄名稱..." oninput="renderFormationUI()" class="mb-2 shrink-0 bg-black/40 text-stone-200 text-[10px] px-3 py-1.5 rounded-lg border border-[#3e3328] outline-none focus:border-fantasy-gold">
                     <div class="flex-1 overflow-y-auto custom-scrollbar pr-1">
                         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-2.5"
                             id="roster-list-ui"></div>
@@ -1829,15 +1840,13 @@
                     </div>
                     <div id="equipment-inventory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
 
-                    <!-- ★ 新增：裝備分解爐——把用不到的裝備分解成共鳴精華(洗鍊用)，強化過的還能退還部分歷史花費 -->
-                    <div class="glass-panel p-3 rounded-xl border border-cyan-700/40 flex flex-col gap-2 mt-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] text-cyan-300 font-bold"><i class="fa-solid fa-recycle mr-1"></i>裝備分解爐</span>
-                            <span class="text-[10px] text-stone-300">共鳴精華：<span id="resonance-essence-display" class="text-cyan-300 font-bold">0</span></span>
+                    <!-- ★ 改版：裝備分解移到「裝備詳情彈窗」裡執行（點一件裝備進去，看著完整資訊再決定），
+                         這裡只留一個共鳴精華顯示，不再有容易選錯的下拉選單 -->
+                    <div class="glass-panel p-3 rounded-xl border border-cyan-700/40 flex items-center justify-between mt-4">
+                        <div>
+                            <span class="text-[10px] text-cyan-300 font-bold"><i class="fa-solid fa-recycle mr-1"></i>共鳴精華：<span id="resonance-essence-display" class="text-cyan-300 font-bold">0</span></span>
+                            <p class="text-[8px] text-stone-500 mt-0.5">點一件裝備進去查看詳情，可以在裡面直接分解換取精華與部分歷史花費退款。</p>
                         </div>
-                        <p class="text-[8px] text-stone-500">只能分解未裝備、未上架黑市的裝備。+0 只能拿到少量精華；強化過的等級越高，退還歷史強化花費的比例越高(+1~5：80%／+6~10：75%／+11~15、+16~20：70%)。</p>
-                        <select id="equip-decompose-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
-                        <button onclick="decomposeEquipmentItem()" class="w-full py-2 bg-cyan-900/60 text-cyan-200 text-[11px] font-bold rounded border border-cyan-600 hover:bg-cyan-800 transition">分解</button>
                     </div>
                 </div>
             </div>
@@ -1903,12 +1912,14 @@
                         </div>
                         <button onclick="createBlackMarketListing()" class="w-full py-2 bg-purple-800/70 text-purple-200 text-[11px] font-bold rounded border border-purple-600 hover:bg-purple-700 transition">上架</button>
                     </div>
-                    <!-- ★ 新增：黑市支援裝備交易——只能上架「未裝備」的物件，上架時直接從背包移除 -->
+                    <!-- ★ 改版：黑市裝備上架改成有圖片的選單（不再是純文字下拉），標記最愛的會顯示星星，
+                         短按選取要上架的裝備，長按可以先看完整詳細數值，避免上架錯裝備 -->
                     <div id="bm-sell-equip-form" class="hidden glass-panel p-3 rounded-xl border border-[#3e3328] flex-col gap-2">
-                        <p class="text-[9px] text-stone-500">只能上架未裝備在任何英雄身上的裝備。上架後會立刻從裝備背包移除，賣出後對方付的黑市幣會扣手續費後匯給你。</p>
-                        <select id="bm-sell-equip-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                        <p class="text-[9px] text-stone-500">只能上架未裝備在任何英雄身上的裝備。點一下選取，長按可以先看詳細數值。上架後會立刻從裝備背包移除，賣出後對方付的黑市幣會扣手續費後匯給你。</p>
+                        <div id="bm-sell-equip-list" class="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto custom-scrollbar"></div>
+                        <p id="bm-sell-equip-selected-label" class="text-[9px] text-amber-400 font-bold hidden"></p>
                         <input id="bm-sell-equip-price" type="number" placeholder="總價(黑市幣)" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
-                        <button onclick="createEquipmentBlackMarketListing(document.getElementById('bm-sell-equip-select').value)" class="w-full py-2 bg-purple-800/70 text-purple-200 text-[11px] font-bold rounded border border-purple-600 hover:bg-purple-700 transition">上架</button>
+                        <button onclick="createEquipmentBlackMarketListing(selectedBmSellEquipValue)" class="w-full py-2 bg-purple-800/70 text-purple-200 text-[11px] font-bold rounded border border-purple-600 hover:bg-purple-700 transition">上架</button>
                     </div>
                 </div>
             </div>
@@ -2052,14 +2063,18 @@
 
     <!-- ★ 新增：裝備背包點擊裝備開啟的詳情/強化彈窗，顯示素質與套裝共鳴效果 -->
     <div id="equipment-detail-modal"
-        class="fixed inset-0 bg-black/95 z-[80] hidden flex-col items-center justify-center p-4 backdrop-blur-md opacity-0 transition-opacity duration-300">
+        class="fixed inset-0 bg-black/95 z-[85] hidden flex-col items-center justify-center p-4 backdrop-blur-md opacity-0 transition-opacity duration-300">
         <div class="glass-panel w-full max-w-md rounded-2xl overflow-hidden border border-[#5a4634] flex flex-col max-h-[85vh]">
             <div class="p-3 border-b border-[#3e3328] flex justify-between items-center shrink-0">
                 <div class="flex items-center gap-2">
                     <div id="equipment-detail-icon" class="text-2xl w-8 text-center"></div>
                     <span class="font-bold text-stone-200 text-sm" id="equipment-detail-title">裝備詳情</span>
                 </div>
-                <button onclick="closeEquipmentDetailModal()" class="text-stone-400 hover:text-white w-8 h-8 rounded-full hover:bg-black/40 transition"><i class="fa-solid fa-xmark"></i></button>
+                <div class="flex items-center gap-1">
+                    <!-- ★ 新增：最愛標記——方便在一堆裝備裡快速認出留下來的好裝備 -->
+                    <button id="equipment-detail-favorite-btn" onclick="toggleEquipmentDetailFavorite()" class="w-8 h-8 rounded-full hover:bg-black/40 transition flex items-center justify-center text-stone-500"><i class="fa-solid fa-star"></i></button>
+                    <button onclick="closeEquipmentDetailModal()" class="text-stone-400 hover:text-white w-8 h-8 rounded-full hover:bg-black/40 transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
             </div>
             <div class="p-3 overflow-y-auto custom-scrollbar space-y-3">
                 <p id="equipment-detail-status" class="text-[9px] text-stone-500"></p>
@@ -2077,9 +2092,13 @@
                     <div id="equipment-detail-resonance" class="space-y-1.5"></div>
                 </div>
             </div>
-            <div class="p-3 border-t border-[#3e3328] shrink-0 flex gap-2">
-                <button id="equipment-detail-enhance-btn" onclick="enhanceEquipmentItemFromDetail()" class="flex-1 py-2.5 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs transition active:scale-95 hover:border-fantasy-gold">強化</button>
-                <button id="equipment-detail-refine-btn" onclick="refineEquipmentItemFromDetail()" class="flex-1 py-2.5 rounded-lg bg-cyan-950/60 text-cyan-200 border border-cyan-700 font-bold text-xs transition active:scale-95 hover:border-cyan-400">洗鍊</button>
+            <div class="p-3 border-t border-[#3e3328] shrink-0 flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <button id="equipment-detail-enhance-btn" onclick="enhanceEquipmentItemFromDetail()" class="flex-1 py-2.5 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs transition active:scale-95 hover:border-fantasy-gold">強化</button>
+                    <button id="equipment-detail-refine-btn" onclick="refineEquipmentItemFromDetail()" class="flex-1 py-2.5 rounded-lg bg-cyan-950/60 text-cyan-200 border border-cyan-700 font-bold text-xs transition active:scale-95 hover:border-cyan-400">洗鍊</button>
+                </div>
+                <!-- ★ 新增：裝備分解移到這裡（原本在裝備背包的下拉選單，容易選錯；現在只能看著這一件裝備的完整資訊再決定要不要分解） -->
+                <button id="equipment-detail-decompose-btn" onclick="decomposeEquipmentItemFromDetail()" class="w-full py-2 rounded-lg bg-black/40 text-stone-400 border border-[#3e3328] font-bold text-[10px] transition active:scale-95 hover:border-rose-500 hover:text-rose-400"><i class="fa-solid fa-recycle mr-1"></i>分解這件裝備</button>
             </div>
         </div>
     </div>
@@ -4011,7 +4030,6 @@
             if (!list) return;
             const essenceEl = document.getElementById('resonance-essence-display');
             if (essenceEl) essenceEl.innerText = (GAME_STATE.resonanceEssence || 0).toLocaleString();
-            populateDecomposeSelect();
             const inv = GAME_STATE.equipmentInventory || {};
             const items = Object.values(inv);
             const stacks = GAME_STATE.equipmentStacks || {};
@@ -4035,11 +4053,12 @@
                     <div class="text-[8px] text-stone-600 mt-0.5">未裝備（堆疊中）</div>
                 </div>`;
             });
-            items.sort((a, b) => b.level - a.level).forEach(item => {
+            items.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0) || b.level - a.level).forEach(item => {
                 const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
                 const setDef = item.setId && EQUIPMENT_SETS[item.setId];
                 const equippedHero = item.equippedBy && HERO_DATABASE.find(h => h.id === item.equippedBy);
-                html += `<div onclick="openEquipmentDetailModal('${item.id}')" class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center cursor-pointer hover:border-fantasy-gold transition active:scale-95">
+                html += `<div onclick="openEquipmentDetailModal('${item.id}')" class="glass-panel p-2 rounded-lg border ${item.favorite ? 'border-amber-500/70' : 'border-[#3e3328]'} flex flex-col items-center text-center cursor-pointer hover:border-fantasy-gold transition active:scale-95 relative">
+                    ${item.favorite ? '<i class="fa-solid fa-star absolute top-1 right-1 text-[9px] text-amber-400"></i>' : ''}
                     <i class="fa-solid ${cfg ? cfg.icon : 'fa-question'} text-lg mb-1" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
                     <div class="text-[9px] font-bold text-stone-300">${cfg ? cfg.name : '???'} +${item.level}</div>
                     <div class="text-[8px]" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
@@ -4051,33 +4070,9 @@
 
         /* ============================================================
            【企劃書 2.0】裝備分解爐——把用不到的裝備分解成共鳴精華，強化過的裝備還能退還部分歷史花費
+           ★ 改版：分解操作本身移到裝備詳情彈窗執行（見 decomposeEquipmentItemFromDetail），
+           這裡只保留退款比例的計算函式。
            ============================================================ */
-        // 下拉選單只列「未裝備」的裝備（不管是堆疊中的 +0 還是已強化的獨立物件）；
-        // 已上架黑市的裝備本來就已經從 equipmentInventory/equipmentStacks 移除了，天然就不會出現在這裡
-        function populateDecomposeSelect() {
-            const sel = document.getElementById('equip-decompose-select');
-            if (!sel) return;
-            const prevValue = sel.value;
-            sel.innerHTML = '<option value="">選擇要分解的裝備</option>';
-            const stacks = GAME_STATE.equipmentStacks || {};
-            Object.keys(stacks).filter(k => stacks[k] > 0).forEach(key => {
-                const [slot, setId] = key.split('_');
-                const cfg = EQUIPMENT_SLOT_CONFIG[slot];
-                const setDef = setId && EQUIPMENT_SETS[setId];
-                const opt = document.createElement('option');
-                opt.value = `stack:${key}`; opt.innerText = `${cfg ? cfg.name : slot} +0（${setDef ? setDef.name : '無套裝'}）×${stacks[key]}`;
-                sel.appendChild(opt);
-            });
-            Object.values(GAME_STATE.equipmentInventory || {}).filter(it => !it.equippedBy).forEach(item => {
-                const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
-                const setDef = item.setId && EQUIPMENT_SETS[item.setId];
-                const opt = document.createElement('option');
-                opt.value = `item:${item.id}`; opt.innerText = `${cfg ? cfg.name : item.slot} +${item.level}（${setDef ? setDef.name : '無套裝'}）`;
-                sel.appendChild(opt);
-            });
-            if (prevValue) sel.value = prevValue;
-        }
-
         // 依強化等級決定分解拿到多少共鳴精華，以及退還多少比例的「這件裝備歷史上花在強化的金幣/鍛造石」
         function getDecomposeReward(level) {
             if (level <= 0) return {essence: 10, refundPct: 0};
@@ -4085,44 +4080,6 @@
             if (level <= 10) return {essence: 25, refundPct: 0.75};
             if (level <= 15) return {essence: 40, refundPct: 0.7};
             return {essence: 60, refundPct: 0.7};
-        }
-
-        function decomposeEquipmentItem() {
-            ToneAudioEngine.playClick();
-            const val = document.getElementById('equip-decompose-select').value;
-            if (!val) {showToast('請選擇要分解的裝備'); return;}
-            let essenceGain = 0, goldRefund = 0, stoneRefund = 0, desc = '';
-            if (val.startsWith('stack:')) {
-                const key = val.slice('stack:'.length);
-                if ((GAME_STATE.equipmentStacks[key] || 0) <= 0) {showToast('數量不足'); return;}
-                GAME_STATE.equipmentStacks[key]--;
-                if (GAME_STATE.equipmentStacks[key] <= 0) delete GAME_STATE.equipmentStacks[key];
-                const reward = getDecomposeReward(0);
-                essenceGain = reward.essence;
-                const [slot] = key.split('_');
-                const cfg = EQUIPMENT_SLOT_CONFIG[slot];
-                desc = `${cfg ? cfg.name : slot} +0`;
-            } else {
-                const itemId = val.slice('item:'.length);
-                const item = GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[itemId];
-                if (!item) {showToast('找不到這件裝備'); return;}
-                if (item.equippedBy) {showToast('請先卸下裝備才能分解'); return;}
-                const reward = getDecomposeReward(item.level);
-                essenceGain = reward.essence;
-                goldRefund = Math.floor((item.historicalGold || 0) * reward.refundPct);
-                stoneRefund = Math.floor((item.historicalStones || 0) * reward.refundPct);
-                const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
-                desc = `${cfg ? cfg.name : item.slot} +${item.level}`;
-                delete GAME_STATE.equipmentInventory[itemId];
-            }
-            GAME_STATE.resonanceEssence = (GAME_STATE.resonanceEssence || 0) + essenceGain;
-            GAME_STATE.gold += goldRefund;
-            GAME_STATE.forgeStones += stoneRefund;
-            saveGame(); updateHUD();
-            renderEquipmentInventoryList();
-            let msg = `分解成功：${desc} → +${essenceGain} 共鳴精華`;
-            if (goldRefund > 0 || stoneRefund > 0) msg += `，退還 ${goldRefund.toLocaleString()} 金幣／${stoneRefund} 鍛造石`;
-            showToast(msg);
         }
 
         // ============ 裝備背包詳情彈窗（顯示素質＋套裝共鳴，可直接強化，不需要先裝備上英雄）============
@@ -4160,6 +4117,11 @@
 
             document.getElementById('equipment-detail-title').innerText = `${cfg ? cfg.name : '???'} +${item.level}`;
             document.getElementById('equipment-detail-icon').innerHTML = `<i class="fa-solid ${cfg ? cfg.icon : 'fa-question'}" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>`;
+
+            // ★ 新增：最愛標記按鈕的顯示狀態
+            const favBtn = document.getElementById('equipment-detail-favorite-btn');
+            favBtn.classList.toggle('text-amber-400', !!item.favorite);
+            favBtn.classList.toggle('text-stone-500', !item.favorite);
 
             const equippedHero = item.equippedBy && HERO_DATABASE.find(h => h.id === item.equippedBy);
             document.getElementById('equipment-detail-status').innerText = equippedHero ? `目前裝備於：${equippedHero.name}` : '未裝備';
@@ -4300,6 +4262,43 @@
             showToast(result.newSubstat
                 ? `裝備強化成功！當前 +${item.level}，副詞條升級：${EQUIPMENT_AFFIX_CONFIG[result.newSubstat.type].name} +${result.newSubstat.value}${EQUIPMENT_AFFIX_CONFIG[result.newSubstat.type].isPct ? '%' : ''}`
                 : `裝備強化成功！當前 +${item.level}`);
+        }
+
+        // ★ 新增：最愛標記——方便在一堆裝備裡快速認出留下來的好裝備
+        function toggleEquipmentDetailFavorite() {
+            ToneAudioEngine.playClick();
+            const item = GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[currentEquipmentDetailItemId];
+            if (!item) return;
+            item.favorite = !item.favorite;
+            saveGame();
+            renderEquipmentDetailModal();
+            renderEquipmentInventoryList();
+            showToast(item.favorite ? '已標記為最愛' : '已取消最愛標記');
+        }
+
+        // ★ 新增：裝備分解改到這個詳情彈窗裡執行——玩家看著完整資訊（素質/副詞條/是否裝備中）再決定要不要分解，
+        // 不像原本背包分頁的下拉選單那樣容易選錯。已裝備中或已標記最愛的裝備會先跳確認，避免手滑分解掉重要裝備。
+        function decomposeEquipmentItemFromDetail() {
+            ToneAudioEngine.playClick();
+            const item = GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[currentEquipmentDetailItemId];
+            if (!item) return;
+            if (item.equippedBy) {showToast('請先卸下裝備才能分解'); return;}
+            if (item.favorite && !confirm('這件裝備已經標記為最愛，確定要分解嗎？')) return;
+            const reward = getDecomposeReward(item.level);
+            const goldRefund = Math.floor((item.historicalGold || 0) * reward.refundPct);
+            const stoneRefund = Math.floor((item.historicalStones || 0) * reward.refundPct);
+            const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
+            const desc = `${cfg ? cfg.name : item.slot} +${item.level}`;
+            delete GAME_STATE.equipmentInventory[currentEquipmentDetailItemId];
+            GAME_STATE.resonanceEssence = (GAME_STATE.resonanceEssence || 0) + reward.essence;
+            GAME_STATE.gold += goldRefund;
+            GAME_STATE.forgeStones += stoneRefund;
+            saveGame(); updateHUD();
+            closeEquipmentDetailModal();
+            renderEquipmentInventoryList();
+            let msg = `分解成功：${desc} → +${reward.essence} 共鳴精華`;
+            if (goldRefund > 0 || stoneRefund > 0) msg += `，退還 ${goldRefund.toLocaleString()} 金幣／${stoneRefund} 鍛造石`;
+            showToast(msg);
         }
 
         /* ============================================================
@@ -4524,6 +4523,8 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 showToast('上架成功！');
+                selectedBmSellEquipValue = '';
+                document.getElementById('bm-sell-equip-price').value = '';
                 populateEquipmentSellSelect();
                 renderEquipmentInventoryList();
             } catch (err) {
@@ -4538,27 +4539,64 @@
             }
         }
 
-        // 上架裝備下拉選單：堆疊(+0)跟已強化的獨立物件都列出來，分別用 stack:/item: 前綴區分來源
+        // ★ 改版：上架裝備選單改成有圖片的卡片清單（不再是純文字下拉），堆疊(+0)跟已強化的獨立物件
+        // 都列出來，分別用 stack:/item: 前綴區分來源；標記最愛的裝備會顯示星星；短按選取、長按預覽。
+        let selectedBmSellEquipValue = '';
         function populateEquipmentSellSelect() {
-            const sel = document.getElementById('bm-sell-equip-select');
-            if (!sel) return;
-            sel.innerHTML = '<option value="">選擇要上架的裝備</option>';
+            const list = document.getElementById('bm-sell-equip-list');
+            if (!list) return;
+            let html = '';
             const stacks = GAME_STATE.equipmentStacks || {};
             Object.keys(stacks).filter(k => stacks[k] > 0).forEach(key => {
                 const [slot, setId] = key.split('_');
                 const cfg = EQUIPMENT_SLOT_CONFIG[slot];
                 const setDef = setId && EQUIPMENT_SETS[setId];
-                const opt = document.createElement('option');
-                opt.value = `stack:${key}`; opt.innerText = `${cfg ? cfg.name : slot} +0（${setDef ? setDef.name : '無套裝'}）×${stacks[key]}`;
-                sel.appendChild(opt);
+                const val = `stack:${key}`;
+                const isSel = selectedBmSellEquipValue === val;
+                html += `<button onmousedown="pickerHoldStart('stack', '${slot}', '${setId}')" onmouseup="pickerHoldEnd('stack', '${slot}', '${setId}')" onmouseleave="pickerHoldCancel()" ontouchstart="event.preventDefault(); pickerHoldStart('stack', '${slot}', '${setId}')" ontouchend="event.preventDefault(); pickerHoldEnd('stack', '${slot}', '${setId}')" ontouchcancel="pickerHoldCancel()" class="p-1.5 rounded-lg border ${isSel ? 'border-fantasy-gold bg-yellow-900/30' : 'border-[#3e3328] bg-black/40'} flex flex-col items-center text-center transition">
+                    <i class="fa-solid ${cfg ? cfg.icon : 'fa-question'} text-base" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
+                    <span class="text-[8px] text-stone-300 mt-0.5">+0 ×${stacks[key]}</span>
+                </button>`;
             });
             Object.values(GAME_STATE.equipmentInventory || {}).filter(it => !it.equippedBy).forEach(item => {
                 const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
                 const setDef = item.setId && EQUIPMENT_SETS[item.setId];
-                const opt = document.createElement('option');
-                opt.value = `item:${item.id}`; opt.innerText = `${cfg ? cfg.name : item.slot} +${item.level}（${setDef ? setDef.name : '無套裝'}）`;
-                sel.appendChild(opt);
+                const val = `item:${item.id}`;
+                const isSel = selectedBmSellEquipValue === val;
+                html += `<button onmousedown="pickerHoldStart('bmitem', '${item.id}')" onmouseup="pickerHoldEnd('bmitem', '${item.id}')" onmouseleave="pickerHoldCancel()" ontouchstart="event.preventDefault(); pickerHoldStart('bmitem', '${item.id}')" ontouchend="event.preventDefault(); pickerHoldEnd('bmitem', '${item.id}')" ontouchcancel="pickerHoldCancel()" class="p-1.5 rounded-lg border ${isSel ? 'border-fantasy-gold bg-yellow-900/30' : 'border-[#3e3328] bg-black/40'} flex flex-col items-center text-center relative transition">
+                    ${item.favorite ? '<i class="fa-solid fa-star absolute top-0.5 right-0.5 text-[8px] text-amber-400"></i>' : ''}
+                    <i class="fa-solid ${cfg ? cfg.icon : 'fa-question'} text-base" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
+                    <span class="text-[8px] text-stone-300 mt-0.5">+${item.level}</span>
+                </button>`;
             });
+            list.innerHTML = html || `<div class="col-span-3 text-center text-[10px] text-stone-500 py-4">背包裡沒有可以上架的裝備</div>`;
+            updateBmSellEquipSelectedLabel();
+        }
+
+        function updateBmSellEquipSelectedLabel() {
+            const label = document.getElementById('bm-sell-equip-selected-label');
+            if (!label) return;
+            if (!selectedBmSellEquipValue) {label.classList.add('hidden'); return;}
+            let text = '';
+            if (selectedBmSellEquipValue.startsWith('stack:')) {
+                const [slot, setId] = selectedBmSellEquipValue.slice('stack:'.length).split('_');
+                const cfg = EQUIPMENT_SLOT_CONFIG[slot]; const setDef = setId && EQUIPMENT_SETS[setId];
+                text = `已選擇：${cfg ? cfg.name : slot} +0（${setDef ? setDef.name : '無套裝'}）`;
+            } else {
+                const itemId = selectedBmSellEquipValue.slice('item:'.length);
+                const item = GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[itemId];
+                if (item) {
+                    const cfg = EQUIPMENT_SLOT_CONFIG[item.slot]; const setDef = item.setId && EQUIPMENT_SETS[item.setId];
+                    text = `已選擇：${cfg ? cfg.name : item.slot} +${item.level}（${setDef ? setDef.name : '無套裝'}）`;
+                }
+            }
+            label.innerText = text;
+            label.classList.toggle('hidden', !text);
+        }
+
+        function selectBmSellEquip(value) {
+            selectedBmSellEquipValue = value;
+            populateEquipmentSellSelect();
         }
 
         async function cancelBlackMarketListing(listing) {
@@ -7327,6 +7365,7 @@
                 slot, setId, level: 0, equippedBy: null,
                 subStats: generateInitialSubstats(), // ★ 新增：鍛造當下隨機給的 2~3 條初始副詞條
                 historicalGold: 0, historicalStones: 0, // ★ 新增：這件裝備歷史上總共花在強化的金幣/鍛造石，分解爐退還用
+                favorite: false, // ★ 新增：最愛標記，方便在一堆裝備裡快速認出留下來的好裝備
             };
         }
 
@@ -8260,9 +8299,46 @@
             gridUI.appendChild(gridFragment);
             document.getElementById('btn-unequip').disabled = (selectedGridIndex === null || !GAME_STATE.gridSlots[selectedGridIndex]);
 
+            // ★ 新增：職業篩選按鈕的選中樣式
+            ['all', '坦克', '戰士', '刺客', '法師', '輔助'].forEach(f => {
+                const btn = document.getElementById('btn-formation-filter-' + f);
+                if (!btn) return;
+                const active = formationRosterFilter === f;
+                btn.className = `shrink-0 px-2.5 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap transition ${active ? 'border-fantasy-gold bg-yellow-900/30 text-fantasy-gold' : 'border-[#3e3328] bg-black/40 text-stone-400'}`;
+            });
+            const sortBtn = document.getElementById('btn-formation-sort');
+            if (sortBtn) {
+                sortBtn.className = `shrink-0 ml-auto px-2.5 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap transition ${formationRosterSortByPower ? 'border-fantasy-gold bg-yellow-900/30 text-fantasy-gold' : 'border-[#3e3328] bg-black/40 text-stone-400'}`;
+            }
+
             const rUI = document.getElementById('roster-list-ui'); rUI.innerHTML = '';
             const rosterFragment = document.createDocumentFragment();
-            Object.keys(GAME_STATE.roster).forEach(id => {
+            const searchInput = document.getElementById('formation-roster-search');
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            let rosterIds = Object.keys(GAME_STATE.roster);
+            // ★ 職業篩選
+            if (formationRosterFilter !== 'all') {
+                rosterIds = rosterIds.filter(id => {
+                    const db = HERO_DATABASE.find(x => x.id === id);
+                    return db && db.role === formationRosterFilter;
+                });
+            }
+            // ★ 名稱搜尋
+            if (searchTerm) {
+                rosterIds = rosterIds.filter(id => {
+                    const db = HERO_DATABASE.find(x => x.id === id);
+                    return db && db.name.includes(searchTerm);
+                });
+            }
+            // ★ 戰力排序（開啟時強戰力優先，方便快速找到最強的幾位；預設維持原本取得順序）
+            if (formationRosterSortByPower) {
+                rosterIds.sort((a, b) => getEffectiveHero(HERO_DATABASE.find(x => x.id === b)).combatPower - getEffectiveHero(HERO_DATABASE.find(x => x.id === a)).combatPower);
+            }
+            if (rosterIds.length === 0) {
+                rUI.innerHTML = `<div class="col-span-full text-center text-[10px] text-stone-500 py-6">找不到符合條件的英雄</div>`;
+                return;
+            }
+            rosterIds.forEach(id => {
                 const h = getEffectiveHero(HERO_DATABASE.find(x => x.id === id)); const isDep = GAME_STATE.gridSlots.includes(h.id); const isSel = selectedRosterHero === h.id;
                 const rColor = h.rarity === 'SSR' ? 'text-yellow-400' : (h.rarity === 'SR' ? 'text-purple-400' : 'text-stone-400');
                 const c = document.createElement('div');
@@ -8272,10 +8348,25 @@
                     <span class="absolute top-1 right-1 text-[7px] font-bold ${rColor}">${h.rarity}</span>
                     ${getHeroImageSrc(h.id) ? `<img src="${getHeroImageSrc(h.id)}" class="w-9 h-9 rounded-full object-cover mb-1 border border-[#5a4634]">` : `<i class="fa-solid ${h.avatarIcon} text-2xl mb-1 drop-shadow" style="color:${h.color}"></i>`}
                     <span class="text-[8px] text-stone-300 w-full text-center truncate">${dName}</span>
+                    <span class="text-[7px] text-fantasy-gold font-bold mt-0.5"><i class="fa-solid fa-bolt"></i> ${formatCompactNumber(h.combatPower)}</span>
                     ${isDep ? `<span class="text-[7px] text-emerald-400 font-bold mt-0.5"><i class="fa-solid fa-check mr-0.5"></i>陣中</span>` : ''}`;
                 c.onclick = () => handleRosterClick(h.id); rosterFragment.appendChild(c);
             });
             rUI.appendChild(rosterFragment);
+        }
+
+        // ★ 新增：待命名冊的職業篩選／戰力排序狀態與切換函式
+        let formationRosterFilter = 'all';
+        let formationRosterSortByPower = false;
+        function setFormationRosterFilter(filter) {
+            ToneAudioEngine.playClick();
+            formationRosterFilter = filter;
+            renderFormationUI();
+        }
+        function toggleFormationRosterSort() {
+            ToneAudioEngine.playClick();
+            formationRosterSortByPower = !formationRosterSortByPower;
+            renderFormationUI();
         }
 
         function handleGridClick(i) {
@@ -8477,9 +8568,12 @@
                     const isMaxLvl = item.level >= EQUIPMENT_MAX_LEVEL;
                     const canEnhance = !isMaxLvl && GAME_STATE.gold >= enhanceCost.gold && GAME_STATE.forgeStones >= enhanceCost.stones;
                     card.innerHTML = `
-                        <div class="text-[9px] font-bold text-stone-300 mb-0.5">${cfg.name} <span class="text-white">+${item.level}</span></div>
-                        <i class="fa-solid ${cfg.icon} text-lg my-1 drop-shadow-md" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
-                        <div class="text-[8px] mb-1 font-bold truncate w-full" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
+                        <div onclick="openEquipmentDetailModal('${item.id}')" class="w-full cursor-pointer hover:opacity-80 transition" title="查看詳細數值">
+                            ${item.favorite ? '<i class="fa-solid fa-star absolute top-1 right-1 text-[8px] text-amber-400"></i>' : ''}
+                            <div class="text-[9px] font-bold text-stone-300 mb-0.5">${cfg.name} <span class="text-white">+${item.level}</span></div>
+                            <i class="fa-solid ${cfg.icon} text-lg my-1 drop-shadow-md" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
+                            <div class="text-[8px] mb-1 font-bold truncate w-full" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
+                        </div>
                         <button onclick="openEquipmentPicker('${slot}')" class="w-full py-1 rounded text-[8px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] hover:border-stone-400 transition mb-1">更換</button>
                         <button onmousedown="equipmentLongPressers['${slot}'].start()" onmouseup="equipmentLongPressers['${slot}'].stop()" onmouseleave="equipmentLongPressers['${slot}'].cancel()" ontouchstart="event.preventDefault(); equipmentLongPressers['${slot}'].start()" ontouchend="event.preventDefault(); equipmentLongPressers['${slot}'].stop()" ontouchcancel="equipmentLongPressers['${slot}'].cancel()" class="w-full py-1 rounded text-[8px] font-bold transition-all ${isMaxLvl ? 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50' : (canEnhance ? 'bg-[#2a2118] text-stone-200 border border-[#5a4634] hover:border-fantasy-gold active:scale-95' : 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50')}" ${isMaxLvl || !canEnhance ? 'disabled' : ''}>
                             ${isMaxLvl ? '已滿級' : `<i class="fa-solid fa-hammer text-stone-400"></i> ${enhanceCost.stones} <i class="fa-solid fa-coins text-yellow-500 ml-1"></i> ${enhanceCost.gold}`}
@@ -8615,13 +8709,45 @@
                 });
                 candidates.sort((a, b) => b.level - a.level).forEach(item => {
                     const setDef = item.setId && EQUIPMENT_SETS[item.setId];
-                    html += `<button onclick="equipItem('${item.id}')" class="w-full py-2 px-3 bg-black/40 rounded-lg border border-[#3e3328] hover:border-fantasy-gold transition flex justify-between items-center">
-                        <span class="text-[10px] font-bold" style="color:${setDef ? setDef.color : '#94a3b8'}">${setDef ? setDef.name : '無套裝'}</span>
+                    // ★ 新增：短按裝備上去、長按（450ms）改成先看詳細數值再決定，避免選錯裝備
+                    html += `<button onmousedown="pickerHoldStart('item', '${item.id}')" onmouseup="pickerHoldEnd('item', '${item.id}')" onmouseleave="pickerHoldCancel()" ontouchstart="event.preventDefault(); pickerHoldStart('item', '${item.id}')" ontouchend="event.preventDefault(); pickerHoldEnd('item', '${item.id}')" ontouchcancel="pickerHoldCancel()" class="w-full py-2 px-3 bg-black/40 rounded-lg border border-[#3e3328] hover:border-fantasy-gold transition flex justify-between items-center">
+                        <span class="text-[10px] font-bold flex items-center gap-1" style="color:${setDef ? setDef.color : '#94a3b8'}">${item.favorite ? '<i class="fa-solid fa-star text-amber-400 text-[9px]"></i>' : ''}${setDef ? setDef.name : '無套裝'}</span>
                         <span class="text-[10px] text-stone-300">+${item.level}</span>
                     </button>`;
                 });
             }
             list.innerHTML = html;
+        }
+
+        // ★ 通用的「短按執行／長按預覽」計時器：全域共用一份就夠，同一時間只會有一根手指按著。
+        // kind='item'：裝備選擇彈窗裡的個別裝備（短按裝備上去，長按看詳情）。
+        // kind='bmitem'：黑市上架清單裡的個別裝備（短按選取待上架，長按看詳情）。
+        // kind='stack'：+0 堆疊裝備（沒有具體副詞條可預覽，短按長按都是選取/裝備）。
+        let pickerHoldTimer = null, pickerHoldFired = false;
+        function pickerHoldStart(kind, arg1, arg2) {
+            pickerHoldFired = false;
+            pickerHoldTimer = setTimeout(() => {
+                pickerHoldFired = true;
+                if (kind === 'item' || kind === 'bmitem') {
+                    openEquipmentDetailModal(arg1); // 直接沿用完整的裝備詳情彈窗，不用另外做一份預覽畫面
+                } else if (kind === 'stack') {
+                    ToneAudioEngine.playClick();
+                    selectBmSellEquip(`stack:${arg1}_${arg2}`);
+                }
+            }, 450);
+        }
+        function pickerHoldEnd(kind, arg1, arg2) {
+            if (pickerHoldTimer) {clearTimeout(pickerHoldTimer); pickerHoldTimer = null;}
+            if (!pickerHoldFired) {
+                if (kind === 'item') equipItem(arg1);
+                else if (kind === 'bmitem') {ToneAudioEngine.playClick(); selectBmSellEquip(`item:${arg1}`);}
+                else if (kind === 'stack') {ToneAudioEngine.playClick(); selectBmSellEquip(`stack:${arg1}_${arg2}`);}
+            }
+            pickerHoldFired = false;
+        }
+        function pickerHoldCancel() {
+            if (pickerHoldTimer) {clearTimeout(pickerHoldTimer); pickerHoldTimer = null;}
+            pickerHoldFired = false;
         }
         // 從堆疊裡選一件 +0 裝備直接裝備上去：先升格成獨立物件，再走一般的裝備流程
         function equipFromStack(slot, setId) {
