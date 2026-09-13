@@ -543,6 +543,13 @@
             <button onclick="switchTab('arena')" class="nav-item" data-target="arena"><i
                     class="fa-solid fa-people-group text-lg mb-1 text-sky-400"></i><span
                     class="text-[10px] font-bold text-sky-400">競技場</span></button>
+            <!-- ★ 新增：個人——聊天跟信件系統從競技場移過來，獨立成一個分頁 -->
+            <button onclick="switchTab('personal')" class="nav-item relative" data-target="personal"><i
+                    class="fa-solid fa-user text-lg mb-1"></i><span class="text-[10px] font-bold">個人</span>
+                <div id="nav-personal-mail-dot"
+                    class="hidden absolute top-0 right-2 w-2 h-2 bg-rose-500 rounded-full border border-black"
+                    title="有未讀信件"></div>
+            </button>
             <button onclick="switchTab('inventory')" class="nav-item" data-target="inventory"><i
                     class="fa-solid fa-sack text-lg mb-1 text-amber-500"></i><span
                     class="text-[10px] font-bold text-amber-500">背包</span></button>
@@ -1183,11 +1190,17 @@
                     </div>
                 </div>
 
-                <!-- ★ 新增：一鍵全體升星，跳過逐一點擊/動畫，一次把所有碎片夠用的英雄升到不能再升為止 -->
-                <button onclick="autoAwakenAllHeroes()"
-                    class="shrink-0 w-full mb-3 py-2 rounded-lg bg-gradient-to-r from-purple-800/70 to-fuchsia-800/70 text-purple-100 text-[11px] font-bold border border-purple-600 hover:from-purple-700 hover:to-fuchsia-700 transition flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>一鍵全體升星
-                </button>
+                <!-- ★ 新增：一鍵升級/一鍵全體升星，跳過逐一點擊/動畫，一次把所有資源夠用的英雄升到不能再升為止 -->
+                <div class="flex gap-2 mb-3 shrink-0">
+                    <button onclick="autoLevelUpAllHeroes()"
+                        class="flex-1 py-2 rounded-lg bg-gradient-to-r from-sky-800/70 to-blue-800/70 text-sky-100 text-[11px] font-bold border border-sky-600 hover:from-sky-700 hover:to-blue-700 transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-arrow-up-right-dots"></i>一鍵升級
+                    </button>
+                    <button onclick="autoAwakenAllHeroes()"
+                        class="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-800/70 to-fuchsia-800/70 text-purple-100 text-[11px] font-bold border border-purple-600 hover:from-purple-700 hover:to-fuchsia-700 transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>一鍵全體升星
+                    </button>
+                </div>
 
                 <!-- 篩選/排序列 -->
                 <div class="flex items-center gap-2 mb-3 shrink-0 overflow-x-auto custom-scrollbar pb-1"
@@ -1267,7 +1280,7 @@
                                 class="h-full bg-gradient-to-r from-fantasy-gold to-yellow-300" style="width:0%"></div>
                         </div>
                         <p id="altar-selected-cost" class="text-[9px] text-stone-400 mb-2"></p>
-                        <button id="altar-ascend-btn" onmousedown="artifactLongPresser.start()" onmouseup="artifactLongPresser.stop()" onmouseleave="artifactLongPresser.cancel()" ontouchstart="artifactLongPresser.start()" ontouchend="artifactLongPresser.stop()" ontouchcancel="artifactLongPresser.cancel()"
+                        <button id="altar-ascend-btn" onmousedown="artifactLongPresser.start()" onmouseup="artifactLongPresser.stop()" onmouseleave="artifactLongPresser.cancel()" ontouchstart="event.preventDefault(); artifactLongPresser.start()" ontouchend="event.preventDefault(); artifactLongPresser.stop()" ontouchcancel="artifactLongPresser.cancel()"
                             class="w-full py-2 rounded-lg bg-gradient-to-b from-fantasy-gold to-amber-700 text-black font-bold text-xs active:scale-95 transition">強化聖物</button>
                     </div>
                     <p id="altar-no-hero-text" class="text-[9px] text-stone-500 text-center mt-4">請先點選上方要強化的騎士</p>
@@ -1437,32 +1450,14 @@
                             class="shrink-0 px-3 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] whitespace-nowrap">首領</button>
                         <button onclick="switchArenaSubTab('leaderboard')" id="btn-arena-leaderboard"
                             class="shrink-0 px-3 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] whitespace-nowrap">排行榜</button>
-                        <button onclick="switchArenaSubTab('chat')" id="btn-arena-chat"
-                            class="shrink-0 px-3 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] whitespace-nowrap">聊天</button>
                         <button onclick="switchArenaSubTab('shop')" id="btn-arena-shop"
                             class="shrink-0 px-3 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] whitespace-nowrap">商店</button>
-                        <button onclick="switchArenaSubTab('mail')" id="btn-arena-mail"
-                            class="shrink-0 px-3 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] relative whitespace-nowrap">信件<span
-                                id="arena-mail-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-black"></span></button>
                     </div>
 
                     <!-- 排行榜子頁 -->
                     <div id="arena-leaderboard-panel" class="hidden flex-col gap-2">
                         <p class="text-[9px] text-stone-500">依戰力排序，點一下可以看該玩家的上陣陣容。</p>
                         <div id="arena-leaderboard-list" class="space-y-2"></div>
-                    </div>
-
-                    <!-- 聊天子頁 -->
-                    <div id="arena-chat-panel" class="hidden flex-col gap-2 flex-1 min-h-0">
-                        <div id="arena-chat-messages" class="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 bg-black/40 rounded-lg border border-[#3e3328] p-2 min-h-[200px]"></div>
-                        <div class="flex gap-2 shrink-0">
-                            <select id="arena-chat-share-hero" class="shrink-0 max-w-[110px] bg-black/40 text-stone-300 text-[9px] px-1.5 py-2 rounded-lg border border-[#3e3328] outline-none">
-                                <option value="">分享英雄...</option>
-                            </select>
-                            <button onclick="shareHeroToChat()" class="shrink-0 px-2.5 py-2 bg-amber-900/60 text-amber-300 text-[9px] font-bold rounded-lg border border-amber-700 hover:bg-amber-800 transition"><i class="fa-solid fa-share-nodes"></i></button>
-                            <input id="arena-chat-input" type="text" maxlength="200" placeholder="輸入訊息..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[11px] px-3 py-2 rounded-lg border border-[#3e3328] outline-none focus:border-sky-500">
-                            <button onclick="sendChatMessage()" class="shrink-0 px-4 py-2 bg-sky-900/60 text-sky-300 text-[10px] font-bold rounded-lg border border-sky-700 hover:bg-sky-800 transition">發送</button>
-                        </div>
                     </div>
 
                     <!-- 即時挑戰子頁 -->
@@ -1544,12 +1539,48 @@
                         <div id="arena-shop-list" class="space-y-2"></div>
                     </div>
 
+                </div>
+            </div>
+
+            <!-- ★ 新增：個人——把聊天跟信件系統集中到這裡，跟競技場分開 -->
+            <div id="tab-personal"
+                class="tab-pane hidden absolute inset-0 w-full h-full p-4 pt-16 bg-black/80 backdrop-blur-md flex flex-col">
+                <h2 class="font-bold text-sky-400 font-magic text-lg flex items-center shrink-0 border-b border-[#3e3328] pb-2 mb-3">
+                    <i class="fa-solid fa-user mr-2"></i>個人
+                </h2>
+
+                <div id="personal-not-connected" class="hidden glass-panel p-4 rounded-xl border border-[#3e3328] text-center">
+                    <p class="text-[10px] text-stone-400">需要先在「競技場」分頁啟用多人連線，才能使用聊天與信件功能。</p>
+                </div>
+
+                <div id="personal-connected-content" class="hidden flex-col gap-3 flex-1 min-h-0">
+                    <!-- 子頁籤 -->
+                    <div class="flex gap-1.5 shrink-0">
+                        <button onclick="switchPersonalSubTab('chat')" id="btn-personal-chat"
+                            class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-teal-900/60 text-teal-300 border border-teal-600 whitespace-nowrap">聊天</button>
+                        <button onclick="switchPersonalSubTab('mail')" id="btn-personal-mail"
+                            class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] relative whitespace-nowrap">信件<span
+                                id="arena-mail-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border border-black"></span></button>
+                    </div>
+
+                    <!-- 聊天子頁 -->
+                    <div id="arena-chat-panel" class="hidden flex-col gap-2 flex-1 min-h-0">
+                        <div id="arena-chat-messages" class="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 bg-black/40 rounded-lg border border-[#3e3328] p-2 min-h-[200px]"></div>
+                        <div class="flex gap-2 shrink-0">
+                            <select id="arena-chat-share-hero" class="shrink-0 max-w-[110px] bg-black/40 text-stone-300 text-[9px] px-1.5 py-2 rounded-lg border border-[#3e3328] outline-none">
+                                <option value="">分享英雄...</option>
+                            </select>
+                            <button onclick="shareHeroToChat()" class="shrink-0 px-2.5 py-2 bg-amber-900/60 text-amber-300 text-[9px] font-bold rounded-lg border border-amber-700 hover:bg-amber-800 transition"><i class="fa-solid fa-share-nodes"></i></button>
+                            <input id="arena-chat-input" type="text" maxlength="200" placeholder="輸入訊息..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[11px] px-3 py-2 rounded-lg border border-[#3e3328] outline-none focus:border-sky-500">
+                            <button onclick="sendChatMessage()" class="shrink-0 px-4 py-2 bg-sky-900/60 text-sky-300 text-[10px] font-bold rounded-lg border border-sky-700 hover:bg-sky-800 transition">發送</button>
+                        </div>
+                    </div>
+
                     <!-- 信件子頁 -->
-                    <div id="arena-mail-panel" class="hidden flex-col gap-2">
+                    <div id="arena-mail-panel" class="hidden flex-col gap-2 overflow-y-auto custom-scrollbar">
                         <p class="text-[9px] text-stone-500">管理員可能會透過信件發放資源，記得來這裡領取。</p>
                         <div id="arena-mail-list" class="space-y-2 max-h-[420px] overflow-y-auto custom-scrollbar pr-0.5"></div>
                     </div>
-
                 </div>
             </div>
 
@@ -1590,7 +1621,13 @@
                                     <input id="admin-season-duration-days" type="number" min="1" placeholder="4" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 </div>
                             </div>
-                            <p class="text-[8px] text-amber-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>只往上調整才安全；往下調會讓已經超過新上限的玩家進度顯示異常，目前沒有自動修正機制。</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[9px] text-stone-500 block mb-1">星級上限（0＝無上限）</label>
+                                    <input id="admin-max-star-level" type="number" min="0" placeholder="0＝無上限" class="w-full bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                </div>
+                            </div>
+                            <p class="text-[8px] text-amber-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>往下調整時，玩家下次讀取存檔會自動把超過新上限的等級/星級/聖物階級拉回上限值（見 enforceProgressionCaps），不會顯示異常，但等於強制降級，請確認清楚再調整。</p>
 
                             <div class="border-t border-[#3e3328] pt-2 flex flex-col gap-1.5">
                                 <label class="flex items-center gap-2 text-[10px] text-stone-300 cursor-pointer">
@@ -1708,6 +1745,7 @@
                                 <input id="admin-mail-starcoins" type="number" placeholder="賽季勳章" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 <input id="admin-mail-crystal" type="number" placeholder="超越結晶" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                                 <input id="admin-mail-bmc" type="number" placeholder="黑市貨幣" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                                <input id="admin-mail-setdungeon-ticket" type="number" placeholder="秘境門票" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                             </div>
                             <div class="border-t border-[#3e3328] pt-2 mt-1">
                                 <p class="text-[9px] text-stone-500 mb-1.5">額外附贈英雄／碎片（選填）</p>
@@ -1749,27 +1787,38 @@
                 <h2 class="font-bold text-amber-500 font-magic text-lg flex items-center shrink-0 border-b border-[#3e3328] pb-2 mb-3">
                     <i class="fa-solid fa-sack mr-2"></i>背包
                 </h2>
-                <p class="text-[9px] text-stone-500 mb-3">目前擁有的英雄碎片，可以到英雄詳情頁用碎片升星，或是拿去黑市上架賣給其他玩家。</p>
-                <div id="inventory-shard-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
-                <p id="inventory-empty-text" class="hidden text-center text-stone-500 text-[10px] py-10">目前沒有任何英雄碎片</p>
 
-                <!-- ★ 新增：溢出碎片熔爐——手上囤太多用不到的碎片，可以分解成超越結晶，不用讓多餘碎片放著生灰塵 -->
-                <div class="glass-panel p-3 rounded-xl border border-fuchsia-700/40 flex flex-col gap-2 mt-4">
-                    <span class="text-[10px] text-fuchsia-300 font-bold"><i class="fa-solid fa-fire mr-1"></i>溢出碎片熔爐</span>
-                    <p class="text-[9px] text-stone-500">用不到的英雄碎片可以分解成超越結晶（20 碎片 = 1 結晶），留著給高星大突破或裝備鍛造使用，不用讓囤積的碎片放著浪費。</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <select id="furnace-hero-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
-                        <input id="furnace-amount" type="number" placeholder="分解數量" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
-                    </div>
-                    <button onclick="recycleHeroShards()" class="w-full py-2 bg-fuchsia-900/60 text-fuchsia-200 text-[11px] font-bold rounded border border-fuchsia-700 hover:bg-fuchsia-800 transition">分解成超越結晶</button>
+                <!-- ★ 新增：背包分類，英雄碎片跟裝備背包分開頁籤，不要擠在同一頁 -->
+                <div class="flex gap-2 mb-3 shrink-0">
+                    <button onclick="switchInventorySubTab('shard')" id="btn-inv-shard" class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-purple-900/60 text-purple-300 border border-purple-600 transition">英雄碎片</button>
+                    <button onclick="switchInventorySubTab('equip')" id="btn-inv-equip" class="flex-1 py-2 rounded-lg text-[10px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] transition">裝備背包</button>
                 </div>
 
-                <!-- ★ 取得裝備改成「套裝秘境」掉落殘頁去鐵匠鋪鍛造，不再是花鍛造石直接做 -->
-                <button onclick="switchTab('setdungeon')" class="w-full mt-4 py-2 rounded-lg bg-gradient-to-r from-amber-800/70 to-orange-800/70 text-amber-100 text-[11px] font-bold border border-amber-600 hover:from-amber-700 hover:to-orange-700 transition flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-fire-flame-curved"></i>前往「套裝秘境」取得裝備殘頁
-                </button>
-                <h3 class="text-[10px] text-stone-400 font-bold mt-4 mb-2"><i class="fa-solid fa-vest mr-1"></i>裝備背包</h3>
-                <div id="equipment-inventory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                <div id="inventory-shard-panel" class="flex flex-col gap-0">
+                    <p class="text-[9px] text-stone-500 mb-3">目前擁有的英雄碎片，可以到英雄詳情頁用碎片升星，或是拿去黑市上架賣給其他玩家。</p>
+                    <div id="inventory-shard-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                    <p id="inventory-empty-text" class="hidden text-center text-stone-500 text-[10px] py-10">目前沒有任何英雄碎片</p>
+
+                    <!-- ★ 溢出碎片熔爐——手上囤太多用不到的碎片，可以分解成超越結晶，不用讓多餘碎片放著生灰塵 -->
+                    <div class="glass-panel p-3 rounded-xl border border-fuchsia-700/40 flex flex-col gap-2 mt-4">
+                        <span class="text-[10px] text-fuchsia-300 font-bold"><i class="fa-solid fa-fire mr-1"></i>溢出碎片熔爐</span>
+                        <p class="text-[9px] text-stone-500">用不到的英雄碎片可以分解成超越結晶（20 碎片 = 1 結晶），留著給高星大突破或裝備鍛造使用，不用讓囤積的碎片放著浪費。</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="furnace-hero-select" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none"></select>
+                            <input id="furnace-amount" type="number" placeholder="分解數量" class="bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                        </div>
+                        <button onclick="recycleHeroShards()" class="w-full py-2 bg-fuchsia-900/60 text-fuchsia-200 text-[11px] font-bold rounded border border-fuchsia-700 hover:bg-fuchsia-800 transition">分解成超越結晶</button>
+                    </div>
+                </div>
+
+                <div id="inventory-equip-panel" class="hidden flex-col gap-0">
+                    <!-- ★ 取得裝備改成「套裝秘境」掉落殘頁去鐵匠鋪鍛造，不再是花鍛造石直接做 -->
+                    <button onclick="switchTab('setdungeon')" class="w-full mb-3 py-2 rounded-lg bg-gradient-to-r from-amber-800/70 to-orange-800/70 text-amber-100 text-[11px] font-bold border border-amber-600 hover:from-amber-700 hover:to-orange-700 transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-fire-flame-curved"></i>前往「套裝秘境」取得裝備殘頁
+                    </button>
+                    <p class="text-[9px] text-stone-500 mb-2">點一件裝備可以查看詳細素質、套裝共鳴效果，並直接在這裡強化。</p>
+                    <div id="equipment-inventory-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                </div>
             </div>
 
             <!-- ★ 新增：黑市，玩家對玩家交易英雄碎片 -->
@@ -1920,11 +1969,39 @@
             <div class="p-3 bg-[#0a0806] border-t border-[#5a4634] flex gap-3 shrink-0 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]"
                 id="modal-hero-actions">
                 <button onmousedown="levelUpLongPresser.start()" onmouseup="levelUpLongPresser.stop()"
-                    onmouseleave="levelUpLongPresser.cancel()" ontouchstart="levelUpLongPresser.start()"
-                    ontouchend="levelUpLongPresser.stop()" ontouchcancel="levelUpLongPresser.cancel()" id="btn-upgrade-lvl"
+                    onmouseleave="levelUpLongPresser.cancel()" ontouchstart="event.preventDefault(); levelUpLongPresser.start()"
+                    ontouchend="event.preventDefault(); levelUpLongPresser.stop()" ontouchcancel="levelUpLongPresser.cancel()" id="btn-upgrade-lvl"
                     class="flex-1 py-2 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs flex flex-col items-center justify-center transition active:scale-95 hover:border-fantasy-gold">升級</button>
-                <button onmousedown="starLongPresser.start()" onmouseup="starLongPresser.stop()" onmouseleave="starLongPresser.cancel()" ontouchstart="starLongPresser.start()" ontouchend="starLongPresser.stop()" ontouchcancel="starLongPresser.cancel()" id="btn-upgrade-star"
+                <button onmousedown="starLongPresser.start()" onmouseup="starLongPresser.stop()" onmouseleave="starLongPresser.cancel()" ontouchstart="event.preventDefault(); starLongPresser.start()" ontouchend="event.preventDefault(); starLongPresser.stop()" ontouchcancel="starLongPresser.cancel()" id="btn-upgrade-star"
                     class="flex-1 py-2 rounded-lg btn-gold font-bold text-xs flex flex-col items-center justify-center transition active:scale-95">覺醒</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★ 新增：裝備背包點擊裝備開啟的詳情/強化彈窗，顯示素質與套裝共鳴效果 -->
+    <div id="equipment-detail-modal"
+        class="fixed inset-0 bg-black/95 z-[80] hidden flex-col items-center justify-center p-4 backdrop-blur-md opacity-0 transition-opacity duration-300">
+        <div class="glass-panel w-full max-w-md rounded-2xl overflow-hidden border border-[#5a4634] flex flex-col max-h-[85vh]">
+            <div class="p-3 border-b border-[#3e3328] flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-2">
+                    <div id="equipment-detail-icon" class="text-2xl w-8 text-center"></div>
+                    <span class="font-bold text-stone-200 text-sm" id="equipment-detail-title">裝備詳情</span>
+                </div>
+                <button onclick="closeEquipmentDetailModal()" class="text-stone-400 hover:text-white w-8 h-8 rounded-full hover:bg-black/40 transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-3 overflow-y-auto custom-scrollbar space-y-3">
+                <p id="equipment-detail-status" class="text-[9px] text-stone-500"></p>
+                <div>
+                    <h4 class="text-[10px] font-bold text-stone-400 mb-1.5 border-b border-[#3e3328] pb-1"><i class="fa-solid fa-chart-simple mr-1"></i>裝備素質</h4>
+                    <div id="equipment-detail-stats" class="space-y-1"></div>
+                </div>
+                <div>
+                    <h4 class="text-[10px] font-bold text-stone-400 mb-1.5 border-b border-[#3e3328] pb-1"><i class="fa-solid fa-wand-sparkles mr-1"></i>套裝共鳴效果</h4>
+                    <div id="equipment-detail-resonance" class="space-y-1.5"></div>
+                </div>
+            </div>
+            <div class="p-3 border-t border-[#3e3328] shrink-0">
+                <button id="equipment-detail-enhance-btn" onclick="enhanceEquipmentItemFromDetail()" class="w-full py-2.5 rounded-lg bg-[#2a2118] text-stone-200 border border-[#5a4634] font-bold text-xs transition active:scale-95 hover:border-fantasy-gold">強化</button>
             </div>
         </div>
     </div>
@@ -2424,10 +2501,13 @@
         // 粗略檢查存檔數值有沒有超出遊戲本身數值系統理論上能達到的範圍（等級/星級/聖物階級封頂、
         // 資源多到不合理等），抓得到明顯離譜的竄改，抓不到精心計算過、卡在上限邊緣的造假
         function checkSavePlausible(state) {
+            // ★ 管理員有設定實際的星級上限時，這裡改用真正的上限做檢查（更精準）；
+            // 沒設定（無上限）時才退回原本寬鬆的估計值，避免徹底失去防呆效果
+            const starCapForCheck = Number.isFinite(MAX_STAR_LEVEL) ? MAX_STAR_LEVEL : PLAUSIBLE_MAX_STAR_ESTIMATE;
             for (const heroId in (state.roster || {})) {
                 const r = state.roster[heroId];
                 if (!r) continue;
-                if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > PLAUSIBLE_MAX_STAR_ESTIMATE || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
+                if ((r.level || 1) > MAX_HERO_LEVEL || (r.star || 1) > starCapForCheck || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
             }
             // ★ 新增：8 部位裝備系統的強化等級也一併檢查，超過上限視為異常存檔
             for (const itemId in (state.equipmentInventory || {})) {
@@ -2591,10 +2671,32 @@
             document.getElementById('nav-btn-admin').classList.toggle('hidden', !isCurrentUserAdmin());
         }
 
+        // ★ 新增：「個人」分頁（聊天／信件）的 UI 刷新——連線判斷邏輯比競技場簡化，
+        // 因為帳號設定／Firebase 連線本身都還是在競技場分頁處理，這裡只需要判斷「有沒有連線」，
+        // 沒連線就請玩家先去競技場分頁設定。
+        function refreshPersonalUI() {
+            const notConnected = document.getElementById('personal-not-connected');
+            const content = document.getElementById('personal-connected-content');
+            if (!notConnected || !content) return;
+            notConnected.classList.toggle('hidden', mpConnected);
+            content.classList.toggle('hidden', !mpConnected);
+            content.classList.toggle('flex', mpConnected);
+            if (!mpConnected) return;
+
+            listenPlayerMail();
+            // 兩個子面板都還是關閉狀態的話（例如第一次打開這個分頁），預設顯示聊天；
+            // 如果玩家原本就選在信件子頁，重新整理時不要把它切回聊天
+            const chatPanel = document.getElementById('arena-chat-panel');
+            const mailPanel = document.getElementById('arena-mail-panel');
+            if (chatPanel.classList.contains('hidden') && mailPanel.classList.contains('hidden')) {
+                switchPersonalSubTab('chat');
+            }
+        }
+
         function switchArenaSubTab(sub) {
             ToneAudioEngine.playClick();
-            const panels = {pvp: 'arena-pvp-panel', boss: 'arena-boss-panel', leaderboard: 'arena-leaderboard-panel', chat: 'arena-chat-panel', shop: 'arena-shop-panel', mail: 'arena-mail-panel'};
-            const btnColors = {pvp: 'bg-sky-900/60 text-sky-300 border-sky-600', boss: 'bg-red-900/60 text-red-300 border-red-600', leaderboard: 'bg-yellow-900/60 text-yellow-300 border-yellow-600', chat: 'bg-teal-900/60 text-teal-300 border-teal-600', shop: 'bg-amber-900/60 text-amber-300 border-amber-600', mail: 'bg-emerald-900/60 text-emerald-300 border-emerald-600'};
+            const panels = {pvp: 'arena-pvp-panel', boss: 'arena-boss-panel', leaderboard: 'arena-leaderboard-panel', shop: 'arena-shop-panel'};
+            const btnColors = {pvp: 'bg-sky-900/60 text-sky-300 border-sky-600', boss: 'bg-red-900/60 text-red-300 border-red-600', leaderboard: 'bg-yellow-900/60 text-yellow-300 border-yellow-600', shop: 'bg-amber-900/60 text-amber-300 border-amber-600'};
             Object.keys(panels).forEach(key => {
                 const el = document.getElementById(panels[key]);
                 if (!el) return;
@@ -2605,9 +2707,28 @@
                     btn.className = `shrink-0 px-3 py-2 rounded-lg text-[10px] font-bold relative border whitespace-nowrap ${key === sub ? btnColors[key] : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
                 }
             });
-            if (sub === 'mail') document.getElementById('arena-mail-dot').classList.add('hidden'); // 打開信件分頁就當作已讀，把小紅點關掉
             if (sub === 'boss') refreshWorldBossUI();
             if (sub === 'leaderboard') listenLeaderboard();
+        }
+
+        // ★ 新增：個人分頁（聊天／信件）的子頁籤切換，從競技場分頁獨立出來
+        function switchPersonalSubTab(sub) {
+            ToneAudioEngine.playClick();
+            const panels = {chat: 'arena-chat-panel', mail: 'arena-mail-panel'};
+            const btnColors = {chat: 'bg-teal-900/60 text-teal-300 border-teal-600', mail: 'bg-emerald-900/60 text-emerald-300 border-emerald-600'};
+            Object.keys(panels).forEach(key => {
+                const el = document.getElementById(panels[key]);
+                if (!el) return;
+                el.classList.toggle('hidden', key !== sub);
+                el.classList.toggle('flex', key === sub);
+                const btn = document.getElementById('btn-personal-' + key);
+                if (btn) btn.className = `flex-1 py-2 rounded-lg text-[10px] font-bold relative border whitespace-nowrap ${key === sub ? btnColors[key] : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
+            });
+            if (sub === 'mail') {
+                // 打開信件分頁就當作已讀，把小紅點關掉（子頁籤上的跟導覽列上的都要關）
+                document.getElementById('arena-mail-dot').classList.add('hidden');
+                document.getElementById('nav-personal-mail-dot').classList.add('hidden');
+            }
             if (sub === 'chat') listenChat();
         }
 
@@ -2647,9 +2768,10 @@
             const rarityMult = RARITY_BASE_MULT[db.rarity] || 1.0;
             const classBase = CLASS_BASE_STATS[db.role] || CLASS_BASE_STATS['戰士'];
             const maxLevelMult = getLevelMultiplier(MAX_HERO_LEVEL);
-            // ★ 星級現在無上限，這裡不能直接用 MAX_STAR_LEVEL (Infinity) 算，不然這個合理性檢查會直接失效。
-            // 改用一個「夠寬鬆但還是有限」的估計值，只用在這個粗略防呆檢查上，跟遊戲實際的星級上限脫鉤。
-            const maxTotalBonus = 1 + getStarBonusRatio(PLAUSIBLE_MAX_STAR_ESTIMATE) + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER);
+            // ★ 管理員如果有設定實際的星級上限，這裡改用真正的上限算（更精準）；
+            // 沒設定（無上限）時才退回一個「夠寬鬆但還是有限」的估計值，只用在這個粗略防呆檢查上。
+            const starCapForCheck = Number.isFinite(MAX_STAR_LEVEL) ? MAX_STAR_LEVEL : PLAUSIBLE_MAX_STAR_ESTIMATE;
+            const maxTotalBonus = 1 + getStarBonusRatio(starCapForCheck) + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER);
             // ★ 同步 8 部位裝備系統：8 個部位都強化滿 +20 的粗估加算數值上限（武器/副手/胸甲/頭盔/鞋子/手套/戒指/項鍊各自算一次）
             const maxEquipFlat = {hp: 3500, atk: 400, def: 250, crit: 5};
             // 套裝加成也給一個寬鬆估計（假設 8 件都湊滿同一套裝的最高數值型加成：狂暴 4 件 暴傷+35% 概念上已經算進 critDmgMult，
@@ -3574,6 +3696,21 @@
         /* ============================================================
            背包：純顯示目前擁有的英雄碎片，不用連線也能看（本地端資料，不像競技場/黑市需要多人功能）
            ============================================================ */
+        // ★ 新增：背包分頁子頁籤切換——英雄碎片跟裝備背包分開顯示，不要擠在同一頁
+        let currentInventorySubTab = 'shard';
+        function switchInventorySubTab(sub) {
+            ToneAudioEngine.playClick();
+            currentInventorySubTab = sub;
+            const shardPanel = document.getElementById('inventory-shard-panel');
+            const equipPanel = document.getElementById('inventory-equip-panel');
+            shardPanel.classList.toggle('hidden', sub !== 'shard');
+            shardPanel.classList.toggle('flex', sub === 'shard');
+            equipPanel.classList.toggle('hidden', sub !== 'equip');
+            equipPanel.classList.toggle('flex', sub === 'equip');
+            document.getElementById('btn-inv-shard').className = `flex-1 py-2 rounded-lg text-[10px] font-bold border transition ${sub === 'shard' ? 'bg-purple-900/60 text-purple-300 border-purple-600' : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
+            document.getElementById('btn-inv-equip').className = `flex-1 py-2 rounded-lg text-[10px] font-bold border transition ${sub === 'equip' ? 'bg-purple-900/60 text-purple-300 border-purple-600' : 'bg-black/40 text-stone-400 border-[#3e3328]'}`;
+        }
+
         function renderInventoryUI() {
             const list = document.getElementById('inventory-shard-list');
             const emptyText = document.getElementById('inventory-empty-text');
@@ -3781,12 +3918,13 @@
             }
             let html = '';
             // ★ 計數堆疊的 +0 裝備先顯示（未裝備、共用同一份 slot+套裝的堆在一起，顯示 ×數量）
+            // 點擊會先從堆疊「升格」出一件獨立物件，再開詳情彈窗
             stackKeys.forEach(key => {
                 const stackCount = stacks[key];
                 const [slot, setId] = key.split('_'); // slot/setId 都是不含底線的英文代號，直接切開即可
                 const cfg = EQUIPMENT_SLOT_CONFIG[slot];
                 const setDef = setId && EQUIPMENT_SETS[setId];
-                html += `<div class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center">
+                html += `<div onclick="openEquipmentDetailFromStack('${slot}', '${setId}')" class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center cursor-pointer hover:border-fantasy-gold transition active:scale-95">
                     <i class="fa-solid ${cfg ? cfg.icon : 'fa-question'} text-lg mb-1" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
                     <div class="text-[9px] font-bold text-stone-300">${cfg ? cfg.name : '???'} +0 <span class="text-amber-300">×${stackCount}</span></div>
                     <div class="text-[8px]" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
@@ -3797,7 +3935,7 @@
                 const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
                 const setDef = item.setId && EQUIPMENT_SETS[item.setId];
                 const equippedHero = item.equippedBy && HERO_DATABASE.find(h => h.id === item.equippedBy);
-                html += `<div class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center">
+                html += `<div onclick="openEquipmentDetailModal('${item.id}')" class="glass-panel p-2 rounded-lg border border-[#3e3328] flex flex-col items-center text-center cursor-pointer hover:border-fantasy-gold transition active:scale-95">
                     <i class="fa-solid ${cfg ? cfg.icon : 'fa-question'} text-lg mb-1" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
                     <div class="text-[9px] font-bold text-stone-300">${cfg ? cfg.name : '???'} +${item.level}</div>
                     <div class="text-[8px]" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
@@ -3805,6 +3943,93 @@
                 </div>`;
             });
             list.innerHTML = html;
+        }
+
+        // ============ 裝備背包詳情彈窗（顯示素質＋套裝共鳴，可直接強化，不需要先裝備上英雄）============
+        let currentEquipmentDetailItemId = null;
+
+        // 從堆疊點進來：先「升格」出一件獨立物件，再用一般流程開詳情彈窗
+        function openEquipmentDetailFromStack(slot, setId) {
+            const item = promoteStackToItem(slot, setId);
+            if (!item) {showToast('數量不足'); return;}
+            renderEquipmentInventoryList(); // 堆疊數量已經變動，背景清單要重新整理
+            openEquipmentDetailModal(item.id);
+        }
+
+        function openEquipmentDetailModal(itemId) {
+            ToneAudioEngine.playClick();
+            currentEquipmentDetailItemId = itemId;
+            renderEquipmentDetailModal();
+            const modal = document.getElementById('equipment-detail-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+        function closeEquipmentDetailModal() {
+            ToneAudioEngine.playClick();
+            const modal = document.getElementById('equipment-detail-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {modal.classList.add('hidden'); modal.classList.remove('flex');}, 300);
+        }
+
+        function renderEquipmentDetailModal() {
+            const item = GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[currentEquipmentDetailItemId];
+            if (!item) {closeEquipmentDetailModal(); return;}
+            const cfg = EQUIPMENT_SLOT_CONFIG[item.slot];
+            const setDef = item.setId && EQUIPMENT_SETS[item.setId];
+            const stats = getEquipmentItemStats(item);
+
+            document.getElementById('equipment-detail-title').innerText = `${cfg ? cfg.name : '???'} +${item.level}`;
+            document.getElementById('equipment-detail-icon').innerHTML = `<i class="fa-solid ${cfg ? cfg.icon : 'fa-question'}" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>`;
+
+            const equippedHero = item.equippedBy && HERO_DATABASE.find(h => h.id === item.equippedBy);
+            document.getElementById('equipment-detail-status').innerText = equippedHero ? `目前裝備於：${equippedHero.name}` : '未裝備';
+
+            // 裝備素質：把這件裝備目前（含強化等級）提供的每一項白字數值列出來
+            const statLabels = {hp: '生命值', atk: '攻擊力', def: '防禦力', crit: '暴擊率', magicRes: '魔法抗性'};
+            const statUnits = {crit: '%', magicRes: ''};
+            const statKeys = Object.keys(stats).filter(k => stats[k] > 0);
+            document.getElementById('equipment-detail-stats').innerHTML = statKeys.length > 0
+                ? statKeys.map(k => `<div class="flex justify-between text-[10px] text-stone-300"><span>${statLabels[k] || k}</span><span class="font-bold text-emerald-400">+${stats[k]}${statUnits[k] || ''}</span></div>`).join('')
+                : '<div class="text-[10px] text-stone-500">這個部位目前沒有基礎數值</div>';
+
+            // 套裝共鳴效果：列出這個套裝 2/4/6/8 件的完整效果說明（純資訊參考，不是「目前生效中」的狀態，
+            // 要看目前實際觸發了哪幾階，得看穿這件裝備的英雄詳情頁）
+            document.getElementById('equipment-detail-resonance').innerHTML = setDef
+                ? [2, 4, 6, 8].map(threshold => {
+                    const bonus = setDef.bonuses[threshold];
+                    if (!bonus) return '';
+                    return `<div class="flex gap-2 text-[9px]"><span class="font-bold shrink-0 w-8" style="color:${setDef.color}">${threshold}件</span><span class="text-stone-400 flex-1">${bonus.desc}</span></div>`;
+                }).join('')
+                : '<div class="text-[10px] text-stone-500">這件裝備沒有套裝歸屬</div>';
+
+            // 強化按鈕
+            const enhanceCost = getEquipmentEnhanceCost(item.level);
+            const isMaxLvl = item.level >= EQUIPMENT_MAX_LEVEL;
+            const canEnhance = !isMaxLvl && GAME_STATE.gold >= enhanceCost.gold && GAME_STATE.forgeStones >= enhanceCost.stones;
+            const btn = document.getElementById('equipment-detail-enhance-btn');
+            if (isMaxLvl) {
+                btn.innerHTML = '已達強化上限';
+            } else {
+                btn.innerHTML = `強化 <i class="fa-solid fa-hammer ml-1"></i> ${enhanceCost.stones} <i class="fa-solid fa-coins text-yellow-500 ml-1"></i> ${enhanceCost.gold.toLocaleString()}`;
+            }
+            btn.disabled = isMaxLvl || !canEnhance;
+            btn.classList.toggle('opacity-50', btn.disabled);
+        }
+
+        function enhanceEquipmentItemFromDetail() {
+            ToneAudioEngine.playClick();
+            const item = GAME_STATE.equipmentInventory && GAME_STATE.equipmentInventory[currentEquipmentDetailItemId];
+            if (!item) return;
+            if (item.level >= EQUIPMENT_MAX_LEVEL) {showToast('此裝備已達強化上限！'); return;}
+            const cost = getEquipmentEnhanceCost(item.level);
+            if (GAME_STATE.gold < cost.gold || GAME_STATE.forgeStones < cost.stones) {showToast('資源不足！需要更多金幣與鍛造石。'); return;}
+            GAME_STATE.gold -= cost.gold;
+            GAME_STATE.forgeStones -= cost.stones;
+            item.level++;
+            saveGame(); updateHUD();
+            renderEquipmentDetailModal();
+            renderEquipmentInventoryList();
+            showToast(`裝備強化成功！當前 +${item.level}`);
         }
 
         /* ============================================================
@@ -4136,17 +4361,24 @@
             } catch (err) {console.warn('購買失敗：', err); showToast('購買失敗：' + (err.message || '未知錯誤'));}
         }
 
+        // ★ 修正重大 bug：原本用 .where(欄位A).orderBy(欄位B) 這種「不同欄位」的組合查詢，
+        // Firestore 需要額外手動建立複合索引才能執行，沒有索引的話查詢會直接失敗——但不會跳出任何
+        // 錯誤畫面，只是列表永遠抓不到資料、一直卡在空的狀態（上架的 .add() 寫入本身不需要索引，
+        // 所以「上架成功」的提示還是會正常跳出，造成「顯示成功但列表是空的」這種矛盾現象）。
+        // 改成只用 where 過濾（不用複合索引就能查），排序改成抓回資料後在前端自己按時間排。
         function listenBlackMarketBrowse() {
             if (bmBrowseUnsub) bmBrowseUnsub();
-            bmBrowseUnsub = fbDb.collection('blackMarketListings').where('status', '==', 'active').orderBy('createdAt', 'desc').limit(30)
+            bmBrowseUnsub = fbDb.collection('blackMarketListings').where('status', '==', 'active').limit(50)
                 .onSnapshot(snap => {
                     const list = document.getElementById('bm-browse-list');
                     if (!list) return;
                     const listings = [];
                     snap.forEach(doc => {if (doc.data().sellerUid !== fbUser.uid) listings.push({id: doc.id, ...doc.data()});});
-                    if (listings.length === 0) {list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-4">目前市場上沒有商品</div>`; return;}
+                    listings.sort((a, b) => (b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0) - (a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0));
+                    const trimmed = listings.slice(0, 30);
+                    if (trimmed.length === 0) {list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-4">目前市場上沒有商品</div>`; return;}
                     list.innerHTML = '';
-                    listings.forEach(l => {
+                    trimmed.forEach(l => {
                         const card = document.createElement('div');
                         card.className = 'glass-panel p-3 rounded-xl border border-[#3e3328] flex items-center justify-between';
                         const title = l.type === 'equipment' ? `${l.itemSlotName} +${l.itemLevel}（${l.itemSetName}）` : `${l.heroName} 碎片 x${l.shardAmount}`;
@@ -4159,14 +4391,16 @@
 
         function listenBlackMarketMine() {
             if (bmMineUnsub) bmMineUnsub();
-            bmMineUnsub = fbDb.collection('blackMarketListings').where('sellerUid', '==', fbUser.uid).orderBy('createdAt', 'desc').limit(30)
+            bmMineUnsub = fbDb.collection('blackMarketListings').where('sellerUid', '==', fbUser.uid).limit(50)
                 .onSnapshot(snap => {
                     const list = document.getElementById('bm-mine-list');
                     if (!list) return;
                     if (snap.empty) {list.innerHTML = `<div class="text-center text-[10px] text-stone-500 py-4">你還沒有上架任何商品</div>`; return;}
+                    const listings = [];
+                    snap.forEach(doc => listings.push({id: doc.id, ...doc.data()}));
+                    listings.sort((a, b) => (b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0) - (a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0));
                     list.innerHTML = '';
-                    snap.forEach(doc => {
-                        const l = {id: doc.id, ...doc.data()};
+                    listings.slice(0, 30).forEach(l => {
                         const statusLabel = {active: '<span class="text-emerald-400">寄售中</span>', sold: '<span class="text-amber-400">已售出</span>', cancelled: '<span class="text-stone-500">已下架</span>'}[l.status] || l.status;
                         const title = l.type === 'equipment' ? `${l.itemSlotName} +${l.itemLevel}（${l.itemSetName}）` : `${l.heroName} 碎片 x${l.shardAmount}`;
                         const card = document.createElement('div');
@@ -4208,6 +4442,7 @@
             if (arenaMailUnsub) arenaMailUnsub();
             arenaMailUnsub = fbDb.collection('mail').doc(fbUser.uid).onSnapshot(doc => {
                 const dot = document.getElementById('arena-mail-dot');
+                const navDot = document.getElementById('nav-personal-mail-dot');
                 const messages = (doc.exists && doc.data().messages) || [];
                 // ★ 新增：真的收到新信件時跳提示通知（不是每次分頁重整都跳，只有信件數量比上次多才算）
                 if (!mailNotifyInitialized) {
@@ -4222,7 +4457,12 @@
                     lastMailCount = messages.length;
                 }
                 const unclaimedCount = messages.filter(m => !m.claimed).length;
-                if (dot) dot.classList.toggle('hidden', unclaimedCount === 0 || !document.getElementById('arena-mail-panel').classList.contains('hidden'));
+                const mailPanel = document.getElementById('arena-mail-panel');
+                const mailPanelVisible = mailPanel && !mailPanel.classList.contains('hidden');
+                if (dot) dot.classList.toggle('hidden', unclaimedCount === 0 || mailPanelVisible);
+                // ★ 新增：導覽列上「個人」分頁的未讀紅點，跟子頁籤上那顆用同一個判斷條件，
+                // 只要信件子頁沒有正在顯示中，有未領取的信件就一直亮著提醒
+                if (navDot) navDot.classList.toggle('hidden', unclaimedCount === 0 || mailPanelVisible);
                 lastMailMessages = messages;
                 renderMailList();
             }, err => console.warn('信箱監聽失敗：', err));
@@ -4242,7 +4482,7 @@
             const visible = reversed.slice(0, mailRenderLimit);
             list.innerHTML = '';
             visible.forEach(msg => {
-                const rewardLabels = {gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', specialTickets: '特急招募卷', honorPoints: '榮譽點數', starCoins: '賽季勳章', transcendCrystals: '超越結晶', blackMarketCurrency: '黑市貨幣'};
+                const rewardLabels = {gold: '金幣', heroExp: '英雄經驗', diamonds: '寶石', forgeStones: '鍛造石', tickets: '召喚卷軸', specialTickets: '特急招募卷', honorPoints: '榮譽點數', starCoins: '賽季勳章', transcendCrystals: '超越結晶', blackMarketCurrency: '黑市貨幣', setDungeonTickets: '秘境門票'};
                 let rewardText = Object.entries(msg.rewards || {}).filter(([k, v]) => v > 0 && rewardLabels[k])
                     .map(([k, v]) => `${rewardLabels[k]} +${v}`).join('／');
                 if (msg.rewards && msg.rewards.heroId) {
@@ -4296,6 +4536,10 @@
                 if (r.starCoins) GAME_STATE.starCoins = (GAME_STATE.starCoins || 0) + r.starCoins;
                 if (r.transcendCrystals) GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + r.transcendCrystals;
                 if (r.blackMarketCurrency) GAME_STATE.blackMarketCurrency = (GAME_STATE.blackMarketCurrency || 0) + r.blackMarketCurrency;
+                if (r.setDungeonTickets) {
+                    ensureSetDungeonState(); // 確保今天的門票額度已經初始化過，不然直接加會被跨日重置蓋掉
+                    GAME_STATE.setDungeonTickets = (GAME_STATE.setDungeonTickets || 0) + r.setDungeonTickets;
+                }
                 // ★ 新增：信件附贈的英雄／碎片。已經擁有的角色再收到「直接贈送角色」，會改成用 grantHeroShards
                 // 走碎片路線（避免把等級/星級蓋掉），滿星的話會自動轉化超越結晶，邏輯跟其他碎片來源一致。
                 if (r.heroId) {
@@ -4359,6 +4603,9 @@
             document.getElementById('admin-max-hero-level').value = (adminGameConfig && adminGameConfig.maxHeroLevel) || MAX_HERO_LEVEL;
             document.getElementById('admin-max-artifact-tier').value = (adminGameConfig && adminGameConfig.maxArtifactTier) || ALTAR_MAX_ARTIFACT_TIER;
             document.getElementById('admin-season-duration-days').value = (adminGameConfig && adminGameConfig.seasonDurationDays) || SEASON_DURATION_DAYS;
+            // ★ 星級上限：Infinity（無上限）時顯示空白，不要真的把 "Infinity" 這個字串塞進輸入框
+            const starLevelForDisplay = (adminGameConfig && adminGameConfig.maxStarLevel) || (Number.isFinite(MAX_STAR_LEVEL) ? MAX_STAR_LEVEL : '');
+            document.getElementById('admin-max-star-level').value = starLevelForDisplay;
             document.getElementById('admin-toggle-unlimited-speed').checked = !!(adminGameConfig && adminGameConfig.unlimitedSpeed);
             document.getElementById('admin-toggle-unlimited-boss').checked = !!(adminGameConfig && adminGameConfig.unlimitedBossAttempts);
             document.getElementById('admin-toggle-free-market').checked = !!(adminGameConfig && adminGameConfig.freeMarket);
@@ -4377,6 +4624,9 @@
             const maxHeroLevel = parseInt(document.getElementById('admin-max-hero-level').value) || MAX_HERO_LEVEL;
             const maxArtifactTier = parseInt(document.getElementById('admin-max-artifact-tier').value) || ALTAR_MAX_ARTIFACT_TIER;
             const seasonDurationDays = parseInt(document.getElementById('admin-season-duration-days').value) || SEASON_DURATION_DAYS;
+            // ★ 星級上限：輸入 0 或留空都代表「無上限」，存成 0，套用時再轉換回 Infinity（見 listenAdminGameConfig）
+            const maxStarLevelInput = document.getElementById('admin-max-star-level').value;
+            const maxStarLevel = maxStarLevelInput ? (parseInt(maxStarLevelInput) || 0) : 0;
             const unlimitedSpeed = document.getElementById('admin-toggle-unlimited-speed').checked;
             const unlimitedBossAttempts = document.getElementById('admin-toggle-unlimited-boss').checked;
             const freeMarket = document.getElementById('admin-toggle-free-market').checked;
@@ -4388,13 +4638,13 @@
                 await fbDb.collection('gameConfig').doc('current').set({
                     currentSeasonId: seasonId,
                     activeEventSeasonId: eventSeasonId,
-                    maxHeroLevel, maxArtifactTier, seasonDurationDays,
+                    maxHeroLevel, maxArtifactTier, seasonDurationDays, maxStarLevel,
                     unlimitedSpeed, unlimitedBossAttempts, freeMarket,
                     seasonBossAtkMult, seasonBossDefMult, seasonBossCrit, seasonBossSkillMult,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: GAME_STATE.mpDisplayName || fbUser.email
                 }, {merge: true});
-                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階，賽季天數 ${seasonDurationDays} 天，賽季首領攻/防倍率 ${seasonBossAtkMult}/${seasonBossDefMult}，暴擊 ${seasonBossCrit}%，技能倍率 ${seasonBossSkillMult}`;
+                document.getElementById('admin-config-status').innerText = `已套用：目前賽季 ${SEASON_CONFIG[seasonId].name}，限時活動 ${eventSeasonId ? SEASON_CONFIG[eventSeasonId].exclusiveMode.title : '（關閉）'}，等級上限 ${maxHeroLevel}，聖物上限 ${maxArtifactTier} 階，星級上限 ${maxStarLevel > 0 ? maxStarLevel + '★' : '無上限'}，賽季天數 ${seasonDurationDays} 天，賽季首領攻/防倍率 ${seasonBossAtkMult}/${seasonBossDefMult}，暴擊 ${seasonBossCrit}%，技能倍率 ${seasonBossSkillMult}`;
                 showToast('全域設定已同步給所有玩家');
             } catch (err) {console.warn('儲存全域設定失敗：', err); showToast('儲存失敗：' + (err.code || err.message || '未知錯誤'));}
         }
@@ -4544,7 +4794,8 @@
                 honorPoints: parseInt(document.getElementById('admin-mail-honor').value) || 0,
                 starCoins: parseInt(document.getElementById('admin-mail-starcoins').value) || 0,
                 transcendCrystals: parseInt(document.getElementById('admin-mail-crystal').value) || 0,
-                blackMarketCurrency: parseInt(document.getElementById('admin-mail-bmc').value) || 0
+                blackMarketCurrency: parseInt(document.getElementById('admin-mail-bmc').value) || 0,
+                setDungeonTickets: parseInt(document.getElementById('admin-mail-setdungeon-ticket').value) || 0
             };
             // ★ 新增：信件附贈英雄／碎片
             const heroId = document.getElementById('admin-mail-hero').value;
@@ -4573,7 +4824,7 @@
                 }
                 document.getElementById('admin-mail-title').value = '';
                 document.getElementById('admin-mail-body').value = '';
-                ['gold', 'exp', 'diamond', 'stone', 'ticket', 'sptickets', 'honor', 'starcoins', 'crystal', 'bmc'].forEach(k => document.getElementById('admin-mail-' + k).value = '');
+                ['gold', 'exp', 'diamond', 'stone', 'ticket', 'sptickets', 'honor', 'starcoins', 'crystal', 'bmc', 'setdungeon-ticket'].forEach(k => document.getElementById('admin-mail-' + k).value = '');
                 document.getElementById('admin-mail-hero').value = '';
             } catch (err) {console.warn('發信失敗：', err); showToast('發信失敗，請檢查網路連線或安全規則設定');}
         }
@@ -5050,6 +5301,8 @@
                     if (adminGameConfig.maxHeroLevel) MAX_HERO_LEVEL = adminGameConfig.maxHeroLevel;
                     if (adminGameConfig.maxArtifactTier) ALTAR_MAX_ARTIFACT_TIER = adminGameConfig.maxArtifactTier;
                     if (adminGameConfig.seasonDurationDays) SEASON_DURATION_DAYS = adminGameConfig.seasonDurationDays;
+                    // ★ 新增：管理員可以調整升星級數上限，0（或沒設定過）代表維持無上限
+                    MAX_STAR_LEVEL = adminGameConfig.maxStarLevel > 0 ? adminGameConfig.maxStarLevel : Infinity;
                     // ★ 新增：管理員可以開關「黑市免手續費」，即時套用給所有玩家（見 exchangeDiamondToBMC 等黑市函式）
                     BLACK_MARKET_FEE_RATE = adminGameConfig.freeMarket ? 0 : BLACK_MARKET_FEE_RATE_DEFAULT;
                     // ★ 管理員如果在玩家正在遊玩時把上限往下調，這裡立刻套用保護機制，不用等下次重新整理頁面
@@ -5677,10 +5930,11 @@
                 if (!r) return;
                 if ((r.level || 1) > MAX_HERO_LEVEL) {r.level = MAX_HERO_LEVEL; clamped = true;}
                 if ((r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) {r.artifactTier = ALTAR_MAX_ARTIFACT_TIER; clamped = true;}
+                if (Number.isFinite(MAX_STAR_LEVEL) && (r.star || 1) > MAX_STAR_LEVEL) {r.star = MAX_STAR_LEVEL; clamped = true;}
             });
             if (clamped) {
                 saveGame();
-                showToast('部分騎士的等級／聖物階級超過目前上限，已自動調整回上限值');
+                showToast('部分騎士的等級／星級／聖物階級超過目前上限，已自動調整回上限值');
             }
             return clamped;
         }
@@ -7116,6 +7370,10 @@
             }
             if (tabId !== 'arena') {
                 if (leaderboardUnsub) {leaderboardUnsub(); leaderboardUnsub = null;}
+            }
+            // ★ 修正：聊天室現在搬到「個人」分頁了，離開監聽的判斷條件要跟著從 'arena' 改成 'personal'，
+            // 不然離開個人分頁後聊天監聽不會正確清掉，會留著一個用不到的即時監聽
+            if (tabId !== 'personal') {
                 if (chatUnsub) {chatUnsub(); chatUnsub = null;}
             }
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
@@ -7134,6 +7392,7 @@
             if (tabId === 'season-mode') checkSeasonModeUnlock();
             if (tabId === 'dungeon') renderDungeonAutoFarmButtons();
             if (tabId === 'arena') refreshArenaUI();
+            if (tabId === 'personal') refreshPersonalUI();
             if (tabId === 'inventory') renderInventoryUI();
             if (tabId === 'setdungeon') {renderSetDungeonList(); populateFurnaceSelects();}
             if (tabId === 'blackmarket') refreshBlackMarketUI();
@@ -7847,7 +8106,7 @@
                         <i class="fa-solid ${cfg.icon} text-lg my-1 drop-shadow-md" style="color:${setDef ? setDef.color : '#94a3b8'}"></i>
                         <div class="text-[8px] mb-1 font-bold truncate w-full" style="color:${setDef ? setDef.color : '#78716c'}">${setDef ? setDef.name : '無套裝'}</div>
                         <button onclick="openEquipmentPicker('${slot}')" class="w-full py-1 rounded text-[8px] font-bold bg-black/40 text-stone-400 border border-[#3e3328] hover:border-stone-400 transition mb-1">更換</button>
-                        <button onmousedown="equipmentLongPressers['${slot}'].start()" onmouseup="equipmentLongPressers['${slot}'].stop()" onmouseleave="equipmentLongPressers['${slot}'].cancel()" ontouchstart="equipmentLongPressers['${slot}'].start()" ontouchend="equipmentLongPressers['${slot}'].stop()" ontouchcancel="equipmentLongPressers['${slot}'].cancel()" class="w-full py-1 rounded text-[8px] font-bold transition-all ${isMaxLvl ? 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50' : (canEnhance ? 'bg-[#2a2118] text-stone-200 border border-[#5a4634] hover:border-fantasy-gold active:scale-95' : 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50')}" ${isMaxLvl || !canEnhance ? 'disabled' : ''}>
+                        <button onmousedown="equipmentLongPressers['${slot}'].start()" onmouseup="equipmentLongPressers['${slot}'].stop()" onmouseleave="equipmentLongPressers['${slot}'].cancel()" ontouchstart="event.preventDefault(); equipmentLongPressers['${slot}'].start()" ontouchend="event.preventDefault(); equipmentLongPressers['${slot}'].stop()" ontouchcancel="equipmentLongPressers['${slot}'].cancel()" class="w-full py-1 rounded text-[8px] font-bold transition-all ${isMaxLvl ? 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50' : (canEnhance ? 'bg-[#2a2118] text-stone-200 border border-[#5a4634] hover:border-fantasy-gold active:scale-95' : 'bg-black/50 text-stone-600 border border-[#3e3328] cursor-not-allowed opacity-50')}" ${isMaxLvl || !canEnhance ? 'disabled' : ''}>
                             ${isMaxLvl ? '已滿級' : `<i class="fa-solid fa-hammer text-stone-400"></i> ${enhanceCost.stones} <i class="fa-solid fa-coins text-yellow-500 ml-1"></i> ${enhanceCost.gold}`}
                         </button>`;
                 } else {
@@ -8169,9 +8428,9 @@
 
         // ============ 英雄潛能覺醒 (升星) 邏輯 ============
         // ★ 改用英雄碎片升星，不再直接花寶石。碎片來源：召喚抽到重複英雄、賽季商店兌換。
-        // ★ 移除星級上限：可以無限升星，星級越高消耗的碎片也越多 (5+star*5，線性成長，不會失控)。
-        // 因為現在可以無限堆疊戰力，遠征章節的難度曲線也跟著大幅提高，讓這個系統有意義的成長空間。
-        const MAX_STAR_LEVEL = Infinity;
+        // ★ 星級上限預設無限（Infinity），但改成 let：管理員可以在後台設定一個實際數字當上限
+        // （見 listenAdminGameConfig 的 maxStarLevel），不填或填 0 就維持無上限。
+        let MAX_STAR_LEVEL = Infinity;
         // ★ 改用企劃書附件的分級消耗表：1~5★/6~10★/11~20★ 各自固定碎片+金幣消耗，
         // 10★與20★是「大突破」，除了更多碎片/金幣，還要額外的超越結晶。
         // 20★以後企劃書沒有繼續定義——這裡的設計延伸：級距內消耗沿用 20★那一階（30碎片/5000金幣），
@@ -8260,6 +8519,38 @@
         }
         // 星級升級也套用跟裝備/聖物強化一樣的通用長按小工具，長按可以連續升星
         const starLongPresser = createLongPressUpgrader((silent) => upgradeSelectedHeroStar(silent));
+
+        // ★ 新增：一鍵升級——依稀有度由高到低排序（GR>LR>UR>SSR>SR>R），逐一升到不能再升為止才換下一位。
+        // 因為金幣/經驗是全帳號共用的同一個池子，按這個順序處理，天然就會變成「稀有度最高的先吃滿
+        // 資源，剩下的才輪到低一階角色」，不用另外做複雜的資源分配演算法。
+        const RARITY_ORDER_DESC = ['GR', 'LR', 'UR', 'SSR', 'SR', 'R'];
+        function autoLevelUpAllHeroes() {
+            ToneAudioEngine.playClick();
+            const prevSelected = GAME_STATE.selectedHeroId;
+            const heroIds = Object.keys(GAME_STATE.roster || {});
+            heroIds.sort((a, b) => {
+                const dbA = HERO_DATABASE.find(h => h.id === a), dbB = HERO_DATABASE.find(h => h.id === b);
+                const rarityA = RARITY_ORDER_DESC.indexOf(dbA ? dbA.rarity : 'R');
+                const rarityB = RARITY_ORDER_DESC.indexOf(dbB ? dbB.rarity : 'R');
+                return rarityA - rarityB;
+            });
+            let totalLevelUps = 0, heroesAffected = 0;
+            heroIds.forEach(heroId => {
+                GAME_STATE.selectedHeroId = heroId;
+                let countForThisHero = 0;
+                while (upgradeSelectedHeroLevel(true)) countForThisHero++;
+                if (countForThisHero > 0) {heroesAffected++; totalLevelUps += countForThisHero;}
+            });
+            GAME_STATE.selectedHeroId = prevSelected;
+            saveGame(); updateHUD();
+            renderHeroesList();
+            if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
+            if (totalLevelUps === 0) {
+                showToast('目前沒有英雄的金幣／經驗足夠升級');
+            } else {
+                showToast(`⬆️ 一鍵升級完成：${heroesAffected} 位英雄共升了 ${totalLevelUps} 級（優先升稀有度最高的角色，滿了才輪到下一階；需要碎片/結晶的突破檢查點不會自動執行，要自己手動點）`);
+            }
+        }
 
         // ★ 新增：一鍵全體升星 (Auto-Awaken All)——依序把「目前擁有的每一位英雄」都升星到不能再升為止，
         // 跳過逐一點擊/動畫，最後跳一次總結算。大突破（10★/20★/30★...需要超越結晶）本來就設計成
