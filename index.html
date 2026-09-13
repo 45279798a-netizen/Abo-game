@@ -5796,6 +5796,8 @@
             // 每個角色都是「小技能疊層／標記 → 大招引爆／消耗 → 終極連動額外效果」的三段式連動設計。
             // ============================================================
             {id: 'h_gr_bahamut', name: '「滅世災炎」巴哈姆特', role: '戰士', rarity: 'GR', star: 1, baseHp: 433, baseAtk: 72, baseDef: 26, crit: 25, avatarIcon: 'fa-dragon', color: '#ef4444',
+                basicAtkMult: 1.5, // ★ 體系一重製：普攻 150% 物理傷害
+                passive: {type: 'bahamut_scale', desc: '【逆鱗】每次我方造成燃燒傷害或自身受到傷害時，疊 1 層「逆鱗」。每層 +10% 攻擊力、+10% 吸血率，最多 5 層。'},
                 skill: {type: 'gr_bahamut', value: 2.2, stackAtkPct: 10, stackLifestealPct: 10, maxStacks: 5, defIgnorePerStack: 15, desc: '小技能【狂血撕裂】：對敵方單體造成巨量傷害，並為自身疊加 1 層「逆鱗」（每層 +10% 攻擊力、+10% 吸血率，最高 5 層）。大招【深淵龍息·燼滅】：對敵方全體噴吐烈焰，消耗全部「逆鱗」層數，每層額外無視目標 15% 防禦力；若消耗滿 5 層且成功擊殺任一敵人，將立刻無消耗再次觸發一次【狂血撕裂】。'},
                 // ★ 命之座範例（企劃書步驟1）：單數層是純粹的「技能倍率/觸發機率」通用成長，不需要額外資料；
                 // 雙數層則解鎖專屬質變（customEffect）。目前只有 2 命的 lifesteal_15 已經接上戰鬥（見 executeHit），
@@ -5810,66 +5812,157 @@
                 ],
                 lore: '曾統治遠古巨龍巢穴的半龍人戰神，血液中流淌著純粹的毀滅之力。', isExclusive: true},
             {id: 'h_gr_alexander', name: '「曙光初王」亞歷山大', role: '坦克', rarity: 'GR', star: 1, baseHp: 533, baseAtk: 34, baseDef: 42, crit: 10, avatarIcon: 'fa-shield-halved', color: '#fbbf24',
+                basicAtkMult: 1.5,
+                passive: {type: 'alexander_kingsguard', dmgReducePct: 10, healOnHalfHp: 20, desc: '【王者庇護】戰鬥開始時，我方全體受到的最終傷害降低 10%。當亞歷山大生命值首次低於 50% 時，立即回復自身 20% 最大生命值（每場限 1 次）。'},
                 skill: {type: 'gr_alexander', value: 3.0, healPct: 1.2, desc: '小技能【耀陽刻印】：舉盾嘲諷，在所有攻擊自己的敵人身上留下無法驅散的「耀陽」印記。大招【王權共鳴·天威】：猛砸地面震盪全場，強制引爆敵方身上所有「耀陽」印記，每個印記對其持有者造成「亞歷山大最大防禦力 300%」的真實傷害，並為我方血量最低的騎士恢復生命。'},
                 lore: '王國建國史詩中的第一代君王，手持聖盾，是光輝與榮耀的化身。', isExclusive: true},
             {id: 'h_gr_astraea', name: '「星軌秘法」阿斯特萊雅', role: '法師', rarity: 'GR', star: 1, baseHp: 292, baseAtk: 80, baseDef: 15, crit: 35, avatarIcon: 'fa-meteor', color: '#a855f7',
+                basicAtkMult: 1.5,
+                passive: {type: 'astraea_stardust', magicResDownPerStack: 5, desc: '【星塵易傷】敵方每被附加一種控制狀態（暈眩/冰凍/沉默等），魔抗永久降低 5%，可疊加。'},
                 skill: {type: 'gr_astraea', value: 2.0, debuffAtkPct: 20, desc: '小技能【星塵引力】：召喚微型黑洞造成魔法傷害，並對目標附加「引力坍縮」（攻擊力 -20%）。大招【星神共鳴·超新星】：召喚隕石優先鎖定帶有「引力坍縮」的目標；命中坍縮目標時傷害翻倍，並將傷害 100% 濺射給周圍所有敵人，同時重新附加「引力坍縮」。'},
                 lore: '掌控星盤矩陣的神秘先知，能夠看穿深淵的過去與未來。', isExclusive: true},
             {id: 'h_gr_kage', name: '「虛空殘影」暗刃·影', role: '刺客', rarity: 'GR', star: 1, baseHp: 233, baseAtk: 78, baseDef: 12, crit: 48, avatarIcon: 'fa-user-ninja', color: '#8b5cf6',
+                basicAtkMult: 1.5,
+                passive: {type: 'kage_void_gaze', critDmgBonusVsDebuffed: 40, desc: '【虛空凝視】對處於「中毒」或「死亡倒數」狀態的敵人，暴擊傷害提升 40%。'},
                 skill: {type: 'gr_kage', value: 2.6, markTurns: 3, desc: '小技能【幽影步】：進入潛行狀態，並對目標施加「死亡倒數」標記（3 回合後自動爆發致死傷害）。大招【虛空斷頭台】：瞬間閃現至帶有「死亡倒數」標記的敵人背後進行背刺，提前引爆標記；若因此擊殺目標，「死亡氣息」將傳染給剩餘血量最低的兩名敵人，並立刻自動觸發二次引爆，形成連鎖刺殺。'},
                 lore: '誕生於虛空迷宮深處的無情死神，從沒有人見過他的真面目。', isExclusive: true},
             {id: 'h_gr_evelynn', name: '「不朽靈木」伊芙琳', role: '輔助', rarity: 'GR', star: 1, baseHp: 383, baseAtk: 38, baseDef: 21, crit: 12, avatarIcon: 'fa-seedling', color: '#22c55e',
+                basicAtkMult: 1.5,
+                passive: {type: 'evelynn_lifeseed', desc: '【靈種生根】帶有「靈種」的友軍，受治療效果 +50%，受到攻擊時微量回血。'},
                 skill: {type: 'gr_evelynn', healBoostPct: 50, shieldPct: 40, drainAtkPct: 20, desc: '小技能【新綠復甦】：為我方血量最低的兩名騎士種下「靈種」（受治療效果 +50%，受擊時微幅回血）。大招【森羅共鳴·萬物生長】：催動全場靈種開花，帶有靈種的騎士獲得最大生命值 40% 的護盾；同時藤蔓纏繞敵方全體，吸取其 20% 攻擊力平均轉移給帶有靈種的騎士。'},
                 lore: '幻影之森的守護神樹化身，掌握著復甦與靈魂共鳴的魔法。', isExclusive: true},
 
 
-            {id: 'h_reina', name: '烈焰騎士·蕾娜', role: '戰士', rarity: 'SSR', star: 1, baseHp: 150, baseAtk: 24, baseDef: 9, crit: 15, avatarIcon: 'fa-fire', color: '#dc2626', skill: {type: 'splash', value: 1.5, splashValue: 0.5, splashCount: 2, desc: '大招對主目標造成 150% 攻擊力傷害，並波及最多 2 名其他敵人，各造成 50% 攻擊力傷害。'}, lore: '來自南方火山地帶的紅蓮騎士，手中的巨劍蘊含著不滅的火種。'},
-            {id: 'h_noah', name: '冰霜法師·諾亞', role: '法師', rarity: 'SSR', star: 1, baseHp: 108, baseAtk: 28, baseDef: 6, crit: 20, avatarIcon: 'fa-snowflake', color: '#3b82f6', skill: {type: 'aoe', value: 1.6, desc: '大招施放暴風雪，對敵方全體造成 160% 攻擊力的魔法傷害。'}, lore: '極北冰原的天才法師，能瞬間凍結範圍內的一切生命。'},
-            {id: 'h_valkyrie', name: '聖殿衛士·瓦爾基里', role: '坦克', rarity: 'SSR', star: 1, baseHp: 200, baseAtk: 15, baseDef: 14, crit: 5, avatarIcon: 'fa-shield-halved', color: '#eab308', skill: {type: 'shield', chance: 0.3, value: 0.12, desc: '受擊時有 30% 機率為自己與全體友軍施加等同自身最大生命值 12% 的護盾。'}, lore: '守護聖都的最高階神官騎士，是戰場上最堅不可摧的壁壘。'},
-            {id: 'h_lilith', name: '暗影牧師·莉莉絲', role: '輔助', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 17, baseDef: 7, crit: 10, avatarIcon: 'fa-moon', color: '#8b5cf6', skill: {type: 'heal_all', value: 2.0, desc: '大招施放群體治癒，為所有友軍恢復等同自身攻擊力 200% 的生命值。'}, lore: '掌握生與死邊界的異端牧師，以暗影魔力修復友軍的傷勢。'},
-            {id: 'h_claude', name: '疾風遊俠·克勞德', role: '刺客', rarity: 'SSR', star: 1, baseHp: 117, baseAtk: 31, baseDef: 6, crit: 30, avatarIcon: 'fa-leaf', color: '#22c55e', skill: {type: 'first_strike', firstStrikeMult: 1.8, desc: '大招專門獵殺還沒受過傷的目標，命中「全新目標」時造成 180% 加成傷害，是名副其實的奇襲高手。'}, lore: '森林精靈中的異類，捨棄了長弓，以驚人的速度使用雙刃進行暗殺。'},
+            {id: 'h_reina', name: '烈焰騎士·蕾娜', role: '戰士', rarity: 'SSR', star: 1, baseHp: 150, baseAtk: 24, baseDef: 9, crit: 15, avatarIcon: 'fa-fire', color: '#dc2626',
+                passive: {type: 'reina_ember', critRateVsBurn: 20, desc: '【灰燼餘溫】攻擊燃燒中的目標時，暴擊率提升 20%。'},
+                skill: {type: 'splash', value: 1.5, splashValue: 0.5, splashCount: 2, desc: '大招對主目標造成 150% 攻擊力傷害，並波及最多 2 名其他敵人，各造成 50% 傷害。'}, lore: '來自南方火山地帶的紅蓮騎士，手中的巨劍蘊含著不滅的火種。'},
+            {id: 'h_noah', name: '冰霜法師·諾亞', role: '法師', rarity: 'SSR', star: 1, baseHp: 108, baseAtk: 28, baseDef: 6, crit: 20, avatarIcon: 'fa-snowflake', color: '#3b82f6',
+                passive: {type: 'noah_frostspike', trueDmgPctVsStunned: 30, desc: '【極寒冰刺】對處於「冰凍」或「暈眩」狀態的敵人造成傷害時，額外附加 30% 真實傷害。'},
+                skill: {type: 'aoe', value: 1.6, desc: '大招施放暴風雪，對敵方全體造成 160% 攻擊力的魔法傷害。'}, lore: '極北冰原的天才法師，能瞬間凍結範圍內的一切生命。'},
+            {id: 'h_valkyrie', name: '聖殿衛士·瓦爾基里', role: '坦克', rarity: 'SSR', star: 1, baseHp: 200, baseAtk: 15, baseDef: 14, crit: 5, avatarIcon: 'fa-shield-halved', color: '#eab308',
+                passive: {type: 'valkyrie_blessing', desc: '【女武神之庇護】受到攻擊時 30% 機率觸發，自己與全體友軍獲得自身最大生命值 12% 護盾。'},
+                skill: {type: 'shield', chance: 0.3, value: 0.12, desc: '受擊時有 30% 機率為自己與全體友軍施加等同自身最大生命值 12% 的護盾。'}, lore: '守護聖都的最高階神官騎士，是戰場上最堅不可摧的壁壘。'},
+            {id: 'h_lilith', name: '暗影牧師·莉莉絲', role: '輔助', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 17, baseDef: 7, crit: 10, avatarIcon: 'fa-moon', color: '#8b5cf6',
+                hpPctBonus: 15,
+                passive: {type: 'lilith_shadowpact', desc: '【暗影契約】自身最大生命值提升 15%。'},
+                skill: {type: 'heal_all', value: 2.0, desc: '大招施放群體治癒，為所有友軍恢復等同自身攻擊力 200% 的生命值。'}, lore: '掌握生與死邊界的異端牧師，以暗影魔力修復友軍的傷勢。'},
+            {id: 'h_claude', name: '疾風遊俠·克勞德', role: '遊俠', rarity: 'SSR', star: 1, baseHp: 117, baseAtk: 31, baseDef: 6, crit: 30, avatarIcon: 'fa-leaf', color: '#22c55e',
+                passive: {type: 'claude_opportunist', critRateVsFullHp: 30, desc: '【伺機而動】攻擊「尚未受傷（100% HP）」的目標時，暴擊率提升 30%。'},
+                skill: {type: 'first_strike', firstStrikeMult: 1.8, desc: '大招專門獵殺還沒受過傷的目標，命中「全新目標」時造成 180% 加成傷害，是名副其實的奇襲高手。'}, lore: '森林精靈中的異類，捨棄了長弓，以驚人的速度使用雙刃進行暗殺。'},
 
-            {id: 'h_arthur', name: '重裝鐵衛·亞瑟', role: '坦克', rarity: 'SR', star: 1, baseHp: 167, baseAtk: 12, baseDef: 12, crit: 5, avatarIcon: 'fa-shield', color: '#a0aec0', skill: {type: 'reflect', chance: 0.3, value: 0.3, desc: '受到攻擊時有 30% 機率反彈 30% 的傷害給攻擊者。'}, lore: '穿戴厚重板甲的王國老兵。'},
-            {id: 'h_faye', name: '精靈射手·菲', role: '刺客', rarity: 'SR', star: 1, baseHp: 92, baseAtk: 25, baseDef: 4, crit: 25, avatarIcon: 'fa-bullseye', color: '#4ade80', skill: {type: 'multi_shot', chance: 0.4, value: 0.8, desc: '普通攻擊後有 40% 機率立即追加一次 80% 傷害的射擊。'}, lore: '百步穿楊的精靈神射手。'},
-            {id: 'h_gideon', name: '狂戰士·吉迪恩', role: '戰士', rarity: 'SR', star: 1, baseHp: 142, baseAtk: 22, baseDef: 6, crit: 15, avatarIcon: 'fa-axe-battle', color: '#b91c1c', skill: {type: 'lifesteal', value: 0.5, desc: '大招攻擊會吸取造成傷害的 50% 轉化為自身生命值。'}, lore: '在戰場上依靠吸食敵人鮮血維生的狂戰士。'},
-            {id: 'h_elara', name: '光之祭司·艾拉', role: '輔助', rarity: 'SR', star: 1, baseHp: 108, baseAtk: 14, baseDef: 7, crit: 5, avatarIcon: 'fa-sun', color: '#fde047', skill: {type: 'buff_atk', value: 0.35, duration: 3, desc: '大招提升全體友軍攻擊力 35%，持續 3 回合。'}, lore: '信仰光明神的見習祭司。'},
-            {id: 'h_zeke', name: '雷霆法師·吉克', role: '法師', rarity: 'SR', star: 1, baseHp: 100, baseAtk: 26, baseDef: 5, crit: 15, avatarIcon: 'fa-bolt', color: '#fbbf24', skill: {type: 'chain', value: 1.5, jumps: 1, desc: '大招造成 150% 攻擊力傷害，閃電鏈會額外彈跳 1 次攻擊其他敵人。'}, lore: '能召喚落雷的火爆法師。'},
+            {id: 'h_arthur', name: '重裝鐵衛·亞瑟', role: '戰士', rarity: 'SR', star: 1, baseHp: 167, baseAtk: 12, baseDef: 12, crit: 5, avatarIcon: 'fa-shield', color: '#a0aec0',
+                passive: {type: 'arthur_thorns', desc: '【荊棘重甲】受攻擊時 30% 機率反彈，反彈 30% 傷害。'},
+                skill: {type: 'reflect', chance: 0.3, value: 0.3, desc: '受到攻擊時有 30% 機率反彈 30% 的傷害給攻擊者。'}, lore: '穿戴厚重板甲的王國老兵。'},
+            {id: 'h_faye', name: '精靈射手·菲', role: '射手', rarity: 'SR', star: 1, baseHp: 92, baseAtk: 25, baseDef: 4, crit: 25, avatarIcon: 'fa-bullseye', color: '#4ade80',
+                passive: {type: 'faye_windchase', chanceOnAllyCounter: 0.2, desc: '【風之連擊】普攻後 40% 機率追加射擊，追加攻擊造成 80% 傷害。當友軍發動「反傷」或「反擊」時，也有 20% 機率觸發追加射擊。'},
+                skill: {type: 'multi_shot', chance: 0.4, value: 0.8, desc: '普通攻擊後有 40% 機率立即追加一次 80% 傷害的射擊。'}, lore: '百步穿楊的精靈神射手。'},
+            {id: 'h_gideon', name: '狂戰士·吉迪恩', role: '戰士', rarity: 'SR', star: 1, baseHp: 142, baseAtk: 22, baseDef: 6, crit: 15, avatarIcon: 'fa-axe-battle', color: '#b91c1c',
+                lifestealBonusFlat: 15, // ★ 被動：永久獲得15%吸血率
+                passive: {type: 'gideon_bloodlust', desc: '【鮮血渴望】永久獲得 15% 吸血率。'},
+                skill: {type: 'lifesteal', value: 0.5, desc: '大招攻擊會吸取造成傷害的 50% 轉化為自身生命值。'}, lore: '在戰場上依靠吸食敵人鮮血維生的狂戰士。'},
+            {id: 'h_elara', name: '光之祭司·艾拉', role: '輔助', rarity: 'SR', star: 1, baseHp: 108, baseAtk: 14, baseDef: 7, crit: 5, avatarIcon: 'fa-sun', color: '#fde047',
+                passive: {type: 'elara_wish', dmgBonusPerShield: 3, maxShieldStacks: 5, desc: '【光明祈願】隊伍中每存在一個護盾，全體友軍造成的傷害提升 3%（最高疊加 5 層）。'},
+                skill: {type: 'buff_atk', value: 0.35, duration: 3, desc: '大招提升全體友軍攻擊力 35%，持續 3 回合。'}, lore: '信仰光明神的見習祭司。'},
+            {id: 'h_zeke', name: '雷霆法師·吉克', role: '法師', rarity: 'SR', star: 1, baseHp: 100, baseAtk: 26, baseDef: 5, crit: 15, avatarIcon: 'fa-bolt', color: '#fbbf24',
+                passive: {type: 'zeke_static', splashPctVsStunned: 50, desc: '【靜電場】技能擊中被控制（冰凍/暈眩）的目標時，會引發靜電爆炸，對其周圍造成 50% 的濺射魔法傷害。'},
+                skill: {type: 'chain', value: 1.5, jumps: 1, desc: '大招造成 150% 攻擊力傷害，閃電鏈會額外彈跳 1 次攻擊其他敵人。'}, lore: '能召喚落雷的火爆法師。'},
 
-            {id: 'h_thorin', name: '矮人鐵匠·索林', role: '戰士', rarity: 'R', star: 1, baseHp: 108, baseAtk: 15, baseDef: 8, crit: 10, avatarIcon: 'fa-hammer', color: '#78716c', skill: {type: 'stun', chance: 0.4, desc: '大招攻擊有 40% 機率擊暈目標，使其下回合無法行動。'}, lore: '力氣很大的矮人。'},
-            {id: 'h_lyra', name: '吟游詩人·萊拉', role: '輔助', rarity: 'R', star: 1, baseHp: 92, baseAtk: 10, baseDef: 5, crit: 5, avatarIcon: 'fa-music', color: '#ec4899', skill: {type: 'heal_single', value: 1.5, desc: '每回合為生命值最低的友軍恢復自身攻擊力 150% 的生命值。'}, lore: '用音樂治癒人心的旅人。'},
-            {id: 'h_draven', name: '賞金獵人·達文', role: '刺客', rarity: 'R', star: 1, baseHp: 83, baseAtk: 17, baseDef: 4, crit: 15, avatarIcon: 'fa-crosshairs', color: '#64748b', skill: {type: 'gold_bonus', value: 20, variance: 10, desc: '擊殺敵人時額外獲得 10~30 枚金幣。'}, lore: '見錢眼開的傭兵。'},
-            {id: 'h_ignis', name: '火徒·伊格尼斯', role: '法師', rarity: 'R', star: 1, baseHp: 75, baseAtk: 20, baseDef: 3, crit: 10, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn', value: 0.2, duration: 3, desc: '大招使目標燃燒，每回合造成自身攻擊力 20% 的灼燒傷害，持續 3 回合。'}, lore: '玩火自焚的學徒。'},
-            {id: 'h_militia', name: '王國步兵', role: '戰士', rarity: 'R', star: 1, baseHp: 83, baseAtk: 12, baseDef: 7, crit: 5, avatarIcon: 'fa-user-shield', color: '#a1887f', skill: {type: 'basic', value: 1.5, desc: '樸實無華的攻擊，大招僅造成 150% 攻擊力傷害，沒有額外效果。'}, lore: '隨處可見的王國基層士兵。'},
+            {id: 'h_thorin', name: '矮人鐵匠·索林', role: '戰士', rarity: 'R', star: 1, baseHp: 108, baseAtk: 15, baseDef: 8, crit: 10, avatarIcon: 'fa-hammer', color: '#78716c',
+                passive: {type: 'thorin_hammerspark', dmgBonusVsStunned: 40, desc: '【重錘火花】對暈眩目標造成的傷害提升 40%。'},
+                skill: {type: 'stun', chance: 0.4, desc: '大招攻擊有 40% 機率擊暈目標，使其下回合無法行動。'}, lore: '力氣很大的矮人。'},
+            {id: 'h_lyra', name: '吟游詩人·萊拉', role: '輔助', rarity: 'R', star: 1, baseHp: 92, baseAtk: 10, baseDef: 5, crit: 5, avatarIcon: 'fa-music', color: '#ec4899',
+                passive: {type: 'lyra_song', desc: '【治癒之音】只要萊拉存活，每回合結束時自動治療我方生命最低者，治療量為自身攻擊力 150%。'},
+                skill: {type: 'heal_single', value: 1.5, desc: '每回合為生命值最低的友軍恢復自身攻擊力 150% 的生命值。'}, lore: '用音樂治癒人心的旅人。'},
+            {id: 'h_draven', name: '賞金獵人·達文', role: '射手', rarity: 'R', star: 1, baseHp: 83, baseAtk: 17, baseDef: 4, crit: 15, avatarIcon: 'fa-crosshairs', color: '#64748b',
+                passive: {type: 'draven_bounty', desc: '【賞金目標】擊殺敵人額外獲得金幣，每次 10～30 枚。'},
+                skill: {type: 'gold_bonus', value: 20, variance: 10, desc: '擊殺敵人時額外獲得 10~30 枚金幣。'}, lore: '見錢眼開的傭兵。'},
+            {id: 'h_ignis', name: '火徒·伊格尼斯', role: '法師', rarity: 'R', star: 1, baseHp: 75, baseAtk: 20, baseDef: 3, crit: 10, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c',
+                passive: {type: 'ignis_joy', healPctOfBurn: 20, desc: '【火之歡愉】場上任何敵人受到燃燒傷害時，回復等同該傷害 20% 的生命值，並將其中一半轉移給我方血量最低的英雄。'},
+                skill: {type: 'burn', value: 0.2, duration: 3, desc: '大招使目標燃燒，每回合造成自身攻擊力 20% 的灼燒傷害，持續 3 回合。'}, lore: '玩火自焚的學徒。'},
+            {id: 'h_militia', name: '王國步兵', role: '戰士', rarity: 'R', star: 1, baseHp: 83, baseAtk: 12, baseDef: 7, crit: 5, avatarIcon: 'fa-user-shield', color: '#a1887f',
+                critRateFlat: 10, // ★ 被動：暴擊率永久+10%
+                passive: {type: 'militia_basics', desc: '【基礎戰技】自身的暴擊率永久提升 10%。'},
+                skill: {type: 'basic', value: 1.5, desc: '樸實無華的攻擊，大招僅造成 150% 攻擊力傷害，沒有額外效果。'}, lore: '隨處可見的王國基層士兵。'},
 
-            {id: 'h_seraph', name: '大天使·熾', role: '輔助', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 18, baseDef: 9, crit: 5, avatarIcon: 'fa-feather', color: '#fef08a', skill: {type: 'revive', value: 0.5, desc: '戰鬥中若有友軍陣亡，可將其復活並恢復 50% 生命值（每場戰鬥限一次）。'}, lore: '從天界降臨的使者。'},
-            {id: 'h_shadow', name: '無形者·影', role: '刺客', rarity: 'SSR', star: 1, baseHp: 108, baseAtk: 33, baseDef: 5, crit: 35, avatarIcon: 'fa-mask', color: '#334155', skill: {type: 'stealth', chance: 0.3, desc: '每回合開始時有 30% 機率潛入暗影，迴避下一次受到的攻擊。'}, lore: '沒有人看過他的真面目。'},
-            {id: 'h_gaia', name: '大地之母·蓋亞', role: '坦克', rarity: 'SSR', star: 1, baseHp: 217, baseAtk: 13, baseDef: 16, crit: 5, avatarIcon: 'fa-mountain', color: '#4d7c0f', skill: {type: 'hp_dmg', value: 0.1, desc: '大招額外造成等同自身最大生命值 10% 的傷害。'}, lore: '自然意志的化身。'},
-            {id: 'h_void', name: '虛空術士·瓦伊德', role: '法師', rarity: 'SSR', star: 1, baseHp: 100, baseAtk: 30, baseDef: 5, crit: 15, avatarIcon: 'fa-meteor', color: '#581c87', skill: {type: 'def_ignore', value: 2.0, desc: '大招無視目標防禦力，造成 200% 攻擊力的真實傷害。'}, lore: '來自異次元的探究者。'},
-            {id: 'h_fang', name: '狼人·法恩', role: '戰士', rarity: 'SR', star: 1, baseHp: 133, baseAtk: 21, baseDef: 6, crit: 20, avatarIcon: 'fa-wolf-pack-battalion', color: '#7c2d12', skill: {type: 'frenzy', value: 1.0, desc: '生命值越低攻擊力越高，生命歸零前最多可提升 100% 攻擊力。'}, lore: '滿月時會失去理智。'},
-            {id: 'h_mist', name: '幻術師·迷霧', role: '輔助', rarity: 'SR', star: 1, baseHp: 100, baseAtk: 15, baseDef: 5, crit: 10, avatarIcon: 'fa-eye', color: '#c084fc', skill: {type: 'confuse', chance: 0.2, desc: '敵方單位選擇目標時有 20% 機率被迷惑，轉而攻擊自己的隊友。'}, lore: '擅長操控心智。'},
-            {id: 'h_iron', name: '鐵傀儡', role: '坦克', rarity: 'SR', star: 1, baseHp: 183, baseAtk: 10, baseDef: 13, crit: 0, avatarIcon: 'fa-robot', color: '#9ca3af', skill: {type: 'taunt', desc: '嘲諷敵人，只要自己存活，敵方必定優先攻擊自己。'}, lore: '古代遺跡的守護者。'},
-            {id: 'h_dart', name: '毒鏢客', role: '刺客', rarity: 'R', star: 1, baseHp: 75, baseAtk: 18, baseDef: 3, crit: 15, avatarIcon: 'fa-syringe', color: '#166534', skill: {type: 'poison', value: 0.18, duration: 4, desc: '大招使目標中毒，每回合造成自身攻擊力 18% 的毒傷害，持續 4 回合。'}, lore: '塗滿劇毒的暗殺者。'},
-            {id: 'h_monk', name: '苦行僧', role: '戰士', rarity: 'R', star: 1, baseHp: 100, baseAtk: 13, baseDef: 7, crit: 5, avatarIcon: 'fa-hands-praying', color: '#ca8a04', skill: {type: 'counter', chance: 0.35, value: 0.6, desc: '受擊時有 35% 機率立即反擊，造成自身攻擊力 60% 的傷害。'}, lore: '修練肉體的武者。'},
+            {id: 'h_seraph', name: '大天使·熾', role: '輔助', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 18, baseDef: 9, crit: 5, avatarIcon: 'fa-feather', color: '#fef08a',
+                passive: {type: 'seraph_resurrection', desc: '【神聖復甦】有友軍死亡時可以復活，恢復 50% 生命值，每場戰鬥限 1 次。'},
+                skill: {type: 'revive', value: 0.5, desc: '戰鬥中若有友軍陣亡，可將其復活並恢復 50% 生命值（每場戰鬥限一次）。'}, lore: '從天界降臨的使者。'},
+            {id: 'h_shadow', name: '無形者·影', role: '刺客', rarity: 'SSR', star: 1, baseHp: 108, baseAtk: 33, baseDef: 5, crit: 35, avatarIcon: 'fa-mask', color: '#334155',
+                passive: {type: 'shadow_formless', desc: '【無形之軀】每回合開始 30% 機率進入潛行，迴避下一次受到的攻擊。'},
+                skill: {type: 'stealth', chance: 0.3, desc: '每回合開始時有 30% 機率潛入暗影，迴避下一次受到的攻擊。'}, lore: '沒有人看過他的真面目。'},
+            {id: 'h_gaia', name: '大地之母·蓋亞', role: '坦克', rarity: 'SSR', star: 1, baseHp: 217, baseAtk: 13, baseDef: 16, crit: 5, avatarIcon: 'fa-mountain', color: '#4d7c0f',
+                hpPctBonus: 15, healReceivedBonus: 10, // ★ 被動加成：最大生命值+15%，受到治療+10%
+                passive: {type: 'gaia_protect', desc: '【大地庇護】自身最大生命值提升 15%，受到治療效果提升 10%。'},
+                skill: {type: 'hp_dmg', value: 0.1, desc: '大招額外造成等同自身最大生命值 10% 的傷害。'}, lore: '自然意志的化身。'},
+            {id: 'h_void', name: '虛空術士·瓦伊德', role: '法師', rarity: 'SSR', star: 1, baseHp: 100, baseAtk: 30, baseDef: 5, crit: 15, avatarIcon: 'fa-meteor', color: '#581c87',
+                passive: {type: 'void_law', noCritOnTrueDmg: true, desc: '【虛空法則】瓦伊德造成的所有真實傷害無法暴擊（平衡限制，防止真傷數字過於離譜）。'},
+                skill: {type: 'def_ignore', value: 2.0, desc: '大招無視目標防禦力，造成 200% 攻擊力的真實傷害。'}, lore: '來自異次元的探究者。'},
+            {id: 'h_fang', name: '狼人·法恩', role: '戰士', rarity: 'SR', star: 1, baseHp: 133, baseAtk: 21, baseDef: 6, crit: 20, avatarIcon: 'fa-wolf-pack-battalion', color: '#7c2d12',
+                passive: {type: 'fang_bloodrage', desc: '【狂怒血脈】HP 越低攻擊越高，最多提升 100% 攻擊力（在 1% HP 時達到最大增益）。'},
+                skill: {type: 'frenzy', value: 1.0, desc: '生命值越低攻擊力越高，生命歸零前最多可提升 100% 攻擊力。'}, lore: '滿月時會失去理智。'},
+            {id: 'h_mist', name: '幻術師·迷霧', role: '輔助', rarity: 'SR', star: 1, baseHp: 100, baseAtk: 15, baseDef: 5, crit: 10, avatarIcon: 'fa-eye', color: '#c084fc',
+                passive: {type: 'mist_mindwarp', desc: '【心智扭曲】敵人選擇目標時有 20% 機率被迷惑，改為攻擊自己的隊友。'},
+                skill: {type: 'confuse', chance: 0.2, desc: '敵方單位選擇目標時有 20% 機率被迷惑，轉而攻擊自己的隊友。'}, lore: '擅長操控心智。'},
+            {id: 'h_iron', name: '鐵傀儡', role: '坦克', rarity: 'SR', star: 1, baseHp: 183, baseAtk: 10, baseDef: 13, crit: 0, avatarIcon: 'fa-robot', color: '#9ca3af',
+                passive: {type: 'iron_plating', dmgReduceFlat: 15, desc: '【合金裝甲】受到的物理傷害固定降低 15%。'},
+                skill: {type: 'taunt', desc: '嘲諷敵人，只要自己存活，敵方必定優先攻擊自己。'}, lore: '古代遺跡的守護者。'},
+            {id: 'h_dart', name: '毒鏢客', role: '遊俠', rarity: 'R', star: 1, baseHp: 75, baseAtk: 18, baseDef: 3, crit: 15, avatarIcon: 'fa-syringe', color: '#166534',
+                passive: {type: 'dart_venom_weapon', chance: 0.4, desc: '【淬毒武器】普攻有 40% 機率對目標施加 1 層中毒（每回合 10% 攻擊力，持續 2 回合）。'},
+                skill: {type: 'poison', value: 0.18, duration: 4, desc: '大招使目標中毒，每回合造成自身攻擊力 18% 的毒傷害，持續 4 回合。'}, lore: '塗滿劇毒的暗殺者。'},
+            {id: 'h_monk', name: '苦行僧', role: '戰士', rarity: 'R', star: 1, baseHp: 100, baseAtk: 13, baseDef: 7, crit: 5, avatarIcon: 'fa-hands-praying', color: '#ca8a04',
+                hpPctBonus: 10,
+                passive: {type: 'monk_austerity', desc: '【苦修】自身最大生命值提升 10%。'},
+                skill: {type: 'counter', chance: 0.35, value: 0.6, desc: '受擊時有 35% 機率立即反擊，造成自身攻擊力 60% 的傷害。'}, lore: '修練肉體的武者。'},
             // S1 限定 (1 LR, 2 SSR)
-            {id: 'h_uther', name: '聖光使者·烏瑟', role: '坦克', rarity: 'UR', star: 1, baseHp: 333, baseAtk: 24, baseDef: 24, crit: 5, avatarIcon: 'fa-shield-heart', color: '#f43f5e', skill: {type: 'holy_shield', value: 2.0, shieldValue: 5.0, desc: '大招為全體友軍恢復自身攻擊力 200% 的生命值，並施加等同攻擊力 500% 的護盾。'}, lore: '王國最偉大的聖騎士，擁有超越凡人的神聖力量。', isExclusive: true, seasonId: 1},
-            {id: 'h_s1_lr', name: '夜魘收割者·莫瑟斯', role: '刺客', rarity: 'LR', star: 1, baseHp: 183, baseAtk: 64, baseDef: 11, crit: 40, avatarIcon: 'fa-user-ninja', color: '#fde047', skill: {type: 'execute_chain', value: 2.4, chainMult: 1.3, desc: '大招對目標造成 240% 攻擊力傷害；若成功擊殺，立刻對另一名隨機敵人發動追擊，追擊傷害為攻擊力的 130%，可連續獵殺。'}, lore: '亡靈甦醒之夜潛入戰場的收割者，鐮刀所指之處，一命換一命，絕不留活口。', isExclusive: true, seasonId: 1},
-            {id: 'h_s1_ssr1', name: '亡靈督軍', role: '戰士', rarity: 'SSR', star: 1, baseHp: 183, baseAtk: 28, baseDef: 12, crit: 10, avatarIcon: 'fa-ghost', color: '#10b981', skill: {type: 'slash', value: 1.5, desc: '大招造成 150% 攻擊力的真實傷害，無視目標防禦。'}, lore: '被巫妖王喚醒的古代將軍。', isExclusive: true, seasonId: 1},
-            {id: 'h_s1_ssr2', name: '瘟疫使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 117, baseAtk: 32, baseDef: 6, crit: 15, avatarIcon: 'fa-disease', color: '#047857', skill: {type: 'poison_nova', value: 0.22, duration: 4, desc: '大招施放劇毒新星，對敵方全體造成傷害並使其中毒，每回合額外損失攻擊力 22% 的生命值，持續 4 回合。'}, lore: '散佈疫病的狂熱者。', isExclusive: true, seasonId: 1},
+            {id: 'h_uther', name: '聖光使者·烏瑟', role: '坦克', rarity: 'UR', star: 1, baseHp: 333, baseAtk: 24, baseDef: 24, crit: 5, avatarIcon: 'fa-shield-heart', color: '#f43f5e',
+                passive: {type: 'uther_beacon', shieldPctOfAtk: 150, hpThreshold: 0.3, cooldown: 2, desc: '【聖光道標】當任意友軍血量低於 30% 時，烏瑟立即為其附加等同烏瑟攻擊力 150% 的護盾（冷卻 2 回合）。'},
+                skill: {type: 'holy_shield', value: 2.0, shieldValue: 5.0, desc: '大招為全體友軍恢復自身攻擊力 200% 的生命值，並施加等同攻擊力 500% 的護盾。'}, lore: '王國最偉大的聖騎士，擁有超越凡人的神聖力量。', isExclusive: true, seasonId: 1},
+            {id: 'h_s1_lr', name: '夜魘收割者·莫瑟斯', role: '刺客', rarity: 'LR', star: 1, baseHp: 183, baseAtk: 64, baseDef: 11, crit: 40, avatarIcon: 'fa-user-ninja', color: '#fde047',
+                basicAtkMult: 1.3,
+                passive: {type: 'mothus_frenzy', critRatePerPoisoned: 5, atkPctPerPoisoned: 5, desc: '【血腥狂熱】場上每有一名中毒的敵人，暴擊率提升 5%、攻擊力提升 5%。'},
+                skill: {type: 'execute_chain', value: 2.4, chainMult: 1.3, desc: '大招對目標造成 240% 攻擊力傷害；若成功擊殺，立刻對另一名隨機敵人發動追擊，追擊傷害為攻擊力的 130%，可連續獵殺。'}, lore: '亡靈甦醒之夜潛入戰場的收割者，鐮刀所指之處，一命換一命，絕不留活口。', isExclusive: true, seasonId: 1},
+            {id: 'h_s1_ssr1', name: '亡靈督軍', role: '坦克', rarity: 'SSR', star: 1, baseHp: 183, baseAtk: 28, baseDef: 12, crit: 10, avatarIcon: 'fa-ghost', color: '#10b981',
+                passive: {type: 'warlord_undeath', healPctOfPoisonDmg: 10, desc: '【亡者氣息】敵方每次受到「中毒」傷害時，回復等同於該傷害 10% 的生命值。'},
+                skill: {type: 'slash', value: 1.5, desc: '大招造成 150% 攻擊力的真實傷害，無視目標防禦。'}, lore: '被巫妖王喚醒的古代將軍。', isExclusive: true, seasonId: 1},
+            {id: 'h_s1_ssr2', name: '瘟疫使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 117, baseAtk: 32, baseDef: 6, crit: 15, avatarIcon: 'fa-disease', color: '#047857',
+                passive: {type: 'plague_spread', desc: '【毒素蔓延】當中毒的敵人死亡時，會將其身上的中毒層數（傷害）100% 傳染給隨機一名敵軍。'},
+                skill: {type: 'poison_nova', value: 0.22, duration: 4, desc: '大招施放劇毒新星，對敵方全體造成傷害並使其中毒，每回合額外損失攻擊力 22% 的生命值，持續 4 回合。'}, lore: '散佈疫病的狂熱者。', isExclusive: true, seasonId: 1},
+
 
             // S2 限定 (1 LR, 2 SSR)
-            {id: 'h_siegfried', name: '屠龍勇士·齊格飛', role: '戰士', rarity: 'UR', star: 1, baseHp: 267, baseAtk: 44, baseDef: 14, crit: 25, avatarIcon: 'fa-gavel', color: '#f43f5e', skill: {type: 'dragon_slayer', value: 2.5, desc: '大招對敵方全體造成攻擊力 250% 的巨額真實傷害。'}, lore: '沐浴過龍血的傳奇勇士，天下無雙。', isExclusive: true, seasonId: 2},
-            {id: 'h_s2_lr', name: '深淵吞噬者·貝希摩斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 315, baseAtk: 52, baseDef: 17, crit: 28, avatarIcon: 'fa-water', color: '#fde047', skill: {type: 'lifesteal_aoe', value: 1.3, lifestealRatio: 0.4, desc: '大招對敵方全體造成 130% 攻擊力傷害，並將造成的總傷害 40% 轉化為自身生命值，越打越不會死。'}, lore: '比災厄紅龍更古老的深淵巨獸，吞噬一切、也從中汲取無盡的生命力。', isExclusive: true, seasonId: 2},
-            {id: 'h_s2_ssr1', name: '龍脈術士', role: '法師', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 34, baseDef: 7, crit: 20, avatarIcon: 'fa-fire', color: '#ef4444', skill: {type: 'meteor', value: 1.8, desc: '大招召喚隕石轟炸敵方全體，造成 180% 攻擊力的範圍傷害。'}, lore: '體內流淌著龍血的魔法師。', isExclusive: true, seasonId: 2},
-            {id: 'h_s2_ssr2', name: '龍鱗衛士', role: '坦克', rarity: 'SSR', star: 1, baseHp: 217, baseAtk: 16, baseDef: 17, crit: 5, avatarIcon: 'fa-shield', color: '#b91c1c', skill: {type: 'dragon_scale', chance: 0.5, value: 0.4, desc: '受到攻擊時有 50% 機率反彈 40% 的傷害給攻擊者。'}, lore: '裝備龍鱗鎧甲的鐵衛。', isExclusive: true, seasonId: 2},
+            {id: 'h_siegfried', name: '屠龍勇士·齊格飛', role: '戰士', rarity: 'UR', star: 1, baseHp: 267, baseAtk: 44, baseDef: 14, crit: 25, avatarIcon: 'fa-gavel', color: '#f43f5e',
+                passive: {type: 'siegfried_dragonblood', dmgReducePer10pctLostHp: 4, maxDmgReduce: 36, desc: '【屠龍血脈】每損失 10% 生命值，獲得 4% 傷害減免（最高 36% 減傷）。'},
+                skill: {type: 'dragon_slayer', value: 2.5, desc: '大招對敵方全體造成攻擊力 250% 的巨額真實傷害。'}, lore: '沐浴過龍血的傳奇勇士，天下無雙。', isExclusive: true, seasonId: 2},
+            {id: 'h_s2_lr', name: '深淵吞噬者·貝希摩斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 315, baseAtk: 52, baseDef: 17, crit: 28, avatarIcon: 'fa-water', color: '#fde047',
+                healReceivedBonus: 30, // ★ 被動：受到的所有治療與吸血效果+30%
+                passive: {type: 'behemoth_maw', desc: '【深淵巨口】貝希摩斯受到的所有治療與吸血效果提升 30%。'},
+                skill: {type: 'lifesteal_aoe', value: 1.3, lifestealRatio: 0.4, desc: '大招對敵方全體造成 130% 攻擊力傷害，並將造成的總傷害 40% 轉化為自身生命值，越打越不會死。'}, lore: '比災厄紅龍更古老的深淵巨獸，吞噬一切、也從中汲取無盡的生命力。', isExclusive: true, seasonId: 2},
+            {id: 'h_s2_ssr1', name: '龍脈術士', role: '法師', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 34, baseDef: 7, crit: 20, avatarIcon: 'fa-fire', color: '#ef4444',
+                passive: {type: 'dragonvein_surge', dmgBonusPer10pctLostHp: 3, desc: '【龍脈湧動】目標每損失 10% 生命值，龍脈術士對其造成的傷害提升 3%。'},
+                skill: {type: 'meteor', value: 1.8, desc: '大招召喚隕石轟炸敵方全體，造成 180% 攻擊力的範圍傷害。'}, lore: '體內流淌著龍血的魔法師。', isExclusive: true, seasonId: 2},
+            {id: 'h_s2_ssr2', name: '龍鱗衛士', role: '坦克', rarity: 'SSR', star: 1, baseHp: 217, baseAtk: 16, baseDef: 17, crit: 5, avatarIcon: 'fa-shield', color: '#b91c1c',
+                passive: {type: 'dragonscale_harden2', dmgReduceOnCritTaken: 20, desc: '【堅硬龍鱗】受到暴擊時，自身受到的傷害降低 20%。'},
+                skill: {type: 'dragon_scale', chance: 0.5, value: 0.4, desc: '受到攻擊時有 50% 機率反彈 40% 的傷害給攻擊者。'}, lore: '裝備龍鱗鎧甲的鐵衛。', isExclusive: true, seasonId: 2},
 
             // S3 限定 (1 LR, 2 SSR)
-            {id: 'h_jeanne', name: '裁決聖女·貞德', role: '法師', rarity: 'UR', star: 1, baseHp: 200, baseAtk: 56, baseDef: 10, crit: 30, avatarIcon: 'fa-cross', color: '#f43f5e', skill: {type: 'divine_judgment', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成秒殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '受到神明啟示的絕對聖女。', isExclusive: true, seasonId: 3},
-            {id: 'h_s3_lr', name: '命運織者·諾恩', role: '法師', rarity: 'LR', star: 1, baseHp: 236, baseAtk: 66, baseDef: 12, crit: 33, avatarIcon: 'fa-clock', color: '#fde047', skill: {type: 'extra_turn', value: 1.6, desc: '大招造成 160% 攻擊力傷害，命中後會直接扭轉時間絲線，讓自己立刻再獲得一次行動機會。'}, lore: '掌管命運絲線的古老存在，連時間的流動都能為她所用，比聖女更接近神諭的本源。', isExclusive: true, seasonId: 3},
-            {id: 'h_s3_ssr1', name: '異端審判官', role: '刺客', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 36, baseDef: 6, crit: 40, avatarIcon: 'fa-mask', color: '#c084fc', skill: {type: 'execute', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成必殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '冷酷無情的異端處刑人。', isExclusive: true, seasonId: 3},
-            {id: 'h_s3_ssr2', name: '聖光狂熱者', role: '戰士', rarity: 'SSR', star: 1, baseHp: 167, baseAtk: 26, baseDef: 11, crit: 15, avatarIcon: 'fa-bolt', color: '#9333ea', skill: {type: 'smite', chance: 0.3, desc: '普通攻擊有 30% 機率附帶暈眩，使目標下回合無法行動。'}, lore: '為了信仰不顧一切。', isExclusive: true, seasonId: 3},
+            {id: 'h_jeanne', name: '裁決聖女·貞德', role: '戰士', rarity: 'UR', star: 1, baseHp: 200, baseAtk: 56, baseDef: 10, crit: 30, avatarIcon: 'fa-cross', color: '#f43f5e',
+                basicAtkMult: 1.2, immunePoison: true,
+                passive: {type: 'jeanne_judgment', dmgBonusVsDebuffed: 20, desc: '【異端審判】免疫所有中毒與流血效果。對處於異常狀態的敵人造成傷害提升 20%。'},
+                skill: {type: 'divine_judgment', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成秒殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '受到神明啟示的絕對聖女。', isExclusive: true, seasonId: 3},
+            {id: 'h_s3_lr', name: '命運織者·諾恩', role: '輔助', rarity: 'LR', star: 1, baseHp: 236, baseAtk: 66, baseDef: 12, crit: 33, avatarIcon: 'fa-clock', color: '#fde047',
+                passive: {type: 'norn_fate', energyGainOnCcExpire: 15, desc: '【命運交錯】每當敵方解除控制狀態時，我方隨機 1 名英雄獲得 15% 能量。'},
+                skill: {type: 'extra_turn', value: 1.6, desc: '大招造成 160% 攻擊力傷害，命中後會直接扭轉時間絲線，讓自己立刻再獲得一次行動機會。'}, lore: '掌管命運絲線的古老存在，連時間的流動都能為她所用，比聖女更接近神諭的本源。', isExclusive: true, seasonId: 3},
+            {id: 'h_s3_ssr1', name: '異端審判官', role: '刺客', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 36, baseDef: 6, crit: 40, avatarIcon: 'fa-mask', color: '#c084fc',
+                passive: {type: 'inquisitor_coldjudgment', dmgBonusVsLowHp: 20, threshold: 0.5, desc: '【冷酷裁決】對血量低於 50% 的敵人造成的傷害提升 20%。'},
+                skill: {type: 'execute', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成必殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '冷酷無情的異端處刑人。', isExclusive: true, seasonId: 3},
+            {id: 'h_s3_ssr2', name: '聖光狂熱者', role: '戰士', rarity: 'SSR', star: 1, baseHp: 167, baseAtk: 26, baseDef: 11, crit: 15, avatarIcon: 'fa-bolt', color: '#9333ea',
+                passive: {type: 'zealot_smite', desc: '【狂熱制裁】普攻有 30% 機率暈眩目標 1 回合。'},
+                skill: {type: 'smite', chance: 0.3, desc: '普通攻擊有 30% 機率附帶暈眩，使目標下回合無法行動。'}, lore: '為了信仰不顧一切。', isExclusive: true, seasonId: 3},
 
             // S4 限定 (1 LR, 2 SSR) —「巨龍之巔」通行證最終獎勵與召喚限定
-            {id: 'h_s4_ur', name: '龍裔王者·灼', role: '戰士', rarity: 'UR', star: 1, baseHp: 300, baseAtk: 48, baseDef: 18, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316', skill: {type: 'burn_stack', value: 0.12, duration: 4, maxStacks: 6, desc: '大招附加龍焰詛咒，每命中一次就疊加一層（最多 6 層），燒傷程度隨層數持續攀升，直到戰鬥結束都不會消退。'},
+            {id: 'h_s4_ur', name: '龍裔王者·灼', role: '法師', rarity: 'UR', star: 1, baseHp: 300, baseAtk: 48, baseDef: 18, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316',
+                passive: {type: 'zhuo_curse', maxStacks: 6, dmgTakenPctPerStack: 3, desc: '【龍焰詛咒】敵方每次受到「燃燒」傷害時，疊加 1 層龍焰詛咒，最多 6 層。每層使該目標受到的所有傷害提升 3%。'},
+                skill: {type: 'burn_stack', value: 0.12, duration: 4, maxStacks: 6, desc: '大招附加龍焰詛咒，每命中一次就疊加一層（最多 6 層），燒傷程度隨層數持續攀升，直到戰鬥結束都不會消退。'},
                 // ★ 命之座範例（企劃書步驟1）：customEffect 目前只有描述文字，戰鬥分支還沒實作
                 constellations: [
                     {level: 1, desc: '技能倍率與觸發機率提升。'},
@@ -5880,21 +5973,45 @@
                     {level: 6, desc: '大招引爆龍焰詛咒後，若成功擊殺目標，返還自身 50% 大招能量。', customEffect: 'zhuo_c6_energy_refund'},
                 ],
                 lore: '與滅世魔龍同源的半龍血脈，渾身燃燒著不滅的龍炎。', isExclusive: true, seasonId: 4},
-            {id: 'h_s4_lr', name: '熔火霸主·瑟拉克斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 354, baseAtk: 57, baseDef: 21, crit: 22, avatarIcon: 'fa-volcano', color: '#fde047', skill: {type: 'wrath_nuke', value: 0.9, desc: '大招造成等同自身攻擊力、再加上「已損失生命值 90%」轉化的真實傷害，血越少打得越痛，是滅世魔龍本尊都忌憚的狂怒化身。'}, lore: '滅世魔龍甦醒前留下的分身，比半龍血脈的灼更接近純粹的毀滅意志。', isExclusive: true, seasonId: 4},
-            {id: 'h_s4_ssr1', name: '熔岩巨匠', role: '法師', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 35, baseDef: 8, crit: 15, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn_aoe', value: 0.28, duration: 3, desc: '大招施放熔岩噴發，對敵方全體造成傷害並使其燃燒，每回合造成攻擊力 28% 的灼燒傷害，持續 3 回合。'}, lore: '巨龍巢穴深處鍛造兵器的異能鐵匠。', isExclusive: true, seasonId: 4},
-            {id: 'h_s4_ssr2', name: '龍鱗盾衛', role: '坦克', rarity: 'SSR', star: 1, baseHp: 233, baseAtk: 17, baseDef: 19, crit: 5, avatarIcon: 'fa-shield-cat', color: '#c2410c', skill: {type: 'harden', value: 4, desc: '龍鱗會越挨打越堅硬：每次受到攻擊，永久提升 4 點防禦力，戰鬥越久越難被打穿。'}, lore: '以巨龍蛻下的鱗片鍛造出堅不可摧的戰甲。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_lr', name: '熔火霸主·瑟拉克斯', role: '坦克', rarity: 'LR', star: 1, baseHp: 354, baseAtk: 57, baseDef: 21, crit: 22, avatarIcon: 'fa-volcano', color: '#fde047',
+                passive: {type: 'seraphix_boil', trueDmgPctOfMissingHp: 90, selfDmgPctPerAtk: 3, desc: '【沸騰之血】免疫燃燒狀態。每次攻擊時，額外附加「已損失生命值 × 90%」的真實傷害；普攻同時消耗自身 3% 當前生命值。'},
+                skill: {type: 'wrath_nuke', value: 0.9, desc: '大招造成等同自身攻擊力、再加上「已損失生命值 90%」轉化的真實傷害，血越少打得越痛，是滅世魔龍本尊都忌憚的狂怒化身。'}, lore: '滅世魔龍甦醒前留下的分身，比半龍血脈的灼更接近純粹的毀滅意志。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_ssr1', name: '熔岩巨匠', role: '輔助', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 35, baseDef: 8, crit: 15, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c',
+                basicAtkMult: 1.0, forceDamageBasicAttack: true, // ★ 職業掛「輔助」是為了套用輔助的三圍/被動基準，但普攻要照企劃書對敵方造成傷害，不是治療隊友
+                passive: {type: 'forge_heat', atkBonusVsBurn: 15, desc: '【高溫鍛造】我方全體對處於「燃燒」狀態的敵人造成傷害時，攻擊力無條件提升 15%。'},
+                skill: {type: 'burn_aoe', value: 0.28, duration: 3, desc: '大招施放熔岩噴發，對敵方全體造成傷害並使其燃燒，每回合造成攻擊力 28% 的灼燒傷害，持續 3 回合。'}, lore: '巨龍巢穴深處鍛造兵器的異能鐵匠。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_ssr2', name: '龍鱗盾衛', role: '坦克', rarity: 'SSR', star: 1, baseHp: 233, baseAtk: 17, baseDef: 19, crit: 5, avatarIcon: 'fa-shield-cat', color: '#c2410c',
+                passive: {type: 'dragon_scale_harden', desc: '【龍鱗硬化】每受攻擊永久 +4 防禦（此效果無限疊加，戰鬥越久越堅不可摧）。'},
+                skill: {type: 'harden', value: 4, desc: '龍鱗會越挨打越堅硬：每次受到攻擊，永久提升 4 點防禦力，戰鬥越久越難被打穿。'}, lore: '以巨龍蛻下的鱗片鍛造出堅不可摧的戰甲。', isExclusive: true, seasonId: 4},
 
             // S5 限定 (1 LR, 2 SSR) —「機械紀元」通行證最終獎勵與召喚限定
-            {id: 'h_s5_ur', name: '虛空破陣者', role: '法師', rarity: 'UR', star: 1, baseHp: 217, baseAtk: 52, baseDef: 12, crit: 25, avatarIcon: 'fa-robot', color: '#38bdf8', skill: {type: 'armor_break', value: 0.15, desc: '大招直接打碎目標的護甲，永久降低其防禦力 15%（可疊加），越打對方越脆，專門用於瓦解重甲機械系敵人。'}, lore: '掌握破解核心機甲護甲頻率的虛空系戰術大師。', isExclusive: true, seasonId: 5},
-            {id: 'h_s5_lr', name: '奇點指揮官·諾娃', role: '法師', rarity: 'LR', star: 1, baseHp: 256, baseAtk: 61, baseDef: 14, crit: 28, avatarIcon: 'fa-satellite', color: '#fde047', skill: {type: 'dispel_aoe', value: 1.4, desc: '大招對敵方全體造成 140% 攻擊力傷害，並清除其護盾與攻擊力增益效果，是核心機甲軍團最忌憚的反支援指揮官。'}, lore: '統籌整個星盤矩陣作戰網路的最高指揮官，連核心機甲的防禦協定都能瞬間瓦解。', isExclusive: true, seasonId: 5},
-            {id: 'h_s5_ssr1', name: '電磁工兵', role: '刺客', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 33, baseDef: 6, crit: 25, avatarIcon: 'fa-bolt', color: '#0ea5e9', skill: {type: 'emp_stun', value: 1.6, chance: 0.5, empCount: 2, desc: '大招造成 160% 攻擊力傷害，同時向另外 2 個隨機敵人施放電磁脈衝，各有 50% 機率使其當機暈眩。'}, lore: '專門拆解古代機械遺跡的實戰工程師。', isExclusive: true, seasonId: 5},
-            {id: 'h_s5_ssr2', name: '護盾核心·艾克', role: '坦克', rarity: 'SSR', star: 1, baseHp: 225, baseAtk: 16, baseDef: 18, crit: 5, avatarIcon: 'fa-shield-halved', color: '#0284c7', skill: {type: 'overload', value: 0.8, chargeMax: 4, desc: '每次受到攻擊都會默默蓄能，累積滿 4 次充能後，會在自己的回合一次性向全體敵人釋放能量爆發。'}, lore: '搭載古代能源核心的自主防禦單位。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ur', name: '虛空破陣者', role: '遊俠', rarity: 'UR', star: 1, baseHp: 217, baseAtk: 52, baseDef: 12, crit: 25, avatarIcon: 'fa-robot', color: '#38bdf8',
+                passive: {type: 'voidbreaker_armorshred', maxStacks: 3, desc: '【裝甲撕裂】每次技能或普攻命中，永久降低目標防禦 15%，可疊加（平衡限制：最多疊加 3 層，即 45% 減防上限，避免讓敵方防禦歸零導致傷害失控）。'},
+                skill: {type: 'armor_break', value: 0.15, desc: '大招直接打碎目標的護甲，永久降低其防禦力 15%（可疊加），越打對方越脆，專門用於瓦解重甲機械系敵人。'}, lore: '掌握破解核心機甲護甲頻率的虛空系戰術大師。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_lr', name: '奇點指揮官·諾娃', role: '法師', rarity: 'LR', star: 1, baseHp: 256, baseAtk: 61, baseDef: 14, crit: 28, avatarIcon: 'fa-satellite', color: '#fde047',
+                passive: {type: 'nova_singularity', energyGainPct: 10, maxPerRound: 2, desc: '【奇點觀測】敵方每次獲得護盾或增益狀態時，諾娃立即回復自身 10% 能量（每回合最多觸發 2 次）。'},
+                skill: {type: 'dispel_aoe', value: 1.4, desc: '大招對敵方全體造成 140% 攻擊力傷害，並清除其護盾與攻擊力增益效果，是核心機甲軍團最忌憚的反支援指揮官。'}, lore: '統籌整個星盤矩陣作戰網路的最高指揮官，連核心機甲的防禦協定都能瞬間瓦解。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ssr1', name: '電磁工兵', role: '遊俠', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 33, baseDef: 6, crit: 25, avatarIcon: 'fa-bolt', color: '#0ea5e9',
+                passive: {type: 'sapper_interference', dmgPctOnAllyDodge: 40, desc: '【高頻干擾】我方英雄每次成功閃避攻擊時，電磁工兵對攻擊者發射微型電擊，造成 40% 物理傷害。'},
+                skill: {type: 'emp_stun', value: 1.6, chance: 0.5, empCount: 2, desc: '大招造成 160% 攻擊力傷害，同時向另外 2 個隨機敵人施放電磁脈衝，各有 50% 機率使其當機暈眩。'}, lore: '專門拆解古代機械遺跡的實戰工程師。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ssr2', name: '護盾核心·艾克', role: '坦克', rarity: 'SSR', star: 1, baseHp: 225, baseAtk: 16, baseDef: 18, crit: 5, avatarIcon: 'fa-shield-halved', color: '#0284c7',
+                passive: {type: 'ike_overload', desc: '【過載蓄能】受擊蓄能，4 層後對全體敵人爆發（造成 120% 魔法傷害並清空層數）。'},
+                skill: {type: 'overload', value: 0.8, chargeMax: 4, desc: '每次受到攻擊都會默默蓄能，累積滿 4 次充能後，會在自己的回合一次性向全體敵人釋放能量爆發。'}, lore: '搭載古代能源核心的自主防禦單位。', isExclusive: true, seasonId: 5},
 
             // S6 限定 (1 LR, 2 SSR) —「拂曉盛典」通行證最終獎勵與召喚限定角色
-            {id: 'h_s6_ur', name: '曙光禮讚者·賽琳', role: '輔助', rarity: 'UR', star: 1, baseHp: 233, baseAtk: 30, baseDef: 13, crit: 10, avatarIcon: 'fa-champagne-glasses', color: '#fbbf24', skill: {type: 'cleanse', value: 1.0, desc: '大招吟唱淨化聖歌，清除全體友軍的暈眩／灼燒／中毒等異常狀態，並為全隊回復生命值。'}, lore: '在拂曉盛典上高歌禮讚的聖詠者，歌聲能滌淨全軍的傷痛。', isExclusive: true, seasonId: 6},
-            {id: 'h_s6_lr', name: '永晝女王·奧蘿拉', role: '輔助', rarity: 'LR', star: 1, baseHp: 275, baseAtk: 35, baseDef: 15, crit: 12, avatarIcon: 'fa-sun', color: '#fde047', skill: {type: 'phoenix', value: 0.4, desc: '戰鬥中首次陣亡時，會以 40% 生命值原地重生一次（整場戰鬥限一次），象徵拂曉永不熄滅的女王意志。'}, lore: '統治著永不落幕的拂曉盛典的女王，就連死亡也無法讓她的光輝真正熄滅。', isExclusive: true, seasonId: 6},
-            {id: 'h_s6_ssr1', name: '煙火使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 142, baseAtk: 37, baseDef: 8, crit: 20, avatarIcon: 'fa-fire-flame-curved', color: '#f97316', skill: {type: 'dazzle_aoe', value: 1.4, dazzleChance: 0.35, desc: '大招施放絢爛煙火轟炸敵方全體，刺眼的閃光讓每個命中的敵人都有 35% 機率當場目眩暈眩。'}, lore: '負責點燃慶典夜空煙火的法師，燦爛的火花底下藏著真正的殺傷力。', isExclusive: true, seasonId: 6},
-            {id: 'h_s6_ssr2', name: '慶典衛兵長', role: '坦克', rarity: 'SSR', star: 1, baseHp: 242, baseAtk: 18, baseDef: 20, crit: 5, avatarIcon: 'fa-shield-cat', color: '#d97706', skill: {type: 'dodge_ward', chance: 0.3, desc: '負責維安的衛兵長，每回合開始時有 30% 機率為全體友軍賦予一次性的守護祝福，直接迴避下一次受到的攻擊。'}, lore: '拂曉盛典期間負責維安的王國精銳衛兵統領。', isExclusive: true, seasonId: 6}
+            {id: 'h_s6_ur', name: '曙光禮讚者·賽琳', role: '輔助', rarity: 'UR', star: 1, baseHp: 233, baseAtk: 30, baseDef: 13, crit: 10, avatarIcon: 'fa-champagne-glasses', color: '#fbbf24',
+                passive: {type: 'selene_dawndew', chance: 0.3, desc: '【晨曦之露】每回合開始時，30% 機率驅散我方血量最低英雄身上的 1 個負面狀態。'},
+                skill: {type: 'cleanse', value: 1.0, desc: '大招吟唱淨化聖歌，清除全體友軍的暈眩／灼燒／中毒等異常狀態，並為全隊回復生命值。'}, lore: '在拂曉盛典上高歌禮讚的聖詠者，歌聲能滌淨全軍的傷痛。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_lr', name: '永晝女王·奧蘿拉', role: '法師', rarity: 'LR', star: 1, baseHp: 275, baseAtk: 35, baseDef: 15, crit: 12, avatarIcon: 'fa-sun', color: '#fde047',
+                passive: {type: 'aurora_dayeternal', hitRateDebuffOnRevive: 20, desc: '【永晝不滅】首次死亡時，以 40% HP 復活；復活時釋放強光，使敵方全體命中率降低 20%，持續 2 回合。'},
+                skill: {type: 'phoenix', value: 0.4, desc: '戰鬥中首次陣亡時，會以 40% 生命值原地重生一次（整場戰鬥限一次），象徵拂曉永不熄滅的女王意志。'}, lore: '統治著永不落幕的拂曉盛典的女王，就連死亡也無法讓她的光輝真正熄滅。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_ssr1', name: '煙火使者', role: '輔助', rarity: 'SSR', star: 1, baseHp: 142, baseAtk: 37, baseDef: 8, crit: 20, avatarIcon: 'fa-fire-flame-curved', color: '#f97316',
+                basicAtkMult: 1.0, forceDamageBasicAttack: true, // ★ 職業掛輔助是為了套用輔助基準，但普攻要照企劃書對敵方造成傷害
+                passive: {type: 'firework_festival', dmgBonusIfEnemyStunned: 10, desc: '【節慶氣氛】只要場上有敵人處於「暈眩」狀態，我方全體造成的傷害提升 10%。'},
+                skill: {type: 'dazzle_aoe', value: 1.4, dazzleChance: 0.35, desc: '大招施放絢爛煙火轟炸敵方全體，刺眼的閃光讓每個命中的敵人都有 35% 機率當場目眩暈眩。'}, lore: '負責點燃慶典夜空煙火的法師，燦爛的火花底下藏著真正的殺傷力。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_ssr2', name: '慶典衛兵長', role: '坦克', rarity: 'SSR', star: 1, baseHp: 242, baseAtk: 18, baseDef: 20, crit: 5, avatarIcon: 'fa-shield-cat', color: '#d97706',
+                passive: {type: 'guardcap_dawn', desc: '【拂曉祝福】每回合開始 30% 機率給全隊一次性迴避祝福，抵擋下一次受到的任何攻擊。'},
+                skill: {type: 'dodge_ward', chance: 0.3, desc: '負責維安的衛兵長，每回合開始時有 30% 機率為全體友軍賦予一次性的守護祝福，直接迴避下一次受到的攻擊。'}, lore: '拂曉盛典期間負責維安的王國精銳衛兵統領。', isExclusive: true, seasonId: 6}
         ];
 
         // 魔物資料庫 (擴充至 7 章節)
@@ -7250,6 +7367,9 @@
             '刺客': {hp: 140, atk: 32, def: 8,  spd: 120},
             '法師': {hp: 130, atk: 35, def: 7,  spd: 95},
             '輔助': {hp: 160, atk: 18, def: 10, spd: 110},
+            // ★ 體系二新增：遊俠/射手，敏捷型物理輸出，數值介於戰士跟刺客之間，比刺客稍微耐打但攻速慢一點
+            '遊俠': {hp: 160, atk: 30, def: 10, spd: 110},
+            '射手': {hp: 150, atk: 31, def: 9,  spd: 105},
         };
         // 職業特例加成：坦克天生格擋、戰士天生吸血、刺客基礎暴傷 180%（其他職業 150%）、法師初始能量+10、輔助效果抵抗+15%
         const CLASS_PASSIVES = {
@@ -7258,6 +7378,8 @@
             '刺客': {blockRate: 0,    critDmgBase: 1.8, energyStartBonus: 0,  effRes: 0,    lifestealBase: 0},
             '法師': {blockRate: 0,    critDmgBase: 1.5, energyStartBonus: 10, effRes: 0,    lifestealBase: 0},
             '輔助': {blockRate: 0,    critDmgBase: 1.5, energyStartBonus: 0,  effRes: 0.15, lifestealBase: 0},
+            '遊俠': {blockRate: 0,    critDmgBase: 1.6, energyStartBonus: 0,  effRes: 0.05, lifestealBase: 0},
+            '射手': {blockRate: 0,    critDmgBase: 1.65, energyStartBonus: 0, effRes: 0,    lifestealBase: 0},
         };
 
         /* ============================================================
@@ -7569,16 +7691,45 @@
         // GR 專屬大招與少數帶特殊機制的技能（斬殺鏈、引爆、機率反擊等）暫時維持各自原本的獨立公式，
         // 還沒套用這份新公式，避免一次牽動過多既有機制、增加不必要的回歸風險。
         function resolveAttackRoll(attacker, target, atkMultiplier) {
-            const hitRate = Math.max(0.2, (typeof attacker.hitRate === 'number' ? attacker.hitRate : 1) - (target.dodgeRate || 0));
+            const hitRate = Math.max(0.2, (typeof attacker.hitRate === 'number' ? attacker.hitRate : 1) - (target.dodgeRate || 0) - (attacker.hitRateDebuffTurns > 0 ? (attacker.hitRateDebuff || 0) : 0));
             if (Math.random() > hitRate) return {damage: 0, isCrit: false, isEvaded: true};
 
+            const targetIsBurning = !!(target.burnStacks && target.burnStacks.turnsLeft > 0);
+            const targetIsDebuffed = targetIsBurning || (target.poisonStacks && target.poisonStacks.turnsLeft > 0) || target.deathCountdown > 0 || target.stunned || target.venomStacks > 0;
+            // ★ 新增：莫瑟斯被動【血腥狂熱】——場上每有一名中毒的敵人，暴擊率/攻擊力各 +5%
+            let mothusStackBonus = 0;
+            if (attacker.passive && attacker.passive.type === 'mothus_frenzy') {
+                const poisonedEnemyCount = combatEntities.filter(e => e.team !== attacker.team && e.hp > 0 && e.poisonStacks && e.poisonStacks.turnsLeft > 0).length;
+                mothusStackBonus = poisonedEnemyCount;
+            }
+            // ★ 新增：蕾娜被動【灰燼餘溫】——攻擊燃燒中的目標時，暴擊率 +20%
+            let effCrit = attacker.crit || 0;
+            if (targetIsBurning && attacker.passive && attacker.passive.type === 'reina_ember') {
+                effCrit += attacker.passive.critRateVsBurn || 20;
+            }
+            if (mothusStackBonus > 0) effCrit += mothusStackBonus * (attacker.passive.critRatePerPoisoned || 5);
+            // ★ 新增：克勞德被動【伺機而動】——攻擊尚未受傷（滿血）的目標時，暴擊率 +30%
+            if (target.hp >= target.maxHp && attacker.passive && attacker.passive.type === 'claude_opportunist') {
+                effCrit += attacker.passive.critRateVsFullHp || 30;
+            }
             let isCrit = false, critMult = 1;
-            if (Math.random() * 100 < (attacker.crit || 0)) {
+            if (Math.random() * 100 < effCrit) {
                 isCrit = true;
                 critMult = Math.min(3.0, attacker.critDmgMult || 1.5); // 暴傷硬上限 300%
+                // ★ 新增：暗刃·影被動【虛空凝視】——對中毒或死亡倒數狀態的目標，暴擊傷害額外 +40%
+                if (attacker.passive && attacker.passive.type === 'kage_void_gaze' && ((target.poisonStacks && target.poisonStacks.turnsLeft > 0) || target.deathCountdown > 0)) {
+                    critMult = Math.min(3.0, critMult + (attacker.passive.critDmgBonusVsDebuffed || 40) / 100);
+                }
             }
 
-            const atkValue = typeof attacker.activeAtk === 'number' ? attacker.activeAtk : attacker.atk;
+            let atkValue = typeof attacker.activeAtk === 'number' ? attacker.activeAtk : attacker.atk;
+            // ★ 新增：莫瑟斯被動【血腥狂熱】的攻擊力部分（暴擊率部分已經在上面套用）
+            if (mothusStackBonus > 0) atkValue *= 1 + mothusStackBonus * (attacker.passive.atkPctPerPoisoned || 5) / 100;
+            // ★ 新增：熔岩巨匠被動【高溫鍛造】——我方全體攻擊燃燒中的目標時，攻擊力無條件 +15%（隊伍共用，不只巨匠自己）
+            if (targetIsBurning) {
+                const forgeHolder = combatEntities.find(e => e.team === attacker.team && e.hp > 0 && e.passive && e.passive.type === 'forge_heat');
+                if (forgeHolder) atkValue *= 1 + (forgeHolder.passive.atkBonusVsBurn || 15) / 100;
+            }
             let rawDamage = atkValue * atkMultiplier * critMult;
 
             // ★ 新增：反制套裝 8 件「繳械」——上一次被反制擁有者命中的攻擊者，這一擊傷害打對折，用完就消耗掉
@@ -7592,13 +7743,79 @@
             // ★ 新增：狂暴套裝 8 件「暴擊無視 40% 防禦」
             if (isCrit && attacker.setFlags && attacker.setFlags.critIgnoreDefKillRefresh) effectiveDef *= 0.6;
             const dmgReduction = effectiveDef / (effectiveDef + (50 * defenderLevel + 300)); // 雙曲線防禦減免公式
-            const extraDmgReduce = Math.min(0.6, target.dmgReduce || 0); // 稀有度/聖物高階帶來的額外免傷，設個上限避免堆到接近無敵
+            let extraDmgReduce = Math.min(0.6, target.dmgReduce || 0); // 稀有度/聖物高階帶來的額外免傷，設個上限避免堆到接近無敵
+            // ★ 新增：亞歷山大被動【王者庇護】——只要他還活著，我方全體受到的最終傷害降低 10%
+            const alexanderHolder = combatEntities.find(e => e.team === target.team && e.hp > 0 && e.passive && e.passive.type === 'alexander_kingsguard');
+            if (alexanderHolder) extraDmgReduce = Math.min(0.6, extraDmgReduce + (alexanderHolder.passive.dmgReducePct || 10) / 100);
+
+            // ★ 新增：鐵傀儡被動【合金裝甲】——受到的傷害固定降低 15%
+            if (target.passive && target.passive.type === 'iron_plating') {
+                extraDmgReduce = Math.min(0.6, extraDmgReduce + (target.passive.dmgReduceFlat || 15) / 100);
+            }
+
+            // ★ 新增：龍鱗衛士被動【堅硬龍鱗】——受到暴擊時，自身受到的傷害降低 20%
+            if (isCrit && target.passive && target.passive.type === 'dragonscale_harden2') {
+                extraDmgReduce = Math.min(0.6, extraDmgReduce + (target.passive.dmgReduceOnCritTaken || 20) / 100);
+            }
+
+            // ★ 新增：齊格飛被動【屠龍血脈】——每損失 10% 生命值，獲得 4% 傷害減免（最高 36%）
+            if (target.passive && target.passive.type === 'siegfried_dragonblood' && target.maxHp > 0) {
+                const lostHpPct = Math.max(0, 1 - target.hp / target.maxHp);
+                const bonus = Math.min((target.passive.maxDmgReduce || 36) / 100, Math.floor(lostHpPct * 10) * (target.passive.dmgReducePer10pctLostHp || 4) / 100);
+                extraDmgReduce = Math.min(0.6, extraDmgReduce + bonus);
+            }
             let dmgBonus = attacker.dmgBonus || 0; // 稀有度天賦帶來的全傷害加成 (LR/GR)
 
             // ★ 新增：劇毒套裝 6 件「中毒目標造成的傷害降低 15%」——攻擊者自己身上如果背著中毒層數，輸出打折
             if (attacker.venomStacks > 0) dmgBonus -= 0.15;
 
+            // ★ 新增：灼被動【龍焰詛咒】——目標身上每層詛咒 +3% 受到的所有傷害（見 applyTurnStartEffects 疊層判定）
+            if (target.zhuoCurseStacks > 0) dmgBonus += target.zhuoCurseStacks * 0.03;
+
+            // ★ 新增：貞德被動【異端審判】——對處於異常狀態（中毒/燃燒/暈眩/死亡倒數等）的敵人傷害 +20%
+            if (targetIsDebuffed && attacker.passive && attacker.passive.type === 'jeanne_judgment') {
+                dmgBonus += (attacker.passive.dmgBonusVsDebuffed || 20) / 100;
+            }
+
+            // ★ 新增：艾拉被動【光明祈願】——隊伍中每存在一個護盾，全體友軍傷害 +3%（最高5層），
+            // 護盾持有者不限定艾拉自己，隊伍任何人身上有護盾都算
+            const elaraHolder = combatEntities.find(e => e.team === attacker.team && e.hp > 0 && e.passive && e.passive.type === 'elara_wish');
+            if (elaraHolder) {
+                const shieldedCount = Math.min(elaraHolder.passive.maxShieldStacks || 5, combatEntities.filter(e => e.team === attacker.team && e.hp > 0 && e.shield > 0).length);
+                if (shieldedCount > 0) dmgBonus += shieldedCount * (elaraHolder.passive.dmgBonusPerShield || 3) / 100;
+            }
+
+            // ★ 新增：阿斯特萊雅被動【星塵易傷】——目標身上每層易傷疊層 +5% 受到的所有傷害
+            if (target.astraeaVulnStacks > 0) dmgBonus += target.astraeaVulnStacks * 0.05;
+
+            // ★ 新增：索林被動【重錘火花】——對暈眩目標造成的傷害提升 40%
+            if (target.stunned && attacker.passive && attacker.passive.type === 'thorin_hammerspark') {
+                dmgBonus += (attacker.passive.dmgBonusVsStunned || 40) / 100;
+            }
+
+            // ★ 新增：異端審判官被動【冷酷裁決】——對血量低於 50% 的敵人傷害提升 20%
+            if (attacker.passive && attacker.passive.type === 'inquisitor_coldjudgment' && target.maxHp > 0 && target.hp / target.maxHp < (attacker.passive.threshold || 0.5)) {
+                dmgBonus += (attacker.passive.dmgBonusVsLowHp || 20) / 100;
+            }
+
+            // ★ 新增：龍脈術士被動【龍脈湧動】——目標每損失 10% 生命值，傷害 +3%
+            if (attacker.passive && attacker.passive.type === 'dragonvein_surge' && target.maxHp > 0) {
+                const lostHpTiers = Math.floor(Math.max(0, 1 - target.hp / target.maxHp) * 10);
+                if (lostHpTiers > 0) dmgBonus += lostHpTiers * (attacker.passive.dmgBonusPer10pctLostHp || 3) / 100;
+            }
+
+            // ★ 新增：煙火使者被動【節慶氣氛】——只要敵方場上有人處於暈眩狀態，我方全體傷害 +10%
+            const fireworkHolder = combatEntities.find(e => e.team === attacker.team && e.hp > 0 && e.passive && e.passive.type === 'firework_festival');
+            if (fireworkHolder && combatEntities.some(e => e.team !== attacker.team && e.hp > 0 && e.stunned)) {
+                dmgBonus += (fireworkHolder.passive.dmgBonusIfEnemyStunned || 10) / 100;
+            }
+
             let finalDamage = rawDamage * (1 - dmgReduction) * (1 - extraDmgReduce) * (1 + dmgBonus);
+
+            // ★ 新增：諾亞被動【極寒冰刺】——對暈眩目標造成傷害時，額外附加 30% 真實傷害（無視防禦，加算在減傷之後）
+            if (target.stunned && attacker.passive && attacker.passive.type === 'noah_frostspike') {
+                finalDamage += rawDamage * ((attacker.passive.trueDmgPctVsStunned || 30) / 100);
+            }
 
             // ★ 新增：不滅套裝 8 件「傷害轉真傷，血越低打得越痛」——忽略目標防禦，攻擊者血量越低額外加成越高（最多 +50%）
             if (attacker.setFlags && attacker.setFlags.dmgToTrueDmgLowHp) {
@@ -7661,10 +7878,10 @@
             const setCounts = getHeroSetCounts(r);
             const setBonus = getSetBonusStats(setCounts);
 
-            const hp = Math.floor((baseHp * lvlMult * totalBonus + eqHp) * (1 + (setBonus.hpPct || 0) / 100 + (subTotals.hpPct || 0) / 100));
+            const hp = Math.floor((baseHp * lvlMult * totalBonus + eqHp) * (1 + (setBonus.hpPct || 0) / 100 + (subTotals.hpPct || 0) / 100 + (db.hpPctBonus || 0) / 100));
             const atk = Math.floor((baseAtk * lvlMult * totalBonus + eqAtk) * (1 + (subTotals.atkPct || 0) / 100));
             const def = Math.floor((baseDef * lvlMult * totalBonus + eqDef) * (1 + (subTotals.defPct || 0) / 100));
-            const crit = (db.crit || 0) + eqCrit + (setBonus.critRate || 0) + (subTotals.critRate || 0);
+            const crit = (db.crit || 0) + eqCrit + (setBonus.critRate || 0) + (subTotals.critRate || 0) + (db.critRateFlat || 0);
 
             // 稀有度天賦：速度、初始能量加成、受傷減免（+聖物高階免傷）、全傷害加成、GR 免死
             const spd = (classBase.spd || 100) + (passive.spd || 0) + (subTotals.speed || 0);
@@ -7680,11 +7897,14 @@
             // 持續傷害%/格擋率——格擋是全新機制，真傷/持續傷害是分散在各技能各自計算，需要之後專門的套裝機制那一輪處理）
             const skillDmgBonus = (setBonus.skillDmgPct || 0) / 100;
             const trueDmgBonus = (setBonus.trueDmgPct || 0) / 100;
-            const lifestealBonus = (classPassive.lifestealBase || 0) + (setBonus.lifesteal || 0) / 100 + (subTotals.lifesteal || 0) / 100;
+            const lifestealBonus = (classPassive.lifestealBase || 0) + (setBonus.lifesteal || 0) / 100 + (subTotals.lifesteal || 0) / 100 + (db.lifestealBonusFlat || 0) / 100;
             const healBonus = (setBonus.healPct || 0) / 100;
             const dotBonus = (setBonus.dotPct || 0) / 100;
             const blockRate = (classPassive.blockRate || 0) + (setBonus.blockRate || 0) / 100;
             const energyRegenBonus = (subTotals.energyRegen || 0) / 100; // ★ 新增：副詞條「能量恢復%」，每回合開始多回這個比例的滿能量
+            // ★ 新增：受到治療/吸血效果的加成（蓋亞/貝希摩斯專屬）——跟上面的 healBonus 不同，
+            // healBonus 是「這個人施放治療時」的加成，這個是「這個人被治療/被吸血救回血時」的加成
+            const healReceivedBonus = (db.healReceivedBonus || 0) / 100;
 
             // ★ 改版：命之座系統——技能倍率跟觸發機率不再跟著星級線性成長，改成依【命座層數 × 稀有度倍率】
             // 動態計算：技能倍率每命座 +3%（乘稀有度倍率），觸發機率每命座 +1%（乘稀有度倍率，封頂 95%）。
@@ -7715,7 +7935,7 @@
             return {
                 ...db, ...r, effectiveLevel: l, maxHp: hp, atk, def, crit, skill: effSkill,
                 spd, dmgReduce, dmgBonus, cheatDeath, critDmgMult, energyStartBonus, hitRate, dodgeRate,
-                skillDmgBonus, trueDmgBonus, lifestealBonus, healBonus, dotBonus, blockRate, energyRegenBonus, setCounts, setFlags: setBonus.flags || {},
+                skillDmgBonus, trueDmgBonus, lifestealBonus, healBonus, healReceivedBonus, dotBonus, blockRate, energyRegenBonus, setCounts, setFlags: setBonus.flags || {},
                 combatPower: Math.floor(hp * 0.5 + atk * 2 + def * 1.5 + crit * 10)
             };
         }
@@ -10289,6 +10509,28 @@
                 return true;
             }
 
+            // ★ 新增：菲被動【風之連擊】延伸——友軍發動反傷/反擊時，菲有 20% 機率跟著補一發追加射擊
+            // (counterer = 觸發反傷/反擊的友軍本人，victim = 被反傷/反擊打到的原攻擊者，追加射擊打在 victim 身上)
+            function triggerFayeWindchase(counterer, victim) {
+                const faye = combatEntities.find(e => e.team === counterer.team && e.hp > 0 && e.passive && e.passive.type === 'faye_windchase' && e !== counterer);
+                if (!faye || victim.hp <= 0) return;
+                if (Math.random() < (faye.passive.chanceOnAllyCounter || 0.2)) {
+                    const dmg = Math.max(5, faye.activeAtk * (faye.skill.value || 0.8) - victim.def * 0.3);
+                    executeHit(faye, victim, dmg, false, 'basic', '#4ade80');
+                    floatingTexts.push({x: faye.x, y: faye.y - 60, text: `追加射擊`, isCrit: false, color: '#4ade80', life: 40});
+                }
+            }
+
+            // ★ 新增：阿斯特萊雅被動【星塵易傷】——敵方每被附加一次控制狀態（暈眩等），永久疊 1 層易傷，
+            // 每層讓這個目標受到的所有傷害 +5%（用「魔抗降低」的概念實作成跟龍焰詛咒一樣的傷害加成疊層）
+            function applyControlDebuffStack(target) {
+                const astraeaHolder = combatEntities.find(e => e.team !== target.team && e.hp > 0 && e.passive && e.passive.type === 'astraea_stardust');
+                if (astraeaHolder) {
+                    target.astraeaVulnStacks = (target.astraeaVulnStacks || 0) + 1;
+                    floatingTexts.push({x: target.x, y: target.y - 115, text: `易傷 x${target.astraeaVulnStacks}`, isCrit: false, color: '#c084fc', life: 40});
+                }
+            }
+
             const executeHit = (attacker, target, damage, isCrit, skillType, fxCol) => {
                 if (target.hp <= 0) return;
 
@@ -10350,6 +10592,45 @@
                 // ★ 大招能量：玩家英雄被攻擊時也會回一點能量（受擊蓄力），讓常被鎖定的英雄大招來得更快一些
                 if (target.team === 'player' && typeof target.energy === 'number') {
                     target.energy = Math.min(target.maxEnergy || 100, target.energy + 10);
+                }
+
+                // ★ 新增：瑟拉克斯被動【沸騰之血】——每次攻擊（不只大招）都額外附加「自身已損失生命值×90%」
+                // 的真實傷害；大招 wrath_nuke 本身已經內建同樣的計算方式，這裡排除掉避免重複疊加兩次。
+                // 沿用跟大招一樣的硬上限（不超過自身攻擊力10倍），避免血量掉很低時單次攻擊直接爆表。
+                if (attacker.passive && attacker.passive.type === 'seraphix_boil' && target.hp > 0 && skillType !== 'wrath_nuke') {
+                    const missingHpRatio = attacker.maxHp > 0 ? 1 - (attacker.hp / attacker.maxHp) : 0;
+                    let extraTrueDmg = attacker.activeAtk * missingHpRatio * ((attacker.passive.trueDmgPctOfMissingHp || 90) / 100);
+                    extraTrueDmg = Math.min(extraTrueDmg, attacker.activeAtk * 9);
+                    if (extraTrueDmg > 0) {
+                        target.hp = Math.max(0, target.hp - extraTrueDmg);
+                        floatingTexts.push({x: target.x, y: target.y - 65, text: `+${Math.floor(extraTrueDmg)}`, isCrit: false, color: '#fbbf24', life: 40});
+                    }
+                }
+
+                // ★ 新增：巴哈姆特被動【逆鱗】——自身受到傷害時也會疊 1 層（跟小技能疊層共用同一個計數器）
+                if (target.passive && target.passive.type === 'bahamut_scale' && target.hp > 0) {
+                    target.reverseScaleStacks = Math.min(target.skill && target.skill.maxStacks || 5, (target.reverseScaleStacks || 0) + 1);
+                    floatingTexts.push({x: target.x, y: target.y - 85, text: `逆鱗 x${target.reverseScaleStacks}`, isCrit: false, color: '#ef4444', life: 40});
+                }
+
+                // ★ 新增：亞歷山大被動【王者庇護】——生命值首次低於 50% 時，立即回復 20% 最大生命值（每場限一次）
+                if (target.passive && target.passive.type === 'alexander_kingsguard' && target.hp > 0 && target.hp / target.maxHp < 0.5 && !target.kingsguardHealUsed) {
+                    target.kingsguardHealUsed = true;
+                    const healAmt = target.maxHp * ((target.passive.healOnHalfHp || 20) / 100);
+                    target.hp = Math.min(target.maxHp, target.hp + healAmt);
+                    floatingTexts.push({x: target.x, y: target.y - 100, text: `王者意志！+${Math.floor(healAmt)}`, isCrit: true, color: '#fbbf24', life: 55});
+                }
+
+                // ★ 新增：烏瑟被動【聖光道標】——任意友軍血量低於 30% 時，烏瑟立即為其附加護盾（有冷卻，避免無限觸發）
+                if (target.hp > 0 && target.hp / target.maxHp < 0.3) {
+                    const uther = combatEntities.find(e => e.team === target.team && e.hp > 0 && e.passive && e.passive.type === 'uther_beacon' && (!e.beaconCooldown || e.beaconCooldown <= 0));
+                    if (uther) {
+                        uther.beaconCooldown = uther.passive.cooldown || 2;
+                        const shieldAmt = uther.activeAtk * ((uther.passive.shieldPctOfAtk || 150) / 100);
+                        target.shield = (target.shield || 0) + shieldAmt;
+                        floatingTexts.push({x: target.x, y: target.y - 95, text: `聖光道標`, isCrit: false, color: '#f43f5e', life: 45});
+                        visualEffects.push({type: 'shield', x: target.x, y: target.y, color: '#f43f5e', life: 35, maxLife: 35});
+                    }
                 }
 
                 // ★ 新增：守護套裝 6 件「反彈 20% 真實傷害」——被打的時候直接回敬攻擊者一部分傷害，不吃防禦
@@ -10464,6 +10745,14 @@
                     target.hp = Math.floor(target.maxHp * (target.skill.value || 0.4));
                     floatingTexts.push({x: target.x, y: target.y - 100, text: `不死鳥重生！`, isCrit: true, color: '#fb923c', life: 60});
                     visualEffects.push({type: 'heal', x: target.x, y: target.y, color: '#fb923c', life: 30, maxLife: 30});
+                    // ★ 新增：奧蘿拉被動【永晝不滅】——復活時釋放強光，使敵方全體命中率降低 20%，持續 2 回合
+                    if (target.passive && target.passive.type === 'aurora_dayeternal') {
+                        combatEntities.filter(e => e.team !== target.team && e.hp > 0).forEach(e => {
+                            e.hitRateDebuff = (target.passive.hitRateDebuffOnRevive || 20) / 100;
+                            e.hitRateDebuffTurns = 2;
+                        });
+                        floatingTexts.push({x: target.x, y: target.y - 120, text: `永晝強光`, isCrit: false, color: '#fde047', life: 50});
+                    }
                 }
 
                 // 判定：擊殺獎勵金幣 (gold_bonus)——只要造成擊殺就會觸發，不限大招
@@ -10498,7 +10787,7 @@
                         lifestealRatio *= Math.pow(0.7, hitIdx);
                         attacker.lifestealAoeHitIndex = hitIdx + 1;
                     }
-                    let heal = damage * lifestealRatio;
+                    let heal = damage * lifestealRatio * (1 + (attacker.healReceivedBonus || 0));
                     attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
                     floatingTexts.push({x: attacker.x, y: attacker.y - 60, text: `+${Math.floor(heal)}`, isCrit: false, color: '#4ade80', life: 45});
                 }
@@ -10507,7 +10796,7 @@
                 // 企劃書步驟1給的原始範例)。判定範圍是「任何非普通攻擊的技能傷害」，不重複套用在
                 // 上面已經算過的 lifesteal/lifesteal_aoe 專屬技能上，避免同一擊疊加兩次吸血判定。
                 if (attacker.skill && attacker.skill.constellationLifesteal > 0 && skillType !== 'normal' && skillType !== 'lifesteal' && skillType !== 'lifesteal_aoe') {
-                    const cHeal = damage * attacker.skill.constellationLifesteal;
+                    const cHeal = damage * attacker.skill.constellationLifesteal * (1 + (attacker.healReceivedBonus || 0));
                     attacker.hp = Math.min(attacker.maxHp, attacker.hp + cHeal);
                     floatingTexts.push({x: attacker.x, y: attacker.y - 45, text: `+${Math.floor(cHeal)}`, isCrit: false, color: '#c084fc', life: 40});
                 }
@@ -10515,7 +10804,7 @@
                 // ★ 新增：通用生命偷取——職業天賦（戰士 +5%）與套裝加成（「不滅」2件 +10%）疊加而成，
                 // 不管這次命中是不是專門的吸血技能，只要攻擊者有這個數值就會額外回血，兩者可以疊加
                 if (attacker.lifestealBonus > 0 && damage > 0) {
-                    const bonusHeal = damage * attacker.lifestealBonus;
+                    const bonusHeal = damage * attacker.lifestealBonus * (1 + (attacker.healReceivedBonus || 0));
                     attacker.hp = Math.min(attacker.maxHp, attacker.hp + bonusHeal);
                     floatingTexts.push({x: attacker.x, y: attacker.y - 40, text: `+${Math.floor(bonusHeal)}`, isCrit: false, color: '#86efac', life: 40});
                 }
@@ -10524,6 +10813,7 @@
                 // ★ 統一免疫檢查：世界首領韌性保護／守護套裝8件免控／神速套裝4件只在第一回合免控
                 if (skillType === 'stun' && Math.random() < (attacker.skill.chance || 0.4) && canBeStunned(target)) {
                     target.stunned = true;
+                    applyControlDebuffStack(target);
                     floatingTexts.push({x: target.x, y: target.y - 80, text: `暈眩`, isCrit: false, color: '#fbbf24', life: 45});
                     visualEffects.push({type: 'stun', x: target.x, y: target.y, color: '#fbbf24', life: 40, maxLife: 40});
                 }
@@ -10531,12 +10821,14 @@
                 // 判定：附帶暈眩 (smite)——普通攻擊也會觸發，跟大招限定的 stun 不同
                 if (skillType === 'basic' && attacker.skill && attacker.skill.type === 'smite' && Math.random() < (attacker.skill.chance || 0.3) && canBeStunned(target)) {
                     target.stunned = true;
+                    applyControlDebuffStack(target);
                     floatingTexts.push({x: target.x, y: target.y - 80, text: `暈眩`, isCrit: false, color: '#fbbf24', life: 45});
                     visualEffects.push({type: 'stun', x: target.x, y: target.y, color: '#fbbf24', life: 40, maxLife: 40});
                 }
 
                 // 判定：灼燒 / 中毒 (持續傷害，僅大招觸發，攻擊者技能決定)
-                if (skillType === 'burn' || skillType === 'burn_aoe') {
+                // ★ 新增：瑟拉克斯被動【沸騰之血】免疫燃燒狀態
+                if ((skillType === 'burn' || skillType === 'burn_aoe') && !(target.passive && target.passive.type === 'seraphix_boil')) {
                     const sk = attacker.skill;
                     target.burnStacks = {dmgPerTurn: attacker.activeAtk * (sk.value || 0.2), turnsLeft: sk.duration || 3};
                     floatingTexts.push({x: target.x, y: target.y - 90, text: `灼燒`, isCrit: false, color: '#f97316', life: 45});
@@ -10544,7 +10836,8 @@
                 }
                 // ★ 新增：龍裔詛咒疊加灼燒 (burn_stack，龍裔王者·灼專屬)——跟一般灼燒不同，
                 // 每次命中都會疊加一層詛咒層數，燒傷程度隨層數持續攀升，一直疊到戰鬥結束都不會消退
-                if (skillType === 'burn_stack') {
+                // ★ 瑟拉克斯免疫燃燒，這個機制本質上也是灼燒，一併排除
+                if (skillType === 'burn_stack' && !(target.passive && target.passive.type === 'seraphix_boil')) {
                     const sk = attacker.skill;
                     const stacks = Math.min(sk.maxStacks || 6, (target.burnStackCount || 0) + 1);
                     target.burnStackCount = stacks;
@@ -10552,10 +10845,18 @@
                     floatingTexts.push({x: target.x, y: target.y - 90, text: `龍焰詛咒 x${stacks}`, isCrit: false, color: '#f97316', life: 45});
                     visualEffects.push({type: 'burn', x: target.x, y: target.y, color: '#f97316', life: 40, maxLife: 40});
                 }
-                if (skillType === 'poison' || skillType === 'poison_nova') {
+                // ★ 新增：貞德被動【異端審判】免疫中毒
+                if ((skillType === 'poison' || skillType === 'poison_nova') && !target.immunePoison) {
                     const sk = attacker.skill;
                     target.poisonStacks = {dmgPerTurn: attacker.activeAtk * (sk.value || 0.18), turnsLeft: sk.duration || 4};
                     floatingTexts.push({x: target.x, y: target.y - 90, text: `中毒`, isCrit: false, color: '#22c55e', life: 45});
+                    visualEffects.push({type: 'poison', x: target.x, y: target.y, color: '#22c55e', life: 40, maxLife: 40});
+                }
+
+                // ★ 新增：毒鏢客被動【淬毒武器】——普攻 40% 機率附加中毒
+                if (skillType === 'basic' && attacker.passive && attacker.passive.type === 'dart_venom_weapon' && !target.immunePoison && target.hp > 0 && Math.random() < (attacker.passive.chance || 0.4)) {
+                    target.poisonStacks = {dmgPerTurn: attacker.activeAtk * 0.1, turnsLeft: 2};
+                    floatingTexts.push({x: target.x, y: target.y - 90, text: `淬毒`, isCrit: false, color: '#22c55e', life: 45});
                     visualEffects.push({type: 'poison', x: target.x, y: target.y, color: '#22c55e', life: 40, maxLife: 40});
                 }
 
@@ -10565,6 +10866,7 @@
                     attacker.hp -= refDmg;
                     floatingTexts.push({x: attacker.x, y: attacker.y - 60, text: `反彈 ${Math.floor(refDmg)}`, isCrit: false, color: '#e2e8f0', life: 45});
                     visualEffects.push({type: 'counter', x: attacker.x, y: attacker.y, color: '#e2e8f0', life: 30, maxLife: 30});
+                    triggerFayeWindchase(target, attacker);
                 }
 
                 // 判定：反擊 (counter，受擊者觸發，須存活)
@@ -10573,6 +10875,7 @@
                     attacker.hp -= counterDmg;
                     floatingTexts.push({x: attacker.x, y: attacker.y - 60, text: `反擊 ${Math.floor(counterDmg)}`, isCrit: false, color: '#fca5a5', life: 45});
                     visualEffects.push({type: 'counter', x: attacker.x, y: attacker.y, color: '#fca5a5', life: 30, maxLife: 30});
+                    triggerFayeWindchase(target, attacker);
                 }
 
                 // 判定：護盾展開 (shield，受擊者觸發，須存活，為全隊施加護盾)
@@ -10637,15 +10940,60 @@
 
             // 內部函數：處理回合開始時的持續效果（灼燒/中毒扣血、攻擊力增益倒數）
             const applyTurnStartEffects = (entity) => {
+                let burnTickDamageThisTurn = 0, poisonTickDamageThisTurn = 0; // ★ 記錄這次 tick 造成的傷害，給體系一/二的被動使用
                 ['burnStacks', 'poisonStacks'].forEach(key => {
                     if (entity[key] && entity[key].turnsLeft > 0) {
                         const dmg = entity[key].dmgPerTurn;
                         entity.hp -= dmg;
+                        if (key === 'burnStacks') burnTickDamageThisTurn += dmg; else poisonTickDamageThisTurn += dmg;
                         floatingTexts.push({x: entity.x, y: entity.y - 70, text: `${key === 'burnStacks' ? '🔥' : '☠️'}${Math.floor(dmg)}`, isCrit: false, color: key === 'burnStacks' ? '#f97316' : '#22c55e', life: 45});
                         entity[key].turnsLeft--;
                         if (entity[key].turnsLeft <= 0) entity[key] = null;
                     }
                 });
+                // ★ 新增：亡靈督軍被動【亡者氣息】——敵方每次受到中毒傷害時，督軍回復等同該傷害 10% 的生命值
+                if (poisonTickDamageThisTurn > 0) {
+                    const warlordHolder = combatEntities.find(e => e.team !== entity.team && e.hp > 0 && e.passive && e.passive.type === 'warlord_undeath');
+                    if (warlordHolder) {
+                        const healAmt = poisonTickDamageThisTurn * ((warlordHolder.passive.healPctOfPoisonDmg || 10) / 100);
+                        warlordHolder.hp = Math.min(warlordHolder.maxHp, warlordHolder.hp + healAmt);
+                        floatingTexts.push({x: warlordHolder.x, y: warlordHolder.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#34d399', life: 40});
+                    }
+                }
+                // ★ 新增：瘟疫使者被動【毒素蔓延】——中毒的敵人如果因為這次 tick 傷害死亡，
+                // 把死前的中毒傷害(每回合量)100% 傳染給隨機一名還活著的敵軍
+                if (poisonTickDamageThisTurn > 0 && entity.hp <= 0) {
+                    const plagueHolder = combatEntities.find(e => e.team !== entity.team && e.hp > 0 && e.passive && e.passive.type === 'plague_spread');
+                    if (plagueHolder) {
+                        const otherEnemies = combatEntities.filter(e => e.team === entity.team && e.hp > 0 && e !== entity);
+                        if (otherEnemies.length > 0) {
+                            const spreadTarget = otherEnemies[Math.floor(Math.random() * otherEnemies.length)];
+                            spreadTarget.poisonStacks = {dmgPerTurn: poisonTickDamageThisTurn, turnsLeft: 4};
+                            floatingTexts.push({x: spreadTarget.x, y: spreadTarget.y - 90, text: `瘟疫蔓延`, isCrit: false, color: '#047857', life: 45});
+                        }
+                    }
+                }
+                // ★ 新增：灼被動【龍焰詛咒】——敵方（相對於灼所在的隊伍）每次受到燃燒傷害時疊 1 層，
+                // 最多 6 層，每層讓這個目標受到的所有傷害 +3%（見 resolveAttackRoll 的傷害加成判定）
+                if (burnTickDamageThisTurn > 0) {
+                    const zhuoHolder = combatEntities.find(e => e.team !== entity.team && e.hp > 0 && e.passive && e.passive.type === 'zhuo_curse');
+                    if (zhuoHolder) {
+                        const maxStacks = zhuoHolder.passive.maxStacks || 6;
+                        entity.zhuoCurseStacks = Math.min(maxStacks, (entity.zhuoCurseStacks || 0) + 1);
+                        floatingTexts.push({x: entity.x, y: entity.y - 105, text: `詛咒 x${entity.zhuoCurseStacks}`, isCrit: false, color: '#fb923c', life: 40});
+                    }
+                    // ★ 新增：伊格尼斯被動【火之歡愉】——場上任何敵人受到燃燒傷害時，伊格尼斯回復等同該傷害
+                    // 20% 的生命值，並將其中一半轉移給我方血量最低的英雄
+                    const ignisHolder = combatEntities.find(e => e.team !== entity.team && e.hp > 0 && e.passive && e.passive.type === 'ignis_joy');
+                    if (ignisHolder) {
+                        const totalHeal = burnTickDamageThisTurn * ((ignisHolder.passive.healPctOfBurn || 20) / 100);
+                        const selfHeal = totalHeal * 0.5, shareHeal = totalHeal * 0.5;
+                        ignisHolder.hp = Math.min(ignisHolder.maxHp, ignisHolder.hp + selfHeal * (1 + (ignisHolder.healReceivedBonus || 0)));
+                        const lowestAlly = combatEntities.filter(e => e.team === ignisHolder.team && e.hp > 0).sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
+                        if (lowestAlly) lowestAlly.hp = Math.min(lowestAlly.maxHp, lowestAlly.hp + shareHeal * (1 + (lowestAlly.healReceivedBonus || 0)));
+                        floatingTexts.push({x: ignisHolder.x, y: ignisHolder.y - 60, text: `+${Math.floor(selfHeal)}`, isCrit: false, color: '#4ade80', life: 40});
+                    }
+                }
                 // ★ 新增：劇毒套裝 4 件疊加的中毒層數——每層每回合造成「當初中毒來源攻擊者」攻擊力 15% 的持續傷害，
                 // 不會自然消退，要靠淨化類技能清除（見 cleanse 分支）
                 if (entity.venomStacks > 0 && entity.hp > 0) {
@@ -10678,6 +11026,47 @@
                 if (entity.wishAtkDefBuffTurns && entity.wishAtkDefBuffTurns > 0) {
                     entity.wishAtkDefBuffTurns--;
                     if (entity.wishAtkDefBuffTurns <= 0) entity.wishAtkDefBuff = 0;
+                }
+                // ★ 新增：奧蘿拉被動【永晝不滅】施加的命中率下降 debuff 持續時間遞減
+                if (entity.hitRateDebuffTurns && entity.hitRateDebuffTurns > 0) {
+                    entity.hitRateDebuffTurns--;
+                    if (entity.hitRateDebuffTurns <= 0) entity.hitRateDebuff = 0;
+                }
+                // ★ 新增：烏瑟被動【聖光道標】的冷卻時間遞減
+                if (entity.beaconCooldown && entity.beaconCooldown > 0) entity.beaconCooldown--;
+
+                // ★ 新增：賽琳被動【晨曦之露】——每回合開始（輪到賽琳自己時判定一次，避免整隊每個人都觸發）30% 機率
+                // 驅散我方血量最低英雄身上的燃燒/中毒/暈眩其中一種負面狀態
+                if (entity.hp > 0 && entity.passive && entity.passive.type === 'selene_dawndew' && Math.random() < (entity.passive.chance || 0.3)) {
+                    const lowestAlly = combatEntities.filter(e => e.team === entity.team && e.hp > 0).sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
+                    if (lowestAlly && (lowestAlly.burnStacks || lowestAlly.poisonStacks || lowestAlly.stunned)) {
+                        lowestAlly.burnStacks = null; lowestAlly.poisonStacks = null; lowestAlly.stunned = false;
+                        floatingTexts.push({x: lowestAlly.x, y: lowestAlly.y - 95, text: `晨曦淨化`, isCrit: false, color: '#fbbf24', life: 45});
+                    }
+                }
+                // ★ 修正：萊拉被動【治癒之音】——上一輪誤判成「機制本來就有」，實際上她的 heal_single 技能類型
+                // 從沒有對應的戰鬥分支，這次一併補上：只要她活著，每回合自動治療我方血量最低者
+                if (entity.hp > 0 && entity.passive && entity.passive.type === 'lyra_song') {
+                    const lowestAlly = combatEntities.filter(e => e.team === entity.team && e.hp > 0).sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
+                    if (lowestAlly && lowestAlly.hp < lowestAlly.maxHp) {
+                        const healAmt = entity.activeAtk * (entity.skill.value || 1.5) * (1 + (lowestAlly.healReceivedBonus || 0));
+                        lowestAlly.hp = Math.min(lowestAlly.maxHp, lowestAlly.hp + healAmt);
+                        floatingTexts.push({x: lowestAlly.x, y: lowestAlly.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#ec4899', life: 40});
+                    }
+                }
+                // ★ 新增：諾娃被動【奇點觀測】——簡化版：每回合開始檢查敵方是否有護盾或攻擊力增益在生效中，
+                // 有的話回能量（最多每回合 2 次）。原文是「每次獲得」這種即時觸發，但護盾/增益的實際授予
+                // 散落在非常多不同技能分支，這裡改成每回合檢查一次是否存在，用來簡化實作範圍。
+                if (entity.hp > 0 && entity.passive && entity.passive.type === 'nova_singularity' && typeof entity.energy === 'number') {
+                    const enemies = combatEntities.filter(e => e.team !== entity.team && e.hp > 0);
+                    let triggers = 0;
+                    if (enemies.some(e => e.shield > 0)) triggers++;
+                    if (enemies.some(e => e.atkBuffValue > 0 && e.atkBuffTurns > 0)) triggers++;
+                    triggers = Math.min(entity.passive.maxPerRound || 2, triggers);
+                    if (triggers > 0) {
+                        entity.energy = Math.min(entity.maxEnergy || 100, entity.energy + triggers * (entity.passive.energyGainPct || 10));
+                        floatingTexts.push({x: entity.x, y: entity.y - 60, text: `奇點觀測`, isCrit: false, color: '#fde047', life: 40});
+                    }
                 }
                 // ★ 新增：死亡倒數 (GR 暗刃·影專屬)——每回合開始倒數一次，倒數歸零就自動引爆造成致死傷害
                 if (entity.deathCountdown && entity.deathCountdown > 0) {
@@ -10779,7 +11168,9 @@
                 }
 
                 // 尋找目標
-                if (currentActor.role === '輔助') {
+                // ★ 新增：熔岩巨匠雖然職業是輔助（沿用輔助的三圍/被動），但企劃書指定他的普攻是對敵方造成
+                // 100% 魔法傷害，不是治療隊友，所以用 forceDamageBasicAttack 標記排除掉輔助的預設鎖定隊友邏輯
+                if (currentActor.role === '輔助' && !currentActor.forceDamageBasicAttack) {
                     const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                     currentTarget = allies.reduce((prev, curr) => (curr.hp / curr.maxHp < prev.hp / prev.maxHp ? curr : prev));
                 } else {
@@ -10878,7 +11269,8 @@
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                         const healMult = 1 + (currentActor.healBonus || 0); // ★ 套用治療量加成（例如「祈願」套裝2件 +25%）
                         allies.forEach(t => {
-                            let healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * healMult;
+                            // ★ 新增：受到治療加成（蓋亞/貝希摩斯專屬）——套用在「這個目標自己」身上，不是施放者
+                            let healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * healMult * (1 + (t.healReceivedBonus || 0));
                             // ★ 新增：祈願套裝 8 件「溢出治療轉換成護盾」——治療量超過缺少的血量時，多的部分變成護盾
                             const missingHp = t.maxHp - t.hp;
                             if (currentActor.setFlags && currentActor.setFlags.overhealToShield && healAmt > missingHp) {
@@ -11145,6 +11537,7 @@
                             // 跟「熔岩巨匠」純粹全體灼燒 DOT 的路線不同，走的是範圍控場
                             if (sType === 'dazzle_aoe' && t.hp > 0 && Math.random() < (currentActor.skill.dazzleChance || 0.35) && canBeStunned(t)) {
                                 t.stunned = true;
+                                applyControlDebuffStack(t);
                                 floatingTexts.push({x: t.x, y: t.y - 100, text: `目眩`, isCrit: false, color: '#f0abfc', life: 45});
                                 visualEffects.push({type: 'stun', x: t.x, y: t.y, color: '#f0abfc', life: 40, maxLife: 40});
                             }
@@ -11160,6 +11553,7 @@
                                 const victim = others[idx]; others.splice(idx, 1);
                                 if (Math.random() < (currentActor.skill.chance || 0.5) && canBeStunned(victim)) {
                                     victim.stunned = true;
+                                    applyControlDebuffStack(victim);
                                     floatingTexts.push({x: victim.x, y: victim.y - 90, text: `EMP 干擾`, isCrit: false, color: '#38bdf8', life: 45});
                                     visualEffects.push({type: 'stun', x: victim.x, y: victim.y, color: '#38bdf8', life: 40, maxLife: 40});
                                 }
@@ -11186,7 +11580,7 @@
                         // 治療類小技能：只治療血量比例最低的一位友軍，效果減半（復甦類小技能不會真的復活人，留給大招）
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                         const t = allies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0] || currentActor;
-                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * 0.5 * (1 + (currentActor.healBonus || 0));
+                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 2.0) * 0.5 * (1 + (currentActor.healBonus || 0)) * (1 + (t.healReceivedBonus || 0));
                         t.hp = Math.min(t.maxHp, t.hp + healAmt);
                         floatingTexts.push({x: t.x, y: t.y - 60, text: `+${Math.floor(healAmt)}`, isCrit: false, color: '#4ade80', life: 45});
                         visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#4ade80', life: 30, maxLife: 30});
@@ -11203,7 +11597,7 @@
                         const allies = combatEntities.filter(e => e.team === currentActor.team && e.hp > 0);
                         const t = allies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0] || currentActor;
                         t.burnStacks = null; t.poisonStacks = null; t.stunned = false; t.venomStacks = 0;
-                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 1.0) * 0.5 * (1 + (currentActor.healBonus || 0));
+                        const healAmt = currentActor.activeAtk * (currentActor.skill.value || 1.0) * 0.5 * (1 + (currentActor.healBonus || 0)) * (1 + (t.healReceivedBonus || 0));
                         t.hp = Math.min(t.maxHp, t.hp + healAmt);
                         floatingTexts.push({x: t.x, y: t.y - 60, text: `淨化`, isCrit: false, color: '#67e8f9', life: 45});
                         visualEffects.push({type: 'heal', x: t.x, y: t.y, color: '#67e8f9', life: 30, maxLife: 30});
@@ -11288,23 +11682,37 @@
                 }
                 else {
                     // --- 普攻/普通治癒 ---
-                    if (currentActor.role === '輔助') {
+                    // ★ 熔岩巨匠例外：職業是輔助但普攻要照企劃書造成傷害，不是治療（見上面的目標選取判定）
+                    if (currentActor.role === '輔助' && !currentActor.forceDamageBasicAttack) {
                         let healAmount = Math.max(10, currentActor.activeAtk * 1.5 * (1 + (currentActor.healBonus || 0))); currentTarget.hp = Math.min(currentTarget.maxHp, currentTarget.hp + healAmount);
                         floatingTexts.push({x: currentTarget.x, y: currentTarget.y - 60, text: `+${Math.floor(healAmount)}`, isCrit: false, color: '#4ade80', life: 45}); ToneAudioEngine.playMagic();
                         visualEffects.push({type: 'heal', x: currentTarget.x, y: currentTarget.y, color: '#4ade80', life: 30, maxLife: 30});
                         bumpAnalytics('heal', currentActor.team, currentActor.name, healAmount); updateAnalyticsUI();
                     } else {
                         ToneAudioEngine.playHit();
-                        const roll = resolveAttackRoll(currentActor, currentTarget, 1.0);
+                        const roll = resolveAttackRoll(currentActor, currentTarget, currentActor.basicAtkMult || 1.0);
                         let fxColor = '#ffffff';
                         if (roll.isEvaded) {
                             floatingTexts.push({x: currentTarget.x, y: currentTarget.y - 60, text: 'MISS', isCrit: false, color: '#9ca3af', life: 40});
+                            // ★ 新增：電磁工兵被動【高頻干擾】——我方英雄成功閃避攻擊時，對攻擊者發射微型電擊
+                            const sapper = combatEntities.find(e => e.team === currentTarget.team && e.hp > 0 && e.passive && e.passive.type === 'sapper_interference');
+                            if (sapper && currentActor.hp > 0) {
+                                const shockDmg = Math.max(5, sapper.activeAtk * (sapper.passive.dmgPctOnAllyDodge || 40) / 100);
+                                currentActor.hp = Math.max(0, currentActor.hp - shockDmg);
+                                floatingTexts.push({x: currentActor.x, y: currentActor.y - 60, text: `電擊 ${Math.floor(shockDmg)}`, isCrit: false, color: '#38bdf8', life: 40});
+                            }
                         } else {
                             let dmg = roll.damage;
                             const isCrit = roll.isCrit;
                             if (isCrit) {screenShake = 5; fxColor = '#ffd54f'; ToneAudioEngine.playCrit();}
 
                             executeHit(currentActor, currentTarget, dmg, isCrit, 'basic', fxColor);
+
+                            // ★ 新增：瑟拉克斯被動【沸騰之血】——普攻額外消耗自身 3% 當前生命值
+                            if (currentActor.passive && currentActor.passive.type === 'seraphix_boil' && currentActor.hp > 0) {
+                                const selfCost = Math.floor(currentActor.hp * ((currentActor.passive.selfDmgPctPerAtk || 3) / 100));
+                                currentActor.hp = Math.max(1, currentActor.hp - selfCost);
+                            }
 
                             // 多重射擊判定 (額外打一下)
                             if (currentActor.skill && currentActor.skill.type === 'multi_shot' && Math.random() < (currentActor.skill.chance || 0.4)) {
