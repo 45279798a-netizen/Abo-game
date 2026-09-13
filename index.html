@@ -8282,7 +8282,9 @@
                     showToast(`🎉 獲得賽季限定英雄：${dbH.name}！`);
                 } else if ((GAME_STATE.roster[hId].constellation || 0) >= MAX_CONSTELLATION_LEVEL) {
                     // ★ 已滿命座（6命）時，改成跟碎片溢出同一套規則：轉化成超越結晶，不會超過命座上限
-                
+                    const crystalGain = 50;
+                    GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + crystalGain;
+                    showToast(`🎉 ${dbH.name} 已滿命座，轉化為 ${crystalGain} 枚超越結晶！`);
                 } else {
                     GAME_STATE.roster[hId].constellation = (GAME_STATE.roster[hId].constellation || 0) + 1;
                     showToast(`🎉 獲得 ${dbH.name} 碎片，命之座已突破！目前 ${GAME_STATE.roster[hId].constellation} 命`);
@@ -9223,24 +9225,6 @@
             };
             return table[target] || table[6];
         }
-
-        // ★ 新增：英雄碎片統一由這個函式發放，處理「英雄已經滿命座 (6命) 還一直拿到碎片」的溢出問題——
-        // 滿命座的英雄碎片已經沒有用途了（沒有更高命座可以解鎖），與其讓碎片白白浪費、憑空消失，
-        // 改成自動轉換成新代幣「超越結晶」，留著給其他英雄的命座/裝備洗鍊使用。
-        function grantHeroShards(heroId, amount) {
-            const dbHero = HERO_DATABASE.find(h => h.id === heroId);
-            const r = GAME_STATE.roster[heroId];
-            const isMaxedConstellation = r && (r.constellation || 0) >= MAX_CONSTELLATION_LEVEL;
-            if (isMaxedConstellation) {
-                GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + amount;
-                showToast(`${dbHero ? dbHero.name : '英雄'} 已滿命座，碎片自動轉化為 ${amount} 枚超越結晶`);
-                return true; // 代表這次是轉換成結晶，不是正常拿到碎片
-            }
-            if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
-            GAME_STATE.heroShards[heroId] = (GAME_STATE.heroShards[heroId] || 0) + amount;
-            return false;
-        }
-
         // ★ 命之座解鎖——取代原本的「潛能覺醒(升星)」。每次解鎖消耗碎片＋金幣（第3命起還要超越結晶），
         // 命座本身不再直接放大三圍，而是動態提升技能倍率／觸發機率，並可能解鎖英雄專屬質變效果
         // （見 getEffectiveHero 讀取 HERO_DATABASE.constellations 的部分）。
