@@ -837,10 +837,6 @@
                                 class="fa-solid fa-folder-open mr-1"></i>切換史詩紀錄</button>
                         <div class="bg-[#1a130e] px-2 py-1 md:px-3 md:py-1.5 rounded-lg border flex flex-col items-end shadow-inner-dark transition-colors duration-500"
                             id="season-coin-border">
-                            <!-- 將這個按鈕加在 season-coin-border 下方 -->
-                            <button onclick="openSeasonTaskModal()"
-                                class="mt-1 px-3 py-1 bg-rose-900/40 border border-rose-700/50 rounded-lg text-[10px] text-rose-300 hover:text-white transition w-full shadow"><i
-                                    class="fa-solid fa-clipboard-list mr-1"></i>賽季任務 (刷卷)</button>
                             <span class="text-[8px] md:text-[9px] text-stone-400 font-bold">目前持有勳章</span>
                             <span class="text-xs md:text-sm font-bold font-magic transition-colors duration-500"
                                 id="season-current-coins-ui"><i
@@ -1788,7 +1784,7 @@
                         <span class="text-[10px] text-stone-400"><i class="fa-solid fa-coins text-purple-400 mr-1"></i>黑市貨幣</span>
                         <span id="bm-currency-display" class="text-purple-300 font-bold text-sm">0</span>
                     </div>
-                    <p class="text-[8px] text-stone-500">匯率：1 寶石 = 10000 黑市貨幣，雙向都能換</p>
+                    <p class="text-[8px] text-stone-500">匯率：1 寶石 = 400 黑市貨幣，雙向都能換</p>
                     <div class="flex gap-2">
                         <input id="bm-exchange-amount" type="number" placeholder="輸入數量" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
                         <button onclick="exchangeDiamondToBMC()" class="shrink-0 px-2 py-1.5 bg-sky-900/60 text-sky-300 text-[9px] font-bold rounded border border-sky-700 hover:bg-sky-800 transition">寶石→黑市幣</button>
@@ -1796,16 +1792,17 @@
                     </div>
                 </div>
 
-                <!-- ★ 新增：每日限量鍛造石補給——用黑市幣跟系統換鍛造石，每天有總量上限，不是玩家對玩家交易 -->
+                <!-- ★ 改版：每日限量鍛造石補給改成特急招募卷回收系統——用黑市幣跟系統換特急招募卷，
+                     每天有嚴格總量上限，不是玩家對玩家交易 -->
                 <div class="glass-panel p-3 rounded-xl border border-stone-600/40 flex flex-col gap-2 shrink-0">
                     <div class="flex justify-between items-center">
-                        <span class="text-[10px] text-stone-400"><i class="fa-solid fa-hammer text-stone-300 mr-1"></i>每日限量鍛造石補給</span>
-                        <span class="text-stone-300 font-bold text-[10px]">今日剩餘 <span id="bm-forge-stone-remaining">2000</span> / 2000</span>
+                        <span class="text-[10px] text-stone-400"><i class="fa-solid fa-ticket text-stone-300 mr-1"></i>每日限量特急招募卷</span>
+                        <span class="text-stone-300 font-bold text-[10px]">今日剩餘 <span id="bm-special-ticket-remaining">3</span> / 3</span>
                     </div>
-                    <p class="text-[8px] text-stone-500">系統直接販售，跟玩家上架的碎片交易無關；匯率：50 黑市幣 = 1 顆鍛造石，每帳號每天限購 2000 顆。</p>
+                    <p class="text-[8px] text-stone-500">系統直接販售，跟玩家上架的碎片交易無關；匯率：24000 黑市幣 = 1 張特急招募卷，每帳號每天限購 3 張。</p>
                     <div class="flex gap-2">
-                        <input id="bm-forge-stone-amount" type="number" placeholder="購買數量" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
-                        <button onclick="purchaseDailyForgeStones()" class="shrink-0 px-3 py-1.5 bg-stone-700/60 text-stone-200 text-[9px] font-bold rounded border border-stone-500 hover:bg-stone-600 transition">購買</button>
+                        <input id="bm-special-ticket-amount" type="number" placeholder="購買數量" class="flex-1 min-w-0 bg-black/40 text-stone-200 text-[10px] px-2 py-1.5 rounded border border-[#3e3328] outline-none">
+                        <button onclick="purchaseDailySpecialTickets()" class="shrink-0 px-3 py-1.5 bg-stone-700/60 text-stone-200 text-[9px] font-bold rounded border border-stone-500 hover:bg-stone-600 transition">購買</button>
                     </div>
                 </div>
 
@@ -2208,77 +2205,6 @@
             <p id="dev-mode-error-text" class="text-[9px] text-red-400 text-center mt-2 h-3"></p>
         </div>
     </div>
-    <!-- 賽季任務 Modal -->
-    <div id="season-task-modal"
-        class="fixed inset-0 bg-black/90 z-[60] hidden flex-col items-center justify-center p-4 backdrop-blur-sm">
-        <div
-            class="glass-panel w-full max-w-sm rounded-xl p-5 relative border border-rose-700/50 shadow-[0_0_30px_rgba(244,63,94,0.2)] max-h-[85vh] flex flex-col">
-            <button onclick="closeSeasonTaskModal()"
-                class="absolute top-3 right-3 text-stone-400 bg-black/50 hover:bg-black w-8 h-8 rounded-full transition"><i
-                    class="fa-solid fa-xmark"></i></button>
-            <h2 class="text-lg font-bold text-rose-400 font-magic mb-1 flex items-center shrink-0"><i
-                    class="fa-solid fa-clipboard-list mr-2"></i>賽季特急任務</h2>
-            <p class="text-[9px] text-stone-400 mb-4 border-b border-[#3e3328] pb-2 shrink-0">完成無限循環任務，獲取特急招募卷。<br><span
-                    class="text-emerald-400 font-bold">進度可重複累積，努力農起來吧！</span></p>
-
-            <div class="space-y-3 overflow-y-auto custom-scrollbar pr-1">
-                <!-- 任務 1：戰鬥次數 -->
-                <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
-                    <div>
-                        <div class="text-xs font-bold text-stone-200">身經百戰</div>
-                        <div class="text-[9px] text-stone-400 mt-1">完成任意戰鬥 4 次</div>
-                        <div class="text-[10px] text-rose-400 font-bold mt-1">進度: <span id="task-battle-prog">0</span> /
-                            4
-                        </div>
-                    </div>
-                    <button onclick="claimSeasonTask('battle')"
-                        class="px-3 py-2 rounded bg-rose-900/50 border border-rose-700 text-[10px] font-bold text-rose-200 hover:bg-rose-700 transition active:scale-95 shadow">領取
-                        2 卷</button>
-                </div>
-                <!-- 任務 2：消耗金幣 -->
-                <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
-                    <div>
-                        <div class="text-xs font-bold text-stone-200">王國後勤</div>
-                        <div class="text-[9px] text-stone-400 mt-1">消耗 8,000 金幣直接兌換</div>
-                    </div>
-                    <button onclick="claimSeasonTask('gold')"
-                        class="px-3 py-2 rounded bg-yellow-900/50 border border-yellow-700 text-[10px] font-bold text-yellow-200 hover:bg-yellow-700 transition active:scale-95 shadow">兌換
-                        2 卷</button>
-                </div>
-                <!-- 任務 3：消耗寶石 -->
-                <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
-                    <div>
-                        <div class="text-xs font-bold text-stone-200">寶石祭儀</div>
-                        <div class="text-[9px] text-stone-400 mt-1">消耗 300 寶石直接兌換</div>
-                    </div>
-                    <button onclick="claimSeasonTask('diamond')"
-                        class="px-3 py-2 rounded bg-sky-900/50 border border-sky-700 text-[10px] font-bold text-sky-200 hover:bg-sky-700 transition active:scale-95 shadow">兌換
-                        2 卷</button>
-                </div>
-                <!-- 任務 4：消耗鍛造石 -->
-                <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
-                    <div>
-                        <div class="text-xs font-bold text-stone-200">鍛造貢獻</div>
-                        <div class="text-[9px] text-stone-400 mt-1">消耗 800 鍛造石直接兌換</div>
-                    </div>
-                    <button onclick="claimSeasonTask('stone')"
-                        class="px-3 py-2 rounded bg-emerald-900/50 border border-emerald-700 text-[10px] font-bold text-emerald-200 hover:bg-emerald-700 transition active:scale-95 shadow">兌換
-                        2 卷</button>
-                </div>
-                <!-- 任務 5：消耗英雄經驗 -->
-                <div class="bg-black/60 p-3 rounded-lg border border-[#3e3328] flex justify-between items-center">
-                    <div>
-                        <div class="text-xs font-bold text-stone-200">陪練回收</div>
-                        <div class="text-[9px] text-stone-400 mt-1">消耗 5,000 英雄經驗直接兌換</div>
-                    </div>
-                    <button onclick="claimSeasonTask('exp')"
-                        class="px-3 py-2 rounded bg-purple-900/50 border border-purple-700 text-[10px] font-bold text-purple-200 hover:bg-purple-700 transition active:scale-95 shadow">兌換
-                        1 卷</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="toast-container"
         class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none w-full max-w-sm px-4">
     </div>
@@ -2725,7 +2651,7 @@
             // 改用一個「夠寬鬆但還是有限」的估計值，只用在這個粗略防呆檢查上，跟遊戲實際的星級上限脫鉤。
             const maxTotalBonus = 1 + getStarBonusRatio(PLAUSIBLE_MAX_STAR_ESTIMATE) + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER);
             // ★ 同步 8 部位裝備系統：8 個部位都強化滿 +20 的粗估加算數值上限（武器/副手/胸甲/頭盔/鞋子/手套/戒指/項鍊各自算一次）
-            const maxEquipFlat = {hp: 17710, atk: 2030, def: 1260, crit: 5};
+            const maxEquipFlat = {hp: 3500, atk: 400, def: 250, crit: 5};
             // 套裝加成也給一個寬鬆估計（假設 8 件都湊滿同一套裝的最高數值型加成：狂暴 4 件 暴傷+35% 概念上已經算進 critDmgMult，
             // 這裡額外估一個暴擊率/生命%的寬鬆上限，避免漏算導致誤判）
             const maxSetHpPct = 20, maxSetCrit = 12; // 對應「守護」2件 HP+20%／「狂暴」2件 暴擊+12% 這類數值型套裝加成的參考上限
@@ -3882,14 +3808,14 @@
         }
 
         /* ============================================================
-           黑市：玩家對玩家交易英雄碎片，用「黑市貨幣」計價（1 寶石 = 10000 黑市貨幣，雙向可換）。
+           黑市：玩家對玩家交易英雄碎片，用「黑市貨幣」計價（1 寶石 = 400 黑市貨幣，雙向可換）。
            賣家上架時碎片立刻從背包扣除、進入「寄售中」；買家付款後，碎片直接進買家背包，
            賣家收到的錢會先扣 10% 手續費，用信件系統匯過去（因為買家的裝置沒有權限直接修改賣家的
            本地存檔，透過雙方都能存取的信箱來完成款項交割，是這個架構下最穩妥的做法）。
            ★ 跟其他多人功能一樣的老實提醒：這是「client 端互相信任」的交易系統，沒有真正的伺服器
            裁判在中間驗證每一步，本質上跟這整個遊戲的其他資源一樣沒辦法做到滴水不漏的防作弊。
            ============================================================ */
-        const BLACK_MARKET_DIAMOND_RATE = 10000; // ★ 匯率調整：1 寶石 = 10000 黑市貨幣
+        const BLACK_MARKET_DIAMOND_RATE = 400; // ★ 修復套利漏洞：原本 10000 的匯率會讓玩家利用競技場商店價差無限套利洗鍛造石，下修回 400
         const BLACK_MARKET_FEE_RATE_DEFAULT = 0.10; // 10% 交易手續費（預設值，管理員開啟「免手續費」時會被覆蓋成 0）
         let BLACK_MARKET_FEE_RATE = BLACK_MARKET_FEE_RATE_DEFAULT; // ★ 改成 let：管理員可以在後台即時調整（見 listenAdminGameConfig 的 freeMarket 開關）
         let bmBrowseUnsub = null, bmMineUnsub = null;
@@ -3926,43 +3852,45 @@
 
         function refreshBlackMarketUI() {
             document.getElementById('bm-currency-display').innerText = (GAME_STATE.blackMarketCurrency || 0).toLocaleString();
-            updateDailyForgeStoneUI();
+            updateDailySpecialTicketUI();
             if (!mpConnected) return;
             listenBlackMarketBrowse();
             listenBlackMarketMine();
         }
 
-        // ★ 新增：每日限量鍛造石補給——系統直接販售（不是玩家對玩家交易），50 黑市幣 = 1 顆，每天限購 2000 顆
-        const DAILY_FORGE_STONE_LIMIT = 2000;
-        const DAILY_FORGE_STONE_BMC_RATE = 50; // 50 黑市幣 = 1 顆鍛造石
-        function getDailyForgeStonePurchased() {
+        // ★ 改版：每日限量鍛造石補給改成特急招募卷回收系統——系統直接販售（不是玩家對玩家交易），
+        // 24000 黑市幣 = 1 張特急招募卷，每天限購 3 張。原本鍛造石的匯率太寬鬆，
+        // 等於變相把多餘碎片洗成無限鍛造石，改成嚴格限量的特急招募卷回收出口。
+        const DAILY_TICKET_LIMIT = 3;
+        const DAILY_TICKET_BMC_RATE = 24000; // 24000 黑市幣 = 1 張特急招募卷
+        function getDailySpecialTicketPurchased() {
             if (GAME_STATE.dailyForgeStoneDate !== getTodayDateStr()) {
                 GAME_STATE.dailyForgeStoneDate = getTodayDateStr();
                 GAME_STATE.dailyForgeStonePurchased = 0;
             }
             return GAME_STATE.dailyForgeStonePurchased || 0;
         }
-        function updateDailyForgeStoneUI() {
-            const el = document.getElementById('bm-forge-stone-remaining');
+        function updateDailySpecialTicketUI() {
+            const el = document.getElementById('bm-special-ticket-remaining');
             if (!el) return;
-            el.innerText = (DAILY_FORGE_STONE_LIMIT - getDailyForgeStonePurchased()).toLocaleString();
+            el.innerText = (DAILY_TICKET_LIMIT - getDailySpecialTicketPurchased()).toLocaleString();
         }
-        function purchaseDailyForgeStones() {
+        function purchaseDailySpecialTickets() {
             ToneAudioEngine.playClick();
-            const amount = parseInt(document.getElementById('bm-forge-stone-amount').value);
+            const amount = parseInt(document.getElementById('bm-special-ticket-amount').value);
             if (!amount || amount <= 0) {showToast('請輸入要購買的數量'); return;}
-            const remaining = DAILY_FORGE_STONE_LIMIT - getDailyForgeStonePurchased();
-            if (amount > remaining) {showToast(`今日剩餘額度只有 ${remaining} 顆`); return;}
-            const cost = amount * DAILY_FORGE_STONE_BMC_RATE;
+            const remaining = DAILY_TICKET_LIMIT - getDailySpecialTicketPurchased();
+            if (amount > remaining) {showToast(`今日剩餘額度只有 ${remaining} 張`); return;}
+            const cost = amount * DAILY_TICKET_BMC_RATE;
             if ((GAME_STATE.blackMarketCurrency || 0) < cost) {showToast('黑市貨幣不足'); return;}
             GAME_STATE.blackMarketCurrency -= cost;
-            GAME_STATE.forgeStones += amount;
-            GAME_STATE.dailyForgeStonePurchased = getDailyForgeStonePurchased() + amount;
+            GAME_STATE.specialTickets = (GAME_STATE.specialTickets || 0) + amount;
+            GAME_STATE.dailyForgeStonePurchased = getDailySpecialTicketPurchased() + amount;
             saveGame(); updateHUD();
             document.getElementById('bm-currency-display').innerText = GAME_STATE.blackMarketCurrency.toLocaleString();
-            document.getElementById('bm-forge-stone-amount').value = '';
-            updateDailyForgeStoneUI();
-            showToast(`購買成功：${cost.toLocaleString()} 黑市幣 → ${amount} 鍛造石`);
+            document.getElementById('bm-special-ticket-amount').value = '';
+            updateDailySpecialTicketUI();
+            showToast(`購買成功：${cost.toLocaleString()} 黑市幣 → ${amount} 張特急招募卷`);
         }
 
         function exchangeDiamondToBMC() {
@@ -5294,85 +5222,85 @@
             // ★ 新增最高稀有度 GR（比 LR 再高一階）：只能靠擊殺全服首領獲得，不開放抽卡/通行證取得，
             // 每個角色都是「小技能疊層／標記 → 大招引爆／消耗 → 終極連動額外效果」的三段式連動設計。
             // ============================================================
-            {id: 'h_gr_bahamut', name: '「滅世災炎」巴哈姆特', role: '戰士', rarity: 'GR', star: 1, baseHp: 2600, baseAtk: 360, baseDef: 130, crit: 25, avatarIcon: 'fa-dragon', color: '#ef4444',
+            {id: 'h_gr_bahamut', name: '「滅世災炎」巴哈姆特', role: '戰士', rarity: 'GR', star: 1, baseHp: 433, baseAtk: 72, baseDef: 26, crit: 25, avatarIcon: 'fa-dragon', color: '#ef4444',
                 skill: {type: 'gr_bahamut', value: 2.2, stackAtkPct: 10, stackLifestealPct: 10, maxStacks: 5, defIgnorePerStack: 15, desc: '小技能【狂血撕裂】：對敵方單體造成巨量傷害，並為自身疊加 1 層「逆鱗」（每層 +10% 攻擊力、+10% 吸血率，最高 5 層）。大招【深淵龍息·燼滅】：對敵方全體噴吐烈焰，消耗全部「逆鱗」層數，每層額外無視目標 15% 防禦力；若消耗滿 5 層且成功擊殺任一敵人，將立刻無消耗再次觸發一次【狂血撕裂】。'},
                 lore: '曾統治遠古巨龍巢穴的半龍人戰神，血液中流淌著純粹的毀滅之力。', isExclusive: true},
-            {id: 'h_gr_alexander', name: '「曙光初王」亞歷山大', role: '坦克', rarity: 'GR', star: 1, baseHp: 3200, baseAtk: 170, baseDef: 210, crit: 10, avatarIcon: 'fa-shield-halved', color: '#fbbf24',
+            {id: 'h_gr_alexander', name: '「曙光初王」亞歷山大', role: '坦克', rarity: 'GR', star: 1, baseHp: 533, baseAtk: 34, baseDef: 42, crit: 10, avatarIcon: 'fa-shield-halved', color: '#fbbf24',
                 skill: {type: 'gr_alexander', value: 3.0, healPct: 1.2, desc: '小技能【耀陽刻印】：舉盾嘲諷，在所有攻擊自己的敵人身上留下無法驅散的「耀陽」印記。大招【王權共鳴·天威】：猛砸地面震盪全場，強制引爆敵方身上所有「耀陽」印記，每個印記對其持有者造成「亞歷山大最大防禦力 300%」的真實傷害，並為我方血量最低的騎士恢復生命。'},
                 lore: '王國建國史詩中的第一代君王，手持聖盾，是光輝與榮耀的化身。', isExclusive: true},
-            {id: 'h_gr_astraea', name: '「星軌秘法」阿斯特萊雅', role: '法師', rarity: 'GR', star: 1, baseHp: 1750, baseAtk: 400, baseDef: 75, crit: 35, avatarIcon: 'fa-meteor', color: '#a855f7',
+            {id: 'h_gr_astraea', name: '「星軌秘法」阿斯特萊雅', role: '法師', rarity: 'GR', star: 1, baseHp: 292, baseAtk: 80, baseDef: 15, crit: 35, avatarIcon: 'fa-meteor', color: '#a855f7',
                 skill: {type: 'gr_astraea', value: 2.0, debuffAtkPct: 20, desc: '小技能【星塵引力】：召喚微型黑洞造成魔法傷害，並對目標附加「引力坍縮」（攻擊力 -20%）。大招【星神共鳴·超新星】：召喚隕石優先鎖定帶有「引力坍縮」的目標；命中坍縮目標時傷害翻倍，並將傷害 100% 濺射給周圍所有敵人，同時重新附加「引力坍縮」。'},
                 lore: '掌控星盤矩陣的神秘先知，能夠看穿深淵的過去與未來。', isExclusive: true},
-            {id: 'h_gr_kage', name: '「虛空殘影」暗刃·影', role: '刺客', rarity: 'GR', star: 1, baseHp: 1400, baseAtk: 390, baseDef: 60, crit: 48, avatarIcon: 'fa-user-ninja', color: '#8b5cf6',
+            {id: 'h_gr_kage', name: '「虛空殘影」暗刃·影', role: '刺客', rarity: 'GR', star: 1, baseHp: 233, baseAtk: 78, baseDef: 12, crit: 48, avatarIcon: 'fa-user-ninja', color: '#8b5cf6',
                 skill: {type: 'gr_kage', value: 2.6, markTurns: 3, desc: '小技能【幽影步】：進入潛行狀態，並對目標施加「死亡倒數」標記（3 回合後自動爆發致死傷害）。大招【虛空斷頭台】：瞬間閃現至帶有「死亡倒數」標記的敵人背後進行背刺，提前引爆標記；若因此擊殺目標，「死亡氣息」將傳染給剩餘血量最低的兩名敵人，並立刻自動觸發二次引爆，形成連鎖刺殺。'},
                 lore: '誕生於虛空迷宮深處的無情死神，從沒有人見過他的真面目。', isExclusive: true},
-            {id: 'h_gr_evelynn', name: '「不朽靈木」伊芙琳', role: '輔助', rarity: 'GR', star: 1, baseHp: 2300, baseAtk: 190, baseDef: 105, crit: 12, avatarIcon: 'fa-seedling', color: '#22c55e',
+            {id: 'h_gr_evelynn', name: '「不朽靈木」伊芙琳', role: '輔助', rarity: 'GR', star: 1, baseHp: 383, baseAtk: 38, baseDef: 21, crit: 12, avatarIcon: 'fa-seedling', color: '#22c55e',
                 skill: {type: 'gr_evelynn', healBoostPct: 50, shieldPct: 40, drainAtkPct: 20, desc: '小技能【新綠復甦】：為我方血量最低的兩名騎士種下「靈種」（受治療效果 +50%，受擊時微幅回血）。大招【森羅共鳴·萬物生長】：催動全場靈種開花，帶有靈種的騎士獲得最大生命值 40% 的護盾；同時藤蔓纏繞敵方全體，吸取其 20% 攻擊力平均轉移給帶有靈種的騎士。'},
                 lore: '幻影之森的守護神樹化身，掌握著復甦與靈魂共鳴的魔法。', isExclusive: true},
 
 
-            {id: 'h_reina', name: '烈焰騎士·蕾娜', role: '戰士', rarity: 'SSR', star: 1, baseHp: 900, baseAtk: 120, baseDef: 45, crit: 15, avatarIcon: 'fa-fire', color: '#dc2626', skill: {type: 'splash', value: 1.5, splashValue: 0.5, splashCount: 2, desc: '大招對主目標造成 150% 攻擊力傷害，並波及最多 2 名其他敵人，各造成 50% 攻擊力傷害。'}, lore: '來自南方火山地帶的紅蓮騎士，手中的巨劍蘊含著不滅的火種。'},
-            {id: 'h_noah', name: '冰霜法師·諾亞', role: '法師', rarity: 'SSR', star: 1, baseHp: 650, baseAtk: 140, baseDef: 30, crit: 20, avatarIcon: 'fa-snowflake', color: '#3b82f6', skill: {type: 'aoe', value: 1.6, desc: '大招施放暴風雪，對敵方全體造成 160% 攻擊力的魔法傷害。'}, lore: '極北冰原的天才法師，能瞬間凍結範圍內的一切生命。'},
-            {id: 'h_valkyrie', name: '聖殿衛士·瓦爾基里', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1200, baseAtk: 75, baseDef: 70, crit: 5, avatarIcon: 'fa-shield-halved', color: '#eab308', skill: {type: 'shield', chance: 0.3, value: 0.12, desc: '受擊時有 30% 機率為自己與全體友軍施加等同自身最大生命值 12% 的護盾。'}, lore: '守護聖都的最高階神官騎士，是戰場上最堅不可摧的壁壘。'},
-            {id: 'h_lilith', name: '暗影牧師·莉莉絲', role: '輔助', rarity: 'SSR', star: 1, baseHp: 750, baseAtk: 85, baseDef: 35, crit: 10, avatarIcon: 'fa-moon', color: '#8b5cf6', skill: {type: 'heal_all', value: 2.0, desc: '大招施放群體治癒，為所有友軍恢復等同自身攻擊力 200% 的生命值。'}, lore: '掌握生與死邊界的異端牧師，以暗影魔力修復友軍的傷勢。'},
-            {id: 'h_claude', name: '疾風遊俠·克勞德', role: '刺客', rarity: 'SSR', star: 1, baseHp: 700, baseAtk: 155, baseDef: 28, crit: 30, avatarIcon: 'fa-leaf', color: '#22c55e', skill: {type: 'first_strike', firstStrikeMult: 1.8, desc: '大招專門獵殺還沒受過傷的目標，命中「全新目標」時造成 180% 加成傷害，是名副其實的奇襲高手。'}, lore: '森林精靈中的異類，捨棄了長弓，以驚人的速度使用雙刃進行暗殺。'},
+            {id: 'h_reina', name: '烈焰騎士·蕾娜', role: '戰士', rarity: 'SSR', star: 1, baseHp: 150, baseAtk: 24, baseDef: 9, crit: 15, avatarIcon: 'fa-fire', color: '#dc2626', skill: {type: 'splash', value: 1.5, splashValue: 0.5, splashCount: 2, desc: '大招對主目標造成 150% 攻擊力傷害，並波及最多 2 名其他敵人，各造成 50% 攻擊力傷害。'}, lore: '來自南方火山地帶的紅蓮騎士，手中的巨劍蘊含著不滅的火種。'},
+            {id: 'h_noah', name: '冰霜法師·諾亞', role: '法師', rarity: 'SSR', star: 1, baseHp: 108, baseAtk: 28, baseDef: 6, crit: 20, avatarIcon: 'fa-snowflake', color: '#3b82f6', skill: {type: 'aoe', value: 1.6, desc: '大招施放暴風雪，對敵方全體造成 160% 攻擊力的魔法傷害。'}, lore: '極北冰原的天才法師，能瞬間凍結範圍內的一切生命。'},
+            {id: 'h_valkyrie', name: '聖殿衛士·瓦爾基里', role: '坦克', rarity: 'SSR', star: 1, baseHp: 200, baseAtk: 15, baseDef: 14, crit: 5, avatarIcon: 'fa-shield-halved', color: '#eab308', skill: {type: 'shield', chance: 0.3, value: 0.12, desc: '受擊時有 30% 機率為自己與全體友軍施加等同自身最大生命值 12% 的護盾。'}, lore: '守護聖都的最高階神官騎士，是戰場上最堅不可摧的壁壘。'},
+            {id: 'h_lilith', name: '暗影牧師·莉莉絲', role: '輔助', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 17, baseDef: 7, crit: 10, avatarIcon: 'fa-moon', color: '#8b5cf6', skill: {type: 'heal_all', value: 2.0, desc: '大招施放群體治癒，為所有友軍恢復等同自身攻擊力 200% 的生命值。'}, lore: '掌握生與死邊界的異端牧師，以暗影魔力修復友軍的傷勢。'},
+            {id: 'h_claude', name: '疾風遊俠·克勞德', role: '刺客', rarity: 'SSR', star: 1, baseHp: 117, baseAtk: 31, baseDef: 6, crit: 30, avatarIcon: 'fa-leaf', color: '#22c55e', skill: {type: 'first_strike', firstStrikeMult: 1.8, desc: '大招專門獵殺還沒受過傷的目標，命中「全新目標」時造成 180% 加成傷害，是名副其實的奇襲高手。'}, lore: '森林精靈中的異類，捨棄了長弓，以驚人的速度使用雙刃進行暗殺。'},
 
-            {id: 'h_arthur', name: '重裝鐵衛·亞瑟', role: '坦克', rarity: 'SR', star: 1, baseHp: 1000, baseAtk: 60, baseDef: 60, crit: 5, avatarIcon: 'fa-shield', color: '#a0aec0', skill: {type: 'reflect', chance: 0.3, value: 0.3, desc: '受到攻擊時有 30% 機率反彈 30% 的傷害給攻擊者。'}, lore: '穿戴厚重板甲的王國老兵。'},
-            {id: 'h_faye', name: '精靈射手·菲', role: '刺客', rarity: 'SR', star: 1, baseHp: 550, baseAtk: 125, baseDef: 20, crit: 25, avatarIcon: 'fa-bullseye', color: '#4ade80', skill: {type: 'multi_shot', chance: 0.4, value: 0.8, desc: '普通攻擊後有 40% 機率立即追加一次 80% 傷害的射擊。'}, lore: '百步穿楊的精靈神射手。'},
-            {id: 'h_gideon', name: '狂戰士·吉迪恩', role: '戰士', rarity: 'SR', star: 1, baseHp: 850, baseAtk: 110, baseDef: 30, crit: 15, avatarIcon: 'fa-axe-battle', color: '#b91c1c', skill: {type: 'lifesteal', value: 0.5, desc: '大招攻擊會吸取造成傷害的 50% 轉化為自身生命值。'}, lore: '在戰場上依靠吸食敵人鮮血維生的狂戰士。'},
-            {id: 'h_elara', name: '光之祭司·艾拉', role: '輔助', rarity: 'SR', star: 1, baseHp: 650, baseAtk: 70, baseDef: 35, crit: 5, avatarIcon: 'fa-sun', color: '#fde047', skill: {type: 'buff_atk', value: 0.35, duration: 3, desc: '大招提升全體友軍攻擊力 35%，持續 3 回合。'}, lore: '信仰光明神的見習祭司。'},
-            {id: 'h_zeke', name: '雷霆法師·吉克', role: '法師', rarity: 'SR', star: 1, baseHp: 600, baseAtk: 130, baseDef: 25, crit: 15, avatarIcon: 'fa-bolt', color: '#fbbf24', skill: {type: 'chain', value: 1.5, jumps: 1, desc: '大招造成 150% 攻擊力傷害，閃電鏈會額外彈跳 1 次攻擊其他敵人。'}, lore: '能召喚落雷的火爆法師。'},
+            {id: 'h_arthur', name: '重裝鐵衛·亞瑟', role: '坦克', rarity: 'SR', star: 1, baseHp: 167, baseAtk: 12, baseDef: 12, crit: 5, avatarIcon: 'fa-shield', color: '#a0aec0', skill: {type: 'reflect', chance: 0.3, value: 0.3, desc: '受到攻擊時有 30% 機率反彈 30% 的傷害給攻擊者。'}, lore: '穿戴厚重板甲的王國老兵。'},
+            {id: 'h_faye', name: '精靈射手·菲', role: '刺客', rarity: 'SR', star: 1, baseHp: 92, baseAtk: 25, baseDef: 4, crit: 25, avatarIcon: 'fa-bullseye', color: '#4ade80', skill: {type: 'multi_shot', chance: 0.4, value: 0.8, desc: '普通攻擊後有 40% 機率立即追加一次 80% 傷害的射擊。'}, lore: '百步穿楊的精靈神射手。'},
+            {id: 'h_gideon', name: '狂戰士·吉迪恩', role: '戰士', rarity: 'SR', star: 1, baseHp: 142, baseAtk: 22, baseDef: 6, crit: 15, avatarIcon: 'fa-axe-battle', color: '#b91c1c', skill: {type: 'lifesteal', value: 0.5, desc: '大招攻擊會吸取造成傷害的 50% 轉化為自身生命值。'}, lore: '在戰場上依靠吸食敵人鮮血維生的狂戰士。'},
+            {id: 'h_elara', name: '光之祭司·艾拉', role: '輔助', rarity: 'SR', star: 1, baseHp: 108, baseAtk: 14, baseDef: 7, crit: 5, avatarIcon: 'fa-sun', color: '#fde047', skill: {type: 'buff_atk', value: 0.35, duration: 3, desc: '大招提升全體友軍攻擊力 35%，持續 3 回合。'}, lore: '信仰光明神的見習祭司。'},
+            {id: 'h_zeke', name: '雷霆法師·吉克', role: '法師', rarity: 'SR', star: 1, baseHp: 100, baseAtk: 26, baseDef: 5, crit: 15, avatarIcon: 'fa-bolt', color: '#fbbf24', skill: {type: 'chain', value: 1.5, jumps: 1, desc: '大招造成 150% 攻擊力傷害，閃電鏈會額外彈跳 1 次攻擊其他敵人。'}, lore: '能召喚落雷的火爆法師。'},
 
-            {id: 'h_thorin', name: '矮人鐵匠·索林', role: '戰士', rarity: 'R', star: 1, baseHp: 650, baseAtk: 75, baseDef: 40, crit: 10, avatarIcon: 'fa-hammer', color: '#78716c', skill: {type: 'stun', chance: 0.4, desc: '大招攻擊有 40% 機率擊暈目標，使其下回合無法行動。'}, lore: '力氣很大的矮人。'},
-            {id: 'h_lyra', name: '吟游詩人·萊拉', role: '輔助', rarity: 'R', star: 1, baseHp: 550, baseAtk: 50, baseDef: 25, crit: 5, avatarIcon: 'fa-music', color: '#ec4899', skill: {type: 'heal_single', value: 1.5, desc: '每回合為生命值最低的友軍恢復自身攻擊力 150% 的生命值。'}, lore: '用音樂治癒人心的旅人。'},
-            {id: 'h_draven', name: '賞金獵人·達文', role: '刺客', rarity: 'R', star: 1, baseHp: 500, baseAtk: 85, baseDef: 20, crit: 15, avatarIcon: 'fa-crosshairs', color: '#64748b', skill: {type: 'gold_bonus', value: 20, variance: 10, desc: '擊殺敵人時額外獲得 10~30 枚金幣。'}, lore: '見錢眼開的傭兵。'},
-            {id: 'h_ignis', name: '火徒·伊格尼斯', role: '法師', rarity: 'R', star: 1, baseHp: 450, baseAtk: 100, baseDef: 15, crit: 10, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn', value: 0.2, duration: 3, desc: '大招使目標燃燒，每回合造成自身攻擊力 20% 的灼燒傷害，持續 3 回合。'}, lore: '玩火自焚的學徒。'},
-            {id: 'h_militia', name: '王國步兵', role: '戰士', rarity: 'R', star: 1, baseHp: 500, baseAtk: 60, baseDef: 35, crit: 5, avatarIcon: 'fa-user-shield', color: '#a1887f', skill: {type: 'basic', value: 1.5, desc: '樸實無華的攻擊，大招僅造成 150% 攻擊力傷害，沒有額外效果。'}, lore: '隨處可見的王國基層士兵。'},
+            {id: 'h_thorin', name: '矮人鐵匠·索林', role: '戰士', rarity: 'R', star: 1, baseHp: 108, baseAtk: 15, baseDef: 8, crit: 10, avatarIcon: 'fa-hammer', color: '#78716c', skill: {type: 'stun', chance: 0.4, desc: '大招攻擊有 40% 機率擊暈目標，使其下回合無法行動。'}, lore: '力氣很大的矮人。'},
+            {id: 'h_lyra', name: '吟游詩人·萊拉', role: '輔助', rarity: 'R', star: 1, baseHp: 92, baseAtk: 10, baseDef: 5, crit: 5, avatarIcon: 'fa-music', color: '#ec4899', skill: {type: 'heal_single', value: 1.5, desc: '每回合為生命值最低的友軍恢復自身攻擊力 150% 的生命值。'}, lore: '用音樂治癒人心的旅人。'},
+            {id: 'h_draven', name: '賞金獵人·達文', role: '刺客', rarity: 'R', star: 1, baseHp: 83, baseAtk: 17, baseDef: 4, crit: 15, avatarIcon: 'fa-crosshairs', color: '#64748b', skill: {type: 'gold_bonus', value: 20, variance: 10, desc: '擊殺敵人時額外獲得 10~30 枚金幣。'}, lore: '見錢眼開的傭兵。'},
+            {id: 'h_ignis', name: '火徒·伊格尼斯', role: '法師', rarity: 'R', star: 1, baseHp: 75, baseAtk: 20, baseDef: 3, crit: 10, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn', value: 0.2, duration: 3, desc: '大招使目標燃燒，每回合造成自身攻擊力 20% 的灼燒傷害，持續 3 回合。'}, lore: '玩火自焚的學徒。'},
+            {id: 'h_militia', name: '王國步兵', role: '戰士', rarity: 'R', star: 1, baseHp: 83, baseAtk: 12, baseDef: 7, crit: 5, avatarIcon: 'fa-user-shield', color: '#a1887f', skill: {type: 'basic', value: 1.5, desc: '樸實無華的攻擊，大招僅造成 150% 攻擊力傷害，沒有額外效果。'}, lore: '隨處可見的王國基層士兵。'},
 
-            {id: 'h_seraph', name: '大天使·熾', role: '輔助', rarity: 'SSR', star: 1, baseHp: 800, baseAtk: 90, baseDef: 45, crit: 5, avatarIcon: 'fa-feather', color: '#fef08a', skill: {type: 'revive', value: 0.5, desc: '戰鬥中若有友軍陣亡，可將其復活並恢復 50% 生命值（每場戰鬥限一次）。'}, lore: '從天界降臨的使者。'},
-            {id: 'h_shadow', name: '無形者·影', role: '刺客', rarity: 'SSR', star: 1, baseHp: 650, baseAtk: 165, baseDef: 25, crit: 35, avatarIcon: 'fa-mask', color: '#334155', skill: {type: 'stealth', chance: 0.3, desc: '每回合開始時有 30% 機率潛入暗影，迴避下一次受到的攻擊。'}, lore: '沒有人看過他的真面目。'},
-            {id: 'h_gaia', name: '大地之母·蓋亞', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1300, baseAtk: 65, baseDef: 80, crit: 5, avatarIcon: 'fa-mountain', color: '#4d7c0f', skill: {type: 'hp_dmg', value: 0.1, desc: '大招額外造成等同自身最大生命值 10% 的傷害。'}, lore: '自然意志的化身。'},
-            {id: 'h_void', name: '虛空術士·瓦伊德', role: '法師', rarity: 'SSR', star: 1, baseHp: 600, baseAtk: 150, baseDef: 25, crit: 15, avatarIcon: 'fa-meteor', color: '#581c87', skill: {type: 'def_ignore', value: 2.0, desc: '大招無視目標防禦力，造成 200% 攻擊力的真實傷害。'}, lore: '來自異次元的探究者。'},
-            {id: 'h_fang', name: '狼人·法恩', role: '戰士', rarity: 'SR', star: 1, baseHp: 800, baseAtk: 105, baseDef: 30, crit: 20, avatarIcon: 'fa-wolf-pack-battalion', color: '#7c2d12', skill: {type: 'frenzy', value: 1.0, desc: '生命值越低攻擊力越高，生命歸零前最多可提升 100% 攻擊力。'}, lore: '滿月時會失去理智。'},
-            {id: 'h_mist', name: '幻術師·迷霧', role: '輔助', rarity: 'SR', star: 1, baseHp: 600, baseAtk: 75, baseDef: 25, crit: 10, avatarIcon: 'fa-eye', color: '#c084fc', skill: {type: 'confuse', chance: 0.2, desc: '敵方單位選擇目標時有 20% 機率被迷惑，轉而攻擊自己的隊友。'}, lore: '擅長操控心智。'},
-            {id: 'h_iron', name: '鐵傀儡', role: '坦克', rarity: 'SR', star: 1, baseHp: 1100, baseAtk: 50, baseDef: 65, crit: 0, avatarIcon: 'fa-robot', color: '#9ca3af', skill: {type: 'taunt', desc: '嘲諷敵人，只要自己存活，敵方必定優先攻擊自己。'}, lore: '古代遺跡的守護者。'},
-            {id: 'h_dart', name: '毒鏢客', role: '刺客', rarity: 'R', star: 1, baseHp: 450, baseAtk: 90, baseDef: 15, crit: 15, avatarIcon: 'fa-syringe', color: '#166534', skill: {type: 'poison', value: 0.18, duration: 4, desc: '大招使目標中毒，每回合造成自身攻擊力 18% 的毒傷害，持續 4 回合。'}, lore: '塗滿劇毒的暗殺者。'},
-            {id: 'h_monk', name: '苦行僧', role: '戰士', rarity: 'R', star: 1, baseHp: 600, baseAtk: 65, baseDef: 35, crit: 5, avatarIcon: 'fa-hands-praying', color: '#ca8a04', skill: {type: 'counter', chance: 0.35, value: 0.6, desc: '受擊時有 35% 機率立即反擊，造成自身攻擊力 60% 的傷害。'}, lore: '修練肉體的武者。'},
+            {id: 'h_seraph', name: '大天使·熾', role: '輔助', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 18, baseDef: 9, crit: 5, avatarIcon: 'fa-feather', color: '#fef08a', skill: {type: 'revive', value: 0.5, desc: '戰鬥中若有友軍陣亡，可將其復活並恢復 50% 生命值（每場戰鬥限一次）。'}, lore: '從天界降臨的使者。'},
+            {id: 'h_shadow', name: '無形者·影', role: '刺客', rarity: 'SSR', star: 1, baseHp: 108, baseAtk: 33, baseDef: 5, crit: 35, avatarIcon: 'fa-mask', color: '#334155', skill: {type: 'stealth', chance: 0.3, desc: '每回合開始時有 30% 機率潛入暗影，迴避下一次受到的攻擊。'}, lore: '沒有人看過他的真面目。'},
+            {id: 'h_gaia', name: '大地之母·蓋亞', role: '坦克', rarity: 'SSR', star: 1, baseHp: 217, baseAtk: 13, baseDef: 16, crit: 5, avatarIcon: 'fa-mountain', color: '#4d7c0f', skill: {type: 'hp_dmg', value: 0.1, desc: '大招額外造成等同自身最大生命值 10% 的傷害。'}, lore: '自然意志的化身。'},
+            {id: 'h_void', name: '虛空術士·瓦伊德', role: '法師', rarity: 'SSR', star: 1, baseHp: 100, baseAtk: 30, baseDef: 5, crit: 15, avatarIcon: 'fa-meteor', color: '#581c87', skill: {type: 'def_ignore', value: 2.0, desc: '大招無視目標防禦力，造成 200% 攻擊力的真實傷害。'}, lore: '來自異次元的探究者。'},
+            {id: 'h_fang', name: '狼人·法恩', role: '戰士', rarity: 'SR', star: 1, baseHp: 133, baseAtk: 21, baseDef: 6, crit: 20, avatarIcon: 'fa-wolf-pack-battalion', color: '#7c2d12', skill: {type: 'frenzy', value: 1.0, desc: '生命值越低攻擊力越高，生命歸零前最多可提升 100% 攻擊力。'}, lore: '滿月時會失去理智。'},
+            {id: 'h_mist', name: '幻術師·迷霧', role: '輔助', rarity: 'SR', star: 1, baseHp: 100, baseAtk: 15, baseDef: 5, crit: 10, avatarIcon: 'fa-eye', color: '#c084fc', skill: {type: 'confuse', chance: 0.2, desc: '敵方單位選擇目標時有 20% 機率被迷惑，轉而攻擊自己的隊友。'}, lore: '擅長操控心智。'},
+            {id: 'h_iron', name: '鐵傀儡', role: '坦克', rarity: 'SR', star: 1, baseHp: 183, baseAtk: 10, baseDef: 13, crit: 0, avatarIcon: 'fa-robot', color: '#9ca3af', skill: {type: 'taunt', desc: '嘲諷敵人，只要自己存活，敵方必定優先攻擊自己。'}, lore: '古代遺跡的守護者。'},
+            {id: 'h_dart', name: '毒鏢客', role: '刺客', rarity: 'R', star: 1, baseHp: 75, baseAtk: 18, baseDef: 3, crit: 15, avatarIcon: 'fa-syringe', color: '#166534', skill: {type: 'poison', value: 0.18, duration: 4, desc: '大招使目標中毒，每回合造成自身攻擊力 18% 的毒傷害，持續 4 回合。'}, lore: '塗滿劇毒的暗殺者。'},
+            {id: 'h_monk', name: '苦行僧', role: '戰士', rarity: 'R', star: 1, baseHp: 100, baseAtk: 13, baseDef: 7, crit: 5, avatarIcon: 'fa-hands-praying', color: '#ca8a04', skill: {type: 'counter', chance: 0.35, value: 0.6, desc: '受擊時有 35% 機率立即反擊，造成自身攻擊力 60% 的傷害。'}, lore: '修練肉體的武者。'},
             // S1 限定 (1 LR, 2 SSR)
-            {id: 'h_uther', name: '聖光使者·烏瑟', role: '坦克', rarity: 'UR', star: 1, baseHp: 2000, baseAtk: 120, baseDef: 120, crit: 5, avatarIcon: 'fa-shield-heart', color: '#f43f5e', skill: {type: 'holy_shield', value: 2.0, shieldValue: 5.0, desc: '大招為全體友軍恢復自身攻擊力 200% 的生命值，並施加等同攻擊力 500% 的護盾。'}, lore: '王國最偉大的聖騎士，擁有超越凡人的神聖力量。', isExclusive: true, seasonId: 1},
-            {id: 'h_s1_lr', name: '夜魘收割者·莫瑟斯', role: '刺客', rarity: 'LR', star: 1, baseHp: 1100, baseAtk: 320, baseDef: 55, crit: 40, avatarIcon: 'fa-user-ninja', color: '#fde047', skill: {type: 'execute_chain', value: 2.4, chainMult: 1.3, desc: '大招對目標造成 240% 攻擊力傷害；若成功擊殺，立刻對另一名隨機敵人發動追擊，追擊傷害為攻擊力的 130%，可連續獵殺。'}, lore: '亡靈甦醒之夜潛入戰場的收割者，鐮刀所指之處，一命換一命，絕不留活口。', isExclusive: true, seasonId: 1},
-            {id: 'h_s1_ssr1', name: '亡靈督軍', role: '戰士', rarity: 'SSR', star: 1, baseHp: 1100, baseAtk: 140, baseDef: 60, crit: 10, avatarIcon: 'fa-ghost', color: '#10b981', skill: {type: 'slash', value: 1.5, desc: '大招造成 150% 攻擊力的真實傷害，無視目標防禦。'}, lore: '被巫妖王喚醒的古代將軍。', isExclusive: true, seasonId: 1},
-            {id: 'h_s1_ssr2', name: '瘟疫使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 700, baseAtk: 160, baseDef: 30, crit: 15, avatarIcon: 'fa-disease', color: '#047857', skill: {type: 'poison_nova', value: 0.22, duration: 4, desc: '大招施放劇毒新星，對敵方全體造成傷害並使其中毒，每回合額外損失攻擊力 22% 的生命值，持續 4 回合。'}, lore: '散佈疫病的狂熱者。', isExclusive: true, seasonId: 1},
+            {id: 'h_uther', name: '聖光使者·烏瑟', role: '坦克', rarity: 'UR', star: 1, baseHp: 333, baseAtk: 24, baseDef: 24, crit: 5, avatarIcon: 'fa-shield-heart', color: '#f43f5e', skill: {type: 'holy_shield', value: 2.0, shieldValue: 5.0, desc: '大招為全體友軍恢復自身攻擊力 200% 的生命值，並施加等同攻擊力 500% 的護盾。'}, lore: '王國最偉大的聖騎士，擁有超越凡人的神聖力量。', isExclusive: true, seasonId: 1},
+            {id: 'h_s1_lr', name: '夜魘收割者·莫瑟斯', role: '刺客', rarity: 'LR', star: 1, baseHp: 183, baseAtk: 64, baseDef: 11, crit: 40, avatarIcon: 'fa-user-ninja', color: '#fde047', skill: {type: 'execute_chain', value: 2.4, chainMult: 1.3, desc: '大招對目標造成 240% 攻擊力傷害；若成功擊殺，立刻對另一名隨機敵人發動追擊，追擊傷害為攻擊力的 130%，可連續獵殺。'}, lore: '亡靈甦醒之夜潛入戰場的收割者，鐮刀所指之處，一命換一命，絕不留活口。', isExclusive: true, seasonId: 1},
+            {id: 'h_s1_ssr1', name: '亡靈督軍', role: '戰士', rarity: 'SSR', star: 1, baseHp: 183, baseAtk: 28, baseDef: 12, crit: 10, avatarIcon: 'fa-ghost', color: '#10b981', skill: {type: 'slash', value: 1.5, desc: '大招造成 150% 攻擊力的真實傷害，無視目標防禦。'}, lore: '被巫妖王喚醒的古代將軍。', isExclusive: true, seasonId: 1},
+            {id: 'h_s1_ssr2', name: '瘟疫使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 117, baseAtk: 32, baseDef: 6, crit: 15, avatarIcon: 'fa-disease', color: '#047857', skill: {type: 'poison_nova', value: 0.22, duration: 4, desc: '大招施放劇毒新星，對敵方全體造成傷害並使其中毒，每回合額外損失攻擊力 22% 的生命值，持續 4 回合。'}, lore: '散佈疫病的狂熱者。', isExclusive: true, seasonId: 1},
 
             // S2 限定 (1 LR, 2 SSR)
-            {id: 'h_siegfried', name: '屠龍勇士·齊格飛', role: '戰士', rarity: 'UR', star: 1, baseHp: 1600, baseAtk: 220, baseDef: 70, crit: 25, avatarIcon: 'fa-gavel', color: '#f43f5e', skill: {type: 'dragon_slayer', value: 2.5, desc: '大招對敵方全體造成攻擊力 250% 的巨額真實傷害。'}, lore: '沐浴過龍血的傳奇勇士，天下無雙。', isExclusive: true, seasonId: 2},
-            {id: 'h_s2_lr', name: '深淵吞噬者·貝希摩斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 1888, baseAtk: 260, baseDef: 83, crit: 28, avatarIcon: 'fa-water', color: '#fde047', skill: {type: 'lifesteal_aoe', value: 1.3, lifestealRatio: 0.4, desc: '大招對敵方全體造成 130% 攻擊力傷害，並將造成的總傷害 40% 轉化為自身生命值，越打越不會死。'}, lore: '比災厄紅龍更古老的深淵巨獸，吞噬一切、也從中汲取無盡的生命力。', isExclusive: true, seasonId: 2},
-            {id: 'h_s2_ssr1', name: '龍脈術士', role: '法師', rarity: 'SSR', star: 1, baseHp: 750, baseAtk: 170, baseDef: 35, crit: 20, avatarIcon: 'fa-fire', color: '#ef4444', skill: {type: 'meteor', value: 1.8, desc: '大招召喚隕石轟炸敵方全體，造成 180% 攻擊力的範圍傷害。'}, lore: '體內流淌著龍血的魔法師。', isExclusive: true, seasonId: 2},
-            {id: 'h_s2_ssr2', name: '龍鱗衛士', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1300, baseAtk: 80, baseDef: 85, crit: 5, avatarIcon: 'fa-shield', color: '#b91c1c', skill: {type: 'dragon_scale', chance: 0.5, value: 0.4, desc: '受到攻擊時有 50% 機率反彈 40% 的傷害給攻擊者。'}, lore: '裝備龍鱗鎧甲的鐵衛。', isExclusive: true, seasonId: 2},
+            {id: 'h_siegfried', name: '屠龍勇士·齊格飛', role: '戰士', rarity: 'UR', star: 1, baseHp: 267, baseAtk: 44, baseDef: 14, crit: 25, avatarIcon: 'fa-gavel', color: '#f43f5e', skill: {type: 'dragon_slayer', value: 2.5, desc: '大招對敵方全體造成攻擊力 250% 的巨額真實傷害。'}, lore: '沐浴過龍血的傳奇勇士，天下無雙。', isExclusive: true, seasonId: 2},
+            {id: 'h_s2_lr', name: '深淵吞噬者·貝希摩斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 315, baseAtk: 52, baseDef: 17, crit: 28, avatarIcon: 'fa-water', color: '#fde047', skill: {type: 'lifesteal_aoe', value: 1.3, lifestealRatio: 0.4, desc: '大招對敵方全體造成 130% 攻擊力傷害，並將造成的總傷害 40% 轉化為自身生命值，越打越不會死。'}, lore: '比災厄紅龍更古老的深淵巨獸，吞噬一切、也從中汲取無盡的生命力。', isExclusive: true, seasonId: 2},
+            {id: 'h_s2_ssr1', name: '龍脈術士', role: '法師', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 34, baseDef: 7, crit: 20, avatarIcon: 'fa-fire', color: '#ef4444', skill: {type: 'meteor', value: 1.8, desc: '大招召喚隕石轟炸敵方全體，造成 180% 攻擊力的範圍傷害。'}, lore: '體內流淌著龍血的魔法師。', isExclusive: true, seasonId: 2},
+            {id: 'h_s2_ssr2', name: '龍鱗衛士', role: '坦克', rarity: 'SSR', star: 1, baseHp: 217, baseAtk: 16, baseDef: 17, crit: 5, avatarIcon: 'fa-shield', color: '#b91c1c', skill: {type: 'dragon_scale', chance: 0.5, value: 0.4, desc: '受到攻擊時有 50% 機率反彈 40% 的傷害給攻擊者。'}, lore: '裝備龍鱗鎧甲的鐵衛。', isExclusive: true, seasonId: 2},
 
             // S3 限定 (1 LR, 2 SSR)
-            {id: 'h_jeanne', name: '裁決聖女·貞德', role: '法師', rarity: 'UR', star: 1, baseHp: 1200, baseAtk: 280, baseDef: 50, crit: 30, avatarIcon: 'fa-cross', color: '#f43f5e', skill: {type: 'divine_judgment', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成秒殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '受到神明啟示的絕對聖女。', isExclusive: true, seasonId: 3},
-            {id: 'h_s3_lr', name: '命運織者·諾恩', role: '法師', rarity: 'LR', star: 1, baseHp: 1416, baseAtk: 330, baseDef: 59, crit: 33, avatarIcon: 'fa-clock', color: '#fde047', skill: {type: 'extra_turn', value: 1.6, desc: '大招造成 160% 攻擊力傷害，命中後會直接扭轉時間絲線，讓自己立刻再獲得一次行動機會。'}, lore: '掌管命運絲線的古老存在，連時間的流動都能為她所用，比聖女更接近神諭的本源。', isExclusive: true, seasonId: 3},
-            {id: 'h_s3_ssr1', name: '異端審判官', role: '刺客', rarity: 'SSR', star: 1, baseHp: 800, baseAtk: 180, baseDef: 30, crit: 40, avatarIcon: 'fa-mask', color: '#c084fc', skill: {type: 'execute', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成必殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '冷酷無情的異端處刑人。', isExclusive: true, seasonId: 3},
-            {id: 'h_s3_ssr2', name: '聖光狂熱者', role: '戰士', rarity: 'SSR', star: 1, baseHp: 1000, baseAtk: 130, baseDef: 55, crit: 15, avatarIcon: 'fa-bolt', color: '#9333ea', skill: {type: 'smite', chance: 0.3, desc: '普通攻擊有 30% 機率附帶暈眩，使目標下回合無法行動。'}, lore: '為了信仰不顧一切。', isExclusive: true, seasonId: 3},
+            {id: 'h_jeanne', name: '裁決聖女·貞德', role: '法師', rarity: 'UR', star: 1, baseHp: 200, baseAtk: 56, baseDef: 10, crit: 30, avatarIcon: 'fa-cross', color: '#f43f5e', skill: {type: 'divine_judgment', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成秒殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '受到神明啟示的絕對聖女。', isExclusive: true, seasonId: 3},
+            {id: 'h_s3_lr', name: '命運織者·諾恩', role: '法師', rarity: 'LR', star: 1, baseHp: 236, baseAtk: 66, baseDef: 12, crit: 33, avatarIcon: 'fa-clock', color: '#fde047', skill: {type: 'extra_turn', value: 1.6, desc: '大招造成 160% 攻擊力傷害，命中後會直接扭轉時間絲線，讓自己立刻再獲得一次行動機會。'}, lore: '掌管命運絲線的古老存在，連時間的流動都能為她所用，比聖女更接近神諭的本源。', isExclusive: true, seasonId: 3},
+            {id: 'h_s3_ssr1', name: '異端審判官', role: '刺客', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 36, baseDef: 6, crit: 40, avatarIcon: 'fa-mask', color: '#c084fc', skill: {type: 'execute', threshold: 0.35, value: 1.6, desc: '大招對生命值低於 35% 的敵人造成必殺一擊，其餘情況造成 160% 攻擊力傷害。'}, lore: '冷酷無情的異端處刑人。', isExclusive: true, seasonId: 3},
+            {id: 'h_s3_ssr2', name: '聖光狂熱者', role: '戰士', rarity: 'SSR', star: 1, baseHp: 167, baseAtk: 26, baseDef: 11, crit: 15, avatarIcon: 'fa-bolt', color: '#9333ea', skill: {type: 'smite', chance: 0.3, desc: '普通攻擊有 30% 機率附帶暈眩，使目標下回合無法行動。'}, lore: '為了信仰不顧一切。', isExclusive: true, seasonId: 3},
 
             // S4 限定 (1 LR, 2 SSR) —「巨龍之巔」通行證最終獎勵與召喚限定
-            {id: 'h_s4_ur', name: '龍裔王者·灼', role: '戰士', rarity: 'UR', star: 1, baseHp: 1800, baseAtk: 240, baseDef: 90, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316', skill: {type: 'burn_stack', value: 0.12, duration: 4, maxStacks: 6, desc: '大招附加龍焰詛咒，每命中一次就疊加一層（最多 6 層），燒傷程度隨層數持續攀升，直到戰鬥結束都不會消退。'}, lore: '與滅世魔龍同源的半龍血脈，渾身燃燒著不滅的龍炎。', isExclusive: true, seasonId: 4},
-            {id: 'h_s4_lr', name: '熔火霸主·瑟拉克斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 2124, baseAtk: 283, baseDef: 106, crit: 22, avatarIcon: 'fa-volcano', color: '#fde047', skill: {type: 'wrath_nuke', value: 0.9, desc: '大招造成等同自身攻擊力、再加上「已損失生命值 90%」轉化的真實傷害，血越少打得越痛，是滅世魔龍本尊都忌憚的狂怒化身。'}, lore: '滅世魔龍甦醒前留下的分身，比半龍血脈的灼更接近純粹的毀滅意志。', isExclusive: true, seasonId: 4},
-            {id: 'h_s4_ssr1', name: '熔岩巨匠', role: '法師', rarity: 'SSR', star: 1, baseHp: 800, baseAtk: 175, baseDef: 40, crit: 15, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn_aoe', value: 0.28, duration: 3, desc: '大招施放熔岩噴發，對敵方全體造成傷害並使其燃燒，每回合造成攻擊力 28% 的灼燒傷害，持續 3 回合。'}, lore: '巨龍巢穴深處鍛造兵器的異能鐵匠。', isExclusive: true, seasonId: 4},
-            {id: 'h_s4_ssr2', name: '龍鱗盾衛', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1400, baseAtk: 85, baseDef: 95, crit: 5, avatarIcon: 'fa-shield-cat', color: '#c2410c', skill: {type: 'harden', value: 4, desc: '龍鱗會越挨打越堅硬：每次受到攻擊，永久提升 4 點防禦力，戰鬥越久越難被打穿。'}, lore: '以巨龍蛻下的鱗片鍛造出堅不可摧的戰甲。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_ur', name: '龍裔王者·灼', role: '戰士', rarity: 'UR', star: 1, baseHp: 300, baseAtk: 48, baseDef: 18, crit: 20, avatarIcon: 'fa-dragon', color: '#f97316', skill: {type: 'burn_stack', value: 0.12, duration: 4, maxStacks: 6, desc: '大招附加龍焰詛咒，每命中一次就疊加一層（最多 6 層），燒傷程度隨層數持續攀升，直到戰鬥結束都不會消退。'}, lore: '與滅世魔龍同源的半龍血脈，渾身燃燒著不滅的龍炎。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_lr', name: '熔火霸主·瑟拉克斯', role: '戰士', rarity: 'LR', star: 1, baseHp: 354, baseAtk: 57, baseDef: 21, crit: 22, avatarIcon: 'fa-volcano', color: '#fde047', skill: {type: 'wrath_nuke', value: 0.9, desc: '大招造成等同自身攻擊力、再加上「已損失生命值 90%」轉化的真實傷害，血越少打得越痛，是滅世魔龍本尊都忌憚的狂怒化身。'}, lore: '滅世魔龍甦醒前留下的分身，比半龍血脈的灼更接近純粹的毀滅意志。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_ssr1', name: '熔岩巨匠', role: '法師', rarity: 'SSR', star: 1, baseHp: 133, baseAtk: 35, baseDef: 8, crit: 15, avatarIcon: 'fa-fire-flame-curved', color: '#ea580c', skill: {type: 'burn_aoe', value: 0.28, duration: 3, desc: '大招施放熔岩噴發，對敵方全體造成傷害並使其燃燒，每回合造成攻擊力 28% 的灼燒傷害，持續 3 回合。'}, lore: '巨龍巢穴深處鍛造兵器的異能鐵匠。', isExclusive: true, seasonId: 4},
+            {id: 'h_s4_ssr2', name: '龍鱗盾衛', role: '坦克', rarity: 'SSR', star: 1, baseHp: 233, baseAtk: 17, baseDef: 19, crit: 5, avatarIcon: 'fa-shield-cat', color: '#c2410c', skill: {type: 'harden', value: 4, desc: '龍鱗會越挨打越堅硬：每次受到攻擊，永久提升 4 點防禦力，戰鬥越久越難被打穿。'}, lore: '以巨龍蛻下的鱗片鍛造出堅不可摧的戰甲。', isExclusive: true, seasonId: 4},
 
             // S5 限定 (1 LR, 2 SSR) —「機械紀元」通行證最終獎勵與召喚限定
-            {id: 'h_s5_ur', name: '虛空破陣者', role: '法師', rarity: 'UR', star: 1, baseHp: 1300, baseAtk: 260, baseDef: 60, crit: 25, avatarIcon: 'fa-robot', color: '#38bdf8', skill: {type: 'armor_break', value: 0.15, desc: '大招直接打碎目標的護甲，永久降低其防禦力 15%（可疊加），越打對方越脆，專門用於瓦解重甲機械系敵人。'}, lore: '掌握破解核心機甲護甲頻率的虛空系戰術大師。', isExclusive: true, seasonId: 5},
-            {id: 'h_s5_lr', name: '奇點指揮官·諾娃', role: '法師', rarity: 'LR', star: 1, baseHp: 1534, baseAtk: 307, baseDef: 71, crit: 28, avatarIcon: 'fa-satellite', color: '#fde047', skill: {type: 'dispel_aoe', value: 1.4, desc: '大招對敵方全體造成 140% 攻擊力傷害，並清除其護盾與攻擊力增益效果，是核心機甲軍團最忌憚的反支援指揮官。'}, lore: '統籌整個星盤矩陣作戰網路的最高指揮官，連核心機甲的防禦協定都能瞬間瓦解。', isExclusive: true, seasonId: 5},
-            {id: 'h_s5_ssr1', name: '電磁工兵', role: '刺客', rarity: 'SSR', star: 1, baseHp: 750, baseAtk: 165, baseDef: 30, crit: 25, avatarIcon: 'fa-bolt', color: '#0ea5e9', skill: {type: 'emp_stun', value: 1.6, chance: 0.5, empCount: 2, desc: '大招造成 160% 攻擊力傷害，同時向另外 2 個隨機敵人施放電磁脈衝，各有 50% 機率使其當機暈眩。'}, lore: '專門拆解古代機械遺跡的實戰工程師。', isExclusive: true, seasonId: 5},
-            {id: 'h_s5_ssr2', name: '護盾核心·艾克', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1350, baseAtk: 80, baseDef: 90, crit: 5, avatarIcon: 'fa-shield-halved', color: '#0284c7', skill: {type: 'overload', value: 0.8, chargeMax: 4, desc: '每次受到攻擊都會默默蓄能，累積滿 4 次充能後，會在自己的回合一次性向全體敵人釋放能量爆發。'}, lore: '搭載古代能源核心的自主防禦單位。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ur', name: '虛空破陣者', role: '法師', rarity: 'UR', star: 1, baseHp: 217, baseAtk: 52, baseDef: 12, crit: 25, avatarIcon: 'fa-robot', color: '#38bdf8', skill: {type: 'armor_break', value: 0.15, desc: '大招直接打碎目標的護甲，永久降低其防禦力 15%（可疊加），越打對方越脆，專門用於瓦解重甲機械系敵人。'}, lore: '掌握破解核心機甲護甲頻率的虛空系戰術大師。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_lr', name: '奇點指揮官·諾娃', role: '法師', rarity: 'LR', star: 1, baseHp: 256, baseAtk: 61, baseDef: 14, crit: 28, avatarIcon: 'fa-satellite', color: '#fde047', skill: {type: 'dispel_aoe', value: 1.4, desc: '大招對敵方全體造成 140% 攻擊力傷害，並清除其護盾與攻擊力增益效果，是核心機甲軍團最忌憚的反支援指揮官。'}, lore: '統籌整個星盤矩陣作戰網路的最高指揮官，連核心機甲的防禦協定都能瞬間瓦解。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ssr1', name: '電磁工兵', role: '刺客', rarity: 'SSR', star: 1, baseHp: 125, baseAtk: 33, baseDef: 6, crit: 25, avatarIcon: 'fa-bolt', color: '#0ea5e9', skill: {type: 'emp_stun', value: 1.6, chance: 0.5, empCount: 2, desc: '大招造成 160% 攻擊力傷害，同時向另外 2 個隨機敵人施放電磁脈衝，各有 50% 機率使其當機暈眩。'}, lore: '專門拆解古代機械遺跡的實戰工程師。', isExclusive: true, seasonId: 5},
+            {id: 'h_s5_ssr2', name: '護盾核心·艾克', role: '坦克', rarity: 'SSR', star: 1, baseHp: 225, baseAtk: 16, baseDef: 18, crit: 5, avatarIcon: 'fa-shield-halved', color: '#0284c7', skill: {type: 'overload', value: 0.8, chargeMax: 4, desc: '每次受到攻擊都會默默蓄能，累積滿 4 次充能後，會在自己的回合一次性向全體敵人釋放能量爆發。'}, lore: '搭載古代能源核心的自主防禦單位。', isExclusive: true, seasonId: 5},
 
             // S6 限定 (1 LR, 2 SSR) —「拂曉盛典」通行證最終獎勵與召喚限定角色
-            {id: 'h_s6_ur', name: '曙光禮讚者·賽琳', role: '輔助', rarity: 'UR', star: 1, baseHp: 1400, baseAtk: 150, baseDef: 65, crit: 10, avatarIcon: 'fa-champagne-glasses', color: '#fbbf24', skill: {type: 'cleanse', value: 1.0, desc: '大招吟唱淨化聖歌，清除全體友軍的暈眩／灼燒／中毒等異常狀態，並為全隊回復生命值。'}, lore: '在拂曉盛典上高歌禮讚的聖詠者，歌聲能滌淨全軍的傷痛。', isExclusive: true, seasonId: 6},
-            {id: 'h_s6_lr', name: '永晝女王·奧蘿拉', role: '輔助', rarity: 'LR', star: 1, baseHp: 1652, baseAtk: 177, baseDef: 77, crit: 12, avatarIcon: 'fa-sun', color: '#fde047', skill: {type: 'phoenix', value: 0.4, desc: '戰鬥中首次陣亡時，會以 40% 生命值原地重生一次（整場戰鬥限一次），象徵拂曉永不熄滅的女王意志。'}, lore: '統治著永不落幕的拂曉盛典的女王，就連死亡也無法讓她的光輝真正熄滅。', isExclusive: true, seasonId: 6},
-            {id: 'h_s6_ssr1', name: '煙火使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 850, baseAtk: 185, baseDef: 42, crit: 20, avatarIcon: 'fa-fire-flame-curved', color: '#f97316', skill: {type: 'dazzle_aoe', value: 1.4, dazzleChance: 0.35, desc: '大招施放絢爛煙火轟炸敵方全體，刺眼的閃光讓每個命中的敵人都有 35% 機率當場目眩暈眩。'}, lore: '負責點燃慶典夜空煙火的法師，燦爛的火花底下藏著真正的殺傷力。', isExclusive: true, seasonId: 6},
-            {id: 'h_s6_ssr2', name: '慶典衛兵長', role: '坦克', rarity: 'SSR', star: 1, baseHp: 1450, baseAtk: 88, baseDef: 98, crit: 5, avatarIcon: 'fa-shield-cat', color: '#d97706', skill: {type: 'dodge_ward', chance: 0.3, desc: '負責維安的衛兵長，每回合開始時有 30% 機率為全體友軍賦予一次性的守護祝福，直接迴避下一次受到的攻擊。'}, lore: '拂曉盛典期間負責維安的王國精銳衛兵統領。', isExclusive: true, seasonId: 6}
+            {id: 'h_s6_ur', name: '曙光禮讚者·賽琳', role: '輔助', rarity: 'UR', star: 1, baseHp: 233, baseAtk: 30, baseDef: 13, crit: 10, avatarIcon: 'fa-champagne-glasses', color: '#fbbf24', skill: {type: 'cleanse', value: 1.0, desc: '大招吟唱淨化聖歌，清除全體友軍的暈眩／灼燒／中毒等異常狀態，並為全隊回復生命值。'}, lore: '在拂曉盛典上高歌禮讚的聖詠者，歌聲能滌淨全軍的傷痛。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_lr', name: '永晝女王·奧蘿拉', role: '輔助', rarity: 'LR', star: 1, baseHp: 275, baseAtk: 35, baseDef: 15, crit: 12, avatarIcon: 'fa-sun', color: '#fde047', skill: {type: 'phoenix', value: 0.4, desc: '戰鬥中首次陣亡時，會以 40% 生命值原地重生一次（整場戰鬥限一次），象徵拂曉永不熄滅的女王意志。'}, lore: '統治著永不落幕的拂曉盛典的女王，就連死亡也無法讓她的光輝真正熄滅。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_ssr1', name: '煙火使者', role: '法師', rarity: 'SSR', star: 1, baseHp: 142, baseAtk: 37, baseDef: 8, crit: 20, avatarIcon: 'fa-fire-flame-curved', color: '#f97316', skill: {type: 'dazzle_aoe', value: 1.4, dazzleChance: 0.35, desc: '大招施放絢爛煙火轟炸敵方全體，刺眼的閃光讓每個命中的敵人都有 35% 機率當場目眩暈眩。'}, lore: '負責點燃慶典夜空煙火的法師，燦爛的火花底下藏著真正的殺傷力。', isExclusive: true, seasonId: 6},
+            {id: 'h_s6_ssr2', name: '慶典衛兵長', role: '坦克', rarity: 'SSR', star: 1, baseHp: 242, baseAtk: 18, baseDef: 20, crit: 5, avatarIcon: 'fa-shield-cat', color: '#d97706', skill: {type: 'dodge_ward', chance: 0.3, desc: '負責維安的衛兵長，每回合開始時有 30% 機率為全體友軍賦予一次性的守護祝福，直接迴避下一次受到的攻擊。'}, lore: '拂曉盛典期間負責維安的王國精銳衛兵統領。', isExclusive: true, seasonId: 6}
         ];
 
         // 魔物資料庫 (擴充至 7 章節)
@@ -6679,7 +6607,9 @@
         // ============ 【企劃書】稀有度基礎倍率與天賦 (Rarity Base Multipliers & Passives) ============
         // ★ 玩家已確認可接受：改成職業基礎值 × 稀有度倍率，會覆蓋掉每個英雄原本個別調校的
         // baseHp/baseAtk/baseDef，現有玩家的英雄數值也會直接套用新公式重算，不特別做相容轉換。
-        const RARITY_BASE_MULT = {R: 1.0, SR: 1.2, SSR: 1.5, UR: 1.8, LR: 2.2, GR: 3.0};
+        // ★ 數值壓縮 (Stat Squish)：原本的倍率梯度太寬(1.0~3.0)，跟等級/星級/聖物疊乘後後期數值直接失控。
+        // 收攏成 1.0~2.5，稀有度之間還是有明確差距，但不會跟其他乘區加在一起後直接爆炸。
+        const RARITY_BASE_MULT = {R: 1.0, SR: 1.2, SSR: 1.45, UR: 1.75, LR: 2.1, GR: 2.5};
         const RARITY_PASSIVES = {
             R:   {spd: 0,  energyStart: 0,  dmgReduce: 0,    dmgBonus: 0,    cheatDeath: false},
             SR:  {spd: 5,  energyStart: 0,  dmgReduce: 0,    dmgBonus: 0,    cheatDeath: false},
@@ -6690,12 +6620,14 @@
         };
 
         // ============ 【企劃書】職業定位基礎三圍 (Class Base Stats by Role) ============
+        // ★ 數值壓縮：原本的基數（4000~5000 HP 級距）疊上稀有度倍率、等級倍率、星級/聖物加成之後，
+        // 後期數值會連環乘出天文數字。改成小一個數量級的基數，戰鬥數值會回到比較好控管的範圍。
         const CLASS_BASE_STATS = {
-            '坦克': {hp: 5000, atk: 150, def: 300, spd: 90},
-            '戰士': {hp: 4000, atk: 250, def: 200, spd: 100},
-            '刺客': {hp: 2800, atk: 350, def: 120, spd: 120},
-            '法師': {hp: 2500, atk: 380, def: 100, spd: 95},
-            '輔助': {hp: 3500, atk: 200, def: 180, spd: 110},
+            '坦克': {hp: 250, atk: 15, def: 22, spd: 90},
+            '戰士': {hp: 180, atk: 24, def: 12, spd: 100},
+            '刺客': {hp: 140, atk: 32, def: 8,  spd: 120},
+            '法師': {hp: 130, atk: 35, def: 7,  spd: 95},
+            '輔助': {hp: 160, atk: 18, def: 10, spd: 110},
         };
         // 職業特例加成：坦克天生格擋、戰士天生吸血、刺客基礎暴傷 180%（其他職業 150%）、法師初始能量+10、輔助效果抵抗+15%
         const CLASS_PASSIVES = {
@@ -8698,69 +8630,10 @@
 
 
 
-        // ============ 賽季任務系統邏輯 ============
-        function openSeasonTaskModal() {
-            ToneAudioEngine.playClick();
-            document.getElementById('task-battle-prog').innerText = GAME_STATE.battlesFought;
-            document.getElementById('season-task-modal').classList.remove('hidden');
-        }
-
-        function closeSeasonTaskModal() {
-            ToneAudioEngine.playClick();
-            document.getElementById('season-task-modal').classList.add('hidden');
-        }
-
-        function claimSeasonTask(type) {
-            ToneAudioEngine.playClick();
-            // ★ 平衡調整：特急招募卷太難拿，門檻降低、獎勵數量提高，讓特急卡池不會抽到卷軸見底就卡住
-            if (type === 'battle') {
-                if (GAME_STATE.battlesFought >= 4) {
-                    GAME_STATE.battlesFought -= 4;
-                    GAME_STATE.specialTickets += 2;
-                    showToast("🎉 獲得 2 張 特急招募卷！");
-                } else {
-                    showToast("戰鬥次數不足，請繼續遠征或討伐！");
-                }
-            } else if (type === 'gold') {
-                if (GAME_STATE.gold >= 8000) {
-                    GAME_STATE.gold -= 8000;
-                    GAME_STATE.specialTickets += 2;
-                    showToast("🎉 成功花費金幣兌換 2 張 特急招募卷！");
-                } else {
-                    showToast("金幣不足！");
-                }
-            } else if (type === 'diamond') {
-                // ★ 新增任務：消耗寶石直接兌換，給不缺卷軸但寶石有餘裕的玩家多一條路可以換特急卷
-                if (GAME_STATE.diamonds >= 300) {
-                    GAME_STATE.diamonds -= 300;
-                    GAME_STATE.specialTickets += 2;
-                    showToast("🎉 成功花費寶石兌換 2 張 特急招募卷！");
-                } else {
-                    showToast("寶石不足！");
-                }
-            } else if (type === 'stone') {
-                // ★ 新增任務：消耗鍛造石直接兌換，裝備都點滿、鍛造石用不完的玩家可以拿來換卷軸
-                if (GAME_STATE.forgeStones >= 800) {
-                    GAME_STATE.forgeStones -= 800;
-                    GAME_STATE.specialTickets += 2;
-                    showToast("🎉 成功花費鍛造石兌換 2 張 特急招募卷！");
-                } else {
-                    showToast("鍛造石不足！");
-                }
-            } else if (type === 'exp') {
-                // ★ 新增任務：消耗英雄經驗直接兌換，英雄都練滿等、經驗堆積用不完時可以拿來換卷軸
-                if (GAME_STATE.heroExp >= 5000) {
-                    GAME_STATE.heroExp -= 5000;
-                    GAME_STATE.specialTickets += 1;
-                    showToast("🎉 成功花費英雄經驗兌換 1 張 特急招募卷！");
-                } else {
-                    showToast("英雄經驗不足！");
-                }
-            }
-            saveGame();
-            updateHUD();
-            document.getElementById('task-battle-prog').innerText = GAME_STATE.battlesFought;
-        }
+        // ============ 賽季任務系統已移除 ============
+        // ★ 徹底移除：這個系統的「身經百戰」任務用 GAME_STATE.battlesFought 當進度，
+        // 但 battlesFought 在每一種戰鬥模式（包含背景自動刷本）裡都會持續累加，等於玩家什麼都不用做，
+        // 掛著背景刷本就能無限循環兌換特急招募卷，是最大的無限刷卷漏洞來源，直接整個系統移除。
 
         function openStageSelectModal() {ToneAudioEngine.playClick(); renderChapterList(); renderStageGrid(currentChapterView); document.getElementById('stage-select-modal').classList.remove('hidden');}
         function closeStageSelectModal() {ToneAudioEngine.playClick(); document.getElementById('stage-select-modal').classList.add('hidden');}
@@ -9759,7 +9632,16 @@
 
                 // 判定：吸血 (僅大招觸發)
                 if (skillType === 'lifesteal' || skillType === 'lifesteal_aoe') {
-                    let heal = damage * (attacker.skill.lifestealRatio || attacker.skill.value || 0.5);
+                    let lifestealRatio = attacker.skill.lifestealRatio || attacker.skill.value || 0.5;
+                    // ★ 數值平衡：多目標吸血衰減——lifesteal_aoe（LR 貝希摩斯專屬）打到第 2 個以後的目標，
+                    // 吸血比例依序打 70%、49%、34%...（每多一位再乘 0.7），避免對著一大群敵人一次全部命中
+                    // 就吸到脫離正常戰鬥範圍的誇張總血量。單體 lifesteal 只會命中一次，不受影響。
+                    if (skillType === 'lifesteal_aoe') {
+                        const hitIdx = attacker.lifestealAoeHitIndex || 0;
+                        lifestealRatio *= Math.pow(0.7, hitIdx);
+                        attacker.lifestealAoeHitIndex = hitIdx + 1;
+                    }
+                    let heal = damage * lifestealRatio;
                     attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
                     floatingTexts.push({x: attacker.x, y: attacker.y - 60, text: `+${Math.floor(heal)}`, isCrit: false, color: '#4ade80', life: 45});
                 }
@@ -10314,8 +10196,16 @@
 
                         // ★ 新增：狂怒爆發 (wrath_nuke，LR 熔火霸主·瑟拉克斯專屬)——傷害看的是「自己已經損失了多少生命」，
                         // 血越少打得越痛，是高風險高回報的另一種狂暴設計，跟「frenzy」單純血量越低攻擊力越高不同，
-                        // 這裡是直接把損失的生命值轉換成這一擊的額外真實傷害
-                        const missingHpBonus = sType === 'wrath_nuke' ? (currentActor.maxHp - currentActor.hp) * (currentActor.skill.value || 0.8) : 0;
+                        // 這裡是直接把損失的生命值轉換成這一擊的額外真實傷害。
+                        // ★ 數值平衡：加上硬上限，這一擊的總傷害（基礎攻擊力+已損生命轉換的部分）最高不超過
+                        // 自身攻擊力的 10 倍，避免高血量、高防禦數值膨脹之後，這個技能單發傷害直接失控。
+                        let missingHpBonus = sType === 'wrath_nuke' ? (currentActor.maxHp - currentActor.hp) * (currentActor.skill.value || 0.8) : 0;
+                        if (sType === 'wrath_nuke') missingHpBonus = Math.min(missingHpBonus, currentActor.activeAtk * 9);
+
+                        // ★ 新增：多目標吸血衰減機制用的計數器——每次重新發動大招都歸零，
+                        // 讓 lifesteal_aoe（LR 貝希摩斯專屬）打到越多目標，後面幾個目標的吸血比例遞減，
+                        // 避免對著一大群敵人打一發大招就吸到單次戰鬥能力範圍以外的誇張血量（見 executeHit）
+                        currentActor.lifestealAoeHitIndex = 0;
 
                         // 結算所有目標的傷害
                         targets.forEach((t, tIdx) => {
