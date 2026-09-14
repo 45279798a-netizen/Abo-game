@@ -447,6 +447,42 @@
             border-color: #d4af37;
             color: #fcd34d;
         }
+
+        /* =========================================
+           命之座解鎖專屬動畫 (Genshin Style)
+           ========================================= */
+        @keyframes constel-pop-in {
+            0% { transform: scale(0.5); opacity: 0; filter: brightness(2); }
+            50% { transform: scale(1.1); opacity: 1; filter: brightness(1.5); }
+            100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+        }
+
+        @keyframes constel-fade-out {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; filter: blur(4px); }
+        }
+
+        @keyframes star-burst {
+            0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.8); }
+            100% { box-shadow: 0 0 100px 50px rgba(251, 191, 36, 0); }
+        }
+
+        .animate-spin-slow {
+            animation: spin 8s linear infinite;
+        }
+
+        .constel-active {
+            animation: constel-pop-in 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .constel-burst {
+            animation: star-burst 1s ease-out forwards;
+            border-radius: 50%;
+        }
+
+        .constel-leaving {
+            animation: constel-fade-out 0.6s ease-in forwards;
+        }
     </style>
 </head>
 
@@ -1653,7 +1689,7 @@
                                 </label>
                             </div>
 
-                            <p class="text-[9px] text-red-300 font-bold border-t border-[#3e3328] pt-2"><i class="fa-solid fa-chess-king mr-1"></i>賽季首領數值調整（防止英雄無限升星後數值跟不上）</p>
+                            <p class="text-[9px] text-red-300 font-bold border-t border-[#3e3328] pt-2"><i class="fa-solid fa-chess-king mr-1"></i>賽季首領數值調整（防止英雄養成數值跟不上）</p>
                             <div class="grid grid-cols-3 gap-2">
                                 <div>
                                     <label class="text-[9px] text-stone-500 block mb-1">攻擊力倍率</label>
@@ -2382,6 +2418,37 @@
     </div>
     <div id="toast-container"
         class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none w-full max-w-sm px-4">
+    </div>
+
+    <!-- ★ 命之座解鎖全螢幕動畫 (Genshin Style) -->
+    <div id="constellation-unlock-overlay" class="fixed inset-0 z-[120] hidden flex-col items-center justify-center pointer-events-none">
+        <!-- 黑色半透明背景 / 點擊防護 -->
+        <div class="absolute inset-0 bg-black/85 backdrop-blur-sm transition-opacity duration-500" id="constellation-bg"></div>
+
+        <!-- 動畫主體 -->
+        <div class="relative z-10 flex flex-col items-center opacity-0" id="constellation-anim-container">
+
+            <!-- 中央星辰與爆發特效 -->
+            <div class="relative mb-8 flex items-center justify-center">
+                <!-- 爆發的光圈 -->
+                <div class="absolute w-4 h-4 bg-white" id="constellation-burst-fx"></div>
+                <!-- 常駐的金色光暈 -->
+                <div class="absolute bg-amber-400 rounded-full blur-[40px] opacity-80 animate-pulse w-48 h-48"></div>
+                <!-- 旋轉的星芒 Icon -->
+                <i class="fa-solid fa-star-of-life text-[100px] text-amber-200 drop-shadow-[0_0_30px_rgba(251,191,36,1)] animate-spin-slow relative z-10"></i>
+            </div>
+
+            <!-- 命座標題與說明 -->
+            <h2 class="font-magic text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-amber-500 tracking-widest drop-shadow-[0_0_15px_rgba(251,191,36,0.6)] mb-3 italic">
+                命之座 啟動
+            </h2>
+            <div class="relative">
+                <div class="absolute inset-0 bg-amber-500 blur-md opacity-50 rounded-full"></div>
+                <p id="constellation-unlock-text" class="relative text-stone-100 text-sm md:text-base font-bold bg-black/80 px-8 py-2.5 rounded-full border border-amber-500/80 shadow-inner-dark text-center min-w-[200px]">
+                    第 1 命：解鎖全新能力
+                </p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -7336,7 +7403,7 @@
         // baseHp/baseAtk/baseDef，現有玩家的英雄數值也會直接套用新公式重算，不特別做相容轉換。
         // ★ 數值壓縮 (Stat Squish)：原本的倍率梯度太寬(1.0~3.0)，跟等級/星級/聖物疊乘後後期數值直接失控。
         // 收攏成 1.0~2.5，稀有度之間還是有明確差距，但不會跟其他乘區加在一起後直接爆炸。
-        const RARITY_BASE_MULT = {R: 1.2, SR: 1.45, SSR: 1.75, UR: 2.1, LR: 2.5, GR: 3.0};
+        const RARITY_BASE_MULT = {R: 1.0, SR: 1.2, SSR: 1.45, UR: 1.75, LR: 2.1, GR: 2.5};
 
         /* ============================================================
            【企劃書】命之座系統 (Constellation System)
@@ -7362,14 +7429,14 @@
         // ★ 數值壓縮：原本的基數（4000~5000 HP 級距）疊上稀有度倍率、等級倍率、星級/聖物加成之後，
         // 後期數值會連環乘出天文數字。改成小一個數量級的基數，戰鬥數值會回到比較好控管的範圍。
         const CLASS_BASE_STATS = {
-            '坦克': {hp: 1250, atk: 75, def: 110, spd: 90},
-            '戰士': {hp: 900, atk: 120, def: 60, spd: 100},
-            '刺客': {hp: 700, atk: 160, def: 40,  spd: 120},
-            '法師': {hp: 650, atk: 175, def: 35,  spd: 95},
-            '輔助': {hp: 800, atk: 90, def: 50, spd: 110},
+            '坦克': {hp: 250, atk: 15, def: 22, spd: 90},
+            '戰士': {hp: 180, atk: 24, def: 12, spd: 100},
+            '刺客': {hp: 140, atk: 32, def: 8,  spd: 120},
+            '法師': {hp: 130, atk: 35, def: 7,  spd: 95},
+            '輔助': {hp: 160, atk: 18, def: 10, spd: 110},
             // ★ 體系二新增：遊俠/射手，敏捷型物理輸出，數值介於戰士跟刺客之間，比刺客稍微耐打但攻速慢一點
-            '遊俠': {hp: 800, atk: 150, def: 50, spd: 110},
-            '射手': {hp: 750, atk: 155, def: 45,  spd: 105},
+            '遊俠': {hp: 160, atk: 30, def: 10, spd: 110},
+            '射手': {hp: 150, atk: 31, def: 9,  spd: 105},
         };
         // 職業特例加成：坦克天生格擋、戰士天生吸血、刺客基礎暴傷 180%（其他職業 150%）、法師初始能量+10、輔助效果抵抗+15%
         const CLASS_PASSIVES = {
@@ -7940,8 +8007,8 @@
             };
         }
 
-        // ★ 把技能物件裡的機率/幅度/持續回合換算成一行文字，讓「升星後技能變強了」這件事看得到、不用自己猜
-        // ★ 小技能跟大招用的是同一個專屬技能，星級加成也是同一份 skill.value（見 getEffectiveHero 的 skillStarMult），
+        // ★ 把技能物件裡的機率/幅度/持續回合換算成一行文字，讓「命座提升後技能變強了」這件事看得到、不用自己猜
+        // ★ 小技能跟大招用的是同一個專屬技能，命座加成也是同一份 skill.value（見 getEffectiveHero 的命座計算），
         // 所以升星時小技能／大招的數值會一起變強；這裡額外加一個 scale 參數，算出小技能（縮水版）實際會是多少數值，
         // 讓介面上能分開顯示兩者目前各是多少，而不是只看得到大招那一份。
         function getMinorSkillScale(skill) {
@@ -8150,12 +8217,12 @@
         // 競技場固定 5x 不給玩家調（開場一律隱藏演算＋回放展示，調速度沒有意義）。
         // 管理員開啟「解除倍速上限」時，直接覆蓋成 [1,2,4,8,10,20]，不分模式。
         const MODE_SPEED_CONFIG = {
-            battle: [1, 2, 4, 8],      // 遠征
-            tower: [1, 2, 4, 8],       // 試煉塔
-            season: [1, 2, 4, 8],      // 賽季討伐
-            rift: [1, 2, 4, 8],        // 深淵迷宮
-            festival: [1, 2, 4, 8],    // 光輝迴廊
-            dungeon: [1, 2, 4, 6, 8],  // 秘境
+            battle: [1, 2, 4],      // 遠征
+            tower: [1, 2, 4],       // 試煉塔
+            season: [1, 2, 4],      // 賽季討伐
+            rift: [1, 2, 4],        // 深淵迷宮
+            festival: [1, 2, 4],    // 光輝迴廊
+            dungeon: [1, 2, 4, 6],  // 秘境
             worldboss: [1, 2, 4, 8],// 全服首領
             arena: [5],             // 競技場：固定 5x，不可調整
             arena_guest: [5],       // 競技場觀戰：同上
@@ -8164,7 +8231,7 @@
         // 取得目前模式可用的倍速清單；管理員開啟「解除倍速上限」時全模式一律覆蓋成這份最高清單
         function getAvailableSpeeds(mode) {
             if (adminGameConfig && adminGameConfig.unlimitedSpeed) return [1, 2, 4, 8, 10, 20];
-            return MODE_SPEED_CONFIG[mode] || [1, 2, 4, 8];
+            return MODE_SPEED_CONFIG[mode] || [1, 2];
         }
 
         // 依目前模式重新整理倍速按鈕的顯示文字與樣式，不實際切換速度數值
@@ -8472,11 +8539,11 @@
                     const ultLine = formatSkillCurrentStats(h.skill, 1);
                     const minorLine = formatSkillCurrentStats(h.skill, getMinorSkillScale(h.skill));
                     let html = '';
-                    if (ultLine) html += `<div class="text-fantasy-gold text-[10px] mt-2">大招（1星基礎值）：${ultLine}</div>`;
-                    if (minorLine) html += `<div class="text-sky-400 text-[10px] mt-1">小技能（1星基礎值）：${minorLine}</div>`;
+                    if (ultLine) html += `<div class="text-fantasy-gold text-[10px] mt-2">大招（依目前命座計算）：${ultLine}</div>`;
+                    if (minorLine) html += `<div class="text-sky-400 text-[10px] mt-1">小技能（依目前命座計算）：${minorLine}</div>`;
                     return html;
                 })()}
-                <div class="text-sky-400 text-[10px] mt-2 pt-2 border-t border-[#2a221b]"><i class="fa-solid fa-bolt mr-1"></i>每回合三選一：普攻／小技能（機率觸發，同一招式的縮小版）／大招（能量滿時保證觸發，威力全開）；升星後兩者數值會一起提升</div>
+                <div class="text-sky-400 text-[10px] mt-2 pt-2 border-t border-[#2a221b]"><i class="fa-solid fa-bolt mr-1"></i>每回合三選一：普攻／小技能（機率觸發，同一招式的縮小版）／大招（能量滿時保證觸發，威力全開）；解鎖命座後兩者數值會一起提升</div>
             </div>
             `;
 
@@ -8761,9 +8828,8 @@
             document.getElementById('modal-hero-power').innerText = h.combatPower.toLocaleString();
             document.getElementById('modal-stat-hp').innerText = h.maxHp; document.getElementById('modal-stat-atk').innerText = h.atk;
             document.getElementById('modal-stat-def').innerText = h.def; document.getElementById('modal-stat-crit').innerText = `${h.crit}%`;
-            // ★ 修正：原本只顯示固定的技能敘述文字，升星後數值其實有變強，但文字裡的百分比是寫死的，
-            // ★ 修正：原本只顯示固定的技能敘述文字，升星後數值其實有變強，但文字裡的百分比是寫死的，
-            // 玩家完全看不出差異。額外拼出「目前數值」這兩行，大招／小技能分開列，升星後兩邊都會一起變強。
+            // ★ 修正：原本只顯示固定的技能敘述文字，命座提升後數值其實有變強，但文字裡的百分比是寫死的，
+            // 玩家完全看不出差異。額外拼出「目前數值」這兩行，大招／小技能分開列，命座提升後兩邊都會一起變強。
             const ultStatsLine = formatSkillCurrentStats(h.skill, 1);
             const minorStatsLine = formatSkillCurrentStats(h.skill, getMinorSkillScale(h.skill));
             let statsHtml = '';
@@ -9209,6 +9275,47 @@
         // 長按放開後會自動持續升級，不用整段時間手指按著，直到封頂/資源不足或再點一次才停止。
         const levelUpLongPresser = createLongPressUpgrader((silent) => upgradeSelectedHeroLevel(silent));
 
+        // ★ 命之座解鎖動畫 (Genshin Style)——按下解鎖命座成功時播放的全螢幕沉浸式特效，2.5秒後自動淡出
+        function playConstellationUnlockAnimation(level, description) {
+            if (typeof ToneAudioEngine !== 'undefined') ToneAudioEngine.playClick();
+
+            const overlay = document.getElementById('constellation-unlock-overlay');
+            const container = document.getElementById('constellation-anim-container');
+            const burstFx = document.getElementById('constellation-burst-fx');
+            const textEl = document.getElementById('constellation-unlock-text');
+            if (!overlay || !container || !burstFx || !textEl) return;
+
+            // 填寫解鎖的層數與敘述
+            textEl.innerText = `第 ${level} 命：${description}`;
+
+            // 顯示全螢幕 Overlay
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+
+            // 重置動畫狀態
+            container.classList.remove('constel-active', 'constel-leaving');
+            burstFx.classList.remove('constel-burst');
+
+            // 強制重繪 (Trigger reflow) 以便重新播放 CSS 動畫
+            void container.offsetWidth;
+
+            // 加上進入動畫與爆發特效
+            container.classList.add('constel-active');
+            burstFx.classList.add('constel-burst');
+
+            // 設定 2.5 秒後自動淡出消失
+            setTimeout(() => {
+                container.classList.remove('constel-active');
+                container.classList.add('constel-leaving');
+
+                // 等待淡出動畫結束後隱藏 Overlay
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                }, 600);
+            }, 2500);
+        }
+
         // ============ 英雄潛能覺醒 (升星) 邏輯 ============
         // ★ 改用英雄碎片升星，不再直接花寶石。碎片來源：召喚抽到重複英雄、賽季商店兌換。
         // ★ 命之座消耗表：解鎖第 1~6 命各自固定的碎片＋金幣消耗，第 3 命起額外需要超越結晶，
@@ -9225,6 +9332,24 @@
             };
             return table[target] || table[6];
         }
+
+        // ★ 新增：英雄碎片統一由這個函式發放，處理「英雄已經滿命座 (6命) 還一直拿到碎片」的溢出問題——
+        // 滿命座的英雄碎片已經沒有用途了（沒有更高命座可以解鎖），與其讓碎片白白浪費、憑空消失，
+        // 改成自動轉換成新代幣「超越結晶」，留著給其他英雄的命座/裝備洗鍊使用。
+        function grantHeroShards(heroId, amount) {
+            const dbHero = HERO_DATABASE.find(h => h.id === heroId);
+            const r = GAME_STATE.roster[heroId];
+            const isMaxedConstellation = r && (r.constellation || 0) >= MAX_CONSTELLATION_LEVEL;
+            if (isMaxedConstellation) {
+                GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + amount;
+                showToast(`${dbHero ? dbHero.name : '英雄'} 已滿命座，碎片自動轉化為 ${amount} 枚超越結晶`);
+                return true; // 代表這次是轉換成結晶，不是正常拿到碎片
+            }
+            if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
+            GAME_STATE.heroShards[heroId] = (GAME_STATE.heroShards[heroId] || 0) + amount;
+            return false;
+        }
+
         // ★ 命之座解鎖——取代原本的「潛能覺醒(升星)」。每次解鎖消耗碎片＋金幣（第3命起還要超越結晶），
         // 命座本身不再直接放大三圍，而是動態提升技能倍率／觸發機率，並可能解鎖英雄專屬質變效果
         // （見 getEffectiveHero 讀取 HERO_DATABASE.constellations 的部分）。
@@ -9267,6 +9392,16 @@
 
                 if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
                 if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
+
+                // ★ 新增：命之座解鎖成功時播放全螢幕動畫（只有玩家手動點擊才播，長按連續解鎖時不會每一層都跳一次，
+                // 避免動畫疊在一起洗版）。效果描述優先讀取這位英雄專屬的 constellations 資料，
+                // 沒有的話（大部分英雄目前還沒有專屬命座資料）顯示通用公式說明。
+                if (!silent) {
+                    const dbHero = HERO_DATABASE.find(h => h.id === heroId);
+                    const constellationData = dbHero && dbHero.constellations && dbHero.constellations[curConstellation];
+                    const unlockDesc = constellationData ? constellationData.desc : '技能倍率與小技能觸發機率提升。';
+                    playConstellationUnlockAnimation(hero.constellation, unlockDesc);
+                }
 
                 if (!silent) showToast(`命之座解鎖成功！目前第 ${hero.constellation} 命，技能倍率與觸發機率一併提升。`);
                 return true;
