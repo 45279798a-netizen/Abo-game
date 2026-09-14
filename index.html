@@ -7736,13 +7736,16 @@
             return agg;
         }
 
-        // 等級成長倍率：分段公式，Lv1~30 每級 +8%、Lv31~70 每級 +5%、Lv71~100 每級 +3%、Lv101+ 每級 +2%
+        // 等級成長倍率：分段公式，Lv1~30 每級 +10%、Lv31~70 每級 +7%、Lv71~100 每級 +5%、Lv101+ 每級 +3%
+        // ★ 修正：原本每級 8%/5%/3%/2% 的成長曲線偏保守，玩家反應升級三圍提升幅度不夠有感。
+        // 整體調高一階：10%/7%/5%/3%，維持「前期成長快、後期趨緩」的分段曲線精神，
+        // 但每一段都比原本更慷慨，Lv.100 的總倍率從原本 6.22x 提升到約 8.2x。
         function getLevelMultiplier(level) {
             const l = Math.max(1, level || 1);
-            let mult = 1 + (Math.min(l, 30) - 1) * 0.08;
-            if (l > 30) mult += (Math.min(l, 70) - 30) * 0.05;
-            if (l > 70) mult += (Math.min(l, 100) - 70) * 0.03;
-            if (l > 100) mult += (l - 100) * 0.02;
+            let mult = 1 + (Math.min(l, 30) - 1) * 0.10;
+            if (l > 30) mult += (Math.min(l, 70) - 30) * 0.07;
+            if (l > 70) mult += (Math.min(l, 100) - 70) * 0.05;
+            if (l > 100) mult += (l - 100) * 0.03;
             return mult;
         }
 
@@ -9242,11 +9245,14 @@
         // 「4 天極速賽季」設計。所有原本各自寫死 SEASON_DURATION_MS 的地方，現在統一呼叫這個函式取得。
         let SEASON_DURATION_DAYS = 4;
         function getSeasonDurationMs() { return SEASON_DURATION_DAYS * 24 * 60 * 60 * 1000; }
-        // ★ 改用企劃書附件的公式：單級金幣消耗 100 × 1.055^(Lvl-1)（指數成長，取代原本的二次曲線）。
-        // 英雄經驗消耗企劃書沒有特別重新規範，維持原本的公式不變。
+        // ★ 修正：原本用指數成長（100 × 1.055^(Lvl-1)）在等級上限預設 100 時看起來還好，
+        // 但這個遊戲的等級上限是管理員可以調整的（見 listenAdminGameConfig 的 maxHeroLevel），
+        // 指數公式一旦把上限往上調，花費會直接爆炸性成長（Lvl150 單級就要 27 萬金幣，Lvl200 更誇張）。
+        // 改成跟英雄經驗同一種「二次多項式」曲線，後期還是比前期貴很多，但不會失控暴衝。
+        // 英雄經驗消耗維持原本的公式不變。
         function getHeroLevelUpCost(level) {
             return {
-                gold: Math.floor(100 * Math.pow(1.055, level - 1)),
+                gold: Math.floor(100 + level * 40 + level * level * 2),
                 exp: Math.floor(80 + level * 22 + level * level * 0.3)
             };
         }
