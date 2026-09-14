@@ -2669,7 +2669,7 @@
             for (const heroId in (state.roster || {})) {
                 const r = state.roster[heroId];
                 if (!r) continue;
-                if ((r.level || 1) > MAX_HERO_LEVEL || (r.constellation || 0) > MAX_CONSTELLATION_LEVEL || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
+                if ((r.level || 1) > MAX_HERO_LEVEL || (r.constellation || 0) > CONSTELLATION_PLAUSIBLE_CEILING || (r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) return false;
             }
             // ★ 新增：8 部位裝備系統的強化等級也一併檢查，超過上限視為異常存檔
             for (const itemId in (state.equipmentInventory || {})) {
@@ -2930,8 +2930,11 @@
             const rarityMult = RARITY_BASE_MULT[db.rarity] || 1.0;
             const classBase = CLASS_BASE_STATS[db.role] || CLASS_BASE_STATS['戰士'];
             const maxLevelMult = getLevelMultiplier(MAX_HERO_LEVEL);
-            // ★ 改版：命之座系統不再影響基礎三圍（只影響技能倍率/觸發機率），加成池只剩聖物
-            const maxTotalBonus = 1 + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER);
+            // ★ 改版：命之座系統解除上限，第7命起的「星輝共鳴」會持續疊加全屬性%，這裡用反作弊的
+            // 合理性上限（CONSTELLATION_PLAUSIBLE_CEILING）估算最高可能的共鳴加成，不然命座衝很高的
+            // 正常玩家會被這個上限誤判成數值異常。
+            const maxResonanceBonus = Math.max(0, CONSTELLATION_PLAUSIBLE_CEILING - MAX_CONSTELLATION_LEVEL) * CONSTELLATION_RESONANCE_PCT_PER_LEVEL / 100;
+            const maxTotalBonus = (1 + getArtifactBonusRatio(ALTAR_MAX_ARTIFACT_TIER)) * (1 + maxResonanceBonus);
             // ★ 同步 8 部位裝備系統：8 個部位都強化滿 +20 的粗估加算數值上限（武器/副手/胸甲/頭盔/鞋子/手套/戒指/項鍊各自算一次）
             const maxEquipFlat = {hp: 3500, atk: 400, def: 250, crit: 5};
             // 套裝加成也給一個寬鬆估計（假設 8 件都湊滿同一套裝的最高數值型加成：狂暴 4 件 暴傷+35% 概念上已經算進 critDmgMult，
@@ -2940,7 +2943,7 @@
             const maxHp = (classBase.hp * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.hp) * (1 + maxSetHpPct / 100);
             const maxAtk = classBase.atk * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.atk;
             const maxDef = classBase.def * rarityMult * maxLevelMult * maxTotalBonus + maxEquipFlat.def;
-            const maxCrit = (db.crit || 0) + maxEquipFlat.crit + maxSetCrit;
+            const maxCrit = ((db.crit || 0) + maxEquipFlat.crit + maxSetCrit) * (1 + maxResonanceBonus);
             return maxHp * 0.5 + maxAtk * 2 + maxDef * 1.5 + maxCrit * 10;
         }
 
@@ -6470,7 +6473,7 @@
                 if (!r) return;
                 if ((r.level || 1) > MAX_HERO_LEVEL) {r.level = MAX_HERO_LEVEL; clamped = true;}
                 if ((r.artifactTier || 0) > ALTAR_MAX_ARTIFACT_TIER) {r.artifactTier = ALTAR_MAX_ARTIFACT_TIER; clamped = true;}
-                if ((r.constellation || 0) > MAX_CONSTELLATION_LEVEL) {r.constellation = MAX_CONSTELLATION_LEVEL; clamped = true;}
+                if ((r.constellation || 0) > CONSTELLATION_PLAUSIBLE_CEILING) {r.constellation = CONSTELLATION_PLAUSIBLE_CEILING; clamped = true;}
             });
             if (clamped) {
                 saveGame();
@@ -7407,13 +7410,16 @@
 
         /* ============================================================
            【企劃書】命之座系統 (Constellation System)
-           ★ 取代原本的「升星（Awaken）」系統：不再是碎片無限疊加星級、數值線性成長，
-           改成每位英雄最高 6 層命之座（0～6 命），每命座依稀有度取得「通用公式」的技能倍率／
-           觸發機率成長，部分命座層還會解鎖英雄專屬的「質變」機制（見 HERO_DATABASE 的
-           constellations 陣列，desc/customEffect 欄位）。
+           ★ 取代原本的「升星（Awaken）」系統。分成兩個階段：
+           - 前 6 命（質變期）：依稀有度取得「通用公式」的技能倍率／觸發機率成長，部分命座層
+             還會解鎖英雄專屬的「質變」機制（見 HERO_DATABASE 的 constellations 陣列）。
+           - 第 7 命以上（星輝共鳴期）：解除上限、無限疊加，每命額外讓全屬性（HP/ATK/DEF）+1%，
+             越往後消耗的碎片／超越結晶越貴，給願意持續投資單一英雄的玩家一個沒有終點的成長曲線。
            ============================================================ */
         const CONSTELLATION_RARITY_MULT = {R: 1.0, SR: 1.2, SSR: 1.5, UR: 1.8, LR: 2.0, GR: 2.5};
-        const MAX_CONSTELLATION_LEVEL = 6;
+        const MAX_CONSTELLATION_LEVEL = 6; // ★ 這是「質變期」的上限，不是命座本身的絕對上限——命座本身無上限
+        const CONSTELLATION_RESONANCE_PCT_PER_LEVEL = 1; // ★ 星輝共鳴：第7命起，每命全屬性額外 +1%
+        const CONSTELLATION_PLAUSIBLE_CEILING = 100000; // ★ 只用在反作弊合理性檢查上，不是遊戲內真正的上限，避免存檔異常導致數值暴走
         const CONSTELLATION_SKILL_MULT_PER_LEVEL = 0.03; // 每命座 +3% 技能倍率（再乘稀有度倍率）
         const CONSTELLATION_PROB_BONUS_PER_LEVEL = 0.01; // 每命座 +1% 小技能觸發機率（再乘稀有度倍率）
         const RARITY_PASSIVES = {
@@ -7907,7 +7913,7 @@
             if (!db) return null;
             const r = GAME_STATE.roster[db.id] || {level: 1, constellation: 0, artifactTier: 0, equippedItems: {}};
             const l = r.level; // ★ 庇護等級移除：不再跟最高等級英雄同步，就是自己實際的等級
-            const constellation = Math.min(MAX_CONSTELLATION_LEVEL, Math.max(0, r.constellation || 0));
+            const constellation = Math.min(CONSTELLATION_PLAUSIBLE_CEILING, Math.max(0, r.constellation || 0));
 
             const rarityMult = RARITY_BASE_MULT[db.rarity] || 1.0;
             const passive = RARITY_PASSIVES[db.rarity] || RARITY_PASSIVES.R;
@@ -7922,9 +7928,12 @@
             // 2. 等級成長倍率（分段公式）
             const lvlMult = getLevelMultiplier(l);
 
-            // 3. ★ 改版：命之座不再直接放大三圍，加成池只剩聖物（分段）。
-            // 命座對戰鬥的影響改成專門作用在「技能倍率／觸發機率」上（見下方 skill 複製與調整）。
-            const totalBonus = 1 + getArtifactBonusRatio(r.artifactTier || 0);
+            // 3. ★ 改版：命之座不再直接放大三圍，加成池只剩聖物（分段）＋星輝共鳴（第7命起）。
+            // 命座對戰鬥的主要影響改成專門作用在「技能倍率／觸發機率」上（見下方 skill 複製與調整），
+            // 但第7命以後的「星輝共鳴」額外疊加一層全屬性百分比加成，讓命座無上限持續投資才有意義。
+            const resonanceLevels = Math.max(0, constellation - MAX_CONSTELLATION_LEVEL);
+            const resonanceBonus = resonanceLevels * CONSTELLATION_RESONANCE_PCT_PER_LEVEL / 100; // 第7命起每命 +1%
+            const totalBonus = (1 + getArtifactBonusRatio(r.artifactTier || 0)) * (1 + resonanceBonus);
             const artifactDmgReduce = getArtifactDmgReduceRatio(r.artifactTier || 0);
 
             // 4. ★ 新版 8 部位裝備：把 8 個部位目前裝備的物件數值直接加總（每個部位各自的白字＋強化等級加成）
@@ -7953,10 +7962,10 @@
             const hp = Math.floor((baseHp * lvlMult * totalBonus + eqHp) * (1 + (setBonus.hpPct || 0) / 100 + (subTotals.hpPct || 0) / 100 + (db.hpPctBonus || 0) / 100));
             const atk = Math.floor((baseAtk * lvlMult * totalBonus + eqAtk) * (1 + (subTotals.atkPct || 0) / 100));
             const def = Math.floor((baseDef * lvlMult * totalBonus + eqDef) * (1 + (subTotals.defPct || 0) / 100));
-            const crit = (db.crit || 0) + eqCrit + (setBonus.critRate || 0) + (subTotals.critRate || 0) + (db.critRateFlat || 0);
+            const crit = ((db.crit || 0) + eqCrit + (setBonus.critRate || 0) + (subTotals.critRate || 0) + (db.critRateFlat || 0)) * (1 + resonanceBonus);
 
             // 稀有度天賦：速度、初始能量加成、受傷減免（+聖物高階免傷）、全傷害加成、GR 免死
-            const spd = (classBase.spd || 100) + (passive.spd || 0) + (subTotals.speed || 0);
+            const spd = ((classBase.spd || 100) + (passive.spd || 0) + (subTotals.speed || 0)) * (1 + resonanceBonus);
             const dmgReduce = Math.min(0.6, (passive.dmgReduce || 0) + artifactDmgReduce);
             const dmgBonus = passive.dmgBonus || 0;
             const cheatDeath = !!passive.cheatDeath;
@@ -8352,8 +8361,8 @@
                 if (!GAME_STATE.roster[hId]) {
                     GAME_STATE.roster[hId] = {level: 1, constellation: 0, artifactTier: 0, equippedItems: {}};
                     showToast(`🎉 獲得賽季限定英雄：${dbH.name}！`);
-                } else if ((GAME_STATE.roster[hId].constellation || 0) >= MAX_CONSTELLATION_LEVEL) {
-                    // ★ 已滿命座（6命）時，改成跟碎片溢出同一套規則：轉化成超越結晶，不會超過命座上限
+                } else if ((GAME_STATE.roster[hId].constellation || 0) >= CONSTELLATION_PLAUSIBLE_CEILING) {
+                    // ★ 命座無上限，這裡只是防呆用的反作弊合理上限，正常玩家幾乎不可能碰到
                     const crystalGain = 50;
                     GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + crystalGain;
                     showToast(`🎉 ${dbH.name} 已滿命座，轉化為 ${crystalGain} 枚超越結晶！`);
@@ -8861,30 +8870,37 @@
             const shardsOwned = (GAME_STATE.heroShards && GAME_STATE.heroShards[h.id]) || 0;
             const curConstellation = h.constellation || 0;
             const curDisplayEl = document.getElementById('constellation-current-display');
-            if (curDisplayEl) curDisplayEl.innerText = `第 ${curConstellation} 命 / 最高 ${MAX_CONSTELLATION_LEVEL} 命`;
             const btnStar = document.getElementById('btn-upgrade-star');
             const nextDescEl = document.getElementById('constellation-next-desc');
-            if (curConstellation >= MAX_CONSTELLATION_LEVEL) {
-                // ★ 命座滿了（6命）之後，再拿到的碎片會自動轉化成「超越結晶」，這裡順便顯示目前結晶庫存，
-                // 不然玩家滿命座之後完全看不到碎片轉換去哪了，會以為東西憑空消失
-                btnStar.innerHTML = `<span><i class="fa-solid fa-star-of-life text-[#110c08] mr-1"></i>已達命座上限 ${MAX_CONSTELLATION_LEVEL} 命</span><span class="text-[8px] mt-1 text-amber-700 font-bold block">之後再拿到的碎片會自動轉化為超越結晶（目前持有 ${(GAME_STATE.transcendCrystals || 0).toLocaleString()}）</span>`;
-                btnStar.disabled = true; btnStar.classList.add('opacity-50'); btnStar.classList.remove('breakthrough-glow');
-                if (nextDescEl) nextDescEl.innerText = '已解鎖全部命座效果';
-            } else {
-                const costStar = getConstellationUpCost(curConstellation);
-                const isMajor = costStar.crystals > 0;
-                const affordableStar = shardsOwned >= costStar.shards && GAME_STATE.gold >= costStar.gold && (GAME_STATE.transcendCrystals || 0) >= costStar.crystals;
-                btnStar.innerHTML = `<span><i class="fa-solid ${isMajor ? 'fa-burst' : 'fa-star-of-life'} text-[#110c08] mr-1"></i>解鎖第 ${curConstellation + 1} 命</span><span class="text-[9px] mt-1 text-[#110c08]/80 font-bold tracking-wide"><i class="fa-solid fa-gem text-purple-900"></i> ${shardsOwned}/${costStar.shards} <i class="fa-solid fa-coins text-yellow-800 ml-1"></i> ${costStar.gold.toLocaleString()}${isMajor ? ` <i class="fa-solid fa-hexagon text-cyan-800 ml-1"></i> ${(GAME_STATE.transcendCrystals || 0)}/${costStar.crystals}` : ''}</span>`;
-                btnStar.classList.toggle('breakthrough-glow', isMajor);
-                btnStar.disabled = !affordableStar; if (btnStar.disabled) btnStar.classList.add('opacity-50'); else btnStar.classList.remove('opacity-50');
-                // ★ 顯示下一層命座的解鎖效果描述（讀取 HERO_DATABASE 的 constellations 陣列；
-                // 大部分英雄目前還沒有專屬命座資料，先顯示通用公式說明）
-                if (nextDescEl) {
+
+            // ★ 改版：命之座解除上限，分兩階段顯示——前6命是「質變期」，第7命起是「星輝共鳴期」（無上限疊加，
+            // 每命全屬性 +1%）。兩階段共用同一個按鈕持續解鎖，不會再有「已達上限」這種狀態。
+            if (curDisplayEl) {
+                if (curConstellation < MAX_CONSTELLATION_LEVEL) {
+                    curDisplayEl.innerText = `第 ${curConstellation} 命 / 質變 ${MAX_CONSTELLATION_LEVEL} 命`;
+                    curDisplayEl.className = 'text-amber-300 font-bold';
+                } else {
+                    curDisplayEl.innerText = `第 ${curConstellation} 命 ✦ 星輝共鳴`;
+                    curDisplayEl.className = 'text-purple-400 font-bold drop-shadow-md';
+                }
+            }
+            if (nextDescEl) {
+                if (curConstellation < MAX_CONSTELLATION_LEVEL) {
                     const dbHero = HERO_DATABASE.find(x => x.id === h.id);
                     const nextData = dbHero && dbHero.constellations && dbHero.constellations[curConstellation];
                     nextDescEl.innerText = nextData ? nextData.desc : '技能倍率與小技能觸發機率提升（依稀有度決定成長幅度）。';
+                } else {
+                    const resonanceLv = curConstellation - MAX_CONSTELLATION_LEVEL;
+                    nextDescEl.innerText = `目前星輝加成：全屬性 +${resonanceLv}%\n下一層解鎖：全屬性提升至 +${resonanceLv + 1}%`;
                 }
             }
+
+            const costStar = getConstellationUpCost(curConstellation);
+            const isMajor = costStar.crystals > 0;
+            const affordableStar = shardsOwned >= costStar.shards && (GAME_STATE.transcendCrystals || 0) >= costStar.crystals;
+            btnStar.innerHTML = `<span><i class="fa-solid ${isMajor ? 'fa-burst' : 'fa-star-of-life'} text-[#110c08] mr-1"></i>解鎖第 ${curConstellation + 1} 命</span><span class="text-[9px] mt-1 text-[#110c08]/80 font-bold tracking-wide"><i class="fa-solid fa-gem text-purple-900"></i> ${shardsOwned}/${costStar.shards}${isMajor ? ` <i class="fa-solid fa-hexagon text-cyan-800 ml-1"></i> ${(GAME_STATE.transcendCrystals || 0)}/${costStar.crystals}` : ''}</span>`;
+            btnStar.classList.toggle('breakthrough-glow', isMajor);
+            btnStar.disabled = !affordableStar; if (btnStar.disabled) btnStar.classList.add('opacity-50'); else btnStar.classList.remove('opacity-50');
 
             renderEquipments(h); document.getElementById('hero-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('hero-modal').classList.remove('opacity-0'), 10);
         }
@@ -9323,28 +9339,30 @@
 
         // ============ 英雄潛能覺醒 (升星) 邏輯 ============
         // ★ 改用英雄碎片升星，不再直接花寶石。碎片來源：召喚抽到重複英雄、賽季商店兌換。
-        // ★ 命之座消耗表：解鎖第 1~6 命各自固定的碎片＋金幣消耗，第 3 命起額外需要超越結晶，
-        // 作為比較貴重的「大突破」門檻，跟裝備強化/等級突破的手感呼應。
+        // ★ 改版：命之座解除等級上限，分成兩個階段：
+        // 前 6 命（質變期）：只消耗碎片，解鎖技能倍率成長與英雄專屬質變效果。
+        // 第 7 命以上（星輝共鳴期）：無上限疊加，每命額外讓全屬性 +1%，消耗碎片＋超越結晶，
+        // 級距越高消耗越貴（7~15命／16~30命／31命以上，三個階梯）。這裡不再收金幣，純粹碎片+結晶。
         function getConstellationUpCost(currentConstellation) {
             const target = (currentConstellation || 0) + 1; // 這是「解鎖第 target 命」需要的花費
-            const table = {
-                1: {shards: 20,  gold: 5000,   crystals: 0},
-                2: {shards: 35,  gold: 12000,  crystals: 0},
-                3: {shards: 55,  gold: 25000,  crystals: 2},
-                4: {shards: 80,  gold: 50000,  crystals: 4},
-                5: {shards: 110, gold: 100000, crystals: 6},
-                6: {shards: 150, gold: 200000, crystals: 10},
-            };
-            return table[target] || table[6];
+            if (target === 1) return {shards: 10, crystals: 0};
+            if (target === 2) return {shards: 15, crystals: 0};
+            if (target === 3) return {shards: 20, crystals: 0};
+            if (target === 4) return {shards: 25, crystals: 0};
+            if (target === 5) return {shards: 30, crystals: 0};
+            if (target === 6) return {shards: 50, crystals: 0};
+            if (target >= 7 && target <= 15) return {shards: 30, crystals: 1};
+            if (target >= 16 && target <= 30) return {shards: 50, crystals: 5};
+            return {shards: 100, crystals: 10}; // 31 命以上
         }
 
-        // ★ 新增：英雄碎片統一由這個函式發放，處理「英雄已經滿命座 (6命) 還一直拿到碎片」的溢出問題——
-        // 滿命座的英雄碎片已經沒有用途了（沒有更高命座可以解鎖），與其讓碎片白白浪費、憑空消失，
-        // 改成自動轉換成新代幣「超越結晶」，留著給其他英雄的命座/裝備洗鍊使用。
+        // ★ 新增：英雄碎片統一由這個函式發放。命之座現在無上限，理論上碎片永遠有地方花，
+        // 所以「滿命座自動轉結晶」這個溢出保護機制已經用不到了，但還是留著防呆——萬一存檔異常
+        // 導致 constellation 超過反作弊的合理上限，碎片還是會自動轉結晶，不會讓數值繼續失控。
         function grantHeroShards(heroId, amount) {
             const dbHero = HERO_DATABASE.find(h => h.id === heroId);
             const r = GAME_STATE.roster[heroId];
-            const isMaxedConstellation = r && (r.constellation || 0) >= MAX_CONSTELLATION_LEVEL;
+            const isMaxedConstellation = r && (r.constellation || 0) >= CONSTELLATION_PLAUSIBLE_CEILING;
             if (isMaxedConstellation) {
                 GAME_STATE.transcendCrystals = (GAME_STATE.transcendCrystals || 0) + amount;
                 showToast(`${dbHero ? dbHero.name : '英雄'} 已滿命座，碎片自動轉化為 ${amount} 枚超越結晶`);
@@ -9355,9 +9373,9 @@
             return false;
         }
 
-        // ★ 命之座解鎖——取代原本的「潛能覺醒(升星)」。每次解鎖消耗碎片＋金幣（第3命起還要超越結晶），
-        // 命座本身不再直接放大三圍，而是動態提升技能倍率／觸發機率，並可能解鎖英雄專屬質變效果
-        // （見 getEffectiveHero 讀取 HERO_DATABASE.constellations 的部分）。
+        // ★ 命之座解鎖——取代原本的「潛能覺醒(升星)」。前6命只消耗碎片，第7命起額外要超越結晶，
+        // 命座本身不再直接放大三圍，改成動態提升技能倍率／觸發機率（前6命）＋全屬性遞增加成（7命以後），
+        // 並可能解鎖英雄專屬質變效果（見 getEffectiveHero 讀取 HERO_DATABASE.constellations 的部分）。
         function upgradeSelectedHeroStar(silent) {
             if (!silent) ToneAudioEngine.playClick();
             const heroId = GAME_STATE.selectedHeroId;
@@ -9365,30 +9383,32 @@
 
             const hero = GAME_STATE.roster[heroId];
             const curConstellation = hero.constellation || 0;
-            if (curConstellation >= MAX_CONSTELLATION_LEVEL) {
-                if (!silent) showToast(`已達命座上限（${MAX_CONSTELLATION_LEVEL} 命）！`);
+
+            // ★ 改版：命之座無上限，只剩下反作弊用的合理性上限（一般玩家幾乎不可能碰到，只防存檔異常）
+            if (curConstellation >= CONSTELLATION_PLAUSIBLE_CEILING) {
+                if (!silent) showToast(`命座已經非常高了（${CONSTELLATION_PLAUSIBLE_CEILING} 命），先不繼續囤積囉！`);
                 return false;
             }
 
             const cost = getConstellationUpCost(curConstellation);
 
-            // ★ 需要超越結晶的命座（第3命起）屬於比較貴重的一次性消耗，長按連續解鎖（silent=true）
+            // ★ 需要超越結晶的命座（第7命起）屬於比較貴重的消耗，長按連續解鎖（silent=true）
             // 遇到這種門檻直接停下，避免不小心把結晶燒光，玩家必須自己手動點一下（silent=false）才能跨過。
             if (cost.crystals > 0 && silent) return false;
 
             if (!GAME_STATE.heroShards) GAME_STATE.heroShards = {};
             const owned = GAME_STATE.heroShards[heroId] || 0;
 
-            if (owned >= cost.shards && GAME_STATE.gold >= cost.gold && (GAME_STATE.transcendCrystals || 0) >= cost.crystals) {
+            if (owned >= cost.shards && (GAME_STATE.transcendCrystals || 0) >= cost.crystals) {
                 GAME_STATE.heroShards[heroId] = owned - cost.shards;
                 // ★ bound（不可交易）碎片數量不能超過扣完之後剩下的總量，確保「可交易數量 = 總量-bound」永遠不會是負的
                 if (GAME_STATE.boundHeroShards && GAME_STATE.boundHeroShards[heroId] > GAME_STATE.heroShards[heroId]) {
                     GAME_STATE.boundHeroShards[heroId] = GAME_STATE.heroShards[heroId];
                 }
-                GAME_STATE.gold -= cost.gold;
                 if (cost.crystals > 0) GAME_STATE.transcendCrystals -= cost.crystals;
 
-                // 解鎖下一層命之座（連帶提升技能倍率／觸發機率，並可能解鎖專屬質變效果，見 getEffectiveHero）
+                // 解鎖下一層命之座（前6命提升技能倍率／觸發機率，並可能解鎖專屬質變效果；
+                // 第7命起額外疊加星輝共鳴的全屬性加成，見 getEffectiveHero）
                 hero.constellation = curConstellation + 1;
 
                 saveGame();
@@ -9398,23 +9418,24 @@
                 if (!document.getElementById('tab-heroes').classList.contains('hidden')) renderHeroesList();
                 if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
 
-                // ★ 新增：命之座解鎖成功時播放全螢幕動畫（只有玩家手動點擊才播，長按連續解鎖時不會每一層都跳一次，
+                // ★ 命之座解鎖成功時播放全螢幕動畫（只有玩家手動點擊才播，長按連續解鎖時不會每一層都跳一次，
                 // 避免動畫疊在一起洗版）。效果描述優先讀取這位英雄專屬的 constellations 資料，
-                // 沒有的話（大部分英雄目前還沒有專屬命座資料）顯示通用公式說明。
+                // 第7命以後統一顯示星輝共鳴的全屬性加成說明。
                 if (!silent) {
                     const dbHero = HERO_DATABASE.find(h => h.id === heroId);
                     const constellationData = dbHero && dbHero.constellations && dbHero.constellations[curConstellation];
-                    const unlockDesc = constellationData ? constellationData.desc : '技能倍率與小技能觸發機率提升。';
+                    const unlockDesc = hero.constellation <= MAX_CONSTELLATION_LEVEL
+                        ? (constellationData ? constellationData.desc : '技能倍率與小技能觸發機率提升。')
+                        : `星輝共鳴：全屬性累積提升 ${hero.constellation - MAX_CONSTELLATION_LEVEL}%`;
                     playConstellationUnlockAnimation(hero.constellation, unlockDesc);
                 }
 
-                if (!silent) showToast(`命之座解鎖成功！目前第 ${hero.constellation} 命，技能倍率與觸發機率一併提升。`);
+                if (!silent) showToast(`命之座解鎖成功！目前第 ${hero.constellation} 命。`);
                 return true;
             } else {
                 if (!silent) {
                     const missing = [];
                     if (owned < cost.shards) missing.push(`${cost.shards - owned} 碎片`);
-                    if (GAME_STATE.gold < cost.gold) missing.push(`${(cost.gold - GAME_STATE.gold).toLocaleString()} 金幣`);
                     if ((GAME_STATE.transcendCrystals || 0) < cost.crystals) missing.push(`${cost.crystals - (GAME_STATE.transcendCrystals || 0)} 超越結晶`);
                     showToast(`資源不足！還差 ${missing.join('、')}。`);
                 }
@@ -9475,7 +9496,7 @@
             renderHeroesList();
             if (!document.getElementById('tab-formation').classList.contains('hidden')) renderFormationUI();
             if (totalStarUps === 0) {
-                showToast('目前沒有英雄的碎片／金幣足夠解鎖命座');
+                showToast('目前沒有英雄的碎片足夠解鎖命座');
             } else {
                 showToast(`✨ 一鍵解鎖命座完成：${heroesAffected} 位英雄共解鎖了 ${totalStarUps} 層命座（需要超越結晶的命座不會自動執行，要自己手動點）`);
             }
