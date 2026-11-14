@@ -10,7 +10,8 @@
         heroes: ['arthur', 'elara', 'faye', 'dart'],
         team: ['arthur', 'faye', 'elara', 'dart', null],
         leader: 'arthur',
-        currency: {gold: 10000, gem: 3000, ticket: 5, ltdTicket: 5, exp: 0},
+        // 經驗藥水、突破石、技能書先給一些試玩用的量；主線與掛機做好後改成從關卡取得
+        currency: {gold: 60000, gem: 3000, ticket: 5, ltdTicket: 5, exp: 600, brk: 10, book: 10, dust: 0},
     };
     // 初始星級：R 1★、SR 2★、SSR 3★、UR 4★
     const START_STAR = {R: 1, SR: 2, SSR: 3, UR: 4};
@@ -29,7 +30,7 @@
 
     function addHero(s, id) {
         if (s.heroes[id]) return false;
-        s.heroes[id] = {lv: 1, star: START_STAR[R.HEROES[id].rarity] || 1, shards: 0, got: Date.now()};
+        s.heroes[id] = {lv: 1, brk: 0, star: START_STAR[R.HEROES[id].rarity] || 1, shards: 0, sk: 1, ul: 1, got: Date.now()};
         return true;
     }
 
@@ -37,6 +38,9 @@
         // 目前只有第 1 版；之後改格式在這裡把舊存檔轉成新格式
         s.v = VERSION;
         s.pity = s.pity || {std: {sr: 0, ssr: 0}, ltd: {sr: 0, ur: 0}};
+        // 養成欄位（養成功能加入前的存檔沒有）
+        for (const [k, v] of Object.entries(START.currency)) if (s.currency[k] == null) s.currency[k] = v;
+        for (const o of Object.values(s.heroes)) { o.brk = o.brk || 0; o.sk = o.sk || 1; o.ul = o.ul || 1; }
         // 資料表刪掉的英雄從存檔移除
         for (const id of Object.keys(s.heroes)) if (!R.HEROES[id]) delete s.heroes[id];
         s.team = (s.team || []).map(id => (id && s.heroes[id]) ? id : null);

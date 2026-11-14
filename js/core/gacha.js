@@ -2,7 +2,7 @@
 //   常駐池：R 55%、SR 35%、SSR 10%；每 10 抽必出 SR 以上；50 抽內必出 SSR
 //   S1 限定池：R 50%、SR 35%、SSR 13%、UR 2%（UR＝烏瑟）；每 10 抽必出 SR 以上；80 抽必出烏瑟，保底整個賽季延續
 //   新手招募：免費 10 連抽一次，必出至少 1 隻 SSR（常駐池的英雄）
-// 重複抽到的英雄轉成碎片：R 10、SR 20、SSR 40、UR 80
+// 重複抽到的英雄轉成碎片：R 10、SR 20、SSR 40、UR 80（滿星的英雄改給同數量的星塵）
 (function () {
     const R = window.RES;
 
@@ -52,9 +52,13 @@
             if (key === 'std') pity.ssr = rarity === 'SSR' ? 0 : pity.ssr + 1;
             else pity.ur = rarity === 'UR' ? 0 : pity.ur + 1;
             const isNew = window.Save.addHero(s, id);
-            let shards = 0;
-            if (!isNew) { shards = SHARDS[rarity]; s.heroes[id].shards += shards; }
-            out.push({id, rarity, isNew, shards});
+            let shards = 0, dust = 0;
+            if (!isNew) {
+                // 滿星的英雄：碎片直接轉成星塵（見 growth.js）
+                const g = window.Growth ? window.Growth.giveShards(s, id, SHARDS[rarity]) : (s.heroes[id].shards += SHARDS[rarity], {shards: SHARDS[rarity], dust: 0});
+                shards = g.shards; dust = g.dust;
+            }
+            out.push({id, rarity, isNew, shards, dust});
         }
         s.pulls += n;
         if (pool === 'newbie') s.newbieDone = true;

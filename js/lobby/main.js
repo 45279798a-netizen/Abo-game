@@ -20,7 +20,10 @@
         gem:       {icon: '💎', name: '鑽石', desc: '招募、快速掛機'},
         ticket:    {icon: '🎫', name: '招募券', desc: '常駐招募 1 次'},
         ltdTicket: {icon: '🌟', name: '限定招募券', desc: 'S1 限定招募 1 次'},
-        exp:       {icon: '🧪', name: '經驗藥水', desc: '英雄升級（第 2 階段養成時開放）'},
+        exp:       {icon: '🧪', name: '經驗藥水', desc: '英雄升級'},
+        brk:       {icon: '💠', name: '突破石', desc: '每 20 級突破一次，提高等級上限'},
+        book:      {icon: '📘', name: '技能書', desc: '小技能、大招升級'},
+        dust:      {icon: '✴️', name: '星塵', desc: '滿星英雄的重複碎片轉成；到星塵商店換碎片與道具'},
     };
 
     // ───────── 主畫面 ─────────
@@ -88,6 +91,7 @@
                 <div class="ebg" style="background-image:url(assets/hd/land_${e.bgHD}.webp)"><span>${e.difficulty}</span></div>
                 <div class="ebody"><h3>${e.name}</h3><p>${e.desc || ''}</p></div></button>`).join('')}</div>
             <div class="go-row"><div class="team-mini">${S.team.map(id => id ? `<div class="face" style="--rc:${rc(R.HEROES[id].rarity)}"><img src="${face(R.HEROES[id].img)}" alt=""></div>` : '<div class="face empty"></div>').join('')}</div>
+            <span style="font-size:12px;color:var(--muted)">隊伍戰力 <b style="color:var(--gold-hi);font-size:16px">${teamPower().toLocaleString()}</b></span>
             <button class="btn" data-open="hero">調整隊伍</button><button class="btn primary" id="go">出戰</button></div>
             <p style="font-size:11.5px;color:var(--muted);margin:10px 0 0">主線 10 章與掛機會在之後的步驟加入，目前先用這 3 場戰鬥試玩。</p></div>`;
         p.querySelectorAll('[data-enc]').forEach(b => { b.onclick = () => { encSel = b.dataset.enc; renderBattle(); }; });
@@ -96,10 +100,13 @@
             if (!team.length) { toast('隊伍裡至少要有 1 位英雄'); return; }
             let auto = true;
             try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
-            localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), encounter: encSel, auto, from: 'lobby'}));
+            const growth = Object.fromEntries(team.map(id => [id, Growth.multipliers(id, S.heroes[id])]));
+            localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), encounter: encSel, auto, growth, from: 'lobby'}));
             location.href = 'hd2d.html';
         };
     }
+
+    const teamPower = () => S.team.filter(Boolean).reduce((a, id) => a + Growth.power(id, S.heroes[id]), 0);
 
     // ───────── 英雄 ─────────
     let heroFilter = 'all';
@@ -135,7 +142,7 @@
                 const d = R.HEROES[id], o = S.heroes[id];
                 return `<button class="hc ${o ? '' : 'locked'}" data-hero="${id}" style="--rc:${rc(d.rarity)};--fc:${fc(d.faction)}">
                     <img src="${face(d.img)}" alt="" loading="lazy"><span class="rt">${d.rarity}</span><span class="el">${R.ELEMENTS[d.element].icon}</span>
-                    ${S.team.includes(id) ? '<span class="in-team">隊伍</span>' : ''}<span class="nm">${short(d.name)}${o ? `<br><small style="font-weight:400;color:#e7dcc8">${'★'.repeat(o.star)}</small>` : ''}</span></button>`;
+                    ${S.team.includes(id) ? '<span class="in-team">隊伍</span>' : ''}<span class="nm">${short(d.name)}${o ? `<br><small style="font-weight:400;color:#e7dcc8">Lv.${o.lv}　<span style="color:var(--gold-hi)">${'★'.repeat(o.star)}</span></small>` : ''}</span></button>`;
             }).join('')}</div></div></div>`;
         p.querySelectorAll('[data-filter]').forEach(b => { b.onclick = () => { heroFilter = b.dataset.filter; renderHero(); }; });
         p.querySelectorAll('[data-hero]').forEach(b => { b.onclick = () => showDetail(b.dataset.hero); });
@@ -149,36 +156,39 @@
             save(); renderHero();
         }; });
     }
-    function heroStats(id) {
-        const d = R.HEROES[id], role = R.ROLES[d.role], m = R.RARITY[d.rarity].mult;
-        return {hp: Math.round(role.hp * m), atk: Math.round(role.atk * m), def: Math.round(role.def * m), spd: role.spd + (d.spdBonus || 0)};
-    }
-    function showDetail(id) {
-        const d = R.HEROES[id], o = S.heroes[id], st = heroStats(id);
+    let detailTab = 'info';
+    function showDetail(id, tab) {
+        if (tab) detailTab = tab;
+        const d = R.HEROES[id], o = S.heroes[id];
+        if (!o) detailTab = 'info';
         const fac = R.FACTIONS[d.faction], el = R.ELEMENTS[d.element];
+        const st = Growth.stats(id, o);
         const inTeam = S.team.includes(id);
         const box = $('#hero-detail');
-        box.innerHTML = `<div class="dt" style="--fc:${fac.color}"><button class="dt-close" data-x>✕</button>
-            <div class="dt-art"><img src="${sprite(d.img)}" alt=""></div>
-            <div class="dt-info">
-                <h3>${d.name}</h3>
-                <span class="tag" style="color:${rc(d.rarity)};border-color:${rc(d.rarity)}">${d.rarity}</span>
-                <span class="tag" style="color:${fac.color}">${fac.name}</span>
-                <span class="tag">${el.icon} ${el.name}屬性</span>
-                <span class="tag">${R.ROLES[d.role].name}</span>
-                ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}</span><span class="tag">碎片 ${o.shards}</span>` : '<span class="tag" style="color:var(--muted)">未擁有：可從招募取得</span>'}
-                <div class="dt-stats"><div>生命<b>${st.hp}</b></div><div>攻擊<b>${st.atk}</b></div><div>防禦<b>${st.def}</b></div><div>速度<b>${st.spd}</b></div></div>
-                <div class="sk"><span class="k">小技能・冷卻 ${d.skill.cd}</span><b>${d.skill.name}</b><br>${d.skill.desc}</div>
-                ${d.ult ? `<div class="sk"><span class="k">大招・能量 ${R.ENERGY.max}</span><b style="color:${fac.color}">${d.ult.name}</b><br>${d.ult.desc}</div>` : ''}
+        const tags = `<span class="tag" style="color:${rc(d.rarity)};border-color:${rc(d.rarity)}">${d.rarity}</span>
+            <span class="tag" style="color:${fac.color}">${fac.name}</span><span class="tag">${el.icon} ${el.name}屬性</span><span class="tag">${R.ROLES[d.role].name}</span>
+            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span><span class="tag">戰力 ${Growth.power(id, o).toLocaleString()}</span>` : '<span class="tag" style="color:var(--muted)">未擁有：可從招募取得</span>'}`;
+        const tabs = o ? `<div class="dt-tabs"><button class="${detailTab === 'info' ? 'on' : ''}" data-tab="info">資料</button><button class="${detailTab === 'grow' ? 'on' : ''}" data-tab="grow">養成</button></div>` : '';
+        let body = '';
+        if (detailTab === 'info') {
+            body = `<div class="dt-stats"><div>生命<b>${st.hp}</b></div><div>攻擊<b>${st.atk}</b></div><div>防禦<b>${st.def}</b></div><div>速度<b>${st.spd}</b></div></div>
+                <div class="sk"><span class="k">小技能・Lv.${o?.sk || 1}・冷卻 ${d.skill.cd}</span><b>${d.skill.name}</b><br>${d.skill.desc}</div>
+                ${d.ult ? `<div class="sk"><span class="k">大招・Lv.${o?.ul || 1}・能量 ${R.ENERGY.max}</span><b style="color:${fac.color}">${d.ult.name}</b><br>${d.ult.desc}</div>` : ''}
                 <div class="sk"><span class="k">被動</span><b>${d.passive.name}</b><br>${d.passive.desc}</div>
                 ${o ? `<div class="dt-btns">
                     ${inTeam ? '<button class="btn" data-act="out">下陣</button>' : '<button class="btn primary" data-act="in">上陣</button>'}
                     ${S.leader === id ? '<button class="btn" disabled>目前隊長</button>' : '<button class="btn" data-act="lead">設為隊長</button>'}
-                </div>` : ''}
-            </div></div>`;
+                </div>` : ''}`;
+        } else {
+            body = growHtml(id, o);
+        }
+        box.innerHTML = `<div class="dt" style="--fc:${fac.color}"><button class="dt-close" data-x>✕</button>
+            <div class="dt-art"><img src="${sprite(d.img)}" alt=""></div>
+            <div class="dt-info"><h3>${d.name}</h3>${tags}${tabs}${body}</div></div>`;
         box.classList.add('show');
         box.querySelector('[data-x]').onclick = () => box.classList.remove('show');
         box.onclick = e => { if (e.target === box) box.classList.remove('show'); };
+        box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => showDetail(id, b.dataset.tab); });
         box.querySelectorAll('[data-act]').forEach(b => { b.onclick = () => {
             const act = b.dataset.act;
             if (act === 'in') {
@@ -196,6 +206,56 @@
             }
             save(); showDetail(id); renderHero(); renderMain();
         }; });
+        box.querySelectorAll('[data-grow]').forEach(b => { b.onclick = () => {
+            const [act, arg] = b.dataset.grow.split(':');
+            const before = Growth.power(id, o);
+            let r;
+            if (act === 'lv') r = Growth.levelUp(S, id, +arg);
+            else if (act === 'brk') r = Growth.breakThrough(S, id);
+            else if (act === 'star') r = Growth.starUp(S, id);
+            else r = Growth.skillUp(S, id, act);
+            if (!r.ok) { toast(r.reason); return; }
+            save();
+            const after = Growth.power(id, o);
+            toast(act === 'star' ? `升到 ${o.star}★！戰力 +${after - before}` : act === 'brk' ? `突破成功！等級上限 ${Growth.lvCap(o)}` : act === 'lv' ? `升到 Lv.${o.lv}　戰力 +${after - before}` : `技能升級！戰力 +${after - before}`);
+            showDetail(id); renderHero(); renderCurrency();
+        }; });
+    }
+    // 養成分頁：升級／突破、升星、技能
+    function costTxt(c) { return Object.entries(c).map(([k, v]) => `<span class="${(S.currency[k] || 0) >= v ? '' : 'lack'}">${CUR[k].icon}${fmt(v)}</span>`).join(' '); }
+    function growHtml(id, o) {
+        const now = Growth.stats(id, o);
+        const cap = Growth.lvCap(o);
+        // 升級
+        let lvRow;
+        if (o.lv >= Growth.MAX_LV) lvRow = '<span class="gr-max">已達最高等級</span>';
+        else if (o.lv >= cap) {
+            const c = Growth.breakCost(o);
+            lvRow = `<span class="gr-cost">突破：${costTxt(c)}</span><button class="btn primary" data-grow="brk">突破</button>`;
+        } else {
+            const c = Growth.lvCost(o.lv);
+            const next = Growth.stats(id, {...o, lv: o.lv + 1});
+            lvRow = `<span class="gr-cost">${costTxt(c)}　<small>攻擊 ${now.atk}→${next.atk}</small></span><button class="btn" data-grow="lv:1">升 1 級</button><button class="btn primary" data-grow="lv:10">升 10 級</button>`;
+        }
+        // 升星
+        const sc = Growth.starCost(o);
+        let starRow;
+        if (!sc) starRow = '<span class="gr-max">已滿星：之後重複抽到會轉成星塵</span>';
+        else {
+            const next = Growth.stats(id, {...o, star: o.star + 1});
+            const pct = Math.min(100, o.shards / sc * 100);
+            starRow = `<span class="gr-cost"><span class="gr-bar"><i style="width:${pct}%"></i></span>碎片 ${o.shards} / ${sc}　<small>攻擊 ${now.atk}→${next.atk}（+${Math.round(Growth.STAR_PCT * 100)}% 全能力）</small></span><button class="btn ${o.shards >= sc ? 'primary' : ''}" data-grow="star" ${o.shards >= sc ? '' : 'disabled'}>升到 ${o.star + 1}★</button>`;
+        }
+        const skRow = (key, label, name) => {
+            const lv = o[key] || 1, c = Growth.skillCost(lv);
+            return `<div class="gr"><div class="gr-h"><b>${label}</b>${name}　<span class="gr-lv">Lv.${lv} / ${Growth.MAX_SKILL}</span>　<small>效果 +${Math.round(Growth.SKILL_PCT * 100 * (lv - 1))}%</small></div>
+                <div class="gr-r">${c ? `<span class="gr-cost">${costTxt(c)}</span><button class="btn" data-grow="${key}">升級</button>` : '<span class="gr-max">已滿級</span>'}</div></div>`;
+        };
+        return `<div class="gr"><div class="gr-h"><b>等級</b>Lv.${o.lv} / ${cap}　<small>（突破 ${o.brk || 0} / 4，每級全能力 +${Math.round(Growth.LV_PCT * 100)}%）</small></div><div class="gr-r">${lvRow}</div></div>
+            <div class="gr"><div class="gr-h"><b>星級</b><span style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span></div><div class="gr-r">${starRow}</div></div>
+            ${skRow('sk', '小技能', R.HEROES[id].skill.name)}
+            ${R.HEROES[id].ult ? skRow('ul', '大招', R.HEROES[id].ult.name) : ''}
+            <div class="fac-note" style="margin-top:6px">碎片來自重複招募，也可以用星塵在背包的「星塵商店」換。經驗藥水、突破石、技能書目前先給試玩用的量，主線與掛機做好後從關卡取得。</div>`;
     }
 
     // ───────── 招募 ─────────
@@ -264,7 +324,7 @@
                     return `<div class="card ${hi ? 'hi' : ''}" data-i="${i}" style="--rc:${rc(x.rarity)};--gl:${hi ? '14px' : '0'}"><div class="in">
                         <div class="face-b">✦</div>
                         <div class="face-f"><img src="${face(d.img)}" alt=""><span class="r">${x.rarity}</span>
-                        ${x.isNew ? '<span class="badge">NEW</span>' : `<span class="badge sh">碎片+${x.shards}</span>`}<span class="n">${short(d.name)}</span></div></div></div>`;
+                        ${x.isNew ? '<span class="badge">NEW</span>' : x.dust ? `<span class="badge sh">星塵+${x.dust}</span>` : `<span class="badge sh">碎片+${x.shards}</span>`}<span class="n">${short(d.name)}</span></div></div></div>`;
                 }).join('')}</div>
                 <div class="splash"><img alt=""><div class="sx"><div class="r"></div><div class="n"></div><div class="f"></div></div><div class="tap">點一下繼續</div></div>
                 <div class="ps-bottom"><button class="btn primary" id="ps-ok" style="display:none">確定</button></div>`;
@@ -305,13 +365,32 @@
     }
 
     // ───────── 背包、設定 ─────────
+    let bagTab = 'items', shopHero = null;
     function renderBag() {
         const p = $('#panel-bag');
         const shardTotal = Object.values(S.heroes).reduce((a, o) => a + o.shards, 0);
-        p.innerHTML = head('背包') + `<div class="pbody"><div class="bag-grid">
-            ${Object.entries(CUR).map(([k, c]) => `<div class="bag-item"><span class="bi">${c.icon}</span><div><b>${c.name}</b><small>${c.desc}</small></div><span class="cnt">${fmt(S.currency[k] || 0)}</span></div>`).join('')}
-            <div class="bag-item"><span class="bi">🧩</span><div><b>英雄碎片</b><small>重複招募取得，之後用來升星（在英雄詳情看各自數量）</small></div><span class="cnt">${shardTotal}</span></div>
-        </div><p style="font-size:11.5px;color:var(--muted)">裝備、突破石、技能書等道具會在養成與裝備的步驟加入。</p></div>`;
+        const tabs = `<div class="filters" style="margin-bottom:8px"><button class="${bagTab === 'items' ? 'on' : ''}" data-bag="items">道具</button><button class="${bagTab === 'shop' ? 'on' : ''}" data-bag="shop">星塵商店　✴️${fmt(S.currency.dust || 0)}</button></div>`;
+        let body;
+        if (bagTab === 'items') {
+            body = `<div class="bag-grid">
+                ${Object.entries(CUR).map(([k, c]) => `<div class="bag-item"><span class="bi">${c.icon}</span><div><b>${c.name}</b><small>${c.desc}</small></div><span class="cnt">${fmt(S.currency[k] || 0)}</span></div>`).join('')}
+                <div class="bag-item"><span class="bi">🧩</span><div><b>英雄碎片</b><small>重複招募取得，用來升星（各英雄的數量在英雄詳情看）</small></div><span class="cnt">${shardTotal}</span></div>
+            </div>`;
+        } else {
+            const own = Object.keys(S.heroes).filter(id => S.heroes[id].star < Growth.MAX_STAR);
+            if (!own.includes(shopHero)) shopHero = own[0] || null;
+            const sh = shopHero && S.heroes[shopHero];
+            body = `<div class="fac-note" style="margin-bottom:8px">滿星的英雄再抽到時，碎片會變成星塵。星塵可以換任何已擁有、還沒滿星的英雄碎片（1 個碎片 ${Growth.DUST_PER_SHARD} 星塵），或換道具。</div>
+                <div class="shop-wrap"><div class="shop-heroes">${own.map(id => `<button class="face ${id === shopHero ? 'on' : ''}" data-shop="${id}" style="--rc:${rc(R.HEROES[id].rarity)}"><img src="${face(R.HEROES[id].img)}" alt=""></button>`).join('') || '<span style="color:var(--muted)">沒有可以升星的英雄</span>'}</div>
+                ${sh ? `<div class="shop-buy"><b>${short(R.HEROES[shopHero].name)}</b>　碎片 ${sh.shards} / ${Growth.starCost(sh)}
+                    ${[10, 50].map(n => `<button class="btn" data-buy="${n}">換 ${n} 碎片<small style="display:block;font-size:10.5px">✴️${n * Growth.DUST_PER_SHARD}</small></button>`).join('')}</div>` : ''}</div>
+                <div class="bag-grid" style="margin-top:10px">${Growth.DUST_SHOP.map(it => `<div class="bag-item"><span class="bi">${CUR[it.key].icon}</span><div><b>${it.name}</b><small>✴️${it.price}</small></div><button class="btn" data-item="${it.key}" style="margin-left:auto">兌換</button></div>`).join('')}</div>`;
+        }
+        p.innerHTML = head('背包') + `<div class="pbody">${tabs}${body}</div>`;
+        p.querySelectorAll('[data-bag]').forEach(b => { b.onclick = () => { bagTab = b.dataset.bag; renderBag(); }; });
+        p.querySelectorAll('[data-shop]').forEach(b => { b.onclick = () => { shopHero = b.dataset.shop; renderBag(); }; });
+        p.querySelectorAll('[data-buy]').forEach(b => { b.onclick = () => { const r = Growth.buyShards(S, shopHero, +b.dataset.buy); if (!r.ok) return toast(r.reason); save(); toast('兌換成功'); renderBag(); renderCurrency(); }; });
+        p.querySelectorAll('[data-item]').forEach(b => { b.onclick = () => { const r = Growth.buyItem(S, b.dataset.item); if (!r.ok) return toast(r.reason); save(); toast('兌換成功'); renderBag(); renderCurrency(); }; });
     }
     function renderSettings() {
         const p = $('#panel-settings');

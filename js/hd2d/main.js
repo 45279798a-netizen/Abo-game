@@ -375,7 +375,7 @@ async function startBattle() {
     units.clear();
     slotsUsed.clear();
     $('#result').classList.remove('show');
-    const b = Battle.create({team: cfg.team, encounterId: cfg.encounter, auto: state.auto});
+    const b = Battle.create({team: cfg.team, encounterId: cfg.encounter, auto: state.auto, growth: cfg.growth});   // growth：從大廳帶來的養成倍率
     state.battle = b;
     $('#b-enc').textContent = `${b.encounter.name}・${b.encounter.difficulty}`;
     await Promise.all(b.units.map(u => addUnit(u)));

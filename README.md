@@ -14,7 +14,7 @@ hd2d.html     橫式 HD-2D 戰鬥
 dev.html      戰鬥測試頁（舊編隊畫面＋直式戰鬥，可任選英雄，不影響存檔）
 gallery.html  特效圖鑑
 js/data/      elements（屬性）factions（陣營被動、能量）heroes（22 位英雄）enemies（敵人、關卡）vfxcolors（重複特效自動換色）
-js/core/      battle.js（戰鬥引擎）save.js（本機存檔）gacha.js（招募機率與保底）
+js/core/      battle.js（戰鬥引擎）save.js（本機存檔）gacha.js（招募機率與保底）growth.js（養成）
 js/lobby/     main.js（大廳畫面）
 js/hd2d/      main.js（橫式戰場）
 js/vfx/       特效播放、特效庫、獨立特效、命中定格
@@ -86,3 +86,12 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 - 開局送亞瑟、艾拉、菲、毒鏢客，外加一次免費新手 10 連抽（必出 SSR）、3000 鑽石、常駐券 5、限定券 5
 - 招募機率與保底在 `js/core/gacha.js`：常駐 R55／SR35／SSR10、10 抽必 SR、50 抽必 SSR；S1 限定 UR2%（烏瑟）、80 抽保底、保底延續整季；重複轉碎片 R10／SR20／SSR40／UR80
 - 大廳背景 `assets/hd/lobby_capital.webp`（原檔 `images/lobby_capital.jpg`）
+
+## 養成
+
+規則在 `js/core/growth.js`：
+- 等級 1～100：經驗藥水＋金幣，每級全能力 +4%；每 20 級用突破石突破一次（共 4 次）
+- 星級：初始 R 1★／SR 2★／SSR 3★／UR 4★，最高 6★，每升 1★ 全能力 +15%；升 2★～6★ 需要碎片 20／40／100／300／500
+- 技能等級 1～5：小技能、大招分開升，用技能書＋金幣，每級效果 +8%（傷害、治療、護盾）
+- 滿星後重複抽到的碎片轉成星塵；星塵商店：1 碎片 = 2 星塵（任選已擁有、未滿星的英雄），也能換技能書、突破石、經驗藥水
+- 出戰時大廳把每位英雄的養成倍率（全能力、小技能、大招）傳給戰鬥引擎

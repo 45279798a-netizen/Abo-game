@@ -51,10 +51,11 @@
         return u;
     }
 
-    function makeHero(id, uid) {
+    // g：養成倍率 {stat, skill, ult}（由大廳依等級、星級、技能等級算好傳進來；沒有就是 1）
+    function makeHero(id, uid, g) {
         const d = R.HEROES[id];
         const role = R.ROLES[d.role];
-        const m = R.RARITY[d.rarity].mult;
+        const m = R.RARITY[d.rarity].mult * (g?.stat || 1);
         return buildUnit({
             uid, id, side: 'ally', name: d.name, faction: d.faction, element: d.element, role: d.role,
             img: d.img, faceY: d.faceY || 0, rarity: d.rarity, boss: false,
@@ -63,6 +64,7 @@
                 spd: role.spd + (d.spdBonus || 0), crit: 0.15, critDmg: 0.5, hit: 0, res: 0,
             },
             skills: d.skill ? [d.skill] : [], passives: d.passive ? [d.passive] : [], ult: d.ult || null,
+            mul: {skill: g?.skill || 1, ult: g?.ult || 1},
         });
     }
 
@@ -82,7 +84,7 @@
     }
 
     class BattleState {
-        constructor({team, encounterId, seed, auto}) {
+        constructor({team, encounterId, seed, auto, growth}) {
             this.encounter = R.ENCOUNTERS.find(e => e.id === encounterId);
             this.rand = makeRng(seed ?? (Date.now() & 0xffffffff));
             this.auto = auto !== false;
@@ -100,7 +102,7 @@
 
             team.forEach((id, i) => {
                 if (!id) return;
-                const u = makeHero(id, 'a' + i);
+                const u = makeHero(id, 'a' + i, growth?.[id]);
                 u.row = i < 2 ? 'front' : 'back';
                 this.units.push(u);
             });
@@ -219,7 +221,7 @@
             u.energy = 0;
             this.emit({type: 'ult', uid, name: u.ult.name});
             this.emit({type: 'energy', uid, value: 0, ready: false});
-            this.runEffects(u, u.ult.effects, {ult: true});
+            this.runEffects(u, u.ult.effects, {ult: true, power: u.mul?.ult || 1});
         }
 
         emit(e) { this.events.push(e); }
@@ -286,7 +288,7 @@
             if (idx >= 0) {
                 const sk = u.skills[idx];
                 this.emit({type: 'skill', uid: u.uid, name: sk.name});
-                this.runEffects(u, sk.effects, {});
+                this.runEffects(u, sk.effects, {power: u.mul?.skill || 1});
                 u.cds[idx] = sk.cd;
             } else {
                 this.emit({type: 'basic', uid: u.uid});
@@ -406,7 +408,7 @@
                         hits.forEach((w, hi) => {
                             for (const t of targets) {
                                 if (!t.alive) continue;
-                                this.dealDamage(src, t, e.mult * w, {
+                                this.dealDamage(src, t, e.mult * w * (ctx.power || 1), {
                                     ult: ctx.ult, execute: hi === hits.length - 1 ? e.execute : 0, hit: hi, hitCount: hits.length,
                                     bonus: e.bonusVsFaction?.[t.faction] || 0, teamHealPct: e.teamHealPct,
                                 });
@@ -415,11 +417,11 @@
                         break;
                     }
                     case 'heal':
-                        for (const t of targets) this.heal(src, t, e.mult * this.atkOf(src));
+                        for (const t of targets) this.heal(src, t, e.mult * (ctx.power || 1) * this.atkOf(src));
                         break;
                     case 'shield':
                         for (const t of targets) {
-                            const amt = e.pctMaxHp * (e.ofCaster ? src.maxHp : t.maxHp);
+                            const amt = e.pctMaxHp * (ctx.power || 1) * (e.ofCaster ? src.maxHp : t.maxHp);
                             t.shield = Math.round(Math.min(t.shield + amt, t.maxHp * 0.5));
                             this.emit({type: 'shield', uid: t.uid, amount: Math.round(amt)});
                         }

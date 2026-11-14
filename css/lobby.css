@@ -11,7 +11,7 @@ body { color: var(--text); font-family: "Noto Serif TC", "Songti TC", "PMingLiU"
 button { font: inherit; color: inherit; cursor: pointer; border: none; background: none; }
 a { color: inherit; text-decoration: none; }
 
-#lobby { position: fixed; inset: 0; overflow: hidden; }
+#lobby { position: fixed; inset: 0; overflow: hidden; overflow: clip; }   /* clip：避免點按鈕時整個畫面被捲動偏移 */
 .lb-bg { position: absolute; inset: 0; background: url(../assets/hd/lobby_capital.webp) center 60% / cover no-repeat; transform: scale(1.04); animation: bgDrift 30s ease-in-out infinite alternate; }
 @keyframes bgDrift { to { transform: scale(1.08) translateX(-1%); } }
 .lb-light { position: absolute; inset: 0; pointer-events: none;
@@ -189,7 +189,7 @@ a { color: inherit; text-decoration: none; }
 .set-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
 .set-row .sp { flex: 1; color: var(--muted); font-size: 12px; }
 
-.toast { position: absolute; left: 50%; bottom: 22%; transform: translate(-50%, 10px); z-index: 60; padding: 8px 18px; border-radius: 18px; background: rgba(0,0,0,.82); border: 1px solid var(--line); opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; font-size: 13px; }
+.toast { position: absolute; left: 50%; top: calc(54px + var(--safe-top)); transform: translate(-50%, 10px); z-index: 60; padding: 8px 18px; border-radius: 18px; background: rgba(0,0,0,.82); border: 1px solid var(--line); opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; font-size: 13px; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .rotate-hint { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 70; display: none; padding: 8px 14px; border-radius: 18px; background: rgba(0,0,0,.85); font-size: 13px; white-space: nowrap; }
 .rotate-hint.show { display: block; }
@@ -217,3 +217,26 @@ a { color: inherit; text-decoration: none; }
     .ps-grid { grid-template-columns: repeat(5, 86px); gap: 8px; }
     .enc .ebg { height: 70px; }
 }
+
+/* 英雄詳情：分頁與養成 */
+.dt-tabs { display: flex; gap: 6px; margin: 8px 0 4px; }
+.dt-tabs button { padding: 4px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,.15); font-size: 12.5px; }
+.dt-tabs button.on { border-color: var(--gold); color: var(--gold-hi); background: rgba(212,175,55,.12); }
+.gr { padding: 7px 9px; border-radius: 9px; background: rgba(255,255,255,.05); margin-top: 6px; }
+.gr-h { font-size: 12.5px; margin-bottom: 5px; }
+.gr-h b { color: var(--gold-hi); margin-right: 8px; font-size: 13px; }
+.gr-h small, .gr-cost small { color: var(--muted); font-size: 11px; }
+.gr-lv { color: var(--text); }
+.gr-r { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gr-r .btn { padding: 6px 12px; font-size: 12.5px; }
+.gr-cost { flex: 1; min-width: 0; font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.gr-cost .lack { color: #f87171; }
+.gr-max { flex: 1; font-size: 12px; color: var(--muted); }
+.gr-bar { display: inline-block; width: 70px; height: 7px; border-radius: 4px; background: #2b2118; overflow: hidden; }
+.gr-bar i { display: block; height: 100%; background: linear-gradient(90deg, #d4af37, #fcd34d); }
+/* 星塵商店 */
+.shop-wrap { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.shop-heroes { display: flex; gap: 6px; flex-wrap: wrap; max-width: 60%; }
+.shop-heroes .face { cursor: pointer; opacity: .65; }
+.shop-heroes .face.on { opacity: 1; box-shadow: 0 0 10px var(--rc); }
+.shop-buy { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
