@@ -36,7 +36,8 @@ node tools/sim.js 300
 - 背景：16:9 橫式戰場原畫 `assets/hd/land_*.webp`（原檔在 `images/land_*.jpg`），用「投影貼圖」從預設鏡頭投到 3D 地面與遠方牆面：預設視角就是原畫本身，鏡頭推近時仍有立體感。鏡頭只做推近、不大幅橫移，避免看到原畫以外的範圍
 - 目前有 6 張：border 王國邊境、forest 翠林、nightcity 暗夜之城、tundra 荒原、icefort 冰冠要塞、throne 巫妖王王座。關卡在 `js/data/enemies.js` 用 `bgHD` 指定
 - 新增背景：生成 16:9、下半部空曠、無人物的原畫，放進 `images/`，轉成 2048 寬的 webp 放到 `assets/hd/land_名稱.webp`
-- 畫質「高」會開泛光（bloom），手機跑不動可切「低」
+- 畫質「高」會開泛光（bloom）、用高解析立繪 `assets/sprites_hd/`（寬 960）並以手機原生解析度繪製；跑不動可切「低」（一般立繪寬 460）
+- 新增或修改角色圖後，執行 `python3 tools/make_sprites.py 角色名` 重做高解析立繪（不加參數 = 全部重做）
 - 戰鬥規則與直式版共用 `js/core/battle.js`；特效播放共用 `js/vfx/player.js`
 
 ## 3D 特效

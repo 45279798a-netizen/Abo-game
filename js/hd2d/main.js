@@ -13,6 +13,8 @@ const Battle = window.Battle;
 const $ = s => document.querySelector(s);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const spriteSrc = img => `assets/sprites/${img}.webp`;
+// 3D 立牌與演出立繪：畫質高用高解析版（寬 960），低用一般版（寬 460）
+const spriteHD = img => state.quality === 'high' ? `assets/sprites_hd/${img}.webp` : spriteSrc(img);
 const facColor = f => R.FACTIONS[f]?.color || '#888';
 const elIcon = e => R.ELEMENTS[e]?.icon || '';
 const shortName = n => n.includes('·') ? n.split('·')[1] : n;
@@ -42,7 +44,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 400);
 const vfx = createVfxPlayer(scene, {maxActive: 3, sizeScale: 0.85});
 const texLoader = new THREE.TextureLoader();
-const loadTex = url => new Promise((res, rej) => texLoader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; res(t); }, undefined, rej));
+const loadTex = url => new Promise((res, rej) => texLoader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); res(t); }, undefined, rej));
 
 let composer = null, bloom = null;
 function setupPost() {
@@ -59,7 +61,7 @@ function setupPost() {
 
 function resize() {
     const w = window.innerWidth, h = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, state.quality === 'high' ? 2 : 1.25));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, state.quality === 'high' ? 3 : 1.25));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -142,12 +144,12 @@ const SPRITE_FS = `
 uniform sampler2D map; uniform float uFlash, uBright, uGray, uOpacity; varying vec2 vUv;
 void main(){
   vec4 c = texture2D(map, vUv);
-  if (c.a < 0.4) discard;
+  if (c.a < 0.03) discard;
   vec3 col = c.rgb;
   col = mix(col, vec3(dot(col, vec3(.299, .587, .114))), uGray);
   col *= uBright;
   col = mix(col, vec3(1.0), uFlash);
-  gl_FragColor = vec4(col, uOpacity);
+  gl_FragColor = vec4(col, smoothstep(0.15, 0.6, c.a) * uOpacity);   // 搭配 alphaToCoverage：邊緣平滑不鋸齒
   #include <colorspace_fragment>
 }`;
 const shadowTex = (() => {
@@ -191,7 +193,7 @@ function slotPos(u, slot) {
 }
 
 async function addUnit(u, spawn) {
-    const tex = await loadTex(spriteSrc(u.img));
+    const tex = await loadTex(spriteHD(u.img)).catch(() => loadTex(spriteSrc(u.img)));
     const h = u.boss ? 4.8 : u.side === 'ally' ? 2.75 : (u.elite ? 2.9 : 2.4);
     const w = h * tex.image.width / tex.image.height;
     const geo = new THREE.PlaneGeometry(w, h);
@@ -545,7 +547,7 @@ async function skillCutIn(u, name) {
         moveCam(dollyTo(c, 0.5), c, 450);
     }
     const el = $('#skill-cut');
-    el.querySelector('img').src = spriteSrc(u.img);
+    el.querySelector('img').src = spriteHD(u.img);
     el.querySelector('.sc-name').textContent = name;
     el.querySelector('.sc-hero').textContent = u.name;
     el.style.setProperty('--fc', facColor(u.faction));
@@ -587,7 +589,7 @@ async function playUltimate(e) {
         ult.style.setProperty('--fc', f.color);
         $('#ult-cast').innerHTML = e.members.slice(0, 3).map((uid, i) => {
             const u = b.get(uid);
-            return `<div class="cut" style="left:${4 + i * 24}%;animation-delay:${i * (short ? 0.06 : 0.13)}s"><img src="${spriteSrc(u.img)}" alt=""></div>`;
+            return `<div class="cut" style="left:${4 + i * 24}%;animation-delay:${i * (short ? 0.06 : 0.13)}s"><img src="${spriteHD(u.img)}" alt=""></div>`;
         }).join('');
         $('#ult-name').textContent = f.combo.name;
         $('#ult-fac').textContent = f.name;
