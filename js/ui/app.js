@@ -12,7 +12,8 @@
         auto: true,
         speed: 1,
         paused: false,
-        ultMode: loadPref('ultMode', 'full'),   // 大招演出：full 完整／short 簡短／off 關閉
+        ultMode: loadPref('ultMode', 'full'),     // 大招演出：full 完整／short 簡短／off 關閉
+        skillMode: loadPref('skillMode', 'pause'), // 主動技演出：pause 暫停演出／flash 不停頓／off 關閉
         ultSkip: null,
         battle: null,
         runId: 0,
@@ -482,7 +483,7 @@
         const otherSide = b.units.filter(u => u.side !== actor.side && (u.alive || hits.includes(u.uid))).map(u => u.uid);
         const mySide = b.units.filter(u => u.side === actor.side && u.alive).map(u => u.uid);
         const at = v.at || 'targets';
-        const dests = at === 'friends' ? mySide : at === 'foes' ? otherSide : (hits.length ? hits : otherSide);
+        const dests = at === 'self' ? [actor.uid] : at === 'friends' ? mySide : at === 'foes' ? otherSide : (hits.length ? hits : otherSide);
         if (!dests.length) return false;
         const cat = window.VFX3D.category(v.id);
         const from = unitPoint(actor.uid);
@@ -670,9 +671,10 @@
                     break;
                 case 'skill':
                     setPill(`${u.name}・<span class="sk">${e.name}</span>`, u.side === 'enemy');
-                    if (u.side === 'ally') skillFlash(u, e.name);
                     if (u.boss) shakeScreen(5);
+                    if (u.side === 'ally') await skillCutIn(u, e.name);
                     await performAction(u, events.slice(i), u.skills.find(s => s.name === e.name) || true);
+                    endSkillCutIn();
                     break;
                 case 'basic':
                     await performAction(u, events.slice(i), false);
@@ -737,13 +739,45 @@
         setTimeout(() => f.remove(), 1150);
     }
 
-    // 我方主動技：角色立繪從側邊閃過＋招式名（不停頓戰鬥）
+    // 我方主動技演出：
+    //   pause 暫停演出：畫面變暗、立繪切入停住，接著播特效，命中後才恢復戰鬥（點一下可跳過）
+    //   flash 不停頓：立繪從側邊閃過
+    //   off   關閉
+    async function skillCutIn(u, name) {
+        const mode = state.skillMode;
+        if (mode === 'off') return;
+        if (mode === 'flash') { skillFlash(u, name); return; }
+        const el = $('#skill-cut');
+        el.querySelector('img').src = spriteSrc(u.img);
+        el.querySelector('.sc-name').textContent = name;
+        el.querySelector('.sc-hero').textContent = u.name;
+        el.style.setProperty('--fc', facColor(u.faction));
+        el.style.animationDuration = '';
+        el.style.setProperty('--fy', -(u.faceY || 0) + '%');
+        el.classList.remove('show', 'out');
+        void el.offsetWidth;
+        el.classList.add('hold');
+        $('#scene').classList.add('skill-dim');
+        const skip = makeSkip();
+        state.ultSkip = skip;
+        await waitOrSkip(state.speed >= 2 ? 380 : 700, skip);
+        el.classList.add('out');
+    }
+    function endSkillCutIn() {
+        const el = $('#skill-cut');
+        if (el.classList.contains('hold')) setTimeout(() => el.classList.remove('hold', 'out'), 220);
+        $('#scene').classList.remove('skill-dim');
+        if (state.ultSkip && !$('#ult').classList.contains('show')) state.ultSkip = null;
+    }
+
+    // 立繪從側邊閃過＋招式名（不停頓戰鬥）
     function skillFlash(u, name) {
         const el = $('#skill-cut');
         el.querySelector('img').src = spriteSrc(u.img);
         el.querySelector('.sc-name').textContent = name;
         el.querySelector('.sc-hero').textContent = u.name;
         el.style.setProperty('--fc', facColor(u.faction));
+        el.style.setProperty('--fy', -(u.faceY || 0) + '%');
         el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
         el.style.animationDuration = (0.9 / state.speed) + 's';
     }
@@ -816,8 +850,16 @@
     $('#btn-help').onclick = showHelp;
     $('#chk-auto').onchange = e => { state.auto = e.target.checked; };
     $('#sel-ult').value = state.ultMode;
+    $('#sel-skill').value = state.skillMode;
+    $('#sel-skill').onchange = e => { state.skillMode = e.target.value; savePref('skillMode', state.skillMode); };
     $('#sel-ult').onchange = e => { state.ultMode = e.target.value; savePref('ultMode', state.ultMode); };
     $('#ult').addEventListener('click', () => state.ultSkip?.fire());
+    $('#screen-battle').addEventListener('click', e => {
+        if (state.ultSkip && $('#skill-cut').classList.contains('hold') && !e.target.closest('button')) {
+            state.ultSkip.fire();
+            e.stopPropagation();
+        }
+    }, true);
     $('#btn-quit').onclick = quitBattle;
     $('#btn-pause').onclick = togglePause;
     $('#btn-speed').onclick = () => {

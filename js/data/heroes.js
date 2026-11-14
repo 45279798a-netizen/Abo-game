@@ -6,8 +6,9 @@
 //   self、allies（我方全體）、allyLowest、allyOthers、trigger（合體技觸發者）、
 //   same（沿用上一個效果的目標）
 // 效果類型：damage / heal / shield / push（推條）/ pull（拉條）/ status / cleanse / summon
-// vfx：技能特效（特效庫 id）。at：特效對準 targets 打到的目標（預設）／foes 對手全體中心／friends 自己隊伍中心；color 可改顏色。
+// vfx：技能特效（特效庫 id）。at：特效對準 targets 打到的目標（預設）／foes 對手全體中心／friends 自己隊伍中心／self 自己；color 可改顏色。
 //      沒填 vfx 的技能用 2D 特效。
+// faceY：立繪切入時臉往上移多少（%），有翅膀或頭頂裝飾比較高的角色才需要
 window.RES = window.RES || {};
 
 RES.RARITY = {
@@ -32,7 +33,7 @@ RES.HEROES = {
     arthur: {
         name: '重裝鐵衛·亞瑟', rarity: 'SR', faction: 'kingdom', element: 'water', role: 'tank', img: 'h_arthur',
         skill: {
-            name: '堅盾號令', cd: 3, desc: '嘲諷敵人 2 回合，並獲得最大生命 20% 的護盾',
+            name: '堅盾號令', cd: 3, vfx: {id: 'healing-field', at: 'self', color: '#60a5fa'}, desc: '嘲諷敵人 2 回合，並獲得最大生命 20% 的護盾',
             effects: [
                 {type: 'status', target: 'self', status: 'taunt', turns: 2, chance: 1},
                 {type: 'shield', target: 'self', pctMaxHp: 0.20},
@@ -52,9 +53,9 @@ RES.HEROES = {
         passive: {name: '乘勝追擊', desc: '擊倒敵人時，自己推條 30%', type: 'onKillPush', pct: 0.3},
     },
     valkyrie: {
-        name: '聖殿衛士·瓦爾基里', rarity: 'SSR', faction: 'kingdom', element: 'light', role: 'tank', img: 'h_valkyrie',
+        name: '聖殿衛士·瓦爾基里', rarity: 'SSR', faction: 'kingdom', element: 'light', role: 'tank', img: 'h_valkyrie', faceY: 14,
         skill: {
-            name: '聖盾', cd: 4, desc: '我方全體獲得自身最大生命 12% 的護盾，自己嘲諷 1 回合',
+            name: '聖盾', cd: 4, vfx: {id: 'healing-field', at: 'friends', color: '#fde68a'}, desc: '我方全體獲得自身最大生命 12% 的護盾，自己嘲諷 1 回合',
             effects: [
                 {type: 'shield', target: 'allies', pctMaxHp: 0.12, ofCaster: true},
                 {type: 'status', target: 'self', status: 'taunt', turns: 1, chance: 1},
@@ -84,9 +85,9 @@ RES.HEROES = {
         passive: {name: '驅魔', desc: '對亡靈天災傷害 +20%', type: 'dmgVsFaction', faction: 'undead', pct: 0.2},
     },
     seraph: {
-        name: '大天使·熾', rarity: 'SSR', faction: 'church', element: 'light', role: 'support', img: 'h_seraph',
+        name: '大天使·熾', rarity: 'SSR', faction: 'church', element: 'light', role: 'support', img: 'h_seraph', faceY: 12,
         skill: {
-            name: '聖光祝福', cd: 4, desc: '我方全體推條 20%，攻擊 +20%（2 回合）',
+            name: '聖光祝福', cd: 4, vfx: {id: 'burning-ground', at: 'friends', color: '#ffd166'}, desc: '我方全體推條 20%，攻擊 +20%（2 回合）',
             effects: [
                 {type: 'push', target: 'allies', pct: 0.2},
                 {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
@@ -99,7 +100,7 @@ RES.HEROES = {
     lyra: {
         name: '吟遊詩人·萊拉', rarity: 'R', faction: 'forest', element: 'fire', role: 'support', img: 'h_lyra',
         skill: {
-            name: '疾風樂章', cd: 3, desc: '我方全體加速（速度 +30%）2 回合',
+            name: '疾風樂章', cd: 3, vfx: {id: 'healing-field', at: 'friends', color: '#67e8f9'}, desc: '我方全體加速（速度 +30%）2 回合',
             effects: [{type: 'status', target: 'allies', status: 'haste', turns: 2, chance: 1}],
         },
         passive: {name: '旅人之歌', desc: '行動後，隨機一名隊友推條 10%（優先同陣營）', type: 'pushAllyAfterTurn', pct: 0.10},
@@ -142,7 +143,7 @@ RES.HEROES = {
     shadow: {
         name: '無形者·影', rarity: 'SSR', faction: 'night', element: 'water', role: 'assassin', img: 'h_shadow',
         skill: {
-            name: '影襲', cd: 3, desc: '對生命比例最低的敵人造成 260% 傷害',
+            name: '影襲', cd: 3, vfx: {id: 'ice-shard', color: '#a78bfa'}, desc: '對生命比例最低的敵人造成 260% 傷害',
             effects: [{type: 'damage', target: 'enemyLowest', mult: 2.6}],
         },
         passive: {name: '伺機而動', desc: '攻擊滿血的目標時，暴擊率 +30%', type: 'critVsFullHp', pct: 0.3},

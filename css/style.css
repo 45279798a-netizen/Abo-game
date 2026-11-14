@@ -292,9 +292,18 @@ a.icon-btn { text-decoration: none; color: inherit; }
 }
 .skill-cut.show { animation: skillCut .9s ease-out both; }
 .skill-cut .sc-face { position: relative; width: 96px; height: 100%; flex: none; overflow: hidden; }
-.skill-cut .sc-face img { position: absolute; left: 50%; top: 2px; width: 150px; transform: translateX(-50%); filter: drop-shadow(0 0 8px rgba(0,0,0,.8)); }
+.skill-cut .sc-face img { position: absolute; left: 50%; top: 2px; width: 150px; transform: translate(-50%, var(--fy, 0%)); filter: drop-shadow(0 0 8px rgba(0,0,0,.8)); }
 .skill-cut .sc-name { font-size: 20px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 10px var(--fc, #fcd34d), 0 2px 0 #000; }
 .skill-cut .sc-hero { font-size: 11px; color: #e7dcc8; }
+.skill-cut.hold { opacity: 1; animation: skillIn .28s cubic-bezier(.2,.9,.3,1.15) both; z-index: 24; top: 40%; height: 96px; width: 92%; }
+.skill-cut.hold .sc-face { width: 116px; }
+.skill-cut.hold .sc-face img { width: 180px; }
+.skill-cut.hold .sc-name { font-size: 26px; }
+.skill-cut.hold.out { animation: skillOut .22s ease-in both; }
+@keyframes skillIn { from { opacity: 0; transform: translateX(-60%); } to { opacity: 1; transform: translateX(0); } }
+@keyframes skillOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(25%); } }
+.scene.skill-dim .scene-bg { filter: brightness(.5) saturate(.8); }
+.scene.skill-dim #stage-sprites .sprite:not(.acting) { filter: brightness(.6); }
 @keyframes skillCut {
     0% { opacity: 0; transform: translateX(-40%); }
     18% { opacity: 1; transform: translateX(0); }

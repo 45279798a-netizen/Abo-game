@@ -55,7 +55,7 @@
         const m = R.RARITY[d.rarity].mult;
         return buildUnit({
             uid, id, side: 'ally', name: d.name, faction: d.faction, element: d.element, role: d.role,
-            img: d.img, rarity: d.rarity, boss: false,
+            img: d.img, faceY: d.faceY || 0, rarity: d.rarity, boss: false,
             base: {
                 hp: Math.round(role.hp * m), atk: Math.round(role.atk * m), def: Math.round(role.def * m),
                 spd: role.spd + (d.spdBonus || 0), crit: 0.15, critDmg: 0.5, hit: 0, res: 0,
