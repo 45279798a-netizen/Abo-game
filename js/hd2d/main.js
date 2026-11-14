@@ -305,6 +305,8 @@ function updateUnit(u) {
     pl.querySelector('.bar.atb i').style.width = Math.min(100, u.atb / Battle.ATB_MAX * 100) + '%';
     pl.querySelector('.p-st').innerHTML = u.statuses.map(s => `<span>${Battle.STATUS[s.key].icon}</span>`).join('');
     pl.classList.toggle('dead', !u.alive);
+    if (u.side === 'ally') updateCard(u);
+    if (u.boss) updateBossBar();
     if (!u.alive && !r.dying) {
         r.dying = true;
         if (u.side === 'enemy') tween(700, t => { r.mat.uniforms.uOpacity.value = 1 - t; r.mesh.position.y = -t * 0.6; r.ring.material.opacity = 0.3 * (1 - t); r.shadow.material.opacity = 1 - t; });
@@ -322,7 +324,7 @@ const footWorld = r => new THREE.Vector3(r.group.position.x, 0.05, r.group.posit
 
 // 血條放腳下；只有會被左下 HUD 蓋到時改放頭頂（站位已經錯開，不用再避讓彼此）
 function placePlate(r) {
-    if (!r.u.alive) return;
+    if (!r.u.alive || r.u.side === 'ally' || r.u.boss) return;   // 我方在底部英雄卡、首領在上方血條
     const gx = r.group.position.x, gz = r.group.position.z;
     const f = toScreen(gx, 0, gz);
     let x = f.x, y = f.y + 4;
@@ -452,34 +454,71 @@ function renderTimeline() {
     });
 }
 
-// 下方：我方頭像＋能量環，能量滿了點頭像放大招
-function renderHud() {
-    const b = state.battle;
-    const fb = b.factionBonus;
-    const fbEl = $('#fac-bonus');
+// 左上：陣營被動小標籤（點一下展開說明）
+function renderFacChip() {
+    const fb = state.battle.factionBonus, el = $('#fac-chip');
     if (fb) {
         const f = R.FACTIONS[fb.faction];
-        fbEl.innerHTML = `<b style="color:${f.color}">${f.short}×${fb.tier}・${f.passive.name}</b><span>${fb.desc}</span>`;
-    } else fbEl.innerHTML = '<span>同陣營 3 人以上可獲得陣營被動</span>';
+        el.innerHTML = `${f.emblem || ''}<b style="color:${f.color}">${f.short} ${fb.tier}</b><span class="fc-desc">${f.passive.name}：${fb.desc}</span>`;
+    } else el.innerHTML = '<b>陣營被動</b><span class="fc-desc">同陣營 3 人以上，全隊獲得陣營被動</span>';
+}
+$('#fac-chip').onclick = () => $('#fac-chip').classList.toggle('open');
+
+// 底部：我方英雄卡（頭像、生命、能量）；能量滿了點卡片放大招
+function renderHud() {
+    const b = state.battle;
+    renderFacChip();
+    updateBossBar();
     const bar = $('#ult-bar');
     const allies = b.units.filter(u => u.side === 'ally');
-    if (bar.children.length !== allies.length) {
-        bar.innerHTML = allies.map(u => `<button class="ult-hero" data-uid="${u.uid}" style="--fc:${facColor(u.faction)}">
-            <svg viewBox="0 0 40 40"><circle class="ring-bg" cx="20" cy="20" r="18"/><circle class="ring" cx="20" cy="20" r="18" pathLength="100"/></svg>
-            <img src="${spriteSrc(u.img)}" alt="" style="--fy:${-(u.faceY || 0)}%"><span class="ult-pct"></span></button>`).join('');
-        bar.querySelectorAll('.ult-hero').forEach(el => { el.onclick = () => tapUlt(el.dataset.uid); });
+    if (bar.children.length !== allies.length || [...bar.children].some((el, i) => el.dataset.uid !== allies[i].uid)) {
+        bar.innerHTML = allies.map(u => `<button class="hcd" data-uid="${u.uid}" style="--fc:${facColor(u.faction)}">
+            <div class="hc-face"><img src="${spriteSrc(u.img)}" alt="" style="--fy:${-(u.faceY || 0)}%"><span class="hc-el">${elIcon(u.element)}</span><span class="hc-tag"></span></div>
+            <div class="hc-name">${shortName(u.name)}</div>
+            <div class="hc-bar hp"><i></i><b></b></div>
+            <div class="hc-bar en"><i></i></div>
+            <div class="hc-st"></div></button>`).join('');
+        bar.querySelectorAll('.hcd').forEach(el => { el.onclick = () => tapUlt(el.dataset.uid); });
     }
-    for (const el of bar.children) {
-        const u = b.get(el.dataset.uid);
-        const v = u.alive ? u.energy : 0;
-        const ready = b.ultReady(u.uid);
-        el.querySelector('.ring').style.strokeDasharray = `${v} 100`;
-        el.querySelector('.ult-pct').textContent = !u.alive ? '' : ready ? (b.pendingUlt === u.uid ? '發動' : '大招') : Math.round(v) + '%';
-        el.classList.toggle('ready', ready);
-        el.classList.toggle('pending', b.pendingUlt === u.uid);
-        el.classList.toggle('dead', !u.alive);
-        el.title = u.ult ? `${u.ult.name}：${u.ult.desc}` : '';
+    for (const el of bar.children) updateCard(b.get(el.dataset.uid), el);
+}
+function updateCard(u, el) {
+    el = el || document.querySelector(`#ult-bar .hcd[data-uid="${u.uid}"]`);
+    if (!el || !u) return;
+    const b = state.battle;
+    const hpPct = Math.max(0, u.hp / u.maxHp * 100);
+    const hp = el.querySelector('.hc-bar.hp');
+    hp.querySelector('i').style.width = hpPct + '%';
+    hp.querySelector('b').style.width = Math.min(100, u.shield / u.maxHp * 100) + '%';
+    hp.classList.toggle('mid', hpPct < 50 && hpPct >= 25);
+    hp.classList.toggle('low', hpPct < 25);
+    const v = u.alive ? u.energy : 0, ready = b.ultReady(u.uid);
+    el.querySelector('.hc-bar.en i').style.width = v + '%';
+    el.querySelector('.hc-tag').textContent = !u.alive ? '倒下' : ready ? (b.pendingUlt === u.uid ? '發動' : '大招') : '';
+    el.querySelector('.hc-st').innerHTML = u.statuses.map(s => `<span>${Battle.STATUS[s.key].icon}</span>`).join('');
+    el.classList.toggle('ready', ready);
+    el.classList.toggle('pending', b.pendingUlt === u.uid);
+    el.classList.toggle('dead', !u.alive);
+    el.classList.toggle('acting', !!units.get(u.uid)?.acting);
+    el.title = u.ult ? `${u.ult.name}：${u.ult.desc}` : '';
+}
+// 上方中央：首領血條
+function updateBossBar() {
+    const boss = state.battle?.units.find(u => u.side === 'enemy' && u.boss);
+    const el = $('#boss-bar');
+    if (!boss) { el.classList.remove('show'); return; }
+    if (el.dataset.uid !== boss.uid) {
+        el.dataset.uid = boss.uid;
+        el.innerHTML = `<div class="bb-name">${elIcon(boss.element)}<span>${boss.name}</span><span class="bb-st"></span><span class="bb-pct"></span></div><div class="bb-bar"><i class="bb-lag"></i><i class="bb-hp"></i><b></b></div>`;
     }
+    const pct = Math.max(0, boss.hp / boss.maxHp * 100);
+    el.querySelector('.bb-hp').style.width = pct + '%';
+    el.querySelector('.bb-lag').style.width = pct + '%';
+    el.querySelector('b').style.width = Math.min(100, boss.shield / boss.maxHp * 100) + '%';
+    el.querySelector('.bb-pct').textContent = Math.ceil(pct) + '%';
+    el.querySelector('.bb-st').innerHTML = boss.statuses.map(s => Battle.STATUS[s.key].icon).join('');
+    el.classList.add('show');
+    el.classList.toggle('dead', !boss.alive);
 }
 function tapUlt(uid) {
     const b = state.battle;
@@ -517,6 +556,7 @@ function setActing(uid, on) {
     r.ring.material.color.set(on ? '#fde68a' : (r.u.side === 'ally' ? facColor(r.u.faction) : '#dc2626'));
     r.ring.material.opacity = on ? 1 : (r.u.side === 'ally' ? 0.55 : 0.3);
     if (!on) r.ring.scale.set(r.w * 0.9, r.w * 0.42, 1);
+    if (r.u.side === 'ally') updateCard(r.u);
 }
 
 function hitFlash(uid, big) {
@@ -905,7 +945,7 @@ async function playEvents(events, id) {
                 }
                 let cls = e.kind === 'dot' ? 'dot' : e.kind === 'ult' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                 if (e.rel) cls += ' ' + e.rel;
-                float(rec, (e.crit ? '暴擊 ' : '') + e.amount, cls, e.hits > 1 ? (e.hit % 2 ? 16 : -16) : 0);
+                float(rec, String(e.amount), cls, e.hits > 1 ? (e.hit % 2 ? 16 : -16) : 0);
                 if (e.hits > 1 && e.hit === e.hits - 1 && rec) { const sum = rec.hitSum; setTimeout(() => float(rec, `總計 ${sum}`, 'total'), 260 / state.speed); }
                 if (e.kind !== 'dot') hitFlash(e.uid, e.crit);
                 if (e.crit) shake(0.08, 220);
@@ -914,7 +954,7 @@ async function playEvents(events, id) {
                 break;
             }
             case 'heal': float(rec, '+' + e.amount, 'heal'); updateUnit(u); break;
-            case 'shield': float(rec, '🛡 ' + e.amount, 'shield'); updateUnit(u); break;
+            case 'shield': float(rec, '護盾 +' + e.amount, 'shield'); updateUnit(u); break;
             case 'atb': float(rec, e.delta > 0 ? `▲推條 ${e.delta}%` : `▼拉條 ${-e.delta}%`, 'info'); updateUnit(u); break;
             case 'status': float(rec, Battle.STATUS[e.key].icon + Battle.STATUS[e.key].name, 'info'); updateUnit(u); break;
             case 'resist': float(rec, '抵抗', 'info'); break;
@@ -1053,13 +1093,33 @@ function syncControls() {
     $('#btn-auto').textContent = state.auto ? '自動' : '手動';
     $('#btn-speed').textContent = 'x' + state.speed;
     $('#btn-pause').textContent = state.paused ? '▶' : '❚❚';
-    $('#btn-quality').textContent = `畫質：${state.quality === 'high' ? '高' : '低'}`;
 }
 
 $('#btn-auto').onclick = () => { state.auto = !state.auto; if (state.battle) state.battle.auto = state.auto; syncControls(); };
 $('#btn-speed').onclick = () => { state.speed = SPEEDS[(SPEEDS.indexOf(state.speed) + 1) % SPEEDS.length]; syncControls(); };
-$('#btn-pause').onclick = () => { state.paused = !state.paused; syncControls(); };
-$('#btn-quality').onclick = () => { state.quality = state.quality === 'high' ? 'low' : 'high'; savePref('hdQuality', state.quality); setupPost(); resize(); syncControls(); };
+// 暫停選單：繼續、畫質、演出設定、離開
+const MODES = {
+    quality: {label: '畫質', opts: [['high', '高'], ['low', '低（手機比較順）']]},
+    skillMode: {label: '小技能演出', opts: [['pause', '暫停演出'], ['flash', '不停頓'], ['off', '關閉']]},
+    ultMode: {label: '大招演出', opts: [['full', '完整'], ['short', '簡短'], ['off', '關閉']]},
+};
+function openPause() {
+    state.paused = true; syncControls();
+    const m = $('#pause-menu');
+    m.innerHTML = `<div class="pm-box"><div class="pm-title">暫停</div>
+        ${Object.entries(MODES).map(([k, d]) => `<div class="pm-row"><span>${d.label}</span><div class="pm-opts">${d.opts.map(([v, t]) => `<button class="${state[k] === v ? 'on' : ''}" data-k="${k}" data-v="${v}">${t}</button>`).join('')}</div></div>`).join('')}
+        <div class="pm-btns"><a class="btn-secondary" href="index.html">離開戰鬥</a><button class="btn-primary" id="pm-go">繼續</button></div></div>`;
+    m.classList.add('show');
+    m.querySelectorAll('[data-k]').forEach(btn => { btn.onclick = () => {
+        const k = btn.dataset.k;
+        state[k] = btn.dataset.v;
+        savePref(k === 'quality' ? 'hdQuality' : k, state[k]);
+        if (k === 'quality') { setupPost(); resize(); }
+        openPause();
+    }; });
+    m.querySelector('#pm-go').onclick = () => { m.classList.remove('show'); state.paused = false; syncControls(); };
+}
+$('#btn-pause').onclick = () => { if ($('#pause-menu').classList.contains('show')) { $('#pm-go').click(); } else openPause(); };
 $('#ult').addEventListener('click', () => state.skip?.fire());
 $('#hd').addEventListener('click', e => {
     if (state.skip && $('#skill-cut').classList.contains('hold') && !e.target.closest('button')) { state.skip.fire(); e.stopPropagation(); }

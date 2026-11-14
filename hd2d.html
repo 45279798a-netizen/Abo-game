@@ -18,24 +18,28 @@
 
     <div class="hd-top-left">
         <a href="index.html" id="btn-back" class="g-btn" aria-label="離開">✕</a>
-        <div class="b-title glass">
-            <div id="b-enc">載入中…</div>
-            <div id="b-round"></div>
+        <div class="b-col">
+            <div class="b-title glass">
+                <div id="b-enc">載入中…</div>
+                <div id="b-round"></div>
+            </div>
+            <button id="fac-chip" class="fac-chip glass"></button>
         </div>
     </div>
     <div id="timeline" class="timeline glass"></div>
+    <div id="boss-bar" class="boss-bar"></div>
     <div class="hd-top-right">
         <button id="btn-auto" class="g-btn wide">自動</button>
         <button id="btn-speed" class="g-btn wide">x1</button>
-        <button id="btn-quality" class="g-btn wide">畫質：高</button>
-        <button id="btn-pause" class="g-btn" aria-label="暫停">❚❚</button>
+        <button id="btn-pause" class="g-btn" aria-label="暫停與設定">❚❚</button>
     </div>
     <div id="turn-pill" class="turn-pill"></div>
 
-    <div id="hud" class="hud glass">
-        <div id="fac-bonus" class="fac-bonus"></div>
-        <div id="ult-bar" class="ult-bar"></div>
+    <!-- 底部：我方英雄卡（生命、能量；能量滿了點卡片放大招） -->
+    <div id="hud" class="hud2">
+        <div id="ult-bar" class="cards"></div>
     </div>
+    <div id="pause-menu" class="pause-menu"></div>
 
     <div id="skill-cut" class="skill-cut"><div class="sc-face"><img alt=""></div><div class="sc-text"><div class="sc-name"></div><div class="sc-hero"></div></div></div>
     <div id="ult" class="ult">
