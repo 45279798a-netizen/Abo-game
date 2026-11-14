@@ -38,6 +38,9 @@ const teams = {
     '暗夜 3＋王國 2': ['arthur', 'valkyrie', 'shadow', 'dart', 'lilith'],
     '王國 3＋翠林 2': ['arthur', 'valkyrie', 'reina', 'faye', 'lyra'],
     '翠林 3＋教團 2': ['gaia', 'valkyrie', 'faye', 'lyra', 'zeke'].map((x, i) => i === 1 ? 'elara' : x),
+    '荒原 4＋教團 1': ['thorin', 'gideon', 'fang', 'noah', 'elara'],
+    '荒原 4＋翠林 1': ['thorin', 'gideon', 'fang', 'noah', 'lyra'],
+    '低稀有度（R／SR 為主）': ['militia', 'monk', 'thorin', 'fang', 'draven'],
     '四陣營混搭（沒有陣營被動）': ['arthur', 'gaia', 'zeke', 'shadow', 'faye'],
 };
 
