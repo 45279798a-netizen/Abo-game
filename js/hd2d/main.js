@@ -6,6 +6,7 @@ import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
 import {createVfxPlayer, loadLib, isGroundEffect, categoryOf} from '../vfx/player.js';
 import createImpactFramePass from '../vfx/impact-frame.js';
 
@@ -41,6 +42,7 @@ const canvas = $('#gl');
 const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'high-performance'});
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NoToneMapping;
+canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); console.warn('WebGL 內容遺失（顯示卡記憶體不足）'); }, false);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 400);
 const vfx = createVfxPlayer(scene, {maxActive: 4, sizeScale: 0.85});
@@ -59,6 +61,15 @@ function setupPost() {
     const rt = new THREE.WebGLRenderTarget(1, 1, {samples: 4, type: THREE.HalfFloatType});
     composer = new EffectComposer(renderer, rt);
     composer.addPass(new RenderPass(scene, camera));
+    // 清掉特效偶爾算出的無效值（NaN／無限大）並限制過亮的像素：不清的話泛光會把一個壞點放大成整片閃爍的方塊
+    composer.addPass(new ShaderPass({
+        uniforms: {tDiffuse: {value: null}},
+        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+            void main(){ vec4 c = texture2D(tDiffuse, vUv);
+              if (any(isnan(c)) || any(isinf(c))) c = vec4(0.0, 0.0, 0.0, 1.0);
+              gl_FragColor = clamp(c, 0.0, 4.0); }`,
+    }));
     bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.42, 0.5, 0.94);   // 門檻高：只讓特效與高光發光，雪地不會過曝
     composer.addPass(bloom);
     try {
@@ -90,7 +101,7 @@ function triggerImpact(contact, subjectUids) {
 
 function resize() {
     const w = window.innerWidth, h = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, state.quality === 'high' ? 3 : 1.25));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, state.quality === 'high' ? 2 : 1.25));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -478,7 +489,7 @@ function setActing(uid, on) {
 function hitFlash(uid, big) {
     const r = units.get(uid);
     if (!r) return;
-    tween(260, t => { r.mat.uniforms.uFlash.value = 0.85 * (1 - t); }, x => x);
+    tween(220, t => { r.mat.uniforms.uFlash.value = (big ? 0.5 : 0.35) * (1 - t); }, x => x);
     const k = big ? 0.14 : 0.08;
     tween(240, t => { r.mesh.position.x = Math.sin(t * Math.PI * 4) * k * (1 - t); }, x => x);
 }
@@ -637,6 +648,7 @@ async function skillCutIn(u, name) {
         return;
     }
     el.style.animationDuration = '';
+    cutToken++;
     el.classList.remove('show', 'out'); void el.offsetWidth;
     el.classList.add('hold');
     const skip = makeSkip();
@@ -647,9 +659,12 @@ async function skillCutIn(u, name) {
     const d = defaultPose();
     moveCam(d.pos.clone().multiplyScalar(0.82).setY(d.pos.y), d.look, 380);
 }
+let cutToken = 0;
 function endSkillCutIn() {
     const el = $('#skill-cut');
-    if (el.classList.contains('hold')) setTimeout(() => el.classList.remove('hold', 'out'), 220);
+    const token = cutToken;
+    // 只收掉「這一次」的切入；下一位很快又放技能時，不能把新的切入一起收掉（會一閃就不見）
+    if (el.classList.contains('hold')) setTimeout(() => { if (token === cutToken) el.classList.remove('hold', 'out'); }, 220);
     state.skip = null;
 }
 
