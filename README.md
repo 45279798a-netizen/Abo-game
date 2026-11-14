@@ -62,9 +62,12 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 - 3D 特效（`js/vfx/library.js`、`vfx-src/`）：00GameDevs，MIT License（授權文字保留在檔案開頭與 `vfx-src/LICENSE.txt`）
 - Three.js 0.187.0（`vendor/three/`，含後製模組 `vendor/three/addons/`）：MIT License，見 `vendor/three/LICENSE`
 
-### 特殊匯出檔（尚未接入）
+### 獨立特效與後製
 
-`vfx-src/special/` 放的是格式不同的匯出檔，不能用 build_vfx.py 合併：
+- `js/vfx/standalone/`：自帶程式的單一匯出檔，直接在 `js/vfx/player.js` 的 `STANDALONE` 登記就能用（星焰爆破、星劍焚界）。星劍焚界是 21 秒的長篇演出，播放時加速成約 3.5 秒，用在教團大招
+- `js/vfx/impact-frame.js`：命中定格（大招命中瞬間畫面變黑白剪影），接在畫質「高」的後製流程裡；角色剪影用 `maskScene` 裡的替身繪製
+- `vfx-src/special/`：還沒接入的匯出檔。森光治癒、織光護盾、連續雷流、冰矛飛射、冰晶護盾、地面冰封、烈焰繞流都會接管整個畫面的繪製（自帶光暈），要改寫才能和現有畫面共存
 
-- `impact-frame.js`：命中定格（畫面後製效果，要接到 EffectComposer，指定角色剪影），適合大招命中瞬間
-- `verdant-restoration.js` 森光治癒、`aegis-weave.js` 織光護盾、`sustained-arc.js` 連續雷流：另一套「支援特效」程式，自帶光暈並會接管整個場景的繪製，需要另外改寫才能和現有畫面共存
+## 技能演出
+
+技能特效寫在 `js/data/heroes.js`、`enemies.js`、`factions.js` 的 `vfx`：可以是多段特效依序播放（delay、each、sky、reverse、main），`show` 是整段演出長度（1.5～3.5 秒，大招約 4～5 秒）。普攻特效依職業（近戰揮砍）與屬性（遠程飛彈）自動決定，在 `js/hd2d/main.js` 的 `BASIC_MELEE`、`BASIC_SHOT`。

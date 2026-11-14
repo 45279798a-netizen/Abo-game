@@ -25,6 +25,7 @@ export const TUNE_BY_CATEGORY = {
     shield:     {speed: 2.0, size: 0.6, cutoffAfterImpact: 1.2},
     portal:     {speed: 2.0, size: 0.6, cutoffAfterImpact: 1.2},
     environment:{speed: 1.5, size: 0.6, cutoffAfterImpact: 1.5},
+    cinematic:  {speed: 6, size: 0.45},
 };
 export const TUNE = {
     'sacred-relic-descent': {speed: 1.8, impact: 1.45, cutoff: 4.95, size: 0.62, hideObject: true, options: {spread: 0.7}},
@@ -40,15 +41,43 @@ export const TUNE = {
     'darkchain-detonation': {size: 0.35},   // 原尺寸會蓋滿整個戰場
     'billowing-airburst':   {size: 0.4},
     'golden-chain-rain':    {size: 0.5},
+    'starblade-explosion':  {size: 0.45},
+};
+
+// 獨立特效：自帶程式的單一匯出檔（不在 library.js 裡），放在 js/vfx/standalone/
+// cinematic：長篇演出，從 from 往 to 掃過去（星劍焚界），time 是原速秒數
+export const STANDALONE = {
+    'starblade-explosion': {file: './standalone/starblade-explosion.js', name: '星焰爆破', english: 'Starfire Explosion', category: 'burst', color: '#ffd35a',
+        description: '白熱火光瞬間炸開，拋出碎石與火星，留下裂紋和翻滾濃煙。', lifecycle: {start: 0.05, end: 1.93}},
+    'starblade-cataclysm': {file: './standalone/starblade-cataclysm.js', name: '星劍焚界', english: 'Starblade Cataclysm', category: 'cinematic', color: '#ffd35a',
+        description: '劍化成金色星光，升空聚成四瓣核心，再射出光束燒開熔岩裂谷。', lifecycle: {start: 13.1, end: 17.7}, length: 21},
 };
 
 let libPromise = null, presetCache = null;
 export function loadLib() {
-    if (!libPromise) libPromise = import('./library.js').then(m => { presetCache = m.PRESETS; return m; });
+    if (!libPromise) {
+        const ids = Object.keys(STANDALONE);
+        libPromise = Promise.all([import('./library.js'), ...ids.map(id => import(STANDALONE[id].file))]).then(([lib, ...mods]) => {
+            const PRESETS = {...lib.PRESETS};
+            const mod = {};
+            ids.forEach((id, i) => { mod[id] = mods[i]; PRESETS[id] = {id, ...STANDALONE[id], standalone: true}; });
+            const create = (id, o = {}) => {
+                if (!mod[id]) return lib.create(id, o);
+                // 獨立特效的 speed 上限只有 2，改用時間倍率播放
+                const rate = o.speed || 1;
+                const fx = mod[id].default({size: Math.min(2, Math.max(0.25, o.size || 1)), ...(o.color ? {color: o.color} : {})});
+                const update = fx.update.bind(fx);
+                fx.update = dt => update(dt * rate);
+                return fx;
+            };
+            presetCache = PRESETS;
+            return {create, PRESETS};
+        });
+    }
     return libPromise;
 }
 export const categoryOf = id => presetCache?.[id]?.category || null;
-export const isGroundEffect = id => !['projectile', 'beam'].includes(categoryOf(id));
+export const isGroundEffect = id => !['projectile', 'beam', 'cinematic'].includes(categoryOf(id));
 
 // scene：要放特效的場景；maxActive：同時最多幾個（大招 priority 不受限）；sizeScale：整體大小倍率
 export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
@@ -104,6 +133,22 @@ export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
                     fx.update(dt);
                     if (!a.hit && (a.t >= flight || skip.skipped)) { fx.hit(o.to); doImpact(); }
                     if (fx.finished || (a.hit && a.t - a.hitAt > 1.4)) finish(a);
+                };
+            } else if (cat === 'cinematic') {
+                // 從施放者腳下往目標掃過去：+X 朝向目標
+                const start = o.from.clone().setY(0), end = o.to.clone().setY(0);
+                const dir = end.clone().sub(start);
+                fx.group.position.copy(start);
+                fx.group.rotation.y = Math.atan2(-dir.z, dir.x);
+                const k = Math.min(2, Math.max(0.25, opts.size));
+                fx.setSweepPath?.(new THREE.Vector3(1.2 / k, 0, 0), new THREE.Vector3(Math.max(1.5, dir.length() + 2) / k, 0, 0));
+                const impactAt = life.start / rate, stopAt = life.end / rate;
+                a.tick = dt => {
+                    a.t += dt;
+                    fx.update(dt);
+                    if (a.t >= impactAt || skip.skipped) doImpact();
+                    if (skip.skipped) doStop();
+                    if (fx.finished || a.t >= stopAt + 0.9 || (a.stopAt !== null && a.t - a.stopAt > 0.3)) finish(a);
                 };
             } else if (cat === 'beam') {
                 fx.setEndpoints(o.from, o.to);

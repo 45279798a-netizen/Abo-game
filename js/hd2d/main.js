@@ -6,7 +6,8 @@ import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
-import {createVfxPlayer, loadLib, isGroundEffect} from '../vfx/player.js';
+import {createVfxPlayer, loadLib, isGroundEffect, categoryOf} from '../vfx/player.js';
+import createImpactFramePass from '../vfx/impact-frame.js';
 
 const R = window.RES;
 const Battle = window.Battle;
@@ -42,21 +43,49 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NoToneMapping;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 400);
-const vfx = createVfxPlayer(scene, {maxActive: 3, sizeScale: 0.85});
+const vfx = createVfxPlayer(scene, {maxActive: 4, sizeScale: 0.85});
 const texLoader = new THREE.TextureLoader();
 const loadTex = url => new Promise((res, rej) => texLoader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); res(t); }, undefined, rej));
 
-let composer = null, bloom = null;
+let composer = null, bloom = null, impact = null;
+// 命中定格（大招命中瞬間的黑白剪影畫面）用的遮罩場景：每個角色一個只畫剪影的替身，跟著立牌移動
+const maskScene = new THREE.Scene();
+const impactState = {contact: null};
 function setupPost() {
     composer = null;
+    impact?.dispose?.();
+    impact = null;
     if (state.quality !== 'high') return;
     const rt = new THREE.WebGLRenderTarget(1, 1, {samples: 4, type: THREE.HalfFloatType});
     composer = new EffectComposer(renderer, rt);
     composer.addPass(new RenderPass(scene, camera));
     bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.42, 0.5, 0.94);   // 門檻高：只讓特效與高光發光，雪地不會過曝
     composer.addPass(bloom);
+    try {
+        impact = createImpactFramePass();
+        composer.addPass(impact);
+    } catch (e) { console.warn('命中定格無法使用', e); impact = null; }
     composer.addPass(new OutputPass());
     resize();
+}
+
+function syncMaskProxies() {
+    scene.updateMatrixWorld();
+    for (const r of units.values()) { r.proxy.matrix.copy(r.mesh.matrixWorld); r.proxy.matrixWorld.copy(r.mesh.matrixWorld); }
+}
+// 命中定格：以 contact（世界座標）為爆心，subjects 是要變成剪影的角色
+function triggerImpact(contact, subjectUids) {
+    if (!impact || impact.active) return false;
+    syncMaskProxies();
+    const subs = subjectUids.map(id => units.get(id)?.proxy).filter(Boolean);
+    if (!subs.length) return false;
+    try {
+        impact.setSubjects(maskScene, camera, subs);
+        const n = contact.clone().project(camera);
+        if (Math.abs(n.x) > 1 || Math.abs(n.y) > 1) return false;
+        impactState.contact = contact.clone();
+        return impact.trigger({x: n.x * 0.5 + 0.5, y: n.y * 0.5 + 0.5});
+    } catch (e) { console.warn('命中定格失敗', e); return false; }
 }
 
 function resize() {
@@ -205,6 +234,9 @@ async function addUnit(u, spawn) {
     const mesh = new THREE.Mesh(geo, mat);
     const group = new THREE.Group();
     group.add(mesh);
+    const proxy = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map: tex, alphaTest: 0.4, side: THREE.DoubleSide}));
+    proxy.matrixAutoUpdate = false;
+    maskScene.add(proxy);
 
     const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({map: shadowTex, transparent: true, depthWrite: false}));
     shadow.rotation.x = -Math.PI / 2;
@@ -234,6 +266,7 @@ async function addUnit(u, spawn) {
     $('#plates').append(plate, fx);
 
     const rec = {u, group, mesh, mat, shadow, ring, base: p, h, w, plate, fx};
+    rec.proxy = proxy;
     units.set(u.uid, rec);
     if (spawn) {
         mat.uniforms.uOpacity.value = 0;
@@ -347,8 +380,8 @@ async function startBattle() {
 
 function preloadVfx(b) {
     const ids = new Set();
-    Object.keys(b.resonance).forEach(f => { const v = R.FACTIONS[f].combo?.vfx; if (v) ids.add(v.id); });
-    b.units.forEach(u => u.skills.forEach(s => { if (s.vfx) ids.add(s.vfx.id); }));
+    Object.keys(b.resonance).forEach(f => stepsOf(R.FACTIONS[f].combo?.vfx).forEach(st => ids.add(st.id)));
+    b.units.forEach(u => { u.skills.forEach(s => stepsOf(s.vfx).forEach(st => ids.add(st.id))); basicSteps(u).forEach(st => ids.add(st.id)); });
     vfx.preload(renderer, camera, [...ids]).catch(() => {});
 }
 
@@ -477,21 +510,69 @@ function centerOf(uids, chest) {
     return c.multiplyScalar(1 / Math.max(1, rs.length));
 }
 
+// 普攻特效：近戰依職業揮砍，遠程依屬性飛彈
+const BASIC_MELEE = {warrior: 'weapon-smear', tank: 'azure-sweep', assassin: 'spatial-sweep'};
+const BASIC_SHOT = {fire: 'fireball', water: 'ice-shard', wind: 'spiral-gale', light: 'plasma-bolt', dark: 'arcane-missile'};
+function basicSteps(u) {
+    const color = R.ELEMENTS[u.element]?.color;
+    if (MELEE.includes(u.role)) return [{id: BASIC_MELEE[u.role], color, size: u.boss ? 1.1 : 0.75, speed: 1.3, main: true}];
+    return [{id: BASIC_SHOT[u.element] || 'plasma-bolt', color: u.element === 'fire' ? undefined : color, size: 0.6, speed: 1.2, main: true}];
+}
+const stepsOf = v => !v ? [] : Array.isArray(v) ? v : [{...v, main: true}];
+
+// 依序播放多段特效（技能、普攻、大招共用）。回傳「主要那段命中」的 Promise；all 等全部播完（最多 maxMs）。
+// ctx：{actor, events, hits（大招指定的目標）, priority, sizeMult, speedMult, skip}
+function playSteps(steps, ctx) {
+    const b = state.battle;
+    const actor = ctx.actor;
+    const me = actor ? units.get(actor.uid) : null;
+    const hitsFrom = ctx.hits || [...new Set((ctx.events || []).filter(e => e.type === 'damage' && actor && e.srcUid === actor.uid && e.kind === 'hit').map(e => e.uid))];
+    const side = actor?.side || 'ally';
+    const foes = b.units.filter(u => u.side !== side && (u.alive || hitsFrom.includes(u.uid))).map(u => u.uid);
+    const mine = b.units.filter(u => u.side === side && u.alive).map(u => u.uid);
+    const pick = at => at === 'self' ? (actor ? [actor.uid] : mine) : at === 'friends' ? mine : at === 'foes' ? foes : (hitsFrom.length ? hitsFrom : foes);
+    const mainIdx = Math.max(0, steps.findIndex(st => st.main));
+    let resolveMain;
+    const main = new Promise(r => { resolveMain = r; });
+    const all = [];
+    const speed = (ctx.speedMult || 1) * state.speed;
+    steps.forEach((st, i) => {
+        const p = (async () => {
+            if (st.delay) await waitOrSkip(st.delay / state.speed, ctx.skip || {waiters: []});
+            await loadLib();
+            const dests = pick(st.at || 'targets').filter(id => units.get(id));
+            if (!dests.length) return;
+            const base = {color: st.color, sizeMult: (st.size || 1) * (ctx.sizeMult || 1), speedMult: (st.speed || 1) * speed, skip: ctx.skip, priority: ctx.priority};
+            const origin = me ? chestWorld(me) : centerOf(mine, true);
+            const runs = [];
+            const cat = categoryOf(st.id);
+            const groups = st.each ? dests.map(d => [d]) : [dests];
+            for (let gi = 0; gi < groups.length; gi++) {
+                const g = groups[gi];
+                if (gi && st.stagger) await sleep(st.stagger / state.speed);
+                let run;
+                if (cat === 'cinematic') run = vfx.play(st.id, {...base, from: centerOf(mine), to: centerOf(g)});
+                else if (isGroundEffect(st.id)) run = vfx.play(st.id, {...base, at: centerOf(g)});
+                else if (st.sky) { const at = centerOf(g); run = vfx.play(st.id, {...base, from: at.clone().setY(9), to: at}); }
+                else if (g.length <= 2 && !st.each) g.forEach(d => { const t = chestWorld(units.get(d)); runs.push(st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t})); });
+                else { const t = centerOf(g, true); run = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t}); }
+                if (run) runs.push(run);
+            }
+            const ok = runs.filter(Boolean);
+            if (i === mainIdx) Promise.race([Promise.all(ok.map(r => r.impact)), sleep(3500)]).then(resolveMain);
+            await Promise.all(ok.map(r => r.done));
+        })().catch(e => console.warn('特效失敗', st.id, e));
+        all.push(p);
+        if (i === mainIdx) p.then(() => resolveMain());   // 主要那段放不出來時也不要卡住
+    });
+    return {main, all: Promise.all(all)};
+}
+
 async function playSkillVfx(actor, skill, events) {
-    const v = skill?.vfx;
-    if (!v) return false;
-    await loadLib();
-    const dests = destsFor(actor, v, events);
-    if (!dests.length) return false;
-    const me = units.get(actor.uid);
-    const common = {color: v.color, sizeMult: v.size || 1, speedMult: state.speed};
-    const runs = [];
-    if (isGroundEffect(v.id)) runs.push(vfx.play(v.id, {...common, at: centerOf(dests)}));
-    else if ((v.at || 'targets') === 'targets' && dests.length <= 2) dests.forEach(d => runs.push(vfx.play(v.id, {...common, from: chestWorld(me), to: chestWorld(units.get(d))})));
-    else runs.push(vfx.play(v.id, {...common, from: chestWorld(me), to: centerOf(dests, true)}));
-    const ok = runs.filter(Boolean);
-    if (!ok.length) return false;
-    await Promise.race([Promise.all(ok.map(r => r.impact)), sleep(1600)]);
+    const steps = skill ? stepsOf(skill.vfx) : basicSteps(actor);
+    if (!steps.length) return false;
+    const run = playSteps(steps, {actor, events, priority: !!skill, speedMult: skill ? 0.8 : 1});
+    await Promise.race([run.main, sleep(skill ? 3500 : 1200)]);
     return true;
 }
 
@@ -512,8 +593,9 @@ async function performAction(actor, events, skill) {
     if (!me) return;
     const hits = [...new Set(events.filter(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit').map(e => e.uid))];
     const target = hits.length ? units.get(hits[0]) : null;
-    const hasVfx = !!skill?.vfx;
-    const melee = MELEE.includes(actor.role) && target && (hits.length === 1 || (hasVfx && isGroundEffect(skill.vfx.id)));
+    const steps = skill ? stepsOf(skill.vfx) : basicSteps(actor);
+    const first = steps.find(st => st.main) || steps[0];
+    const melee = MELEE.includes(actor.role) && target && (hits.length === 1 || (first && isGroundEffect(first.id) && (first.at || 'targets') === 'targets'));
     const color = R.ELEMENTS[actor.element]?.color || '#fde68a';
 
     if (melee) {
@@ -522,20 +604,17 @@ async function performAction(actor, events, skill) {
         const dir = new THREE.Vector3(target.group.position.x - from.x, 0, target.group.position.z - from.z);
         const stop = dir.clone().setLength(Math.max(0, dir.length() - 1.3));
         await tween(230, t => me.group.position.copy(from).addScaledVector(stop, t));
-        if (!(hasVfx && await playSkillVfx(actor, skill, events))) slash2D(target.u.uid, skill ? color : '#fde68a');
+        if (!(await playSkillVfx(actor, skill, events))) slash2D(target.u.uid, skill ? color : '#fde68a');
         await wait(90);
-        await tween(260, t => me.group.position.copy(from).addScaledVector(stop, 1 - t));
+        tween(260, t => me.group.position.copy(from).addScaledVector(stop, 1 - t));
         return;
     }
     // 施法：原地一跳
     tween(420, t => { me.mesh.position.y = Math.sin(t * Math.PI) * 0.35; });
     await wait(140);
-    if (hasVfx && await playSkillVfx(actor, skill, events)) return;
-    if (!target) { await wait(160); return; }
-    // 沒有特效的遠程普攻：用小型飛行特效（忙不過來就用 2D）
-    const run = vfx.play('plasma-bolt', {color, sizeMult: 0.6, speedMult: state.speed, from: chestWorld(me), to: chestWorld(target)});
-    if (run) await Promise.race([run.impact, sleep(700)]);
-    else slash2D(target.u.uid, color);
+    if (await playSkillVfx(actor, skill, events)) return;
+    if (target) slash2D(target.u.uid, color);
+    else await wait(160);
 }
 
 // 主動技演出：鏡頭推近施放者＋立繪切入（暫停），然後看向目標放特效
@@ -574,8 +653,8 @@ function endSkillCutIn() {
     state.skip = null;
 }
 
-// 大招：時間停止 → 立繪切入 → 鏡頭從我方身後看向敵陣 → 3D 特效 → 傷害爆發
-async function playUltimate(e) {
+// 大招（長篇演出）：時間停止 → 三人立繪切入 → 鏡頭先看我方蓄力、再推向敵陣 → 多段 3D 特效 → 命中定格＋閃光震動 → 傷害一次爆出
+async function playUltimate(e, events) {
     const f = R.FACTIONS[e.faction];
     const b = state.battle;
     e.members.forEach(m => setActing(m, true));
@@ -584,6 +663,7 @@ async function playUltimate(e) {
     const short = mode === 'short';
     const skip = makeSkip();
     state.skip = skip;
+    const t0 = performance.now();
     if (mode !== 'off') {
         const ult = $('#ult');
         ult.style.setProperty('--fc', f.color);
@@ -596,25 +676,41 @@ async function playUltimate(e) {
         ult.classList.remove('leaving', 'fxphase');
         ult.classList.add('show');
         $('#hd').classList.add('cine');
-        await waitOrSkip(short ? 700 : 1400, skip);
+        await waitOrSkip(short ? 700 : 1500, skip);
         ult.classList.add('leaving');
         await sleep(200);
         ult.classList.add('fxphase');
     }
+    const hits = [...new Set(events.filter(x => x.type === 'damage' && x.kind === 'combo').map(x => x.uid))];
     const onFoes = (f.combo.effects[0]?.target || '').startsWith('enem');
-    const dests = (onFoes ? b.enemies() : b.allies()).map(u => u.uid);
+    const dests = hits.length ? hits : (onFoes ? b.enemies() : b.allies()).map(u => u.uid);
+    const allyC = centerOf(b.allies().map(u => u.uid));
     const at = centerOf(dests);
-    // 鏡頭：沿著預設視線往目標推近（只推近、不橫移，畫面才不會超出戰場原畫的範圍）
-    const look = at.clone().setY(1.2);
-    moveCam(dollyTo(look, 0.45), look, mode === 'off' ? 300 : 650);
-    const v = f.combo.vfx;
-    const run = v ? vfx.play(v.id, {at, color: v.color, sizeMult: (v.size || 1) * 1.15, speedMult: short ? 1.8 : 1, skip, priority: true}) : null;
-    if (run) await Promise.race([run.impact, waitOrSkip(4000, skip)]);
+    const steps = stepsOf(f.combo.vfx);
+    const show = (f.combo.show || 3500) * (short ? 0.55 : 1);
+    // 鏡頭：先看我方（蓄力），再沿預設視線推向目標（只推近、不橫移，畫面才不會超出戰場原畫）
+    if (mode !== 'off' && onFoes) {
+        const lookA = allyC.clone().setY(1.4);
+        moveCam(dollyTo(lookA, 0.62), lookA, 500);
+    }
+    const run = steps.length ? playSteps(steps, {actor: b.get(e.members[0]), events, hits: dests, priority: true, sizeMult: 1.1, speedMult: short ? 1.6 : 0.85, skip}) : null;
+    const lookB = at.clone().setY(1.2);
+    setTimeout(() => moveCam(dollyTo(lookB, onFoes ? 0.45 : 0.78), lookB, short ? 500 : 1100), mode === 'off' || !onFoes ? 0 : (short ? 250 : 700));
+    if (run) await Promise.race([run.main, waitOrSkip(5000, skip)]);
     else await waitOrSkip(500, skip);
-    $('#flash').animate([{opacity: 0}, {opacity: .5}, {opacity: 0}], {duration: 380});
-    shake(0.25, 420);
+    // 命中瞬間
+    const framed = f.combo.impactFrame && mode === 'full' && !skip.skipped && triggerImpact(at.clone().setY(1.3), onFoes ? dests : e.members);
+    $('#flash').animate([{opacity: 0}, {opacity: framed ? .25 : .5}, {opacity: 0}], {duration: 380});
+    shake(0.3, 520);
+    if (framed) {   // 定格期間藏起血條、不跳傷害，結束才爆數字
+        $('#hd').classList.add('impact');
+        await sleep(420);
+        setTimeout(() => $('#hd').classList.remove('impact'), 150);
+    }
     $('#ult').classList.remove('show', 'leaving', 'fxphase');
     setTimeout(() => $('#hd').classList.remove('cine'), 500 / state.speed);
+    // 讓後段特效播完（傷害數字照常跳），整段長度依大招設定
+    state.holdUntil = Math.max(state.holdUntil || 0, t0 + show / state.speed);
     state.skip = null;
     e.members.forEach(m => setActing(m, false));
 }
@@ -641,7 +737,9 @@ async function playEvents(events, id) {
                 if (u.boss) shake(0.15, 300);
                 if (u.side === 'ally') await skillCutIn(u, e.name);
                 usedSkill = true;
-                await performAction(u, events.slice(i), u.skills.find(s => s.name === e.name));
+                const sk = u.skills.find(s => s.name === e.name);
+                if (sk?.show && state.skillMode !== 'off') state.holdUntil = performance.now() + sk.show / state.speed;
+                await performAction(u, events.slice(i), sk);
                 endSkillCutIn();
                 break;
             }
@@ -680,7 +778,7 @@ async function playEvents(events, id) {
             case 'summon': await addUnit(u, true); float(units.get(u.uid), '召喚', 'info'); break;
             case 'combo':
                 setPill(`✨ ${R.FACTIONS[e.faction].name}大招・<span class="sk">${e.name}</span>`);
-                await playUltimate(e);
+                await playUltimate(e, events.slice(i));
                 usedSkill = true;
                 break;
             case 'end':
@@ -691,6 +789,10 @@ async function playEvents(events, id) {
                 break;
         }
     }
+    // 技能／大招演出還沒播完：停在這裡讓特效播完再換下一位
+    const left = (state.holdUntil || 0) - performance.now();
+    state.holdUntil = 0;
+    if (left > 0 && id === state.runId) await sleep(Math.min(left, 4000));
     if (usedSkill && !b.over) camHome(500);
 }
 
@@ -753,6 +855,14 @@ function frame(now) {
     if (shakeState?.p) camera.position.add(new THREE.Vector3((Math.random() - 0.5) * shakeState.p, (Math.random() - 0.5) * shakeState.p, 0));
     camera.lookAt(cam.look);
     syncOverlays();
+    if (impact) {
+        if (impact.active) syncMaskProxies();
+        impact.update(dt);
+        if (impact.active && impactState.contact) {
+            const n = impactState.contact.clone().project(camera);
+            impact.setCenter({x: n.x * 0.5 + 0.5, y: n.y * 0.5 + 0.5});
+        }
+    }
     if (composer) composer.render(dt); else renderer.render(scene, camera);
     requestAnimationFrame(frame);
 }
@@ -769,7 +879,11 @@ function frame(now) {
     requestAnimationFrame(frame);
     await startBattle();
     $('#loading').classList.add('done');
-    window.__hd = {state, camera, cam, units};   // 測試用
+    window.__hd = {state, camera, cam, units,   // 測試用：__hd.ult('church')、__hd.skill(uid) 直接播演出（不影響戰鬥結果）
+        impactActive: () => !!impact?.active,
+        ult: f => playUltimate({faction: f, members: state.battle.allies().filter(u => u.faction === f).map(u => u.uid)}, []),
+        skill: async uid => { const u = state.battle.get(uid); const sk = u.skills[0]; if (sk.show) state.holdUntil = performance.now() + sk.show; if (u.side === 'ally') await skillCutIn(u, sk.name); await performAction(u, [], sk); endSkillCutIn(); },
+    };
 })().catch(e => {
     console.error(e);
     $('#loading').textContent = '這台裝置無法顯示 3D 戰場：' + e.message;

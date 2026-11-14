@@ -481,9 +481,12 @@
         return {x: avg('x'), y: avg('y') + 6, h: avg('h')};
     }
 
+    // 新格式的技能特效是多段；直式畫面只播主要那一段（長篇演出特效只在橫式畫面播）
+    const mainVfx = v => { const arr = !v ? [] : Array.isArray(v) ? v : [v]; const ok = arr.filter(x => x.id !== 'starblade-cataclysm'); return ok.find(x => x.main) || ok[0] || null; };
+
     // 技能的 3D 特效。回傳 true 表示已播放（並已等到命中瞬間），false 表示沒有特效或播不了
     async function playSkillVfx(actor, skill, events) {
-        const v = skill?.vfx;
+        const v = mainVfx(skill?.vfx);
         if (!v || !window.VFX3D) return false;
         const b = state.battle;
         const hits = [...new Set(events.filter(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit').map(e => e.uid))];
@@ -517,10 +520,11 @@
         if (!rec) return;
         const el = rec.sprite;
         const color = R.ELEMENTS[actor.element]?.color;
-        const hasVfx = isSkill && skill.vfx && window.VFX3D?.category(skill.vfx.id);
+        const mv = isSkill ? mainVfx(skill.vfx) : null;
+        const hasVfx = mv && window.VFX3D?.category(mv.id);
         const targets = [...new Set(events.filter(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit').map(e => e.uid))];
         const tgt = firstHit ? chest(firstHit.uid) : null, me = sprites.get(actor.uid);
-        const groundFx = hasVfx && !['projectile', 'beam'].includes(window.VFX3D.category(skill.vfx.id));
+        const groundFx = hasVfx && !['projectile', 'beam'].includes(window.VFX3D.category(mv.id));
         const lunge = MELEE.includes(actor.role) && tgt && (targets.length === 1 || groundFx);
 
         if (lunge) {
@@ -549,8 +553,8 @@
         const ids = new Set();
         const counts = {};
         b.units.filter(u => u.side === 'ally').forEach(u => { counts[u.faction] = (counts[u.faction] || 0) + 1; });
-        Object.keys(b.resonance).forEach(f => { const v = R.FACTIONS[f].combo?.vfx; if (v) ids.add(v.id); });
-        b.units.forEach(u => u.skills.forEach(s => { if (s.vfx) ids.add(s.vfx.id); }));
+        Object.keys(b.resonance).forEach(f => { const v = mainVfx(R.FACTIONS[f].combo?.vfx); if (v) ids.add(v.id); });
+        b.units.forEach(u => u.skills.forEach(s => { const v = mainVfx(s.vfx); if (v) ids.add(v.id); }));
         return [...ids];
     }
 
@@ -620,8 +624,9 @@
 
         // 2. 特效：有 3D 特效就播 3D，沒有就用 2D 備用演出
         const at = comboAnchor(f.combo);
-        const run = (f.combo.vfx && window.VFX3D)
-            ? window.VFX3D.play(f.combo.vfx.id, {at, color: f.combo.vfx.color, sizeMult: f.combo.vfx.size || 1, speedMult: short ? 1.8 : 1, skip, priority: true})
+        const cv = mainVfx(f.combo.vfx);
+        const run = (cv && window.VFX3D)
+            ? window.VFX3D.play(cv.id, {at, color: cv.color, sizeMult: cv.size || 1, speedMult: short ? 1.8 : 1, skip, priority: true})
             : null;
         if (run) {
             await Promise.race([run.impact, waitOrSkip(4000, skip)]);

@@ -66,16 +66,18 @@
 (function () {
     const R = window.RES;
     const $ = s => document.querySelector(s);
-    const CAT = {all: '全部', projectile: '飛行', beam: '光束', area: '法陣', burst: '爆炸', vortex: '旋風', smoke: '煙霧', shield: '護盾', portal: '傳送門', environment: '環境'};
+    const CAT = {all: '全部', projectile: '飛行', beam: '光束', area: '法陣', burst: '爆炸', vortex: '旋風', smoke: '煙霧', shield: '護盾', portal: '傳送門', environment: '環境', cinematic: '大招演出'};
     const BGS = ['1', '4', '6'];
     const st = {presets: {}, cat: 'all', sel: null, loop: false, side: 'foe', bg: 0, timer: null};
 
     // 哪些招式用了哪個特效
     const usage = {};
     const use = (id, label) => { (usage[id] = usage[id] || []).push(label); };
-    for (const f of Object.values(R.FACTIONS)) if (f.combo?.vfx) use(f.combo.vfx.id, `${f.name}合體技「${f.combo.name}」`);
-    for (const h of Object.values(R.HEROES)) if (h.skill?.vfx) use(h.skill.vfx.id, `${h.name}「${h.skill.name}」`);
-    for (const e of Object.values(R.ENEMIES)) (e.skills || []).forEach(s => { if (s.vfx) use(s.vfx.id, `敵方 ${e.name}「${s.name}」`); });
+    const ids = v => (!v ? [] : Array.isArray(v) ? v : [v]).map(x => x.id);
+    for (const f of Object.values(R.FACTIONS)) ids(f.combo?.vfx).forEach(id => use(id, `${f.name}大招「${f.combo.name}」`));
+    for (const h of Object.values(R.HEROES)) ids(h.skill?.vfx).forEach(id => use(id, `${h.name}「${h.skill.name}」`));
+    for (const e of Object.values(R.ENEMIES)) (e.skills || []).forEach(s => ids(s.vfx).forEach(id => use(id, `敵方 ${e.name}「${s.name}」`)));
+    ['weapon-smear', 'azure-sweep', 'spatial-sweep', 'fireball', 'ice-shard', 'spiral-gale', 'plasma-bolt', 'arcane-missile'].forEach(id => use(id, '普攻'));
 
     // 示範用的角色：我方 2 人、敵方 3 人
     const cast = [
@@ -150,7 +152,7 @@
         const allies = cast.filter(c => c.side === 'ally'), foes = cast.filter(c => c.side === 'enemy');
         const caster = st.side === 'foe' ? allies[0] : foes[1];
         const targets = st.side === 'foe' ? foes : allies;
-        const onGround = p.category !== 'projectile' && p.category !== 'beam';
+        const onGround = !['projectile', 'beam', 'cinematic'].includes(p.category);
         const run = onGround
             ? VFX3D.play(p.id, {at: center(targets)})
             : VFX3D.play(p.id, {from: pt(caster), to: pt(targets[1] || targets[0])});

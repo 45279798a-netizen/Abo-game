@@ -71,3 +71,6 @@ html, body { background: #000; overflow: hidden; }
 #hd .hud, #hd .timeline, #hd .turn-pill, #hd .hd-top-left, #hd .hd-top-right, #hd .plates { transition: opacity .25s; }
 #hd.cine .hud, #hd.cine .timeline, #hd.cine .turn-pill, #hd.cine .hd-top-left, #hd.cine .hd-top-right { opacity: 0; pointer-events: none; }
 #hd.cine .hplate { opacity: .35; }
+
+/* 命中定格期間：畫面變成黑白剪影，血條與介面先藏起來 */
+#hd.impact #plates, #hd.impact .hud, #hd.impact #turn-pill { opacity: 0; transition: none; }

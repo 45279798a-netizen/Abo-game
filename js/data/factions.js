@@ -1,4 +1,5 @@
-// 陣營：只負責連攜。同陣營英雄接連出手形成連鎖，連到 3 人觸發合體技。
+// 陣營：只負責大招。隊伍裡同陣營 3 人以上就有共鳴條，集滿可放大招（合體技）。
+// combo.vfx：大招的多段特效（格式同 heroes.js 的技能 vfx）；show：演出長度（毫秒）；impactFrame：命中時畫面定格。
 // 新增陣營 = 在這裡加一筆（名稱、顏色、合體技）。
 window.RES = window.RES || {};
 
@@ -6,7 +7,7 @@ RES.FACTIONS = {
     kingdom: {
         name: '獅心王國', short: '王國', color: '#60a5fa',
         combo: {
-            vfx: {id: 'magic-barrier', color: '#93c5fd', size: 1.8},
+            show: 4200, vfx: [{id: 'astral-gate', at: 'friends', color: '#fde68a', size: 1.4}, {id: 'radiant-beam', at: 'friends', sky: true, color: '#93c5fd', delay: 700}, {id: 'magic-barrier', at: 'friends', color: '#93c5fd', size: 1.8, delay: 1000, main: true}, {id: 'prism-guard', at: 'friends', size: 1.5, delay: 1300}],
             name: '王國號令', desc: '全隊獲得最大生命 15% 的護盾，攻擊 +20%（2 回合）',
             effects: [
                 {type: 'shield', target: 'allies', pctMaxHp: 0.15},
@@ -17,7 +18,7 @@ RES.FACTIONS = {
     church: {
         name: '聖光教團', short: '教團', color: '#facc15',
         combo: {
-            vfx: {id: 'sacred-relic-descent'},   // 3D 大招特效（特效庫 id）；沒填就用 2D 演出
+            show: 4800, impactFrame: true, vfx: [{id: 'starblade-cataclysm', at: 'foes', main: true}, {id: 'starblade-explosion', at: 'foes', size: 1.2, delay: 2250}, {id: 'healing-field', at: 'friends', color: '#fde68a', delay: 2700}],
             name: '神聖審判', desc: '對全體敵人造成 160% 傷害（對亡靈天災 +30%），並淨化我方全體 1 個減益',
             effects: [
                 {type: 'damage', target: 'enemies', mult: 1.6, bonusVsFaction: {undead: 0.3}},
@@ -28,7 +29,7 @@ RES.FACTIONS = {
     forest: {
         name: '翠林盟約', short: '翠林', color: '#34d399',
         combo: {
-            vfx: {id: 'wind-vortex', size: 1.8},
+            show: 4200, impactFrame: true, vfx: [{id: 'painterly-grass', at: 'foes', size: 1.2}, {id: 'wind-vortex', at: 'foes', size: 1.8, delay: 300}, {id: 'thorn-crown', at: 'foes', each: true, delay: 900, stagger: 120, main: true}, {id: 'binding-curse', at: 'foes', color: '#34d399', size: 1.4, delay: 1100}],
             name: '森林纏繞', desc: '對全體敵人造成 90% 傷害，拉條 35%，並減速 2 回合',
             effects: [
                 {type: 'damage', target: 'enemies', mult: 0.9},
@@ -40,7 +41,7 @@ RES.FACTIONS = {
     wild: {
         name: '荒原部族', short: '荒原', color: '#f87171',
         combo: {
-            vfx: {id: 'fire-vortex', size: 1.6},
+            show: 3800, vfx: [{id: 'fire-vortex', at: 'friends', size: 1.6, main: true}, {id: 'flame-surge', at: 'friends', size: 1.2, delay: 500}, {id: 'magma-fissure', at: 'friends', delay: 900}],
             name: '戰嚎', desc: '全隊攻擊 +30%（2 回合），觸發者立即再行動一次',
             effects: [
                 {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
@@ -51,7 +52,7 @@ RES.FACTIONS = {
     night: {
         name: '暗夜結社', short: '暗夜', color: '#a78bfa',
         combo: {
-            vfx: {id: 'energy-vortex', color: '#7c3aed', size: 1.6},
+            show: 4200, impactFrame: true, vfx: [{id: 'black-hole', at: 'targets', each: true, size: 0.6}, {id: 'shadow-glaive', color: '#a78bfa', delay: 900}, {id: 'darkchain-detonation', at: 'targets', each: true, delay: 1200, main: true}],
             name: '月蝕處決', desc: '對生命比例最低的 2 個敵人造成 260% 傷害，生命低於 20% 直接斬殺（首領除外）',
             effects: [
                 {type: 'damage', target: 'enemyLowest2', mult: 2.6, execute: 0.2},

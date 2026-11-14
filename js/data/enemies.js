@@ -2,7 +2,7 @@
 window.RES = window.RES || {};
 
 // 全體敵人能力倍率（調整整體難度用）
-RES.ENEMY_SCALE = {hp: 1.5, atk: 1.2, def: 1.0};
+RES.ENEMY_SCALE = {hp: 1.6, atk: 1.3, def: 1.0};
 
 RES.ENEMIES = {
     skeleton: {
@@ -17,7 +17,7 @@ RES.ENEMIES = {
         name: '冰霜巫妖', faction: 'undead', element: 'water', role: 'mage', img: 'm10',
         stats: {hp: 1050, atk: 210, def: 70, spd: 100},
         skills: [{
-            name: '寒冰箭', cd: 3, vfx: {id: 'ice-shard'}, desc: '單體 130% 傷害，35% 機率凍結 1 回合',
+            name: '寒冰箭', cd: 3, show: 1800, vfx: [{id: 'frost-wheel', main: true}, {id: 'ice-shatter', delay: 250, size: 0.7}], desc: '單體 130% 傷害，35% 機率凍結 1 回合',
             effects: [
                 {type: 'damage', target: 'enemy', mult: 1.3},
                 {type: 'status', target: 'same', status: 'freeze', turns: 1, chance: 0.35},
@@ -33,7 +33,7 @@ RES.ENEMIES = {
         name: '墓穴蝠', faction: 'undead', element: 'wind', role: 'assassin', img: 'm4',
         stats: {hp: 900, atk: 180, def: 60, spd: 128},
         skills: [{
-            name: '吸血俯衝', cd: 3, desc: '單體 120% 傷害，並拉條 25%',
+            name: '吸血俯衝', cd: 3, show: 1600, vfx: [{id: 'shadow-glaive', color: '#ef4444', main: true}], desc: '單體 120% 傷害，並拉條 25%',
             effects: [
                 {type: 'damage', target: 'enemy', mult: 1.2},
                 {type: 'pull', target: 'same', pct: 0.25},
@@ -44,7 +44,7 @@ RES.ENEMIES = {
         name: '亡靈督軍', faction: 'undead', element: 'dark', role: 'tank', img: 'h_s1_ssr1', elite: true,
         stats: {hp: 3200, atk: 190, def: 180, spd: 88, res: 0.1},
         skills: [{
-            name: '死亡怒吼', cd: 3, desc: '嘲諷 2 回合，獲得最大生命 20% 護盾',
+            name: '死亡怒吼', cd: 3, show: 1800, vfx: [{id: 'smoke-column', at: 'self', color: '#6b21a8', size: 0.8, main: true}, {id: 'shockwave', at: 'self', color: '#a855f7', delay: 200}], desc: '嘲諷 2 回合，獲得最大生命 20% 護盾',
             effects: [
                 {type: 'status', target: 'self', status: 'taunt', turns: 2, chance: 1},
                 {type: 'shield', target: 'self', pctMaxHp: 0.2},
@@ -55,7 +55,7 @@ RES.ENEMIES = {
         name: '瘟疫使者', faction: 'undead', element: 'fire', role: 'mage', img: 'h_s1_ssr2', elite: true,
         stats: {hp: 1800, atk: 230, def: 90, spd: 104, res: 0.1},
         skills: [{
-            name: '瘟疫之雲', cd: 3, vfx: {id: 'fireball', at: 'foes'}, desc: '全體 60% 傷害，60% 機率中毒 2 回合',
+            name: '瘟疫之雲', cd: 3, show: 2200, vfx: [{id: 'venom-stream', at: 'foes', main: true}, {id: 'ground-fog', at: 'foes', color: '#86efac', delay: 300, size: 1.2}], desc: '全體 60% 傷害，60% 機率中毒 2 回合',
             effects: [
                 {type: 'damage', target: 'enemies', mult: 0.6},
                 {type: 'status', target: 'same', status: 'poison', turns: 2, chance: 0.6, dotMult: 0.3},
@@ -67,11 +67,11 @@ RES.ENEMIES = {
         stats: {hp: 10500, atk: 250, def: 150, spd: 100, res: 0.3},
         skills: [
             {
-                name: '骸骨召喚', cd: 5, desc: '召喚 2 隻高速骸骨僕從插進時間軸，打斷連攜',
+                name: '骸骨召喚', cd: 5, show: 2400, vfx: [{id: 'black-hole', at: 'self', size: 0.7, main: true}], desc: '召喚 2 隻高速骸骨僕從插進時間軸',
                 effects: [{type: 'summon', unit: 'boneMinion', count: 2, atb: 0.7}],
             },
             {
-                name: '死亡凍結', cd: 3, vfx: {id: 'frost-field', at: 'foes', size: 1.4}, desc: '全體 80% 傷害並拉條 30%，隨機 1 人 60% 機率凍結',
+                name: '死亡凍結', cd: 3, show: 2800, vfx: [{id: 'frost-field', at: 'foes', size: 1.4}, {id: 'frost-lance-rain', at: 'foes', delay: 350, size: 1.1, main: true}], desc: '全體 80% 傷害並拉條 30%，隨機 1 人 60% 機率凍結',
                 effects: [
                     {type: 'damage', target: 'enemies', mult: 0.8},
                     {type: 'pull', target: 'same', pct: 0.3},
@@ -79,7 +79,7 @@ RES.ENEMIES = {
                 ],
             },
             {
-                name: '瘟疫新星', cd: 5, desc: '全體中毒 3 回合',
+                name: '瘟疫新星', cd: 5, show: 2600, vfx: [{id: 'darkchain-detonation', at: 'foes', main: true}, {id: 'venom-pool', at: 'foes', each: true, delay: 400, size: 0.7}], desc: '全體中毒 3 回合',
                 effects: [{type: 'status', target: 'enemies', status: 'poison', turns: 3, chance: 1, dotMult: 0.25}],
             },
         ],
