@@ -88,19 +88,21 @@ RES.ENEMIES = {
 };
 
 // 原型的三場戰鬥。rows：front 最多 2 格、back 最多 3 格（首領也佔 1 格）
+// bg：直式版背景（assets/bg/）；bgHD：橫式版戰場原畫（assets/hd/land_*.webp）
+// 其他橫式戰場（留給主線）：nightcity 暗夜之城、tundra 荒原、icefort 冰冠要塞
 RES.ENCOUNTERS = [
     {
-        id: 'vanguard', name: '亡靈先鋒', difficulty: '簡單', power: 1.0, bg: '1',
+        id: 'vanguard', name: '亡靈先鋒', difficulty: '簡單', power: 1.0, bg: '1', bgHD: 'border',
         desc: '混合屬性的雜兵，先熟悉行動條與連攜',
         front: ['skeleton', 'corpseBomber'], back: ['cryptBat', 'frostLich', 'skeleton'],
     },
     {
-        id: 'plague', name: '瘟疫軍團', difficulty: '普通', power: 1.25, bg: '4',
+        id: 'plague', name: '瘟疫軍團', difficulty: '普通', power: 1.25, bg: '4', bgHD: 'forest',
         desc: '督軍會嘲諷，瘟疫使者讓全隊中毒',
         front: ['warlord', 'skeleton'], back: ['plagueBringer', 'frostLich', 'cryptBat'],
     },
     {
-        id: 'lich', name: '巫妖王', difficulty: '首領', power: 1.0, bg: '6',
+        id: 'lich', name: '巫妖王', difficulty: '首領', power: 1.0, bg: '6', bgHD: 'throne',
         desc: '會召喚骷髏打斷連攜、凍結並拉條，光屬性與群攻有利',
         front: ['lichKing'], back: ['frostLich', 'frostLich'],
     },

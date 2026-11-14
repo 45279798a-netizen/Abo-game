@@ -33,7 +33,9 @@ node tools/sim.js 300
 編隊畫面的「戰鬥畫面」選「橫式 HD-2D」，開始戰鬥會進入 `hd2d.html`：
 2D 全身立繪當成立牌放在 3D 戰場上（`js/hd2d/main.js`），有遠景柔焦、霧、泛光，鏡頭會在主動技與大招時移動，特效與角色在同一個 3D 場景裡。
 
-- 背景：`assets/hd/bg*_far.webp`（遠景）與 `bg*_ground.webp`（地面），由原本的直式背景裁切而成；之後換成橫式原畫效果會更好
+- 背景：16:9 橫式戰場原畫 `assets/hd/land_*.webp`（原檔在 `images/land_*.jpg`），用「投影貼圖」從預設鏡頭投到 3D 地面與遠方牆面：預設視角就是原畫本身，鏡頭推近時仍有立體感。鏡頭只做推近、不大幅橫移，避免看到原畫以外的範圍
+- 目前有 6 張：border 王國邊境、forest 翠林、nightcity 暗夜之城、tundra 荒原、icefort 冰冠要塞、throne 巫妖王王座。關卡在 `js/data/enemies.js` 用 `bgHD` 指定
+- 新增背景：生成 16:9、下半部空曠、無人物的原畫，放進 `images/`，轉成 2048 寬的 webp 放到 `assets/hd/land_名稱.webp`
 - 畫質「高」會開泛光（bloom），手機跑不動可切「低」
 - 戰鬥規則與直式版共用 `js/core/battle.js`；特效播放共用 `js/vfx/player.js`
 

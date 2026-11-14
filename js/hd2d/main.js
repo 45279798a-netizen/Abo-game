@@ -1,5 +1,5 @@
 // 橫向 HD-2D 戰鬥畫面（試做）
-// 把 2D 全身立繪當成「立牌」放進真正的 3D 場景：遠景（柔焦）、地面、霧、泛光，鏡頭可以移動。
+// 把 2D 全身立繪當成「立牌」放進 3D 場景；戰場原畫用投影貼圖鋪在地面與遠方，鏡頭可以移動，有泛光。
 // 戰鬥規則完全沿用 js/core/battle.js，這裡只負責畫面與演出。
 import * as THREE from 'three';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
@@ -66,46 +66,63 @@ function resize() {
     composer?.setSize(w, h);
     composer?.setPixelRatio(renderer.getPixelRatio());
     $('#rotate-hint').classList.toggle('show', h > w && !state.rotateOk);
+    updateProjector();
 }
 window.addEventListener('resize', resize);
 
-// 環境：
-//   地面：原圖下半部，鋪在戰場範圍（高解析度，近看也清楚），外圍用同色大平面延伸
-//   遠景：原圖上半部（已預先柔焦，模擬景深），立在地面盡頭
-//   霧：讓遠處自然融進遠景
-const FIELD = {w: 60, near: 10, far: -14};   // 地面範圍（x 寬度、z 從近到遠）；寬度超過原圖比例的部分用鏡像延伸
+// 環境（投影貼圖）：
+//   把一整張 16:9 橫式戰場原畫，從「預設鏡頭」的位置投影到 3D 地面與遠方牆面上。
+//   預設視角看到的就是原畫本身（不變形）；鏡頭移動時地面仍貼著地，有立體感。
+const PROJ_VS = `uniform mat4 projMatrix; varying vec4 vProj;
+void main(){ vec4 wp = modelMatrix * vec4(position, 1.0); vProj = projMatrix * wp; gl_Position = projectionMatrix * viewMatrix * wp; }`;
+const PROJ_FS = `uniform sampler2D map; varying vec4 vProj;
+void main(){
+  vec2 uv = vProj.w > 0.0 ? vProj.xy / vProj.w * 0.5 + 0.5 : vec2(0.5, 0.0);
+  gl_FragColor = vec4(texture2D(map, clamp(uv, 0.002, 0.998)).rgb, 1.0);
+  #include <colorspace_fragment>
+}`;
+const projector = new THREE.PerspectiveCamera();
+let projMat = null, bgAspect = 16 / 9;
+
+function updateProjector() {
+    if (!projMat) return;
+    const d = defaultPose();
+    projector.position.copy(d.pos);
+    projector.lookAt(d.look);
+    // 讓原畫「填滿」畫面：螢幕比原畫寬就對齊左右，比原畫窄就對齊上下
+    const screenAspect = window.innerWidth / window.innerHeight;
+    const vHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const hHalf = vHalf * screenAspect;
+    const projVHalf = screenAspect >= bgAspect ? hHalf / bgAspect : vHalf;
+    projector.fov = THREE.MathUtils.radToDeg(Math.atan(projVHalf) * 2);
+    projector.aspect = bgAspect;
+    projector.updateProjectionMatrix();
+    projector.updateMatrixWorld();
+    projMat.uniforms.projMatrix.value.multiplyMatrices(projector.projectionMatrix, projector.matrixWorldInverse);
+}
+
 async function buildEnvironment(bgKey) {
-    const [far, ground] = await Promise.all([loadTex(`assets/hd/bg${bgKey}_far.webp`), loadTex(`assets/hd/bg${bgKey}_ground.webp`)]);
-    const groundColor = new THREE.Color(sampleColor(ground.image, 0.5, 0.15));
-    const skyColor = new THREE.Color(sampleColor(far.image, 0.5, 0.05));
-    scene.background = skyColor;
-    scene.fog = new THREE.Fog(groundColor.clone().lerp(skyColor, 0.3), 26, 60);
-
-    const depth = FIELD.near - FIELD.far;
-    ground.wrapS = THREE.MirroredRepeatWrapping;
-    ground.repeat.set(FIELD.w / (depth * ground.image.width / ground.image.height), 1);
-    ground.offset.x = (1 - ground.repeat.x) / 2;
-    const gMesh = new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w, depth), new THREE.MeshBasicMaterial({map: ground}));
-    gMesh.rotation.x = -Math.PI / 2;
-    gMesh.position.set(0, 0, (FIELD.near + FIELD.far) / 2);
-    scene.add(gMesh);
-    // 外圍延伸，邊緣不會露出空白
-    const outer = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshBasicMaterial({color: groundColor}));
-    outer.rotation.x = -Math.PI / 2;
-    outer.position.y = -0.02;
-    scene.add(outer);
-
-    const farW = 70, farH = farW * far.image.height / far.image.width;
-    const farMesh = new THREE.Mesh(new THREE.PlaneGeometry(farW, farH), new THREE.MeshBasicMaterial({map: far, fog: false}));
-    farMesh.position.set(0, farH / 2 - 1.2, FIELD.far - 0.5);
-    scene.add(farMesh);
+    const tex = await loadTex(`assets/hd/land_${bgKey}.webp`);
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    bgAspect = tex.image.width / tex.image.height;
+    scene.background = new THREE.Color(sampleColor(tex.image, 0.5, 0.02));
+    projMat = new THREE.ShaderMaterial({uniforms: {map: {value: tex}, projMatrix: {value: new THREE.Matrix4()}}, vertexShader: PROJ_VS, fragmentShader: PROJ_FS});
+    // 地面
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), projMat);
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+    // 遠方牆面（接住原畫的上半部：遠景、天空）
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(240, 120), projMat);
+    wall.position.set(0, 60, -13);
+    scene.add(wall);
+    updateProjector();
 
     // 浮塵粒子，讓空氣有層次
     const n = 160, pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 30; pos[i * 3 + 1] = Math.random() * 7; pos[i * 3 + 2] = (Math.random() - 0.5) * 16; }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    motes = new THREE.Points(g, new THREE.PointsMaterial({color: 0xfff3c4, size: 0.06, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending}));
+    motes = new THREE.Points(g, new THREE.PointsMaterial({color: 0xfff3c4, size: 0.06, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending}));
     scene.add(motes);
 }
 let motes = null;
@@ -290,6 +307,11 @@ function defaultPose() {
 function moveCam(pos, look, ms = 600) {
     const p0 = cam.pos.clone(), l0 = cam.look.clone();
     return tween(ms, t => { cam.pos.lerpVectors(p0, pos, t); cam.look.lerpVectors(l0, look, t); });
+}
+// 從預設鏡頭位置往 target 推近 ratio（0～1）的距離
+function dollyTo(target, ratio) {
+    const d = defaultPose();
+    return d.pos.clone().lerp(target, ratio).add(new THREE.Vector3(0, 0.4, 0));
 }
 function camHome(ms = 600) { const d = defaultPose(); return moveCam(d.pos, d.look, ms); }
 let shakeState = null;
@@ -520,7 +542,7 @@ async function skillCutIn(u, name) {
     if (state.skillMode === 'off') return;
     if (state.skillMode === 'pause' && r) {
         const c = chestWorld(r);
-        moveCam(new THREE.Vector3(c.x + (u.side === 'ally' ? 2.2 : -2.2), c.y + 0.6, c.z + 6.5), c, 450);
+        moveCam(dollyTo(c, 0.5), c, 450);
     }
     const el = $('#skill-cut');
     el.querySelector('img').src = spriteSrc(u.img);
@@ -580,10 +602,9 @@ async function playUltimate(e) {
     const onFoes = (f.combo.effects[0]?.target || '').startsWith('enem');
     const dests = (onFoes ? b.enemies() : b.allies()).map(u => u.uid);
     const at = centerOf(dests);
-    // 鏡頭：從斜上方拉近目標，讓法陣、地面與遠景都入鏡
+    // 鏡頭：沿著預設視線往目標推近（只推近、不橫移，畫面才不會超出戰場原畫的範圍）
     const look = at.clone().setY(1.2);
-    const side = onFoes ? -1 : 1;
-    moveCam(new THREE.Vector3(at.x + side * 5.5, 4.2, at.z + 8.5), look, mode === 'off' ? 300 : 650);
+    moveCam(dollyTo(look, 0.45), look, mode === 'off' ? 300 : 650);
     const v = f.combo.vfx;
     const run = v ? vfx.play(v.id, {at, color: v.color, sizeMult: (v.size || 1) * 1.15, speedMult: short ? 1.8 : 1, skip, priority: true}) : null;
     if (run) await Promise.race([run.impact, waitOrSkip(4000, skip)]);
@@ -742,7 +763,7 @@ function frame(now) {
     setupPost();
     const d = defaultPose();
     cam.pos.copy(d.pos); cam.look.copy(d.look);
-    await buildEnvironment(enc.bg || '1');
+    await buildEnvironment(cfg.bg || enc.bgHD || 'border');
     requestAnimationFrame(frame);
     await startBattle();
     $('#loading').classList.add('done');
