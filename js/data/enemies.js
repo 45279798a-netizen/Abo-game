@@ -17,7 +17,7 @@ RES.ENEMIES = {
         name: '冰霜巫妖', faction: 'undead', element: 'water', role: 'mage', img: 'm10',
         stats: {hp: 1050, atk: 210, def: 70, spd: 100},
         skills: [{
-            name: '寒冰箭', cd: 3, desc: '單體 130% 傷害，35% 機率凍結 1 回合',
+            name: '寒冰箭', cd: 3, vfx: {id: 'ice-shard'}, desc: '單體 130% 傷害，35% 機率凍結 1 回合',
             effects: [
                 {type: 'damage', target: 'enemy', mult: 1.3},
                 {type: 'status', target: 'same', status: 'freeze', turns: 1, chance: 0.35},
@@ -55,7 +55,7 @@ RES.ENEMIES = {
         name: '瘟疫使者', faction: 'undead', element: 'fire', role: 'mage', img: 'h_s1_ssr2', elite: true,
         stats: {hp: 1800, atk: 230, def: 90, spd: 104, res: 0.1},
         skills: [{
-            name: '瘟疫之雲', cd: 3, desc: '全體 60% 傷害，60% 機率中毒 2 回合',
+            name: '瘟疫之雲', cd: 3, vfx: {id: 'fireball', at: 'foes'}, desc: '全體 60% 傷害，60% 機率中毒 2 回合',
             effects: [
                 {type: 'damage', target: 'enemies', mult: 0.6},
                 {type: 'status', target: 'same', status: 'poison', turns: 2, chance: 0.6, dotMult: 0.3},
@@ -71,7 +71,7 @@ RES.ENEMIES = {
                 effects: [{type: 'summon', unit: 'boneMinion', count: 2, atb: 0.7}],
             },
             {
-                name: '死亡凍結', cd: 3, desc: '全體 80% 傷害並拉條 30%，隨機 1 人 60% 機率凍結',
+                name: '死亡凍結', cd: 3, vfx: {id: 'charged-beam', at: 'foes', color: '#8fd3ff'}, desc: '全體 80% 傷害並拉條 30%，隨機 1 人 60% 機率凍結',
                 effects: [
                     {type: 'damage', target: 'enemies', mult: 0.8},
                     {type: 'pull', target: 'same', pct: 0.3},

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0907">
+    <title>Project Resonance · 特效圖鑑</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">{"imports": {"three": "./vendor/three/three.module.js"}}</script>
+    <style>
+        #gal { position: fixed; inset: 0; max-width: 520px; margin: 0 auto; overflow: hidden; background: #000; }
+        .g-top { position: absolute; top: calc(8px + var(--safe-top)); left: 8px; right: 8px; display: flex; gap: 6px; align-items: center; z-index: 10; }
+        .g-top a { text-decoration: none; display: grid; place-items: center; }
+        .g-title { flex: 1; padding: 6px 12px; border-radius: 18px; font-weight: 700; color: var(--gold-hi); font-size: 14px; }
+        .g-title small { color: #cbbfa8; font-weight: 400; font-size: 11px; margin-left: 4px; }
+        .g-info { position: absolute; top: calc(54px + var(--safe-top)); left: 8px; right: 8px; z-index: 10; padding: 8px 12px; }
+        .g-info h3 { margin: 0; font-size: 16px; }
+        .g-info h3 small { font-size: 11px; color: #b9ab93; font-weight: 400; margin-left: 6px; font-family: Georgia, serif; }
+        .g-info p { margin: 4px 0 0; font-size: 12px; color: #ddd2bf; line-height: 1.5; }
+        .g-info .used { color: #fcd34d; }
+        .g-info .unused { color: #8f8270; }
+        .g-panel { position: absolute; left: 8px; right: 8px; bottom: calc(8px + var(--safe-bottom)); z-index: 10; padding: 8px; max-height: 36%; display: flex; flex-direction: column; gap: 6px; }
+        .g-tabs, .g-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+        .g-tabs button, .g-acts button { font-size: 12px; padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border); background: rgba(34,24,17,.85); }
+        .g-tabs button.on, .g-acts button.on { border-color: var(--gold); color: var(--gold-hi); }
+        .g-list { overflow-y: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .g-item { text-align: left; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: rgba(24,17,12,.9); font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+        .g-item.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+        .g-item i { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 6px currentColor; }
+        .g-item .tag { margin: 0 0 0 auto; font-size: 10px; padding: 0 5px; }
+        .g-msg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 9; color: #fff; background: rgba(0,0,0,.6); padding: 8px 14px; border-radius: 10px; font-size: 13px; display: none; }
+    </style>
+</head>
+<body>
+<div id="gal">
+    <div id="scene" class="scene">
+        <div id="scene-bg" class="scene-bg"></div>
+        <div class="scene-shade"></div>
+        <div id="stage-sprites" class="stage"></div>
+    </div>
+    <div class="g-top">
+        <a href="index.html" class="g-btn" aria-label="返回">✕</a>
+        <div class="g-title glass">特效圖鑑<small id="g-count"></small></div>
+        <button id="g-bg" class="g-btn wide">換背景</button>
+    </div>
+    <div id="g-info" class="g-info glass"><h3>載入中…</h3></div>
+    <div id="g-msg" class="g-msg"></div>
+    <div class="g-panel glass">
+        <div class="g-tabs" id="g-tabs"></div>
+        <div class="g-acts">
+            <button id="g-replay">▶ 重播</button>
+            <button id="g-loop">🔁 自動重播</button>
+            <button id="g-side">對準：敵方</button>
+        </div>
+        <div id="g-list" class="g-list"></div>
+    </div>
+</div>
+
+<script src="js/data/elements.js"></script>
+<script src="js/data/factions.js"></script>
+<script src="js/data/heroes.js"></script>
+<script src="js/data/enemies.js"></script>
+<script>
+// 特效圖鑑：列出特效庫裡全部特效，點一下在戰場上預覽，並顯示目前被哪一招使用。
+(function () {
+    const R = window.RES;
+    const $ = s => document.querySelector(s);
+    const CAT = {all: '全部', projectile: '飛行', beam: '光束', area: '範圍'};
+    const BGS = ['1', '4', '6'];
+    const st = {presets: {}, cat: 'all', sel: null, loop: false, side: 'foe', bg: 0, timer: null};
+
+    // 哪些招式用了哪個特效
+    const usage = {};
+    const use = (id, label) => { (usage[id] = usage[id] || []).push(label); };
+    for (const f of Object.values(R.FACTIONS)) if (f.combo?.vfx) use(f.combo.vfx.id, `${f.name}合體技「${f.combo.name}」`);
+    for (const h of Object.values(R.HEROES)) if (h.skill?.vfx) use(h.skill.vfx.id, `${h.name}「${h.skill.name}」`);
+    for (const e of Object.values(R.ENEMIES)) (e.skills || []).forEach(s => { if (s.vfx) use(s.vfx.id, `敵方 ${e.name}「${s.name}」`); });
+
+    // 示範用的角色：我方 2 人、敵方 3 人
+    const cast = [
+        {img: 'h_zeke', side: 'ally', fx: 0.3, fy: 0.62, s: 19},
+        {img: 'h_valkyrie', side: 'ally', fx: 0.7, fy: 0.62, s: 19},
+        {img: 'm5', side: 'enemy', fx: 0.22, fy: 0.4, s: 14},
+        {img: 'm10', side: 'enemy', fx: 0.5, fy: 0.36, s: 14},
+        {img: 'm14', side: 'enemy', fx: 0.78, fy: 0.4, s: 14},
+    ];
+
+    function layout() {
+        const sc = $('#scene');
+        const W = sc.clientWidth, H = sc.clientHeight, u = Math.min(H, W * 1.85) / 100;
+        $('#stage-sprites').innerHTML = '';
+        for (const c of cast) {
+            c.x = c.fx * W; c.y = c.fy * H; c.h = c.s * u;
+            const d = document.createElement('div');
+            d.className = `sprite ${c.side}`;
+            d.style.cssText = `--s:${c.s};--u:${u}px;left:${c.x}px;top:${c.y}px;z-index:${Math.round(c.y)}`;
+            d.innerHTML = `<div class="shadow"></div><div class="body"><img src="assets/sprites/${c.img}.webp" alt=""></div>`;
+            $('#stage-sprites').appendChild(d);
+        }
+    }
+    const pt = c => ({x: c.x, y: c.y, h: c.h});
+    const center = list => ({x: list.reduce((s, c) => s + c.x, 0) / list.length, y: list.reduce((s, c) => s + c.y, 0) / list.length + 6, h: list[0].h});
+
+    function setBg() { $('#scene-bg').style.backgroundImage = `url(assets/bg/${BGS[st.bg]}.webp)`; }
+
+    function renderTabs() {
+        $('#g-tabs').innerHTML = '';
+        for (const [k, name] of Object.entries(CAT)) {
+            const n = k === 'all' ? Object.keys(st.presets).length : Object.values(st.presets).filter(p => p.category === k).length;
+            const b = document.createElement('button');
+            b.className = st.cat === k ? 'on' : '';
+            b.textContent = `${name} ${n}`;
+            b.onclick = () => { st.cat = k; renderTabs(); renderList(); };
+            $('#g-tabs').appendChild(b);
+        }
+    }
+
+    function renderList() {
+        $('#g-list').innerHTML = '';
+        const items = Object.values(st.presets).filter(p => st.cat === 'all' || p.category === st.cat);
+        for (const p of items) {
+            const b = document.createElement('button');
+            b.className = 'g-item' + (st.sel === p.id ? ' sel' : '');
+            b.innerHTML = `<i style="background:${p.color};color:${p.color}"></i>${p.name}${usage[p.id] ? '<span class="tag">使用中</span>' : ''}`;
+            b.onclick = () => select(p.id);
+            $('#g-list').appendChild(b);
+        }
+    }
+
+    function renderInfo() {
+        const p = st.presets[st.sel];
+        if (!p) return;
+        const used = usage[p.id];
+        $('#g-info').innerHTML = `<h3 style="color:${p.color}">${p.name}<small>${p.english || ''}・${CAT[p.category] || p.category}</small></h3>
+            <p>${p.description || ''}</p>
+            <p class="${used ? 'used' : 'unused'}">${used ? '使用於：' + used.join('、') : '目前還沒有招式使用'}</p>`;
+    }
+
+    function select(id) {
+        st.sel = id;
+        renderList();
+        renderInfo();
+        playSel();
+    }
+
+    function playSel() {
+        const p = st.presets[st.sel];
+        if (!p) return;
+        const allies = cast.filter(c => c.side === 'ally'), foes = cast.filter(c => c.side === 'enemy');
+        const caster = st.side === 'foe' ? allies[0] : foes[1];
+        const targets = st.side === 'foe' ? foes : allies;
+        const run = p.category === 'area'
+            ? VFX3D.play(p.id, {at: center(targets)})
+            : VFX3D.play(p.id, {from: pt(caster), to: pt(targets[1] || targets[0])});
+        if (!run) { msg('裝置不支援 3D 特效，或同時播放太多個'); return; }
+        clearTimeout(st.timer);
+        run.done.then(() => { if (st.loop) st.timer = setTimeout(playSel, 400); });
+    }
+
+    function msg(t) {
+        const m = $('#g-msg');
+        m.textContent = t;
+        m.style.display = 'block';
+        setTimeout(() => { m.style.display = 'none'; }, 1800);
+    }
+
+    async function init() {
+        layout();
+        setBg();
+        if (!VFX3D.available()) { $('#g-info').innerHTML = '<h3>這台裝置無法顯示 3D 特效</h3>'; return; }
+        st.presets = await VFX3D.list();
+        $('#g-count').textContent = `${Object.keys(st.presets).length} 種`;
+        renderTabs();
+        select(Object.keys(st.presets)[0]);
+    }
+
+    $('#g-replay').onclick = playSel;
+    $('#g-loop').onclick = e => { st.loop = !st.loop; e.target.classList.toggle('on', st.loop); if (st.loop) playSel(); };
+    $('#g-side').onclick = e => { st.side = st.side === 'foe' ? 'friend' : 'foe'; e.target.textContent = `對準：${st.side === 'foe' ? '敵方' : '我方'}`; playSel(); };
+    $('#g-bg').onclick = () => { st.bg = (st.bg + 1) % BGS.length; setBg(); };
+    window.addEventListener('resize', layout);
+    window.galleryPlay = id => select(id);   // 測試用
+    if (window.VFX3D) init(); else window.addEventListener('vfx3d-ready', init, {once: true});
+})();
+</script>
+<script type="module" src="js/vfx/stage3d.js"></script>
+</body>
+</html>

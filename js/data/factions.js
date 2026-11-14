@@ -16,7 +16,7 @@ RES.FACTIONS = {
     church: {
         name: '聖光教團', short: '教團', color: '#facc15',
         combo: {
-            vfx: 'sacred-relic',   // 3D 大招特效（js/vfx/stage3d.js 登記的名稱）；沒填就用 2D 演出
+            vfx: {id: 'sacred-relic-descent'},   // 3D 大招特效（特效庫 id）；沒填就用 2D 演出
             name: '神聖審判', desc: '對全體敵人造成 160% 傷害（對亡靈天災 +30%），並淨化我方全體 1 個減益',
             effects: [
                 {type: 'damage', target: 'enemies', mult: 1.6, bonusVsFaction: {undead: 0.3}},

@@ -1,25 +1,45 @@
-// 3D 特效層：在 2D 戰場上疊一層透明的 WebGL 畫布，用來播放 Three.js 特效（大招演出用）。
-// 新增特效：把特效檔放進 js/vfx/，在下面 EFFECTS 登記一筆，再到 js/data/factions.js 的合體技填上 vfx 名稱。
+// 3D 特效層：在 2D 戰場上疊一層透明的 WebGL 畫布，播放特效庫（js/vfx/library.js）裡的 Three.js 特效。
 //
-//   speed   特效播放倍速（原始特效通常很長，加速才適合當大招）
-//   impact  特效「打中」的時間點（原速秒數）：演出會停在這裡，之後才跳傷害數字
-//   cutoff  播到這個時間點（原速秒數）就開始淡出結束
-//   size    特效大小
-//   hideObject  把特效內建的暫代模型藏起來
+// 三種特效用法（依特效本身的類型自動判斷）：
+//   projectile 飛行：從施放者胸口飛向目標，抵達時「命中」
+//   beam       光束：施放者與目標之間拉一條光束
+//   area       範圍：在地面某一點展開
+//
+// 每種特效的播放手感在 TUNE 調整：
+//   speed   播放倍速（原始特效通常較長，加速才適合戰鬥節奏）
+//   impact  命中時間點（特效原速秒數），演出會等到這一刻才跳傷害
+//   cutoff  播到這個時間點（原速秒數）開始淡出
+//   size    大小
+//   options 其他特效參數（例如 spread 範圍）
+//   hideObject 把內建的暫代模型藏起來
 import * as THREE from 'three';
 
-const EFFECTS = {
-    'sacred-relic': {
-        load: () => import('./sacred-relic.js'),
-        speed: 1.8, impact: 1.45, cutoff: 4.95, size: 0.62, hideObject: true,
-        options: {spread: 0.7},   // 光波範圍縮小，主要罩住敵方
-    },
+const TUNE_BY_CATEGORY = {
+    projectile: {speed: 2.2, size: 1.4, flight: 0.32},
+    beam:       {speed: 2.2, size: 1.3, hold: 0.35},
+    area:       {speed: 2.2, size: 0.7, cutoffAfterImpact: 1.1},
 };
+const TUNE = {
+    'sacred-relic-descent': {speed: 1.8, impact: 1.45, cutoff: 4.95, size: 0.62, hideObject: true, options: {spread: 0.7}},
+    'healing-field':        {size: 0.55},
+    'burning-ground':       {size: 0.55},
+    'arc-ray':              {size: 1.0},
+    'fireball':             {size: 0.85, flight: 0.42},
+    'charged-beam':         {hold: 0.5},
+};
+const MAX_ACTIVE = 2;       // 同時最多幾個 3D 特效（大招不受限）
+const CHEST_HEIGHT = 0.5;   // 胸口高度（角色身高的比例）
 
-let renderer = null, scene, camera, canvas, failed = false;
-const factories = {};
+let renderer = null, scene, camera, canvas, failed = false, lib = null, running = false;
+const active = new Set();
 const raycaster = new THREE.Raycaster();
 const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+let presetCache = null;
+function loadLib() {
+    if (!lib) lib = import('./library.js').then(m => { presetCache = m.PRESETS; return m; });
+    return lib;
+}
 
 function ensure() {
     if (renderer) return true;
@@ -50,96 +70,162 @@ function ensure() {
 function resize() {
     if (!renderer) return;
     const host = document.getElementById('scene');
-    const w = host.clientWidth, h = host.clientHeight;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
+    renderer.setSize(host.clientWidth, host.clientHeight, false);
+    camera.aspect = host.clientWidth / host.clientHeight;
     camera.updateProjectionMatrix();
 }
 
-// 把畫面上的一點（px）換算成 3D 地面上的位置
-function groundPoint(px, py) {
+function rayAt(px, py) {
     const host = document.getElementById('scene');
-    const ndc = new THREE.Vector2(px / host.clientWidth * 2 - 1, -(py / host.clientHeight) * 2 + 1);
-    raycaster.setFromCamera(ndc, camera);
-    const out = new THREE.Vector3();
-    return raycaster.ray.intersectPlane(ground, out) || out.set(0, 0, 0);
+    raycaster.setFromCamera(new THREE.Vector2(px / host.clientWidth * 2 - 1, -(py / host.clientHeight) * 2 + 1), camera);
+    return raycaster.ray;
 }
 
-async function factory(name) {
-    if (!factories[name]) factories[name] = EFFECTS[name].load().then(m => m.default);
-    return factories[name];
+// 畫面上腳底的點 → 3D 地面位置
+function groundPoint(px, py) {
+    return rayAt(px, py).intersectPlane(ground, new THREE.Vector3()) || new THREE.Vector3();
 }
 
-function make(create, def, speedMult, scale) {
-    const fx = create({...(def.options || {}), speed: def.speed * speedMult, size: def.size * scale});
-    if (def.hideObject && fx.setObject) {
-        try {
-            fx.setObject(new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), new THREE.MeshBasicMaterial({transparent: true, opacity: 0})));
-        } catch (e) { /* 換不了就保留原本的模型 */ }
+// 畫面上的角色（腳底 x,y、身高 h 像素）→ 3D 胸口位置：在角色所在位置立一面朝向鏡頭的牆，取胸口那一點
+function chestPoint(p) {
+    const foot = groundPoint(p.x, p.y);
+    const wall = new THREE.Plane(new THREE.Vector3(0, 0, 1), -foot.z);
+    return rayAt(p.x, p.y - (p.h || 0) * CHEST_HEIGHT).intersectPlane(wall, new THREE.Vector3()) || foot;
+}
+
+function startLoop() {
+    if (running) return;
+    running = true;
+    canvas.classList.add('on');
+    let last = performance.now();
+    function frame(now) {
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        for (const a of [...active]) a.tick(dt);
+        renderer.render(scene, camera);
+        if (active.size) { requestAnimationFrame(frame); return; }
+        renderer.clear();
+        canvas.classList.remove('on');
+        running = false;
     }
-    return fx;
+    requestAnimationFrame(frame);
 }
 
-// 預先載入並編譯 shader，避免第一次放大招時卡頓
-async function preload(name) {
-    if (!EFFECTS[name] || !ensure()) return false;
+function finish(a) {
+    if (!active.has(a)) return;
+    active.delete(a);
+    scene.remove(a.fx.group);
+    a.fx.dispose?.();
+    a.resolveImpact();
+    a.resolveDone();
+}
+
+// 預先載入並編譯，避免第一次播放卡頓
+async function preload(ids) {
+    if (!ensure()) return false;
     try {
-        const create = await factory(name);
-        const fx = make(create, EFFECTS[name], 1, 1);
-        scene.add(fx.group);
-        renderer.compile(scene, camera);
-        scene.remove(fx.group);
-        fx.dispose?.();
+        const {create, PRESETS} = await loadLib();
+        for (const id of ids) {
+            if (!PRESETS[id]) continue;
+            const fx = create(id, {});
+            scene.add(fx.group);
+            renderer.compile(scene, camera);
+            scene.remove(fx.group);
+            fx.dispose?.();
+        }
         return true;
     } catch (e) {
-        console.warn('特效載入失敗', name, e);
+        console.warn('特效載入失敗', e);
         return false;
     }
 }
 
-// 播放特效。回傳 {impact, done} 兩個 Promise：impact = 打中的瞬間，done = 特效完全結束。
-// skip.skipped 變成 true 時會立刻淡出。
-function play(name, {x, y, scale = 1, speedMult = 1, skip = {}}) {
-    const def = EFFECTS[name];
-    if (!def || !ensure()) return null;
+// 播放特效。
+//   id        特效名稱（特效庫裡的 id）
+//   at        範圍特效的地面落點 {x,y}（畫面像素）
+//   from, to  飛行／光束的起點與終點 {x,y,h}（腳底座標＋角色身高像素）
+//   color     改顏色；sizeMult、speedMult 微調大小與速度
+//   skip      {skipped} 變 true 時立刻收尾；priority 為 true 時不受同時數量限制
+// 回傳 {impact, done} 兩個 Promise；不能播（沒有 WebGL、太多特效同時在播）時回傳 null，請改用 2D 演出。
+function play(id, o = {}) {
+    if (!ensure()) return null;
+    if (!o.priority && active.size >= MAX_ACTIVE) return null;
     let resolveImpact, resolveDone;
     const impact = new Promise(r => { resolveImpact = r; });
     const done = new Promise(r => { resolveDone = r; });
 
-    factory(name).then(create => {
+    loadLib().then(({create, PRESETS}) => {
+        const preset = PRESETS[id];
+        if (!preset) { resolveImpact(); resolveDone(); return; }
         resize();
-        const fx = make(create, def, speedMult, scale);
-        fx.group.position.copy(groundPoint(x, y));
-        scene.add(fx.group);
-        canvas.classList.add('on');
-        const rate = def.speed * speedMult;
-        const impactAt = def.impact / rate, cutoffAt = def.cutoff / rate, fadeFor = 0.5 / rate;
-        let t = 0, stopAt = null, last = performance.now(), hit = false;
-        function frame(now) {
-            const dt = Math.min(0.05, (now - last) / 1000);
-            last = now;
-            t += dt;
-            fx.update(dt);
-            if (!hit && (t >= impactAt || skip.skipped)) { hit = true; resolveImpact(); }
-            if (stopAt === null && (t >= cutoffAt || skip.skipped)) { fx.stop(); stopAt = t; }
-            renderer.render(scene, camera);
-            if (stopAt !== null && (t - stopAt > fadeFor || fx.finished)) {
-                scene.remove(fx.group);
-                fx.dispose?.();
-                renderer.clear();
-                canvas.classList.remove('on');
-                resolveDone();
-                return;
-            }
-            requestAnimationFrame(frame);
+        const cat = preset.category;
+        const tune = {...TUNE_BY_CATEGORY[cat], ...TUNE[id]};
+        const rate = (tune.speed || 2) * (o.speedMult || 1);
+        const opts = {...(tune.options || {}), speed: rate, size: (tune.size || 1) * (o.sizeMult || 1)};
+        if (o.color) opts.color = o.color;
+        const fx = create(id, opts);
+        if (tune.hideObject && fx.setObject) {
+            try { fx.setObject(new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), new THREE.MeshBasicMaterial({transparent: true, opacity: 0}))); } catch (e) { /* 保留原模型 */ }
         }
-        requestAnimationFrame(frame);
+        const a = {fx, t: 0, hit: false, stopAt: null, resolveImpact, resolveDone};
+        const life = preset.lifecycle || {start: 0.4, end: 0.6};
+        const skip = o.skip || {};
+        const doImpact = () => { if (!a.hit) { a.hit = true; a.hitAt = a.t; resolveImpact(); } };
+        const doStop = () => { if (a.stopAt === null) { a.stopAt = a.t; fx.stop(); } };
+
+        if (cat === 'projectile') {
+            const start = chestPoint(o.from), end = chestPoint(o.to);
+            const dir = end.clone().sub(start);
+            const flight = (tune.flight || 0.32) / (o.speedMult || 1);
+            fx.group.position.copy(start);
+            fx.setDirection(dir, dir.length() / flight);
+            a.tick = dt => {
+                a.t += dt;
+                fx.update(dt);
+                if (!a.hit && (a.t >= flight || skip.skipped)) { fx.hit(end); doImpact(); }
+                if (fx.finished || (a.hit && a.t - a.hitAt > 1.4)) finish(a);
+            };
+        } else if (cat === 'beam') {
+            fx.setEndpoints(chestPoint(o.from), chestPoint(o.to));
+            const impactAt = life.start / rate, stopAt = impactAt + (tune.hold || 0.35);
+            a.tick = dt => {
+                a.t += dt;
+                fx.update(dt);
+                if (a.t >= impactAt || skip.skipped) doImpact();
+                if (a.t >= stopAt || skip.skipped) doStop();
+                if (fx.finished || (a.stopAt !== null && a.t - a.stopAt > 1.2)) finish(a);
+            };
+        } else {
+            fx.group.position.copy(groundPoint(o.at.x, o.at.y));
+            const impactAt = (tune.impact ?? life.start) / rate;
+            const cutoffAt = tune.cutoff != null ? tune.cutoff / rate : impactAt + (tune.cutoffAfterImpact || 1);
+            a.tick = dt => {
+                a.t += dt;
+                fx.update(dt);
+                if (a.t >= impactAt || skip.skipped) doImpact();
+                if (a.t >= cutoffAt || skip.skipped) doStop();
+                if (fx.finished || (a.stopAt !== null && a.t - a.stopAt > 1.2)) finish(a);
+            };
+        }
+        scene.add(fx.group);
+        active.add(a);
+        startLoop();
     }).catch(e => {
-        console.warn('特效播放失敗', name, e);
+        console.warn('特效播放失敗', id, e);
         resolveImpact(); resolveDone();
     });
     return {impact, done};
 }
 
-window.VFX3D = {has: name => !!EFFECTS[name] && !failed, preload, play};
+async function list() {
+    const {PRESETS} = await loadLib();
+    return PRESETS;
+}
+
+window.VFX3D = {
+    available: () => ensure(),
+    category: id => presetCache?.[id]?.category || null,   // 特效庫載入後才有
+    busy: () => active.size >= MAX_ACTIVE,
+    preload, play, list,
+};
 window.dispatchEvent(new Event('vfx3d-ready'));

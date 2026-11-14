@@ -466,47 +466,94 @@
             {translate: `${power / 2}px 0`}, {translate: '0 0'}], 320);
     }
 
-    // 出手動作：近戰衝向目標，遠程原地施法並飛出光束
-    async function performAction(actor, events, isSkill) {
+    // 角色在畫面上的位置：腳底 x,y 與身高 h（像素），給 3D 特效對準用
+    function unitPoint(uid) {
+        const r = sprites.get(uid);
+        return r ? {x: r.x, y: r.y, h: r.s * r.unit} : null;
+    }
+    function centerOf(uids) {
+        const pts = uids.map(unitPoint).filter(Boolean);
+        if (!pts.length) return null;
+        const avg = k => pts.reduce((s, p) => s + p[k], 0) / pts.length;
+        return {x: avg('x'), y: avg('y') + 6, h: avg('h')};
+    }
+
+    // 技能的 3D 特效。回傳 true 表示已播放（並已等到命中瞬間），false 表示沒有特效或播不了
+    async function playSkillVfx(actor, skill, events) {
+        const v = skill?.vfx;
+        if (!v || !window.VFX3D) return false;
+        const b = state.battle;
+        const hits = [...new Set(events.filter(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit').map(e => e.uid))];
+        const otherSide = b.units.filter(u => u.side !== actor.side && (u.alive || hits.includes(u.uid))).map(u => u.uid);
+        const mySide = b.units.filter(u => u.side === actor.side && u.alive).map(u => u.uid);
+        const at = v.at || 'targets';
+        const dests = at === 'friends' ? mySide : at === 'foes' ? otherSide : (hits.length ? hits : otherSide);
+        if (!dests.length) return false;
+        const cat = window.VFX3D.category(v.id);
+        const from = unitPoint(actor.uid);
+        const common = {color: v.color, speedMult: state.speed};
+        const runs = [];
+        if (cat === 'area') {
+            runs.push(window.VFX3D.play(v.id, {...common, at: centerOf(dests)}));
+        } else if (at === 'targets' && dests.length <= 2) {
+            dests.forEach(d => runs.push(window.VFX3D.play(v.id, {...common, from, to: unitPoint(d)})));
+        } else {
+            runs.push(window.VFX3D.play(v.id, {...common, from, to: centerOf(dests)}));
+        }
+        const ok = runs.filter(Boolean);
+        if (!ok.length) return false;
+        await Promise.race([Promise.all(ok.map(r => r.impact)), sleep(1600)]);
+        return true;
+    }
+
+    // 出手動作：近戰衝向目標，遠程原地施法；技能有 3D 特效就播 3D，否則用 2D 斬擊／光束
+    async function performAction(actor, events, skill) {
+        const isSkill = !!skill;
         const firstHit = events.find(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit');
         const rec = sprites.get(actor.uid);
         if (!rec) return;
         const el = rec.sprite;
         const color = R.ELEMENTS[actor.element]?.color;
-        if (!firstHit) {
-            // 輔助類技能：原地發光一下
-            await animate(el, [{translate: '0 0'}, {translate: '0 -14px'}, {translate: '0 0'}], 320);
-            return;
-        }
-        const tgt = chest(firstHit.uid), me = sprites.get(actor.uid);
+        const hasVfx = isSkill && skill.vfx && window.VFX3D?.category(skill.vfx.id);
         const targets = [...new Set(events.filter(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit').map(e => e.uid))];
-        if (MELEE.includes(actor.role) && tgt && targets.length === 1) {
+        const tgt = firstHit ? chest(firstHit.uid) : null, me = sprites.get(actor.uid);
+        const lunge = MELEE.includes(actor.role) && tgt && (targets.length === 1 || (hasVfx && window.VFX3D.category(skill.vfx.id) === 'area'));
+
+        if (lunge) {
             const dx = (tgt.x - me.x) * 0.72, dy = (tgt.y + me.s * me.unit * 0.45 - me.y) * 0.72;
             const go = animate(el, [{translate: '0 0'}, {translate: `${dx}px ${dy}px`, offset: .45}, {translate: `${dx}px ${dy}px`, offset: .6}, {translate: '0 0'}], 520, 'ease-in-out');
             await wait(230);
+            if (hasVfx && await playSkillVfx(actor, skill, events)) { await go; return; }
             playSlash(firstHit.uid, isSkill ? color : '#fde68a');
             await go;
-        } else {
-            animate(el, [{translate: '0 0'}, {translate: '0 -16px', offset: .4}, {translate: '0 0'}], 420);
-            await wait(140);
-            if (targets.length > 1) targets.forEach(t => playRing(t, color));
-            else { await playBolt(actor.uid, firstHit.uid, color); playRing(firstHit.uid, color); }
-            await wait(80);
+            return;
         }
+        // 施法動作：往上一跳
+        animate(el, [{translate: '0 0'}, {translate: '0 -16px', offset: .4}, {translate: '0 0'}], 420);
+        await wait(140);
+        if (hasVfx && await playSkillVfx(actor, skill, events)) return;
+        if (!firstHit) { await wait(180); return; }
+        if (targets.length > 1) targets.forEach(t => playRing(t, color));
+        else { await playBolt(actor.uid, firstHit.uid, color); playRing(firstHit.uid, color); }
+        await wait(80);
     }
 
     // ───────── 大招（合體技）演出：時間停止 → 立繪切入 → 3D 特效 → 傷害爆發 ─────────
-    function teamComboVfx() {
+    // 這場戰鬥會用到的 3D 特效：合體技、雙方技能、首領可能召喚的單位
+    function battleVfxIds() {
         const b = state.battle;
+        const ids = new Set();
         const counts = {};
         b.units.filter(u => u.side === 'ally').forEach(u => { counts[u.faction] = (counts[u.faction] || 0) + 1; });
-        return Object.keys(counts).filter(f => counts[f] >= R.CHAIN_COMBO_AT).map(f => R.FACTIONS[f].combo?.vfx).filter(Boolean);
+        Object.keys(counts).filter(f => counts[f] >= R.CHAIN_COMBO_AT).forEach(f => { const v = R.FACTIONS[f].combo?.vfx; if (v) ids.add(v.id); });
+        b.units.forEach(u => u.skills.forEach(s => { if (s.vfx) ids.add(s.vfx.id); }));
+        return [...ids];
     }
 
     function preloadUltimates() {
-        const names = teamComboVfx();
+        const names = battleVfxIds();
         if (!names.length) return;
-        const go = () => names.forEach(n => window.VFX3D.preload(n));
+        const go = () => window.VFX3D.preload(names);
         if (window.VFX3D) go();
         else window.addEventListener('vfx3d-ready', go, {once: true});
     }
@@ -569,8 +616,8 @@
 
         // 2. 特效：有 3D 特效就播 3D，沒有就用 2D 備用演出
         const at = comboAnchor(f.combo);
-        const run = (f.combo.vfx && window.VFX3D?.has(f.combo.vfx))
-            ? window.VFX3D.play(f.combo.vfx, {x: at.x, y: at.y, speedMult: short ? 1.8 : 1, skip})
+        const run = (f.combo.vfx && window.VFX3D)
+            ? window.VFX3D.play(f.combo.vfx.id, {at, color: f.combo.vfx.color, speedMult: short ? 1.8 : 1, skip, priority: true})
             : null;
         if (run) {
             await Promise.race([run.impact, waitOrSkip(4000, skip)]);
@@ -634,7 +681,7 @@
                 case 'skill':
                     setPill(`${u.name}・<span class="sk">${e.name}</span>`, u.side === 'enemy');
                     if (u.boss) shakeScreen(5);
-                    await performAction(u, events.slice(i), true);
+                    await performAction(u, events.slice(i), u.skills.find(s => s.name === e.name) || true);
                     break;
                 case 'basic':
                     await performAction(u, events.slice(i), false);

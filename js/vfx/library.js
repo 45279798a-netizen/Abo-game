@@ -50,6 +50,126 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+// ═══════════════════════════════════════════════════════════════
+// 特效庫：由 tools/build_vfx.py 自動產生，請勿手動修改。
+// 共 11 種特效，共用同一份程式（原本每個匯出檔都各帶一份）。
+// 用法：import {create, PRESETS} from './library.js'; const fx = create('fireball', {speed: 2});
+// ═══════════════════════════════════════════════════════════════
+// 各特效原始使用說明：
+// 分岔雷流 / Forked Lightning Stream
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 符晶飛彈 / Runic Crystal Missiles
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 炎紋灼地 / Flame-Etched Ground
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 蓄能光炮 / Charged Light Cannon
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 繞絲光束 / Threadwoven Beam
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 熾焰火球 / Blazing Fireball
+// Fireball: hit ends after lifecycle.hitEnd (2 visual seconds); stop uses lifecycle.end (0.8).
+// 火球命中與一般停止有不同收尾時間；持續 update 至 finished，不以 end 提早釋放命中餘煙。
+// Continue update until finished. hit(worldPoint, worldNormal) clips to a supplied valid contact plane; omitted normal keeps an uncut airborne burst.
+// Level7: white-hot flash, arcs, sparks, 30 rocks (10-30% mean size; fade at age .35-.65), wall heat. Use fx.render(renderer,scene,camera) instead of renderer.render to include the calibrated glow; call once per scene/frame; it includes glow from all Fireball instances in that scene. This renders the entire scene with an opaque output, SRGBColorSpace and NoToneMapping (ACES/transparent composition not supported). Contact normal only controls the static plane.
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 療光法陣 / Healing Sigil
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 霜晶飛矢 / Frostcrystal Dart
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 電漿尖矢 / Plasma Dart
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 環脈射線 / Ringpulse Ray
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 聖遺物・治癒降臨 / Sacred Relic Descent
 // 替換模型 / Replace the model after loading (for example with GLTFLoader):
 // const fx = createVFX(); scene.add(fx.group);
@@ -84,6 +204,7 @@ THE SOFTWARE.
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 
 import * as THREE from "three";
+
 var __vfxModule = (function(exports, three) {
 
 Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
@@ -12109,7 +12230,251 @@ return exports;
 const createEffect = __vfxModule.createEffect;
 
 
-const preset = {
+
+export const PRESETS = {
+ "arc-ray": {
+  "id": "arc-ray",
+  "quantity": {
+   "min": 1,
+   "max": 12,
+   "default": 6,
+   "label": "電弧數量",
+   "unit": "道",
+   "help": "端點之間的獨立電弧數，保留兩端耀光及原射程。"
+  },
+  "lifecycle": {
+   "start": 0.4,
+   "end": 0.6
+  },
+  "name": "分岔雷流",
+  "english": "Forked Lightning Stream",
+  "category": "beam",
+  "color": "#2878ff",
+  "description": "藍白閃電連接兩端，小閃電在旁跳動，打中時炸出火花。",
+  "tags": "閃電 電擊 雷射 電弧射線 Arc ray",
+  "maxParticles": 768,
+  "kind": 1,
+  "variant": 3,
+  "duration": 5,
+  "burst": false,
+  "seed": 73496,
+  "schools": [
+   "storm"
+  ]
+ },
+ "arcane-missile": {
+  "id": "arcane-missile",
+  "spread": {
+   "min": 0.5,
+   "max": 3,
+   "default": 1,
+   "label": "投射物散布範圍",
+   "help": "拉開晶核與配對尾跡的繞行間距；晶核大小、尾跡長度與整組前進方向不變。"
+  },
+  "quantity": {
+   "min": 1,
+   "max": 6,
+   "default": 3,
+   "label": "晶核數量",
+   "unit": "枚",
+   "help": "晶核與配對尾跡一起增減；整組共同飛行及命中。"
+  },
+  "lifecycle": {
+   "start": 0.35,
+   "end": 0.8
+  },
+  "name": "符晶飛彈",
+  "english": "Runic Crystal Missiles",
+  "category": "projectile",
+  "color": "#c99aff",
+  "description": "三顆魔法水晶一邊繞圈一邊前進，身後拖著發光圖案。",
+  "tags": "魔法 螺旋 法師 奧術飛彈 Arcane missile",
+  "maxParticles": 768,
+  "kind": 0,
+  "variant": 3,
+  "duration": 5,
+  "burst": false,
+  "seed": 36748,
+  "schools": [
+   "arcane"
+  ]
+ },
+ "burning-ground": {
+  "id": "burning-ground",
+  "lifecycle": {
+   "start": 0.7,
+   "end": 1
+  },
+  "name": "炎紋灼地",
+  "english": "Flame-Etched Ground",
+  "category": "area",
+  "color": "#ff914a",
+  "description": "地面裂縫發出紅光，火舌不斷冒出又散去，像正在燃燒。",
+  "tags": "火焰 地板 傷害 範圍 燃燒地面 Burning ground",
+  "maxParticles": 1024,
+  "kind": 2,
+  "variant": 1,
+  "duration": 5,
+  "burst": false,
+  "seed": 91870,
+  "schools": [
+   "fire"
+  ]
+ },
+ "charged-beam": {
+  "id": "charged-beam",
+  "lifecycle": {
+   "start": 1.6,
+   "end": 0.6
+  },
+  "name": "蓄能光炮",
+  "english": "Charged Light Cannon",
+  "category": "beam",
+  "color": "#f6c76c",
+  "description": "先聚起亮光再持續發射，打中的地方不斷噴出亮光與光圈。",
+  "tags": "雷射 蓄力 大招 科幻 蓄力光束 Charged beam",
+  "maxParticles": 768,
+  "kind": 1,
+  "variant": 2,
+  "duration": 5,
+  "burst": false,
+  "seed": 64309
+ },
+ "continuous-beam": {
+  "id": "continuous-beam",
+  "lifecycle": {
+   "start": 0.4,
+   "end": 0.6
+  },
+  "name": "繞絲光束",
+  "english": "Threadwoven Beam",
+  "category": "beam",
+  "color": "#ff6555",
+  "description": "細光線持續往前射，光絲繞著它轉，打中時冒出火花。",
+  "tags": "雷射 激光 武器 科幻 持續光束 Continuous beam",
+  "maxParticles": 512,
+  "kind": 1,
+  "variant": 0,
+  "duration": 5,
+  "burst": false,
+  "seed": 45935
+ },
+ "fireball": {
+  "id": "fireball",
+  "lifecycle": {
+   "start": 0.35,
+   "end": 0.8,
+   "hitEnd": 2
+  },
+  "name": "熾焰火球",
+  "english": "Blazing Fireball",
+  "category": "projectile",
+  "color": "#ff823e",
+  "description": "火球拖著火尾向前飛，命中爆出弧光與火星，接觸處留下漸暗的裂紋。",
+  "tags": "火焰 法師 技能 飛行 火球 Fireball",
+  "maxParticles": 768,
+  "kind": 0,
+  "variant": 0,
+  "duration": 5,
+  "burst": false,
+  "seed": 9187,
+  "schools": [
+   "fire"
+  ]
+ },
+ "healing-field": {
+  "id": "healing-field",
+  "lifecycle": {
+   "start": 0.7,
+   "end": 1
+  },
+  "name": "療光法陣",
+  "english": "Healing Sigil",
+  "category": "area",
+  "color": "#86e9b2",
+  "description": "地上的魔法圖案一圈圈發光，小十字向上飄，適合補血時使用。",
+  "tags": "回血 治療 輔助 光環 治療領域 Healing field",
+  "maxParticles": 512,
+  "kind": 2,
+  "variant": 0,
+  "duration": 5,
+  "burst": false,
+  "seed": 82683,
+  "schools": [
+   "light"
+  ]
+ },
+ "ice-shard": {
+  "id": "ice-shard",
+  "lifecycle": {
+   "start": 0.35,
+   "end": 0.8
+  },
+  "name": "霜晶飛矢",
+  "english": "Frostcrystal Dart",
+  "category": "projectile",
+  "color": "#b3dcff",
+  "description": "一簇尖冰向前飛，身後掉落旋轉的小冰塊與細霜。",
+  "tags": "冰 魔法 射擊 冰晶彈 Ice shard",
+  "maxParticles": 512,
+  "kind": 0,
+  "variant": 2,
+  "duration": 5,
+  "burst": false,
+  "seed": 27561,
+  "schools": [
+   "ice"
+  ]
+ },
+ "plasma-bolt": {
+  "id": "plasma-bolt",
+  "lifecycle": {
+   "start": 0.35,
+   "end": 0.8
+  },
+  "name": "電漿尖矢",
+  "english": "Plasma Dart",
+  "category": "projectile",
+  "color": "#73e3ff",
+  "description": "亮白箭頭帶著藍色閃電往前飛，身後留下細小火花。",
+  "previewTime": 1.2,
+  "thumbnailTime": 1.2,
+  "tags": "科幻 能量 子彈 電漿彈 Plasma bolt",
+  "maxParticles": 512,
+  "kind": 0,
+  "variant": 1,
+  "duration": 5,
+  "burst": false,
+  "seed": 18374
+ },
+ "pulse-beam": {
+  "id": "pulse-beam",
+  "quantity": {
+   "min": 1,
+   "max": 8,
+   "default": 4,
+   "label": "脈衝波數",
+   "unit": "道",
+   "help": "固定射程內的主要脈衝波數。流速保持不變，數量增加時脈衝更密。"
+  },
+  "lifecycle": {
+   "start": 0.4,
+   "end": 0.6
+  },
+  "name": "環脈射線",
+  "english": "Ringpulse Ray",
+  "category": "beam",
+  "color": "#71e7dc",
+  "description": "光線上亮起一顆顆光球，光圈沿著光線往前跑。",
+  "tags": "雷射 激光 脈衝 射擊 脈衝光束 Pulse beam",
+  "maxParticles": 512,
+  "kind": 1,
+  "variant": 1,
+  "duration": 5,
+  "burst": false,
+  "seed": 55122
+ },
+ "sacred-relic-descent": {
   "id": "sacred-relic-descent",
   "name": "聖遺物・治癒降臨",
   "english": "Sacred Relic Descent",
@@ -12117,7 +12482,7 @@ const preset = {
   "kind": 2,
   "variant": 18,
   "schools": [
-    "light"
+   "light"
   ],
   "color": "#f5cc75",
   "seed": 829652,
@@ -12126,29 +12491,108 @@ const preset = {
   "maxParticles": 416,
   "defaultDensity": 0.5,
   "lifecycle": {
-    "start": 1.35,
-    "end": 1.65
+   "start": 1.35,
+   "end": 1.65
   },
   "previewTime": 3.85,
   "thumbnailTime": 3.85,
   "spread": {
-    "min": 0.5,
-    "max": 1.5,
-    "default": 1,
-    "label": "治療光波範圍",
-    "help": "一起調整貼地光波與中段煙浪的範圍，不改高度、三角錐、砸地或時間。"
+   "min": 0.5,
+   "max": 1.5,
+   "default": 1,
+   "label": "治療光波範圍",
+   "help": "一起調整貼地光波與中段煙浪的範圍，不改高度、三角錐、砸地或時間。"
   },
   "description": "多層白金法陣旋轉，三角錐砸地揚石，每兩秒推出水紋光波與中段煙浪。",
   "tags": "聖遺物 治癒 白金 三角錐 暫代 召喚 落地 光波 魔法陣 碎石 塵浪 地裂 中段 煙浪 雙層 sacred relic healing holy triangular pyramid tetrahedron placeholder summon descent pulse debris dust cracks mid-height magic smoke ring two-layer"
+ }
 };
-export const defaultOptions = {
+export const DEFAULTS = {
+ "arc-ray": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#2878ff",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 6
+ },
+ "arcane-missile": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#c99aff",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 3,
+  "spread": 1
+ },
+ "burning-ground": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ff914a",
+  "size": 1,
+  "density": 0.5
+ },
+ "charged-beam": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#f6c76c",
+  "size": 1,
+  "density": 0.5
+ },
+ "continuous-beam": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ff6555",
+  "size": 1,
+  "density": 0.5
+ },
+ "fireball": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ff823e",
+  "size": 1,
+  "density": 0.5
+ },
+ "healing-field": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#86e9b2",
+  "size": 1,
+  "density": 0.5
+ },
+ "ice-shard": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#b3dcff",
+  "size": 1,
+  "density": 0.5
+ },
+ "plasma-bolt": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#73e3ff",
+  "size": 1,
+  "density": 0.5
+ },
+ "pulse-beam": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#71e7dc",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 4
+ },
+ "sacred-relic-descent": {
   "speed": 1,
   "detail": 1,
   "color": "#f5cc75",
   "size": 1,
   "density": 0.5,
   "spread": 1
+ }
 };
-export default function createVFX(options = {}) {
-  return createEffect(preset, { ...defaultOptions, ...options });
+export function create(id, options = {}) {
+  const preset = PRESETS[id];
+  if (!preset) throw new Error('沒有這個特效：' + id);
+  return createEffect(preset, { ...DEFAULTS[id], ...options });
 }

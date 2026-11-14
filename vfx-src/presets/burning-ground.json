@@ -1,0 +1,32 @@
+{
+ "preset": {
+  "id": "burning-ground",
+  "lifecycle": {
+   "start": 0.7,
+   "end": 1
+  },
+  "name": "炎紋灼地",
+  "english": "Flame-Etched Ground",
+  "category": "area",
+  "color": "#ff914a",
+  "description": "地面裂縫發出紅光，火舌不斷冒出又散去，像正在燃燒。",
+  "tags": "火焰 地板 傷害 範圍 燃燒地面 Burning ground",
+  "maxParticles": 1024,
+  "kind": 2,
+  "variant": 1,
+  "duration": 5,
+  "burst": false,
+  "seed": 91870,
+  "schools": [
+   "fire"
+  ]
+ },
+ "defaults": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ff914a",
+  "size": 1,
+  "density": 0.5
+ },
+ "notes": "// 炎紋灼地 / Flame-Etched Ground\n// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping\n// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。\n// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。\n// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。\n// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。\n// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。\n// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。\n// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。\n// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。\n// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。"
+}

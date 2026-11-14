@@ -59,6 +59,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ───────── 編隊畫面 ───────── */
 #screen-setup { padding: calc(12px + var(--safe-top)) 14px calc(90px + var(--safe-bottom)); }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.top-btns { display: flex; gap: 8px; }
+a.icon-btn { text-decoration: none; color: inherit; }
 .brand-sub { font-size: 10px; letter-spacing: 4px; color: var(--gold); }
 .brand h1 { margin: 2px 0 0; font-size: 20px; }
 .brand-season { font-size: 13px; color: #86efac; font-weight: 400; margin-left: 4px; }
