@@ -1,9 +1,9 @@
 // 3D 特效層：在 2D 戰場上疊一層透明的 WebGL 畫布，播放特效庫（js/vfx/library.js）裡的 Three.js 特效。
 //
-// 三種特效用法（依特效本身的類型自動判斷）：
+// 特效用法（依特效本身的類型自動判斷）：
 //   projectile 飛行：從施放者胸口飛向目標，抵達時「命中」
 //   beam       光束：施放者與目標之間拉一條光束
-//   area       範圍：在地面某一點展開
+//   area／burst／vortex  在地面某一點展開（法陣、爆炸、旋風）
 //
 // 每種特效的播放手感在 TUNE 調整：
 //   speed   播放倍速（原始特效通常較長，加速才適合戰鬥節奏）
@@ -18,6 +18,8 @@ const TUNE_BY_CATEGORY = {
     projectile: {speed: 2.2, size: 1.4, flight: 0.32},
     beam:       {speed: 2.2, size: 1.3, hold: 0.35},
     area:       {speed: 2.2, size: 0.7, cutoffAfterImpact: 1.1},
+    burst:      {speed: 1.8, size: 0.75, cutoffAfterImpact: 1.4},
+    vortex:     {speed: 2.6, size: 0.45, impact: 1.0, cutoffAfterImpact: 0.9},
 };
 const TUNE = {
     'sacred-relic-descent': {speed: 1.8, impact: 1.45, cutoff: 4.95, size: 0.62, hideObject: true, options: {spread: 0.7}},

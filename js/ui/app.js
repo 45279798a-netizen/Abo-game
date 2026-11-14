@@ -487,9 +487,9 @@
         if (!dests.length) return false;
         const cat = window.VFX3D.category(v.id);
         const from = unitPoint(actor.uid);
-        const common = {color: v.color, speedMult: state.speed};
+        const common = {color: v.color, sizeMult: v.size || 1, speedMult: state.speed};
         const runs = [];
-        if (cat === 'area') {
+        if (cat !== 'projectile' && cat !== 'beam') {   // 法陣、爆炸、旋風：在地面展開
             runs.push(window.VFX3D.play(v.id, {...common, at: centerOf(dests)}));
         } else if (at === 'targets' && dests.length <= 2) {
             dests.forEach(d => runs.push(window.VFX3D.play(v.id, {...common, from, to: unitPoint(d)})));
@@ -513,7 +513,8 @@
         const hasVfx = isSkill && skill.vfx && window.VFX3D?.category(skill.vfx.id);
         const targets = [...new Set(events.filter(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit').map(e => e.uid))];
         const tgt = firstHit ? chest(firstHit.uid) : null, me = sprites.get(actor.uid);
-        const lunge = MELEE.includes(actor.role) && tgt && (targets.length === 1 || (hasVfx && window.VFX3D.category(skill.vfx.id) === 'area'));
+        const groundFx = hasVfx && !['projectile', 'beam'].includes(window.VFX3D.category(skill.vfx.id));
+        const lunge = MELEE.includes(actor.role) && tgt && (targets.length === 1 || groundFx);
 
         if (lunge) {
             const dx = (tgt.x - me.x) * 0.72, dy = (tgt.y + me.s * me.unit * 0.45 - me.y) * 0.72;
@@ -613,7 +614,7 @@
         // 2. 特效：有 3D 特效就播 3D，沒有就用 2D 備用演出
         const at = comboAnchor(f.combo);
         const run = (f.combo.vfx && window.VFX3D)
-            ? window.VFX3D.play(f.combo.vfx.id, {at, color: f.combo.vfx.color, speedMult: short ? 1.8 : 1, skip, priority: true})
+            ? window.VFX3D.play(f.combo.vfx.id, {at, color: f.combo.vfx.color, sizeMult: f.combo.vfx.size || 1, speedMult: short ? 1.8 : 1, skip, priority: true})
             : null;
         if (run) {
             await Promise.race([run.impact, waitOrSkip(4000, skip)]);

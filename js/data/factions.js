@@ -6,6 +6,7 @@ RES.FACTIONS = {
     kingdom: {
         name: '獅心王國', short: '王國', color: '#60a5fa',
         combo: {
+            vfx: {id: 'magic-barrier', color: '#93c5fd', size: 1.8},
             name: '王國號令', desc: '全隊獲得最大生命 15% 的護盾，攻擊 +20%（2 回合）',
             effects: [
                 {type: 'shield', target: 'allies', pctMaxHp: 0.15},
@@ -27,6 +28,7 @@ RES.FACTIONS = {
     forest: {
         name: '翠林盟約', short: '翠林', color: '#34d399',
         combo: {
+            vfx: {id: 'wind-vortex', size: 1.8},
             name: '森林纏繞', desc: '對全體敵人造成 90% 傷害，拉條 35%，並減速 2 回合',
             effects: [
                 {type: 'damage', target: 'enemies', mult: 0.9},
@@ -38,6 +40,7 @@ RES.FACTIONS = {
     wild: {
         name: '荒原部族', short: '荒原', color: '#f87171',
         combo: {
+            vfx: {id: 'fire-vortex', size: 1.6},
             name: '戰嚎', desc: '全隊攻擊 +30%（2 回合），觸發者立即再行動一次',
             effects: [
                 {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
@@ -48,6 +51,7 @@ RES.FACTIONS = {
     night: {
         name: '暗夜結社', short: '暗夜', color: '#a78bfa',
         combo: {
+            vfx: {id: 'energy-vortex', color: '#7c3aed', size: 1.6},
             name: '月蝕處決', desc: '對生命比例最低的 2 個敵人造成 260% 傷害，生命低於 20% 直接斬殺（首領除外）',
             effects: [
                 {type: 'damage', target: 'enemyLowest2', mult: 2.6, execute: 0.2},

@@ -21,6 +21,7 @@
         .g-info .unused { color: #8f8270; }
         .g-panel { position: absolute; left: 8px; right: 8px; bottom: calc(8px + var(--safe-bottom)); z-index: 10; padding: 8px; max-height: 36%; display: flex; flex-direction: column; gap: 6px; }
         .g-tabs, .g-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+        .g-tabs button { padding: 4px 8px; }
         .g-tabs button, .g-acts button { font-size: 12px; padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border); background: rgba(34,24,17,.85); }
         .g-tabs button.on, .g-acts button.on { border-color: var(--gold); color: var(--gold-hi); }
         .g-list { overflow-y: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
@@ -65,7 +66,7 @@
 (function () {
     const R = window.RES;
     const $ = s => document.querySelector(s);
-    const CAT = {all: '全部', projectile: '飛行', beam: '光束', area: '範圍'};
+    const CAT = {all: '全部', projectile: '飛行', beam: '光束', area: '法陣', burst: '爆炸', vortex: '旋風'};
     const BGS = ['1', '4', '6'];
     const st = {presets: {}, cat: 'all', sel: null, loop: false, side: 'foe', bg: 0, timer: null};
 
@@ -149,7 +150,8 @@
         const allies = cast.filter(c => c.side === 'ally'), foes = cast.filter(c => c.side === 'enemy');
         const caster = st.side === 'foe' ? allies[0] : foes[1];
         const targets = st.side === 'foe' ? foes : allies;
-        const run = p.category === 'area'
+        const onGround = p.category !== 'projectile' && p.category !== 'beam';
+        const run = onGround
             ? VFX3D.play(p.id, {at: center(targets)})
             : VFX3D.play(p.id, {from: pt(caster), to: pt(targets[1] || targets[0])});
         if (!run) { msg('裝置不支援 3D 特效，或同時播放太多個'); return; }

@@ -52,7 +52,7 @@ THE SOFTWARE.
 */
 // ═══════════════════════════════════════════════════════════════
 // 特效庫：由 tools/build_vfx.py 自動產生，請勿手動修改。
-// 共 11 種特效，共用同一份程式（原本每個匯出檔都各帶一份）。
+// 共 21 種特效，共用同一份程式（原本每個匯出檔都各帶一份）。
 // 用法：import {create, PRESETS} from './library.js'; const fx = create('fireball', {speed: 2});
 // ═══════════════════════════════════════════════════════════════
 // 各特效原始使用說明：
@@ -111,11 +111,77 @@ THE SOFTWARE.
 // quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 飛砂風旋 / Sand-Swept Vortex
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 雷弧綻爆 / Lightning Arc Burst
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 符環渦流 / Runic Ring Vortex
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 白熱炎爆 / White-Hot Fireburst
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 捲焰風旋 / Flame-Swept Vortex
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 熾焰火球 / Blazing Fireball
 // Fireball: hit ends after lifecycle.hitEnd (2 visual seconds); stop uses lifecycle.end (0.8).
 // 火球命中與一般停止有不同收尾時間；持續 update 至 finished，不以 end 提早釋放命中餘煙。
 // Continue update until finished. hit(worldPoint, worldNormal) clips to a supplied valid contact plane; omitted normal keeps an uncut airborne burst.
 // Level7: white-hot flash, arcs, sparks, 30 rocks (10-30% mean size; fade at age .35-.65), wall heat. Use fx.render(renderer,scene,camera) instead of renderer.render to include the calibrated glow; call once per scene/frame; it includes glow from all Fireball instances in that scene. This renders the entire scene with an opaque output, SRGBColorSpace and NoToneMapping (ACES/transparent composition not supported). Contact normal only controls the static plane.
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 六芒霜陣 / Sixfold Frost Sigil
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
 // 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
@@ -138,6 +204,28 @@ THE SOFTWARE.
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 霜晶飛矢 / Frostcrystal Dart
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 裂晶霜爆 / Shattering Frostburst
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 符網結界 / Runic Mesh Barrier
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
 // 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
@@ -196,6 +284,28 @@ THE SOFTWARE.
 // No actual healing, collision detection, terrain deformation, camera motion, sound or required postprocessing.
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 揚塵震波 / Dust-Raising Shockwave
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 捲葉風旋 / Leaf-Swept Vortex
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
 // 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
 // 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
 // size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
@@ -12359,6 +12469,130 @@ export const PRESETS = {
   "burst": false,
   "seed": 45935
  },
+ "dust-devil": {
+  "id": "dust-devil",
+  "lifecycle": {
+   "start": 1.7,
+   "end": 1.4
+  },
+  "name": "飛砂風旋",
+  "english": "Sand-Swept Vortex",
+  "category": "vortex",
+  "color": "#dcbb87",
+  "description": "一圈圈沙塵交錯往上捲，中央留著空隙，旁邊有砂石飛動。",
+  "tags": "沙 土 龍捲風 沙漠 卡通 賽璐璐 沙塵旋風 Dust devil",
+  "maxParticles": 1024,
+  "kind": 4,
+  "variant": 1,
+  "duration": 5,
+  "burst": false,
+  "seed": 165366,
+  "renderStyle": "toon",
+  "schools": [
+   "sand"
+  ]
+ },
+ "energy-burst": {
+  "id": "energy-burst",
+  "quantity": {
+   "previewTime": 0.35,
+   "min": 1,
+   "max": 24,
+   "default": 12,
+   "label": "主放電數量",
+   "unit": "道",
+   "help": "每道主放電及其兩條子分岔一起增減；裝飾碎電另由密度調整。"
+  },
+  "lifecycle": {
+   "start": 0.27999999999999997,
+   "end": 1.26
+  },
+  "name": "雷弧綻爆",
+  "english": "Lightning Arc Burst",
+  "category": "burst",
+  "color": "#2878ff",
+  "description": "藍白亮光突然炸開，閃電向四周伸展，最後剩下零星電光。",
+  "tags": "科幻 命中 能量 雷電 放電 電弧 能量爆裂 Energy burst",
+  "maxParticles": 768,
+  "kind": 3,
+  "variant": 1,
+  "duration": 2.8,
+  "burst": true,
+  "seed": 128618,
+  "renderStyle": "toon",
+  "schools": [
+   "storm"
+  ]
+ },
+ "energy-vortex": {
+  "id": "energy-vortex",
+  "lifecycle": {
+   "start": 1.7,
+   "end": 1.4
+  },
+  "name": "符環渦流",
+  "english": "Runic Ring Vortex",
+  "category": "vortex",
+  "color": "#bba5ff",
+  "description": "發光帶繞圈往上捲，魔法圖案沿著中央的空隙流動。",
+  "tags": "魔法 能量 傳送 龍捲風 卡通 賽璐璐 能量漩渦 Energy vortex",
+  "maxParticles": 768,
+  "kind": 4,
+  "variant": 3,
+  "duration": 5,
+  "burst": false,
+  "seed": 183740,
+  "renderStyle": "toon",
+  "schools": [
+   "arcane"
+  ]
+ },
+ "fire-explosion": {
+  "id": "fire-explosion",
+  "lifecycle": {
+   "start": 0.27999999999999997,
+   "end": 1.26
+  },
+  "name": "白熱炎爆",
+  "english": "White-Hot Fireburst",
+  "category": "burst",
+  "color": "#ff5c26",
+  "description": "火球炸開並吹出一圈煙，火焰慢慢變成煙霧，留下小火星。",
+  "tags": "火焰 爆破 命中 卡通 賽璐璐 火焰爆炸 Fire explosion",
+  "maxParticles": 256,
+  "kind": 3,
+  "variant": 0,
+  "duration": 2.8,
+  "burst": true,
+  "seed": 119431,
+  "renderStyle": "toon",
+  "schools": [
+   "fire"
+  ]
+ },
+ "fire-vortex": {
+  "id": "fire-vortex",
+  "lifecycle": {
+   "start": 1.7,
+   "end": 1.4
+  },
+  "name": "捲焰風旋",
+  "english": "Flame-Swept Vortex",
+  "category": "vortex",
+  "color": "#ff884b",
+  "description": "橙色火焰繞圈往上捲，底下的煙塵也被火光照亮。",
+  "tags": "火焰 龍捲風 旋風 卡通 賽璐璐 火焰旋風 Fire vortex",
+  "maxParticles": 1024,
+  "kind": 4,
+  "variant": 2,
+  "duration": 5,
+  "burst": false,
+  "seed": 174553,
+  "renderStyle": "toon",
+  "schools": [
+   "fire"
+  ]
+ },
  "fireball": {
   "id": "fireball",
   "lifecycle": {
@@ -12380,6 +12614,28 @@ export const PRESETS = {
   "seed": 9187,
   "schools": [
    "fire"
+  ]
+ },
+ "frost-field": {
+  "id": "frost-field",
+  "lifecycle": {
+   "start": 0.7,
+   "end": 1
+  },
+  "name": "六芒霜陣",
+  "english": "Sixfold Frost Sigil",
+  "category": "area",
+  "color": "#9bdfff",
+  "description": "雪花形的魔法圖案向外亮起，上方有小冰屑慢慢閃光。",
+  "tags": "冰凍 緩速 範圍 雪 冰霜領域 Frost field",
+  "maxParticles": 512,
+  "kind": 2,
+  "variant": 2,
+  "duration": 5,
+  "burst": false,
+  "seed": 101057,
+  "schools": [
+   "ice"
   ]
  },
  "healing-field": {
@@ -12424,6 +12680,59 @@ export const PRESETS = {
   "seed": 27561,
   "schools": [
    "ice"
+  ]
+ },
+ "ice-shatter": {
+  "id": "ice-shatter",
+  "quantity": {
+   "min": 1,
+   "max": 18,
+   "default": 9,
+   "label": "主晶片數量",
+   "unit": "枚",
+   "help": "向外爆散的大晶片數量；小冰屑仍由粒子密度控制。"
+  },
+  "lifecycle": {
+   "start": 0.27999999999999997,
+   "end": 1.26
+  },
+  "name": "裂晶霜爆",
+  "english": "Shattering Frostburst",
+  "category": "burst",
+  "color": "#b8e5ff",
+  "description": "冰柱先亮起裂紋，再炸成一塊塊飛散的小冰晶。",
+  "tags": "冰 碎片 破碎 命中 卡通 賽璐璐 冰晶碎裂 Ice shatter",
+  "maxParticles": 768,
+  "kind": 3,
+  "variant": 3,
+  "duration": 2.8,
+  "burst": true,
+  "seed": 146992,
+  "renderStyle": "toon",
+  "schools": [
+   "ice"
+  ]
+ },
+ "magic-barrier": {
+  "id": "magic-barrier",
+  "lifecycle": {
+   "start": 0.7,
+   "end": 1
+  },
+  "name": "符網結界",
+  "english": "Runic Mesh Barrier",
+  "category": "area",
+  "color": "#bba3ff",
+  "description": "半圓形光罩從地面升起，表面有發光格子與閃動的小方塊。",
+  "tags": "護盾 防禦 法陣 範圍 魔法結界 Magic barrier",
+  "maxParticles": 768,
+  "kind": 2,
+  "variant": 3,
+  "duration": 5,
+  "burst": false,
+  "seed": 110244,
+  "schools": [
+   "arcane"
   ]
  },
  "plasma-bolt": {
@@ -12505,6 +12814,49 @@ export const PRESETS = {
   },
   "description": "多層白金法陣旋轉，三角錐砸地揚石，每兩秒推出水紋光波與中段煙浪。",
   "tags": "聖遺物 治癒 白金 三角錐 暫代 召喚 落地 光波 魔法陣 碎石 塵浪 地裂 中段 煙浪 雙層 sacred relic healing holy triangular pyramid tetrahedron placeholder summon descent pulse debris dust cracks mid-height magic smoke ring two-layer"
+ },
+ "shockwave": {
+  "id": "shockwave",
+  "lifecycle": {
+   "start": 0.27999999999999997,
+   "end": 1.26
+  },
+  "name": "揚塵震波",
+  "english": "Dust-Raising Shockwave",
+  "category": "burst",
+  "color": "#f0cf9d",
+  "description": "一圈塵土向外衝，捲起大片灰塵，小石頭再落回地面。",
+  "tags": "衝擊 地面 爆炸 範圍 卡通 賽璐璐 衝擊波 Shockwave",
+  "maxParticles": 512,
+  "kind": 3,
+  "variant": 2,
+  "duration": 2.8,
+  "burst": true,
+  "seed": 137805,
+  "renderStyle": "toon"
+ },
+ "wind-vortex": {
+  "id": "wind-vortex",
+  "lifecycle": {
+   "start": 1.7,
+   "end": 1.4
+  },
+  "name": "捲葉風旋",
+  "english": "Leaf-Swept Vortex",
+  "category": "vortex",
+  "color": "#a4dfd1",
+  "description": "旋風不停往上捲，葉子穿過中央，地面的灰塵也被捲進去。",
+  "tags": "風 龍捲風 旋風 卡通 賽璐璐 風旋 Wind vortex",
+  "maxParticles": 768,
+  "kind": 4,
+  "variant": 0,
+  "duration": 5,
+  "burst": false,
+  "seed": 156179,
+  "renderStyle": "toon",
+  "schools": [
+   "wind"
+  ]
  }
 };
 export const DEFAULTS = {
@@ -12546,10 +12898,53 @@ export const DEFAULTS = {
   "size": 1,
   "density": 0.5
  },
+ "dust-devil": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#dcbb87",
+  "size": 1,
+  "density": 0.5
+ },
+ "energy-burst": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#2878ff",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 12
+ },
+ "energy-vortex": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#bba5ff",
+  "size": 1,
+  "density": 0.5
+ },
+ "fire-explosion": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ff5c26",
+  "size": 1,
+  "density": 0.5
+ },
+ "fire-vortex": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ff884b",
+  "size": 1,
+  "density": 0.5
+ },
  "fireball": {
   "speed": 1,
   "detail": 1,
   "color": "#ff823e",
+  "size": 1,
+  "density": 0.5
+ },
+ "frost-field": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#9bdfff",
   "size": 1,
   "density": 0.5
  },
@@ -12564,6 +12959,21 @@ export const DEFAULTS = {
   "speed": 1,
   "detail": 1,
   "color": "#b3dcff",
+  "size": 1,
+  "density": 0.5
+ },
+ "ice-shatter": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#b8e5ff",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 9
+ },
+ "magic-barrier": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#bba3ff",
   "size": 1,
   "density": 0.5
  },
@@ -12589,6 +12999,20 @@ export const DEFAULTS = {
   "size": 1,
   "density": 0.5,
   "spread": 1
+ },
+ "shockwave": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#f0cf9d",
+  "size": 1,
+  "density": 0.5
+ },
+ "wind-vortex": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#a4dfd1",
+  "size": 1,
+  "density": 0.5
  }
 };
 export function create(id, options = {}) {

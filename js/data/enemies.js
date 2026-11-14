@@ -71,7 +71,7 @@ RES.ENEMIES = {
                 effects: [{type: 'summon', unit: 'boneMinion', count: 2, atb: 0.7}],
             },
             {
-                name: '死亡凍結', cd: 3, vfx: {id: 'charged-beam', at: 'foes', color: '#8fd3ff'}, desc: '全體 80% 傷害並拉條 30%，隨機 1 人 60% 機率凍結',
+                name: '死亡凍結', cd: 3, vfx: {id: 'frost-field', at: 'foes', size: 1.4}, desc: '全體 80% 傷害並拉條 30%，隨機 1 人 60% 機率凍結',
                 effects: [
                     {type: 'damage', target: 'enemies', mult: 0.8},
                     {type: 'pull', target: 'same', pct: 0.3},

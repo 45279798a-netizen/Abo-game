@@ -1,0 +1,43 @@
+{
+ "preset": {
+  "id": "energy-burst",
+  "quantity": {
+   "previewTime": 0.35,
+   "min": 1,
+   "max": 24,
+   "default": 12,
+   "label": "主放電數量",
+   "unit": "道",
+   "help": "每道主放電及其兩條子分岔一起增減；裝飾碎電另由密度調整。"
+  },
+  "lifecycle": {
+   "start": 0.27999999999999997,
+   "end": 1.26
+  },
+  "name": "雷弧綻爆",
+  "english": "Lightning Arc Burst",
+  "category": "burst",
+  "color": "#2878ff",
+  "description": "藍白亮光突然炸開，閃電向四周伸展，最後剩下零星電光。",
+  "tags": "科幻 命中 能量 雷電 放電 電弧 能量爆裂 Energy burst",
+  "maxParticles": 768,
+  "kind": 3,
+  "variant": 1,
+  "duration": 2.8,
+  "burst": true,
+  "seed": 128618,
+  "renderStyle": "toon",
+  "schools": [
+   "storm"
+  ]
+ },
+ "defaults": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#2878ff",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 12
+ },
+ "notes": "// 雷弧綻爆 / Lightning Arc Burst\n// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping\n// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。\n// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。\n// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。\n// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。\n// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。\n// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。\n// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。\n// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。\n// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。"
+}
