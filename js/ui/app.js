@@ -12,9 +12,18 @@
         auto: true,
         speed: 1,
         paused: false,
+        ultMode: loadPref('ultMode', 'full'),   // 大招演出：full 完整／short 簡短／off 關閉
+        ultSkip: null,
         battle: null,
         runId: 0,
     };
+
+    function loadPref(key, def) {
+        try { return localStorage.getItem('pr_' + key) || def; } catch (e) { return def; }
+    }
+    function savePref(key, v) {
+        try { localStorage.setItem('pr_' + key, v); } catch (e) { /* 無法儲存就算了 */ }
+    }
 
     function h(tag, cls, html) {
         const e = document.createElement(tag);
@@ -229,6 +238,7 @@
         syncControls();
         for (const u of b.units) addSprite(u);
         refreshAll();
+        preloadUltimates();
         runLoop(state.runId);
     }
 
@@ -485,6 +495,99 @@
         }
     }
 
+    // ───────── 大招（合體技）演出：時間停止 → 立繪切入 → 3D 特效 → 傷害爆發 ─────────
+    function teamComboVfx() {
+        const b = state.battle;
+        const counts = {};
+        b.units.filter(u => u.side === 'ally').forEach(u => { counts[u.faction] = (counts[u.faction] || 0) + 1; });
+        return Object.keys(counts).filter(f => counts[f] >= R.CHAIN_COMBO_AT).map(f => R.FACTIONS[f].combo?.vfx).filter(Boolean);
+    }
+
+    function preloadUltimates() {
+        const names = teamComboVfx();
+        if (!names.length) return;
+        const go = () => names.forEach(n => window.VFX3D.preload(n));
+        if (window.VFX3D) go();
+        else window.addEventListener('vfx3d-ready', go, {once: true});
+    }
+
+    function makeSkip() {
+        const skip = {skipped: false, waiters: []};
+        skip.fire = () => { skip.skipped = true; skip.waiters.splice(0).forEach(r => r()); };
+        return skip;
+    }
+    function waitOrSkip(ms, skip) {
+        if (skip.skipped) return Promise.resolve();
+        return new Promise(r => { skip.waiters.push(r); setTimeout(r, ms); });
+    }
+
+    // 特效中心：對準還活著的敵人（或我方）腳下的平均位置
+    function comboAnchor(combo) {
+        const b = state.battle;
+        const first = combo.effects[0]?.target || '';
+        const group = first.startsWith('enem') ? b.enemies() : b.allies();
+        const pts = group.map(u => sprites.get(u.uid)).filter(Boolean);
+        if (!pts.length) { const {W, H} = sceneMetrics(); return {x: W / 2, y: H * 0.45}; }
+        return {
+            x: pts.reduce((s, p) => s + p.x, 0) / pts.length,
+            y: pts.reduce((s, p) => s + p.y, 0) / pts.length + 6,
+        };
+    }
+
+    async function playUltimate(e) {
+        const f = R.FACTIONS[e.faction];
+        e.members.forEach(m => sprites.get(m)?.sprite.classList.add('acting'));
+        let mode = state.ultMode;
+        if (mode === 'full' && state.speed >= 2) mode = 'short';
+        if (mode === 'off') {
+            animate($('#flash'), [{opacity: 0}, {opacity: .5}, {opacity: 0}], 380);
+            shakeScreen(8);
+            await showBanner(f.color, 'CHAIN RESONANCE', f.combo.name, f.combo.desc, f.name);
+            return;
+        }
+        const short = mode === 'short';
+        const skip = makeSkip();
+        state.ultSkip = skip;
+        const ult = $('#ult');
+        ult.style.setProperty('--fc', f.color);
+        const b = state.battle;
+        $('#ult-cast').innerHTML = e.members.map((uid, i) => {
+            const u = b.get(uid);
+            return `<div class="cut" style="left:${-4 + i * 29}%;animation-delay:${i * (short ? 0.06 : 0.13)}s"><img src="${spriteSrc(u.img)}" alt=""></div>`;
+        }).join('');
+        $('#ult-name').textContent = f.combo.name;
+        $('#ult-fac').textContent = f.name;
+        ult.classList.remove('leaving', 'fxphase');
+        ult.classList.add('show');
+        $('#scene').classList.add('ult-dim');
+
+        // 1. 立繪切入
+        await waitOrSkip(short ? 700 : 1400, skip);
+        ult.classList.add('leaving');
+        await sleep(200);
+        ult.classList.add('fxphase');
+
+        // 2. 特效：有 3D 特效就播 3D，沒有就用 2D 備用演出
+        const at = comboAnchor(f.combo);
+        const run = (f.combo.vfx && window.VFX3D?.has(f.combo.vfx))
+            ? window.VFX3D.play(f.combo.vfx, {x: at.x, y: at.y, speedMult: short ? 1.8 : 1, skip})
+            : null;
+        if (run) {
+            await Promise.race([run.impact, waitOrSkip(4000, skip)]);
+        } else {
+            const targets = f.combo.effects[0]?.target?.startsWith('enem') ? state.battle.enemies() : state.battle.allies();
+            targets.forEach(t => playRing(t.uid, f.color));
+            await waitOrSkip(short ? 250 : 450, skip);
+        }
+
+        // 3. 打中：閃光、震動，接著跳傷害數字（特效本身會在背景播完）
+        animate($('#flash'), [{opacity: 0}, {opacity: .5}, {opacity: 0}], 380);
+        shakeScreen(10);
+        ult.classList.remove('show', 'leaving', 'fxphase');
+        $('#scene').classList.remove('ult-dim');
+        state.ultSkip = null;
+    }
+
     // ───────── 主迴圈 ─────────
     async function runLoop(id) {
         const b = state.battle;
@@ -585,14 +688,9 @@
                     float(sprites.get(u.uid)?.plate.querySelector('.fx'), '召喚', 'info');
                     break;
                 case 'points': renderHud(); break;
-                case 'combo': {
-                    const f = R.FACTIONS[e.faction];
-                    e.members.forEach(m => sprites.get(m)?.sprite.classList.add('acting'));
-                    animate($('#flash'), [{opacity: 0}, {opacity: .55}, {opacity: 0}], 420);
-                    shakeScreen(9);
-                    await showBanner(f.color, 'CHAIN RESONANCE', f.combo.name, f.combo.desc, f.name);
+                case 'combo':
+                    await playUltimate(e);
                     break;
-                }
                 case 'end':
                     $('#turn-pill').classList.remove('show');
                     refreshAll();
@@ -678,6 +776,9 @@
     $('#btn-start').onclick = startBattle;
     $('#btn-help').onclick = showHelp;
     $('#chk-auto').onchange = e => { state.auto = e.target.checked; };
+    $('#sel-ult').value = state.ultMode;
+    $('#sel-ult').onchange = e => { state.ultMode = e.target.value; savePref('ultMode', state.ultMode); };
+    $('#ult').addEventListener('click', () => state.ultSkip?.fire());
     $('#btn-quit').onclick = quitBattle;
     $('#btn-pause').onclick = togglePause;
     $('#btn-speed').onclick = () => {

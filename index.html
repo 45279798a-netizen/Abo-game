@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#0b0907">
     <title>Project Resonance · 戰鬥原型</title>
     <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">{"imports": {"three": "./vendor/three/three.module.js"}}</script>
 </head>
 <body>
 <div id="app">
@@ -32,7 +33,16 @@
         <div id="hero-grid" class="hero-grid"></div>
 
         <div class="start-bar">
-            <label class="auto-toggle"><input type="checkbox" id="chk-auto" checked> 自動戰鬥</label>
+            <div class="opt-col">
+                <label class="auto-toggle"><input type="checkbox" id="chk-auto" checked> 自動戰鬥</label>
+                <label class="auto-toggle">大招演出
+                    <select id="sel-ult">
+                        <option value="full">完整</option>
+                        <option value="short">簡短</option>
+                        <option value="off">關閉</option>
+                    </select>
+                </label>
+            </div>
             <button id="btn-start" class="btn-primary">開始戰鬥</button>
         </div>
     </section>
@@ -77,6 +87,16 @@
             </button>
         </div>
 
+        <div id="ult" class="ult">
+            <div class="ult-band"></div>
+            <div id="ult-cast" class="ult-cast"></div>
+            <div class="ult-text">
+                <div class="ult-tag">CHAIN RESONANCE</div>
+                <div id="ult-name" class="ult-name"></div>
+                <div id="ult-fac" class="ult-fac"></div>
+            </div>
+            <div class="ult-skip">點一下跳過</div>
+        </div>
         <div id="banner" class="banner"></div>
         <div id="result" class="overlay"></div>
     </section>
@@ -90,5 +110,6 @@
 <script src="js/data/enemies.js"></script>
 <script src="js/core/battle.js"></script>
 <script src="js/ui/app.js"></script>
+<script type="module" src="js/vfx/stage3d.js"></script>
 </body>
 </html>

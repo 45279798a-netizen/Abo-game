@@ -27,3 +27,16 @@ tools/sim.js  平衡模擬
 ```
 node tools/sim.js 300
 ```
+
+## 大招特效（3D）
+
+合體技觸發時會暫停戰鬥，播放立繪切入與 3D 特效。
+
+- 特效檔放在 `js/vfx/`，在 `js/vfx/stage3d.js` 的 `EFFECTS` 登記（播放速度、打中時間、大小）
+- 在 `js/data/factions.js` 的合體技填上 `vfx: '名稱'` 就會使用；沒填的陣營用 2D 備用演出
+- 演出可在編隊畫面設定「完整／簡短／關閉」，戰鬥中點一下可跳過，x2 以上速度自動改簡短
+
+## 授權與來源
+
+- 3D 特效「聖遺物・治癒降臨」（`js/vfx/sacred-relic.js`）：00GameDevs，MIT License（授權文字保留在檔案開頭）
+- Three.js 0.187.0（`vendor/three/`）：MIT License，見 `vendor/three/LICENSE`
