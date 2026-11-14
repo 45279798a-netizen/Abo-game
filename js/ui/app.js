@@ -14,7 +14,6 @@
         paused: false,
         battle: null,
         runId: 0,
-        log: [],
     };
 
     function h(tag, cls, html) {
@@ -183,59 +182,148 @@
         if (e.target.id === 'modal' || e.target.closest('[data-close]')) $('#modal').classList.remove('show');
     });
 
-    // ═════════ 戰鬥畫面 ═════════
-    const cards = new Map();
+    // ═════════ 戰鬥畫面（場景式）═════════
+    // 角色以「腳底」為定位點站在戰場上；位置用畫面寬高的比例表示。
+    // 敵方在上（遠、較小），我方在下（近、較大），後排比前排更遠／更近形成縱深。
+    const LAYOUT = {
+        enemy: {
+            back:  {y: 0.35, s: 14.5, xs: [0.2, 0.5, 0.8]},
+            front: {y: 0.47, s: 16.5, xs: [0.31, 0.69]},
+            // 有首領時：首領站中間偏左，其他人往兩側讓開，避免被首領擋住
+            bossFront: {xs: [0.44, 0.86]},
+            bossBack: {xs: [0.13, 0.87, 0.7]},
+            boss: {s: 27},
+        },
+        ally: {
+            front: {yFromHud: 0.15, s: 19, xs: [0.3, 0.7]},
+            back:  {yFromHud: 0.0,  s: 21, xs: [0.16, 0.5, 0.84]},
+        },
+    };
+    const MELEE = ['warrior', 'tank', 'assassin'];
+    const sprites = new Map();   // uid → {sprite, plate, x, y, s}
+    const slotsUsed = new Map(); // `${side}-${row}` → Map(slot → uid)
+    const spriteSrc = img => `assets/sprites/${img}.webp`;
+
+    function sceneMetrics() {
+        const sc = $('#screen-battle');
+        const W = sc.clientWidth, H = sc.clientHeight;
+        const u = Math.min(H, W * 1.85) / 100;
+        const hudTop = $('#hud').offsetTop || (H - 80);
+        return {W, H, u, hudTop};
+    }
 
     function startBattle() {
         state.runId++;
         state.paused = false;
-        state.log = [];
         const b = Battle.create({team: state.team.slice(), encounterId: state.encounter, auto: state.auto});
         state.battle = b;
-        cards.clear();
-        document.querySelectorAll('#screen-battle .row').forEach(r => { r.innerHTML = ''; });
+        sprites.clear();
+        slotsUsed.clear();
+        $('#stage-sprites').innerHTML = '';
+        $('#stage-ui').innerHTML = '';
         $('#result').classList.remove('show');
-        $('#log').innerHTML = '';
-        $('#b-enc').textContent = `${b.encounter.name}（${b.encounter.difficulty}）`;
-        for (const u of b.units) addCard(u);
+        $('#turn-pill').classList.remove('show');
+        $('#b-enc').textContent = `${b.encounter.name}・${b.encounter.difficulty}`;
+        $('#scene-bg').style.backgroundImage = `url(assets/bg/${b.encounter.bg || '1'}.webp)`;
         showScreen('battle');
         syncControls();
+        for (const u of b.units) addSprite(u);
         refreshAll();
         runLoop(state.runId);
     }
 
-    function addCard(u, spawn) {
-        const c = h('div', 'unit' + (u.boss ? ' boss' : '') + (spawn ? ' spawn' : ''), `
-            <div class="portrait"><img src="${imgSrc(u.img)}" alt=""><span class="u-el">${elIcon(u.element)}</span><span class="u-ready">技</span></div>
-            <div class="bar hp"><i></i><b></b></div>
-            <div class="bar atb"><i></i></div>
-            <div class="u-name">${u.boss ? '👑 ' : ''}${shortName(u.name)}</div>
-            <div class="u-st"></div>
-            <div class="fx"></div>`);
-        c.style.borderColor = u.side === 'ally' ? facColor(u.faction) : (u.boss ? '#a3e635' : '#5b2a2a');
-        const row = document.querySelector(`#field-${u.side === 'ally' ? 'ally' : 'enemy'} .row.${u.row}`);
-        row.appendChild(c);
-        cards.set(u.uid, c);
-        c.onclick = () => showUnitInfo(u);
-        updateCard(u);
+    function pickSlot(u) {
+        const key = `${u.side}-${u.row}`;
+        if (!slotsUsed.has(key)) slotsUsed.set(key, new Map());
+        const used = slotsUsed.get(key);
+        const b = state.battle;
+        const cap = Battle.ROW_CAP[u.row];
+        for (let i = 0; i < cap; i++) {
+            const occ = used.get(i);
+            if (!occ || !b.get(occ)?.alive) { used.set(i, u.uid); return i; }
+        }
+        return 0;
     }
 
-    function updateCard(u) {
-        const c = cards.get(u.uid);
-        if (!c) return;
+    function spritePos(u, slot) {
+        const {W, H, u: unit, hudTop} = sceneMetrics();
+        let x, y, s;
+        if (u.side === 'enemy') {
+            const L = LAYOUT.enemy;
+            const hasBoss = state.battle.units.some(e => e.side === 'enemy' && e.boss);
+            const row = L[u.row];
+            const xs = hasBoss ? (u.row === 'front' ? L.bossFront.xs : L.bossBack.xs) : row.xs;
+            x = xs[slot] ?? 0.5; y = row.y * H; s = u.boss ? L.boss.s : row.s;
+            if (u.boss) y += H * 0.03;
+        } else {
+            const row = LAYOUT.ally[u.row];
+            const backY = hudTop - 34;
+            y = backY - row.yFromHud * H;
+            x = row.xs[slot] ?? 0.5; s = row.s;
+        }
+        return {x: x * W, y, s, unit};
+    }
+
+    function addSprite(u, spawn) {
+        const slot = pickSlot(u);
+        const p = spritePos(u, slot);
+        const sp = h('div', `sprite ${u.side}${u.boss ? ' boss' : ''}${spawn ? ' spawn' : ''}`, `
+            <div class="shadow"></div><div class="ring"></div>
+            <div class="body"><img src="${spriteSrc(u.img)}" alt="${u.name}" draggable="false"></div>`);
+        const pl = h('div', `plate ${u.side}${u.boss ? ' boss' : ''}`, `
+            ${u.boss ? `<div class="p-name">👑 ${u.name}</div>` : ''}
+            <div class="p-row"><span class="p-el">${elIcon(u.element)}</span><div class="p-bars">
+                <div class="bar hp"><i></i><b></b></div><div class="bar atb"><i></i></div></div></div>
+            <div class="p-st"></div><span class="p-ready">技</span><div class="fx"></div>`);
+        const style = `--s:${p.s};--u:${p.unit}px;` + (u.side === 'ally' ? `--fc:${facColor(u.faction)};` : '');
+        sp.style.cssText = style + `left:${p.x}px;top:${p.y}px;z-index:${Math.round(p.y)};`;
+        pl.style.cssText = style + `left:${p.x}px;top:${p.y + 4}px;`;
+        sp.querySelector('img').onclick = () => showUnitInfo(u);
+        $('#stage-sprites').appendChild(sp);
+        $('#stage-ui').appendChild(pl);
+        sprites.set(u.uid, {sprite: sp, plate: pl, x: p.x, y: p.y, s: p.s, unit: p.unit});
+        updateSprite(u);
+    }
+
+    function relayout() {
+        const b = state.battle;
+        if (!b) return;
+        for (const u of b.units) {
+            const rec = sprites.get(u.uid);
+            if (!rec) continue;
+            const key = `${u.side}-${u.row}`;
+            const slot = [...(slotsUsed.get(key) || new Map()).entries()].find(([, id]) => id === u.uid)?.[0] ?? 0;
+            const p = spritePos(u, slot);
+            Object.assign(rec, {x: p.x, y: p.y, unit: p.unit});
+            for (const el of [rec.sprite, rec.plate]) { el.style.setProperty('--u', p.unit + 'px'); el.style.left = p.x + 'px'; }
+            rec.sprite.style.top = p.y + 'px';
+            rec.plate.style.top = (p.y + 4) + 'px';
+        }
+    }
+    window.addEventListener('resize', relayout);
+
+    function updateSprite(u) {
+        const rec = sprites.get(u.uid);
+        if (!rec) return;
+        const pl = rec.plate;
         const hpPct = Math.max(0, u.hp / u.maxHp * 100);
-        c.querySelector('.bar.hp i').style.width = hpPct + '%';
-        c.querySelector('.bar.hp b').style.width = Math.min(100, u.shield / u.maxHp * 100) + '%';
-        c.querySelector('.bar.hp').classList.toggle('low', hpPct < 30);
-        c.querySelector('.bar.atb i').style.width = Math.min(100, u.atb / Battle.ATB_MAX * 100) + '%';
-        c.querySelector('.u-st').innerHTML = u.statuses.map(s => `<span title="${Battle.STATUS[s.key].name}">${Battle.STATUS[s.key].icon}</span>`).join('');
-        c.classList.toggle('ready', u.alive && u.cds.some(cd => cd === 0) && u.skills.length > 0);
-        c.classList.toggle('dead', !u.alive);
+        const hp = pl.querySelector('.bar.hp');
+        hp.querySelector('i').style.width = hpPct + '%';
+        hp.querySelector('b').style.width = Math.min(100, u.shield / u.maxHp * 100) + '%';
+        hp.classList.toggle('mid', hpPct < 50 && hpPct >= 25);
+        hp.classList.toggle('low', hpPct < 25);
+        const atbPct = Math.min(100, u.atb / Battle.ATB_MAX * 100);
+        pl.querySelector('.bar.atb i').style.width = atbPct + '%';
+        pl.querySelector('.bar.atb').classList.toggle('full', atbPct >= 99);
+        pl.querySelector('.p-st').innerHTML = u.statuses.map(st => `<span title="${Battle.STATUS[st.key].name}">${Battle.STATUS[st.key].icon}</span>`).join('');
+        pl.classList.toggle('ready', u.alive && u.skills.length > 0 && u.cds.some(cd => cd === 0));
+        pl.classList.toggle('dead', !u.alive);
+        rec.sprite.classList.toggle('dead', !u.alive);
     }
 
     function refreshAll() {
         const b = state.battle;
-        for (const u of b.units) updateCard(u);
+        for (const u of b.units) updateSprite(u);
         renderTimeline();
         renderHud();
         $('#b-round').textContent = `第 ${Math.min(b.round(), Battle.MAX_ROUNDS)} / ${Battle.MAX_ROUNDS} 回合`;
@@ -246,19 +334,16 @@
         const list = b.over ? [] : b.preview(8);
         const box = $('#timeline');
         box.innerHTML = '';
-        // 從目前的連鎖接續計算：時間軸上的同陣營隊友會形成第幾節
+        box.style.visibility = list.length ? 'visible' : 'hidden';
+        // 從目前的連鎖接續推算：時間軸上同陣營隊友會接成第幾節
         let runFaction = b.chain.faction, runCount = b.chain.count;
         list.forEach((u, i) => {
-            const t = h('div', 'tl' + (i === 0 ? ' first' : '') + (u.side === 'enemy' ? ' enemy' : ''));
-            t.innerHTML = `<img src="${imgSrc(u.img)}" alt="">`;
+            const t = h('div', 'tl' + (i === 0 ? ' first' : '') + (u.side === 'enemy' ? ' enemy' : ''),
+                `<div class="tl-face"><img src="${spriteSrc(u.img)}" alt=""></div>`);
             if (u.side === 'ally') {
                 t.style.borderColor = facColor(u.faction);
-                if (u.faction === runFaction && runCount > 0) {
-                    runCount++;
-                    t.appendChild(h('span', 'tl-link', '⛓'));
-                } else {
-                    runFaction = u.faction; runCount = 1;
-                }
+                if (u.faction === runFaction && runCount > 0) { runCount++; t.appendChild(h('span', 'tl-link', '⛓')); }
+                else { runFaction = u.faction; runCount = 1; }
                 if (runCount >= R.CHAIN_COMBO_AT && b.comboReady(u.faction)) t.appendChild(h('span', 'tl-combo', '✨'));
             } else {
                 runFaction = null; runCount = 0;
@@ -273,24 +358,23 @@
         const label = $('#chain-label');
         if (ch.count > 0) {
             const f = R.FACTIONS[ch.faction];
-            label.innerHTML = `<span style="color:${f.color}">${f.name}</span> 連鎖 ${ch.count}`;
+            label.innerHTML = `<span style="color:${f.color}">${f.name}</span> 連鎖 ${ch.count}${ch.count >= 2 ? `（傷害 +${Math.round((R.CHAIN_MULT[Math.min(ch.count, 3)] - 1) * 100)}%）` : ''}`;
         } else {
             label.textContent = '連鎖：無';
         }
         $('#chain-pips').innerHTML = Array.from({length: R.CHAIN_COMBO_AT}, (_, i) => `<i class="${i < ch.count ? 'on' : ''}"></i>`).join('');
         $('#points-pips').innerHTML = Array.from({length: R.CHAIN_POINTS_MAX}, (_, i) => `<i class="${i < b.chainPoints ? 'on' : ''}"></i>`).join('');
-
-        // 合體技冷卻
         const facs = [...new Set(b.units.filter(u => u.side === 'ally').map(u => u.faction))]
             .filter(f => b.units.filter(u => u.side === 'ally' && u.faction === f).length >= R.CHAIN_COMBO_AT);
         $('#combo-cd').textContent = facs.length
             ? facs.map(f => `${R.FACTIONS[f].combo.name}：${b.comboReady(f) ? '可觸發' : `冷卻 ${b.comboCooldownLeft(f)} 回合`}`).join('　')
-            : '隊伍裡沒有同陣營 3 人，無法觸發合體技';
+            : '沒有同陣營 3 人，無法觸發合體技';
+        // 連鎖中的同陣營隊友腳下發光
+        for (const u of b.units) sprites.get(u.uid)?.sprite.classList.toggle('chainlit', u.side === 'ally' && ch.count > 0 && ch.members.includes(u.uid));
 
         const {ok, target} = b.canChainCommand();
-        const btn = $('#btn-chain');
-        btn.disabled = !ok || b.over;
-        $('#btn-chain-sub').textContent = ok ? `讓 ${shortName(target.name)} 出手` : (b.chainPoints < 1 ? '連攜點不足' : '等待連鎖');
+        $('#btn-chain').disabled = !ok || b.over;
+        $('#btn-chain-sub').textContent = ok ? `讓${shortName(target.name)}出手` : (b.chainPoints < 1 ? '連攜點不足' : '連鎖中才能用');
     }
 
     function showUnitInfo(u) {
@@ -313,10 +397,98 @@
             <div class="row-btns"><button class="btn-secondary" data-close>關閉（戰鬥已暫停）</button></div>`);
     }
 
+    // ───────── 演出 ─────────
+    function chest(uid) {
+        const r = sprites.get(uid);
+        return r ? {x: r.x, y: r.y - r.s * r.unit * 0.5} : null;
+    }
+
+    function animate(el, frames, ms, easing = 'ease-out') {
+        if (!el?.animate) return Promise.resolve();
+        return el.animate(frames, {duration: ms / state.speed, easing}).finished.catch(() => {});
+    }
+
+    function vfx(cls, x, y, color, extra = {}) {
+        const v = h('div', 'vfx ' + cls);
+        v.style.left = x + 'px'; v.style.top = y + 'px';
+        if (color) v.style.setProperty('--c', color);
+        Object.assign(v.style, extra);
+        $('#stage-ui').appendChild(v);
+        return v;
+    }
+
+    async function playSlash(target, color) {
+        const p = chest(target);
+        if (!p) return;
+        const v = vfx('slash', p.x, p.y, color);
+        await animate(v, [{opacity: 0, scale: .4, rotate: '-20deg'}, {opacity: 1, scale: 1.1, rotate: '0deg', offset: .35}, {opacity: 0, scale: 1.3}], 380);
+        v.remove();
+    }
+
+    async function playRing(target, color) {
+        const p = chest(target);
+        if (!p) return;
+        const v = vfx('ring', p.x, p.y, color);
+        await animate(v, [{opacity: 1, scale: .3}, {opacity: 0, scale: 4.5}], 450);
+        v.remove();
+    }
+
+    async function playBolt(from, to, color) {
+        const a = chest(from), b = chest(to);
+        if (!a || !b) return;
+        const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+        const v = vfx('bolt', a.x, a.y, color, {width: len + 'px', transform: `translate(0,-50%) rotate(${Math.atan2(dy, dx)}rad)`});
+        await animate(v, [{opacity: 0, clipPath: 'inset(0 100% 0 0)'}, {opacity: 1, clipPath: 'inset(0 0 0 0)', offset: .6}, {opacity: 0, clipPath: 'inset(0 0 0 100%)'}], 300);
+        v.remove();
+    }
+
+    function hitFlash(uid, big) {
+        const img = sprites.get(uid)?.sprite.querySelector('img');
+        if (!img) return;
+        animate(img, [{filter: 'brightness(3) drop-shadow(0 0 8px #fff)'}, {filter: 'brightness(1)'}], 260);
+        const k = big ? 7 : 4;
+        animate(img, [{translate: '0 0'}, {translate: `${-k}px 0`}, {translate: `${k}px 0`}, {translate: '0 0'}], 240);
+    }
+
+    function shakeScreen(power = 6) {
+        animate($('#scene'), [
+            {translate: '0 0'}, {translate: `${power}px ${-power / 2}px`}, {translate: `${-power}px ${power / 2}px`},
+            {translate: `${power / 2}px 0`}, {translate: '0 0'}], 320);
+    }
+
+    // 出手動作：近戰衝向目標，遠程原地施法並飛出光束
+    async function performAction(actor, events, isSkill) {
+        const firstHit = events.find(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit');
+        const rec = sprites.get(actor.uid);
+        if (!rec) return;
+        const el = rec.sprite;
+        const color = R.ELEMENTS[actor.element]?.color;
+        if (!firstHit) {
+            // 輔助類技能：原地發光一下
+            await animate(el, [{translate: '0 0'}, {translate: '0 -14px'}, {translate: '0 0'}], 320);
+            return;
+        }
+        const tgt = chest(firstHit.uid), me = sprites.get(actor.uid);
+        const targets = [...new Set(events.filter(e => e.type === 'damage' && e.srcUid === actor.uid && e.kind === 'hit').map(e => e.uid))];
+        if (MELEE.includes(actor.role) && tgt && targets.length === 1) {
+            const dx = (tgt.x - me.x) * 0.72, dy = (tgt.y + me.s * me.unit * 0.45 - me.y) * 0.72;
+            const go = animate(el, [{translate: '0 0'}, {translate: `${dx}px ${dy}px`, offset: .45}, {translate: `${dx}px ${dy}px`, offset: .6}, {translate: '0 0'}], 520, 'ease-in-out');
+            await wait(230);
+            playSlash(firstHit.uid, isSkill ? color : '#fde68a');
+            await go;
+        } else {
+            animate(el, [{translate: '0 0'}, {translate: '0 -16px', offset: .4}, {translate: '0 0'}], 420);
+            await wait(140);
+            if (targets.length > 1) targets.forEach(t => playRing(t, color));
+            else { await playBolt(actor.uid, firstHit.uid, color); playRing(firstHit.uid, color); }
+            await wait(80);
+        }
+    }
+
     // ───────── 主迴圈 ─────────
     async function runLoop(id) {
         const b = state.battle;
-        await wait(500);
+        await wait(600);
         while (id === state.runId && !b.over) {
             if (state.paused) { await sleep(120); continue; }
             const events = b.step();
@@ -327,34 +499,46 @@
         }
     }
 
+    function setPill(html, enemy) {
+        const p = $('#turn-pill');
+        p.innerHTML = html;
+        p.classList.toggle('enemy', !!enemy);
+        p.classList.add('show');
+    }
+
     async function playEvents(events, id) {
         const b = state.battle;
-        document.querySelectorAll('.unit.acting, .unit.commanded').forEach(c => c.classList.remove('acting', 'commanded'));
+        document.querySelectorAll('.sprite.acting, .sprite.commanded').forEach(c => c.classList.remove('acting', 'commanded'));
         let actor = null;
-        for (const e of events) {
+        for (let i = 0; i < events.length; i++) {
+            const e = events[i];
             if (id !== state.runId) return;
-            const c = e.uid ? cards.get(e.uid) : null;
+            const rec = e.uid ? sprites.get(e.uid) : null;
+            const fx = rec?.plate.querySelector('.fx');
             const u = e.uid ? b.get(e.uid) : null;
             switch (e.type) {
                 case 'turn':
                     actor = u;
-                    c?.classList.add('acting');
+                    rec?.sprite.classList.add('acting');
+                    setPill(`${u.name} 行動`, u.side === 'enemy');
                     $('#b-round').textContent = `第 ${Math.min(e.round, Battle.MAX_ROUNDS)} / ${Battle.MAX_ROUNDS} 回合`;
                     break;
                 case 'command':
-                    c?.classList.add('commanded');
-                    float(c, '連攜！', 'callout chain');
-                    log(`⛓ 連攜指令：${u.name} 立刻出手`);
-                    await wait(350);
+                    rec?.sprite.classList.add('commanded');
+                    float(fx, '連攜！', 'callout chain');
+                    await wait(300);
                     break;
                 case 'skill':
-                    float(c, e.name, 'callout');
-                    log(`${u.side === 'ally' ? '' : '◆ '}${u.name} 施放「${e.name}」`);
-                    await wait(250);
+                    setPill(`${u.name}・<span class="sk">${e.name}</span>`, u.side === 'enemy');
+                    if (u.boss) shakeScreen(5);
+                    await performAction(u, events.slice(i), true);
+                    break;
+                case 'basic':
+                    await performAction(u, events.slice(i), false);
                     break;
                 case 'chain':
                     if (e.count >= 2) {
-                        float(cards.get(actor.uid), `連鎖 ×${e.count}`, 'callout chain');
+                        float(sprites.get(actor.uid)?.plate.querySelector('.fx'), `連鎖 ×${e.count}`, 'callout chain');
                         $('#hud').classList.remove('pulse'); void $('#hud').offsetWidth; $('#hud').classList.add('pulse');
                     }
                     renderHud();
@@ -362,76 +546,78 @@
                 case 'chainBreak':
                     $('#hud').classList.add('broken');
                     setTimeout(() => $('#hud').classList.remove('broken'), 400);
+                    renderHud();
                     break;
                 case 'damage': {
                     let cls = e.kind === 'dot' ? 'dot' : e.kind === 'combo' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                     if (e.rel) cls += ' ' + e.rel;
                     if (e.chained) cls += ' chained';
-                    float(c, (e.crit ? '暴擊 ' : '') + e.amount, cls);
-                    if (c) { c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
-                    updateCard(u);
-                    await wait(70);
+                    float(fx, (e.crit ? '暴擊 ' : '') + e.amount, cls);
+                    if (e.kind !== 'dot') hitFlash(e.uid, e.crit);
+                    if (e.crit) shakeScreen(4);
+                    updateSprite(u);
+                    await wait(60);
                     break;
                 }
-                case 'heal': float(c, '+' + e.amount, 'heal'); updateCard(u); break;
-                case 'shield': float(c, '🛡 ' + e.amount, 'shield'); updateCard(u); break;
-                case 'atb': float(c, e.delta > 0 ? `▲推條 ${e.delta}%` : `▼拉條 ${-e.delta}%`, 'info'); updateCard(u); break;
-                case 'status': float(c, Battle.STATUS[e.key].icon + Battle.STATUS[e.key].name, 'info'); updateCard(u); break;
-                case 'resist': float(c, '抵抗', 'info'); break;
-                case 'cleanse': float(c, '✨淨化', 'info'); updateCard(u); break;
-                case 'skip': float(c, '❄️ 凍結中', 'info'); log(`${u.name} 被凍結，跳過行動`); await wait(250); break;
-                case 'execute': float(c, '斬殺！', 'callout'); break;
-                case 'explode': float(c, '💥屍爆', 'callout'); log(`${u.name} 屍爆！`); break;
-                case 'enrage': await showBanner('#a3e635', '首領', `${u.name}狂暴了`, '速度大幅提升'); break;
+                case 'heal':
+                    float(fx, '+' + e.amount, 'heal');
+                    updateSprite(u);
+                    break;
+                case 'shield': float(fx, '🛡 ' + e.amount, 'shield'); updateSprite(u); break;
+                case 'atb': float(fx, e.delta > 0 ? `▲推條 ${e.delta}%` : `▼拉條 ${-e.delta}%`, 'info'); updateSprite(u); break;
+                case 'status': float(fx, Battle.STATUS[e.key].icon + Battle.STATUS[e.key].name, 'info'); updateSprite(u); break;
+                case 'resist': float(fx, '抵抗', 'info'); break;
+                case 'cleanse': float(fx, '✨淨化', 'info'); updateSprite(u); break;
+                case 'skip':
+                    float(fx, '❄️ 凍結中', 'info');
+                    setPill(`${u.name} 被凍結，跳過行動`, u.side === 'enemy');
+                    await wait(300);
+                    break;
+                case 'execute': float(fx, '斬殺！', 'callout'); shakeScreen(6); break;
+                case 'explode': float(fx, '💥屍爆', 'callout'); shakeScreen(7); break;
+                case 'enrage': await showBanner('#a3e635', 'ENRAGE', `${u.name}狂暴`, '速度大幅提升'); break;
                 case 'death':
-                    updateCard(u);
-                    log(`✝ ${u.name} 倒下`);
-                    if (u.side === 'enemy') setTimeout(() => c?.classList.add('gone'), 700);
+                    updateSprite(u);
+                    if (rec) animate(rec.sprite.querySelector('img'), [{translate: '0 0', opacity: 1}, {translate: '0 16px', opacity: 0.3}], 600);
                     break;
                 case 'summon':
-                    addCard(u, true);
-                    log(`◆ 召喚了 ${u.name}`);
+                    addSprite(u, true);
+                    float(sprites.get(u.uid)?.plate.querySelector('.fx'), '召喚', 'info');
                     break;
                 case 'points': renderHud(); break;
                 case 'combo': {
                     const f = R.FACTIONS[e.faction];
-                    log(`✨ ${f.name}合體技「${e.name}」！`);
-                    e.members.forEach(m => cards.get(m)?.classList.add('acting'));
-                    await showBanner(f.color, f.name, e.name, f.combo.desc);
+                    e.members.forEach(m => sprites.get(m)?.sprite.classList.add('acting'));
+                    animate($('#flash'), [{opacity: 0}, {opacity: .55}, {opacity: 0}], 420);
+                    shakeScreen(9);
+                    await showBanner(f.color, 'CHAIN RESONANCE', f.combo.name, f.combo.desc, f.name);
                     break;
                 }
                 case 'end':
+                    $('#turn-pill').classList.remove('show');
                     refreshAll();
-                    await wait(600);
+                    await wait(700);
                     showResult(e);
                     break;
             }
         }
     }
 
-    function float(card, text, cls) {
-        if (!card) return;
+    function float(fx, text, cls) {
+        if (!fx) return;
         const f = h('span', 'float ' + cls, text);
-        const fx = card.querySelector('.fx');
-        const n = fx.children.length;
-        f.style.marginTop = (n * 14) + 'px';
+        f.style.top = (-fx.children.length * 18) + 'px';
         fx.appendChild(f);
-        setTimeout(() => f.remove(), 1100);
+        setTimeout(() => f.remove(), 1150);
     }
 
-    async function showBanner(color, top, name, desc) {
+    async function showBanner(color, tag, name, desc, fac) {
         const bn = $('#banner');
-        bn.innerHTML = `<div class="bn-fac" style="color:${color}">${top}</div><div class="bn-name" style="color:${color}">${name}</div><div class="bn-desc">${desc}</div>`;
+        bn.innerHTML = `<div class="bn-tag">${tag}</div><div class="bn-name" style="color:${color}">${name}</div>${fac ? `<div class="bn-fac" style="color:${color}">${fac}</div>` : ''}<div class="bn-desc">${desc}</div>`;
         bn.classList.add('show');
-        await wait(1100);
+        await wait(1250);
         bn.classList.remove('show');
-        await wait(150);
-    }
-
-    function log(text) {
-        state.log.push(text);
-        if (state.log.length > 3) state.log.shift();
-        $('#log').innerHTML = state.log.map(t => `<div>${t}</div>`).join('');
+        await wait(180);
     }
 
     function showResult(e) {
@@ -507,10 +693,10 @@
         const b = state.battle;
         if (!b || !b.useChainCommand()) return;
         const target = b.get(b.forced);
-        const c = cards.get(target.uid);
-        c?.classList.add('commanded');
-        float(c, '連攜！', 'callout chain');
-        log(`⛓ 連攜指令：${target.name} 立刻出手`);
+        const rec = sprites.get(target.uid);
+        rec?.sprite.classList.add('commanded');
+        float(rec?.plate.querySelector('.fx'), '連攜！', 'callout chain');
+        setPill(`⛓ 連攜指令：${target.name} 立刻出手`);
         renderHud();
         renderTimeline();
     };

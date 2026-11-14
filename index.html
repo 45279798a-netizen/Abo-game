@@ -37,30 +37,31 @@
         </div>
     </section>
 
-    <!-- ───────── 戰鬥畫面 ───────── -->
+    <!-- ───────── 戰鬥畫面：場景式，角色站在戰場上 ───────── -->
     <section id="screen-battle" class="screen">
+        <div id="scene" class="scene">
+            <div id="scene-bg" class="scene-bg"></div>
+            <div class="scene-shade"></div>
+            <div id="stage-sprites" class="stage"></div>
+            <div id="stage-ui" class="stage"></div>
+            <div id="flash" class="flash"></div>
+        </div>
+
         <div class="b-top">
-            <button id="btn-quit" class="icon-btn" aria-label="離開">✕</button>
-            <div class="b-title">
+            <button id="btn-quit" class="g-btn" aria-label="離開">✕</button>
+            <div class="b-title glass">
                 <div id="b-enc"></div>
                 <div id="b-round"></div>
             </div>
-            <button id="btn-auto" class="pill">自動</button>
-            <button id="btn-speed" class="pill">x1</button>
-            <button id="btn-pause" class="icon-btn" aria-label="暫停">❚❚</button>
+            <button id="btn-auto" class="g-btn wide">自動</button>
+            <button id="btn-speed" class="g-btn wide">x1</button>
+            <button id="btn-pause" class="g-btn" aria-label="暫停">❚❚</button>
         </div>
 
-        <div class="timeline-wrap">
-            <div class="timeline-label">行動順序</div>
-            <div id="timeline" class="timeline"></div>
-        </div>
+        <div id="timeline" class="timeline glass"></div>
+        <div id="turn-pill" class="turn-pill"></div>
 
-        <div id="field-enemy" class="field enemy">
-            <div class="row back"></div>
-            <div class="row front"></div>
-        </div>
-
-        <div id="hud" class="hud">
+        <div id="hud" class="hud glass">
             <div class="hud-chain">
                 <div id="chain-label" class="chain-label">連鎖</div>
                 <div id="chain-pips" class="pips"></div>
@@ -71,17 +72,11 @@
                 <div id="points-pips" class="pips points"></div>
             </div>
             <button id="btn-chain" class="btn-chain" disabled>
-                <span class="btn-chain-main">連攜！</span>
+                <span class="btn-chain-main">連攜</span>
                 <span id="btn-chain-sub" class="btn-chain-sub"></span>
             </button>
         </div>
 
-        <div id="field-ally" class="field ally">
-            <div class="row front"></div>
-            <div class="row back"></div>
-        </div>
-
-        <div id="log" class="log"></div>
         <div id="banner" class="banner"></div>
         <div id="result" class="overlay"></div>
     </section>
