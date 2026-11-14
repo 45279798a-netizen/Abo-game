@@ -58,14 +58,15 @@ RES.FACTIONS = {
     undead: {name: '亡靈天災', short: '亡靈', color: '#84cc16', combo: null},
 };
 
-// 連攜鏈：第 N 個出手的人吃到的傷害倍率
-RES.CHAIN_MULT = [1, 1, 1.15, 1.30];
-RES.CHAIN_COMBO_AT = 3;        // 連到幾人觸發合體技
-RES.COMBO_COOLDOWN_ROUNDS = 4; // 同陣營合體技觸發後，要隔幾回合才能再觸發
-RES.CHAIN_POINTS_MAX = 3;      // 連攜點上限
-RES.CHAIN_POINTS_START = 1;    // 開場給的連攜點
-RES.CHAIN_POINT_EVERY_ROUNDS = 4; // 每 4 回合自動補 1 點
-// 連攜點來源：開場 1 點、之後每 4 回合 +1
+// 共鳴（合體技）規則：
+//   隊伍裡同陣營 3 人以上，該陣營就有一條共鳴條。
+//   該陣營的英雄每出手一次，共鳴 +10%；集滿 100% 就能放合體技（大招），放完歸零。
+//   大招會插隊立刻放出，不佔用任何人的回合。手動模式按按鈕放，自動模式滿了就放。
+RES.RESONANCE = {
+    minMembers: 3,      // 同陣營幾人以上才有共鳴條
+    gainPerAction: 10,  // 每次出手增加多少
+    max: 100,
+};
 
 // 開場行動條隨機範圍（0～此值），越大出手順序越分散
 RES.START_ATB_SPREAD = 500;

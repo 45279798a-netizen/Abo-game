@@ -135,10 +135,10 @@
         const lines = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([f, n]) => {
             const fac = R.FACTIONS[f];
             const name = `<b style="color:${fac.color}">${fac.name}</b>`;
-            if (n >= R.CHAIN_COMBO_AT) return `${name} ×${n}：可觸發合體技「${fac.combo.name}」`;
-            return `${name} ×${n}：只能連鎖加傷害，還差 ${R.CHAIN_COMBO_AT - n} 位才能觸發合體技`;
+            if (n >= R.RESONANCE.minMembers) return `${name} ×${n}：有共鳴條，集滿可放大招「${fac.combo.name}」`;
+            return `${name} ×${n}：再 ${R.RESONANCE.minMembers - n} 位同陣營，才能放大招「${fac.combo.name}」`;
         });
-        $('#team-hint').innerHTML = lines.join('<br>') || '選 5 位英雄。同陣營 3 位以上才能觸發合體技。';
+        $('#team-hint').innerHTML = lines.join('<br>') || '選 5 位英雄。同陣營 3 位以上就能放該陣營的大招。';
     }
 
     function showHeroInfo(id) {
@@ -170,13 +170,12 @@
         openModal(`
             <h3>怎麼玩</h3>
             <ul>
-                <li><b>行動條</b>：每個角色依速度累積行動條，滿了就出手。上方「行動順序」顯示接下來誰動。</li>
-                <li><b>連鎖</b>：同陣營英雄<b>接連</b>出手會形成連鎖，第 2 人傷害 +15%、第 3 人 +30%。中間只要插進一個敵人（或其他陣營）就斷掉。</li>
-                <li><b>合體技</b>：連鎖到第 3 人時觸發該陣營的合體技。同一陣營觸發後要冷卻 ${R.COMBO_COOLDOWN_ROUNDS} 回合。</li>
-                <li><b>連攜點與「連攜！」</b>：開場有 ${R.CHAIN_POINTS_START} 點，之後每 ${R.CHAIN_POINT_EVERY_ROUNDS} 回合 +1（最多 ${R.CHAIN_POINTS_MAX}）。連鎖進行中按「連攜！」花 1 點，把下一位同陣營隊友拉到現在出手。自動模式下，電腦只在能湊滿合體技時才用。</li>
-                <li><b>屬性克制</b>：🔥火 → 🌪️風 → 💧水 → 🔥火，☀️光 ↔ 🌑暗。克制方傷害 ×1.3，被剋 ×0.85。合體技不吃屬性。</li>
+                <li><b>行動順序</b>：每個角色依速度輪流出手，上方的頭像列是接下來誰會動。</li>
+                <li><b>主動技</b>：每位英雄冷卻好了就自動施放。</li>
+                <li><b>大招（陣營合體技）</b>：隊伍裡同陣營有 3 位以上，下方就會出現該陣營的共鳴條。這幾位每出手一次，共鳴 +${R.RESONANCE.gainPerAction}%；集滿 100% 時按下大招按鈕，戰鬥會暫停播放演出，大招立刻插隊放出、不佔回合。自動模式下集滿就會自動放。</li>
+                <li><b>屬性克制</b>：🔥火 → 🌪️風 → 💧水 → 🔥火，☀️光 ↔ 🌑暗。克制方傷害 ×1.3，被剋 ×0.85。大招不受屬性影響。</li>
                 <li><b>站位</b>：一般攻擊先打前排；射手打生命比例最低的、刺客打生命最少的。</li>
-                <li><b>推條／拉條</b>：讓目標行動條增加／減少，用來排出手順序。首領被拉條效果減半。</li>
+                <li><b>推條／拉條</b>：讓目標更早／更晚出手。首領被拉條效果減半。</li>
                 <li>${Battle.MAX_ROUNDS} 回合內沒打完算輸。</li>
             </ul>
             <div class="row-btns"><button class="btn-secondary" data-close>知道了</button></div>`);
@@ -345,46 +344,42 @@
         const box = $('#timeline');
         box.innerHTML = '';
         box.style.visibility = list.length ? 'visible' : 'hidden';
-        // 從目前的連鎖接續推算：時間軸上同陣營隊友會接成第幾節
-        let runFaction = b.chain.faction, runCount = b.chain.count;
         list.forEach((u, i) => {
             const t = h('div', 'tl' + (i === 0 ? ' first' : '') + (u.side === 'enemy' ? ' enemy' : ''),
                 `<div class="tl-face"><img src="${spriteSrc(u.img)}" alt=""></div>`);
-            if (u.side === 'ally') {
-                t.style.borderColor = facColor(u.faction);
-                if (u.faction === runFaction && runCount > 0) { runCount++; t.appendChild(h('span', 'tl-link', '⛓')); }
-                else { runFaction = u.faction; runCount = 1; }
-                if (runCount >= R.CHAIN_COMBO_AT && b.comboReady(u.faction)) t.appendChild(h('span', 'tl-combo', '✨'));
-            } else {
-                runFaction = null; runCount = 0;
-            }
+            if (u.side === 'ally') t.style.borderColor = facColor(u.faction);
             box.appendChild(t);
         });
     }
 
+    // 下方面板：共鳴條與大招按鈕（一隊 5 人最多只會有一個陣營達到 3 人）
     function renderHud() {
         const b = state.battle;
-        const ch = b.chain;
-        const label = $('#chain-label');
-        if (ch.count > 0) {
-            const f = R.FACTIONS[ch.faction];
-            label.innerHTML = `<span style="color:${f.color}">${f.name}</span> 連鎖 ${ch.count}${ch.count >= 2 ? `（傷害 +${Math.round((R.CHAIN_MULT[Math.min(ch.count, 3)] - 1) * 100)}%）` : ''}`;
-        } else {
-            label.textContent = '連鎖：無';
+        const f = Object.keys(b.resonance)[0];
+        const btn = $('#btn-ult');
+        if (!f) {
+            $('#res-label').textContent = '沒有大招';
+            $('#res-fill').style.width = '0%';
+            $('#res-hint').textContent = '隊伍裡同陣營 3 人以上才能放大招';
+            btn.disabled = true;
+            btn.style.removeProperty('--fc');
+            $('#btn-ult-name').textContent = '大招';
+            $('#btn-ult-sub').textContent = '';
+            return;
         }
-        $('#chain-pips').innerHTML = Array.from({length: R.CHAIN_COMBO_AT}, (_, i) => `<i class="${i < ch.count ? 'on' : ''}"></i>`).join('');
-        $('#points-pips').innerHTML = Array.from({length: R.CHAIN_POINTS_MAX}, (_, i) => `<i class="${i < b.chainPoints ? 'on' : ''}"></i>`).join('');
-        const facs = [...new Set(b.units.filter(u => u.side === 'ally').map(u => u.faction))]
-            .filter(f => b.units.filter(u => u.side === 'ally' && u.faction === f).length >= R.CHAIN_COMBO_AT);
-        $('#combo-cd').textContent = facs.length
-            ? facs.map(f => `${R.FACTIONS[f].combo.name}：${b.comboReady(f) ? '可觸發' : `冷卻 ${b.comboCooldownLeft(f)} 回合`}`).join('　')
-            : '沒有同陣營 3 人，無法觸發合體技';
-        // 連鎖中的同陣營隊友腳下發光
-        for (const u of b.units) sprites.get(u.uid)?.sprite.classList.toggle('chainlit', u.side === 'ally' && ch.count > 0 && ch.members.includes(u.uid));
-
-        const {ok, target} = b.canChainCommand();
-        $('#btn-chain').disabled = !ok || b.over;
-        $('#btn-chain-sub').textContent = ok ? `讓${shortName(target.name)}出手` : (b.chainPoints < 1 ? '連攜點不足' : '連鎖中才能用');
+        const fac = R.FACTIONS[f];
+        const v = b.resonance[f];
+        const ready = b.ultReady(f);
+        const members = b.units.filter(u => u.side === 'ally' && u.faction === f).map(u => shortName(u.name)).join('、');
+        $('#res-label').innerHTML = `<span style="color:${fac.color}">${fac.name}</span>・共鳴 ${Math.round(v)}%`;
+        $('#res-fill').style.width = v + '%';
+        $('#res-fill').style.background = fac.color;
+        $('#res-hint').textContent = ready ? '集滿了！按右邊的按鈕放大招' : `${members} 每出手一次 +${R.RESONANCE.gainPerAction}%`;
+        btn.style.setProperty('--fc', fac.color);
+        btn.disabled = !ready || !!b.pendingUlt;
+        btn.classList.toggle('ready', ready);
+        $('#btn-ult-name').textContent = fac.combo.name;
+        $('#btn-ult-sub').textContent = b.pendingUlt ? '發動中…' : ready ? '點我放大招' : `${Math.round(v)}%`;
     }
 
     function showUnitInfo(u) {
@@ -545,7 +540,7 @@
         const ids = new Set();
         const counts = {};
         b.units.filter(u => u.side === 'ally').forEach(u => { counts[u.faction] = (counts[u.faction] || 0) + 1; });
-        Object.keys(counts).filter(f => counts[f] >= R.CHAIN_COMBO_AT).forEach(f => { const v = R.FACTIONS[f].combo?.vfx; if (v) ids.add(v.id); });
+        Object.keys(b.resonance).forEach(f => { const v = R.FACTIONS[f].combo?.vfx; if (v) ids.add(v.id); });
         b.units.forEach(u => u.skills.forEach(s => { if (s.vfx) ids.add(s.vfx.id); }));
         return [...ids];
     }
@@ -589,7 +584,7 @@
         if (mode === 'off') {
             animate($('#flash'), [{opacity: 0}, {opacity: .5}, {opacity: 0}], 380);
             shakeScreen(8);
-            await showBanner(f.color, 'CHAIN RESONANCE', f.combo.name, f.combo.desc, f.name);
+            await showBanner(f.color, 'RESONANCE', f.combo.name, f.combo.desc, f.name);
             return;
         }
         const short = mode === 'short';
@@ -598,7 +593,7 @@
         const ult = $('#ult');
         ult.style.setProperty('--fc', f.color);
         const b = state.battle;
-        $('#ult-cast').innerHTML = e.members.map((uid, i) => {
+        $('#ult-cast').innerHTML = e.members.slice(0, 3).map((uid, i) => {
             const u = b.get(uid);
             return `<div class="cut" style="left:${-4 + i * 29}%;animation-delay:${i * (short ? 0.06 : 0.13)}s"><img src="${spriteSrc(u.img)}" alt=""></div>`;
         }).join('');
@@ -673,35 +668,22 @@
                     setPill(`${u.name} 行動`, u.side === 'enemy');
                     $('#b-round').textContent = `第 ${Math.min(e.round, Battle.MAX_ROUNDS)} / ${Battle.MAX_ROUNDS} 回合`;
                     break;
-                case 'command':
-                    rec?.sprite.classList.add('commanded');
-                    float(fx, '連攜！', 'callout chain');
-                    await wait(300);
-                    break;
                 case 'skill':
                     setPill(`${u.name}・<span class="sk">${e.name}</span>`, u.side === 'enemy');
+                    if (u.side === 'ally') skillFlash(u, e.name);
                     if (u.boss) shakeScreen(5);
                     await performAction(u, events.slice(i), u.skills.find(s => s.name === e.name) || true);
                     break;
                 case 'basic':
                     await performAction(u, events.slice(i), false);
                     break;
-                case 'chain':
-                    if (e.count >= 2) {
-                        float(sprites.get(actor.uid)?.plate.querySelector('.fx'), `連鎖 ×${e.count}`, 'callout chain');
-                        $('#hud').classList.remove('pulse'); void $('#hud').offsetWidth; $('#hud').classList.add('pulse');
-                    }
+                case 'resonance':
                     renderHud();
-                    break;
-                case 'chainBreak':
-                    $('#hud').classList.add('broken');
-                    setTimeout(() => $('#hud').classList.remove('broken'), 400);
-                    renderHud();
+                    if (e.ready) { $('#hud').classList.remove('pulse'); void $('#hud').offsetWidth; $('#hud').classList.add('pulse'); }
                     break;
                 case 'damage': {
                     let cls = e.kind === 'dot' ? 'dot' : e.kind === 'combo' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                     if (e.rel) cls += ' ' + e.rel;
-                    if (e.chained) cls += ' chained';
                     float(fx, (e.crit ? '暴擊 ' : '') + e.amount, cls);
                     if (e.kind !== 'dot') hitFlash(e.uid, e.crit);
                     if (e.crit) shakeScreen(4);
@@ -734,7 +716,6 @@
                     addSprite(u, true);
                     float(sprites.get(u.uid)?.plate.querySelector('.fx'), '召喚', 'info');
                     break;
-                case 'points': renderHud(); break;
                 case 'combo':
                     await playUltimate(e);
                     break;
@@ -754,6 +735,17 @@
         f.style.top = (-fx.children.length * 18) + 'px';
         fx.appendChild(f);
         setTimeout(() => f.remove(), 1150);
+    }
+
+    // 我方主動技：角色立繪從側邊閃過＋招式名（不停頓戰鬥）
+    function skillFlash(u, name) {
+        const el = $('#skill-cut');
+        el.querySelector('img').src = spriteSrc(u.img);
+        el.querySelector('.sc-name').textContent = name;
+        el.querySelector('.sc-hero').textContent = u.name;
+        el.style.setProperty('--fc', facColor(u.faction));
+        el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+        el.style.animationDuration = (0.9 / state.speed) + 's';
     }
 
     async function showBanner(color, tag, name, desc, fac) {
@@ -837,16 +829,11 @@
         if (state.battle) state.battle.auto = state.auto;
         syncControls();
     };
-    $('#btn-chain').onclick = () => {
+    $('#btn-ult').onclick = () => {
         const b = state.battle;
-        if (!b || !b.useChainCommand()) return;
-        const target = b.get(b.forced);
-        const rec = sprites.get(target.uid);
-        rec?.sprite.classList.add('commanded');
-        float(rec?.plate.querySelector('.fx'), '連攜！', 'callout chain');
-        setPill(`⛓ 連攜指令：${target.name} 立刻出手`);
+        const f = b && Object.keys(b.resonance)[0];
+        if (!f || !b.useUltimate(f)) return;
         renderHud();
-        renderTimeline();
     };
 
     renderSetup();

@@ -64,7 +64,7 @@ RES.ENEMIES = {
     },
     lichKing: {
         name: '巫妖王', faction: 'undead', element: 'dark', role: 'mage', img: 'boss_lich', boss: true,
-        stats: {hp: 12500, atk: 250, def: 150, spd: 100, res: 0.3},
+        stats: {hp: 10500, atk: 250, def: 150, spd: 100, res: 0.3},
         skills: [
             {
                 name: '骸骨召喚', cd: 5, desc: '召喚 2 隻高速骸骨僕從插進時間軸，打斷連攜',
