@@ -67,7 +67,7 @@ RES.ENEMIES = {
         stats: {hp: 10500, atk: 250, def: 150, spd: 100, res: 0.3},
         skills: [
             {
-                name: '骸骨召喚', cd: 5, show: 2400, vfx: [{id: 'black-hole', at: 'self', size: 1.6, speed: 0.6, dark: 1500, main: true}], desc: '召喚 2 隻高速骸骨僕從插進時間軸',
+                name: '骸骨召喚', cd: 5, show: 2400, vfx: [{id: 'arcane-matrix', at: 'self', color: '#84cc16', size: 1.3, main: true}, {id: 'ground-fog', at: 'self', color: '#4d7c0f', delay: 200, size: 1.4}, {id: 'steam-jet', at: 'self', color: '#a3e635', delay: 350}], summonVfx: {id: 'smoke-column', color: '#84cc16'}, desc: '召喚 2 隻高速骸骨僕從插進時間軸',
                 effects: [{type: 'summon', unit: 'boneMinion', count: 2, atb: 0.7}],
             },
             {

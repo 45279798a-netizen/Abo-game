@@ -840,7 +840,16 @@ async function playEvents(events, id) {
             case 'explode': float(rec, '💥屍爆', 'callout'); shake(0.18); break;
             case 'enrage': float(rec, '狂暴！', 'callout'); shake(0.2, 500); await wait(500); break;
             case 'death': updateUnit(u); break;
-            case 'summon': await addUnit(u, true); float(units.get(u.uid), '召喚', 'info'); break;
+            case 'summon': {
+                await addUnit(u, true);
+                // 召喚出來的位置冒出煙柱（特效寫在召喚者技能的 summonVfx）
+                const by = b.get(e.by);
+                const sv = by?.skills.find(sk => sk.summonVfx)?.summonVfx;
+                const r = units.get(u.uid);
+                if (sv && r) vfx.play(sv.id, {color: sv.color, at: footWorld(r), fit: fitRadius([u.uid]), speedMult: state.speed, priority: true});
+                float(r, '召喚', 'info');
+                break;
+            }
             case 'ult':
                 setPill(`✨ ${shortName(u.name)}・<span class="sk">${e.name}</span>`);
                 await playUltimate(e, events.slice(i));
