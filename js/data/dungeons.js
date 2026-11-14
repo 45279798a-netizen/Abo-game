@@ -9,11 +9,11 @@ RES.DUNGEONS = {
     rounds: 18,   // 3 星：18 回合內通關
     // 解鎖：最高通關關卡序號（15＝打完第 1 章）
     sets: [
-        {id: 'wind', name: '疾風回廊', sets: ['swift', 'resonance'], bgHD: 'forest', boss: 'stormBandit', adds: ['wolf', 'spider', 'goblin'], unlock: 30,
+        {id: 'wind', name: '疾風回廊', sets: ['swift', 'resonance'], bgHD: 'wind', boss: 'stormBandit', adds: ['wolf', 'spider', 'goblin'], unlock: 30,
          desc: '掉落疾風、共鳴套裝'},
-        {id: 'iron', name: '鐵壁要塞', sets: ['bulwark', 'vitality'], bgHD: 'border', boss: 'ironGolem', adds: ['gargoyle', 'skeleton', 'slime'], unlock: 30,
+        {id: 'iron', name: '鐵壁要塞', sets: ['bulwark', 'vitality'], bgHD: 'iron', boss: 'ironGolem', adds: ['gargoyle', 'skeleton', 'slime'], unlock: 30,
          desc: '掉落壁壘、生命套裝'},
-        {id: 'blood', name: '血月祭壇', sets: ['fury', 'seal'], bgHD: 'nightcity', boss: 'bloodWarlock', adds: ['cultist', 'imp', 'cryptBat'], unlock: 30,
+        {id: 'blood', name: '血月祭壇', sets: ['fury', 'seal'], bgHD: 'blood', boss: 'bloodWarlock', adds: ['cultist', 'imp', 'cryptBat'], unlock: 30,
          desc: '掉落狂怒、封印套裝'},
     ],
     trials: [

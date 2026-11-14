@@ -974,7 +974,7 @@ function settleStage(win, round) {
     res.S = S;
     return res;
 }
-const CUR_ICON = {gold: '🪙', gem: '💎', ticket: '🎫', ltdTicket: '🌟', exp: '🧪', brk: '💠', book: '📘', stone: '🔨', dust: '✴️'};
+const CUR_ICON = new Proxy({}, {get: (o, k) => window.ICON ? window.ICON(k) : ''});   // 貨幣圖示（js/ui/icons.js）
 // 副本結算
 function settleDungeon(win, round) {
     const b = state.battle, dg = cfg.dungeon;

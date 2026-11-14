@@ -409,3 +409,22 @@ a { color: inherit; text-decoration: none; }
     .lb-btn.main { padding: 6px 12px; }
     .lb-mini-btn { padding: 4px; }
 }
+
+/* ───────── 圖示（assets/icons） ───────── */
+.ico { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.32em; margin-right: 1px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+.lb-btn .i img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); display: block; margin: 0 auto; }
+.lb-btn.main .i img { width: 40px; height: 40px; }
+@media (max-height: 520px) { .lb-btn .i img { width: 28px; height: 28px; } .lb-btn.main .i img { width: 34px; height: 34px; } }
+.cur .ci .ico { width: 20px; height: 20px; vertical-align: -5px; }
+.bag-item .bi .ico { width: 40px; height: 40px; vertical-align: middle; }
+.chest .ico { width: 26px; height: 26px; vertical-align: middle; }
+.gi .gs .ico { width: 34px; height: 34px; vertical-align: middle; margin: 0; filter: drop-shadow(0 0 4px var(--sc, transparent)) drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.gi.setd { background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--sc) 45%, #1a120b), #120c07 78%); }
+.gi .gset .ico { width: 17px; height: 17px; vertical-align: top; }
+.gi .glock .ico { width: 12px; height: 12px; }
+.gsets .ico, .gsetd .ico { width: 18px; height: 18px; }
+.tag .ico { width: 16px; height: 16px; vertical-align: -3px; }
+.idle-chip .ico { width: 22px; height: 22px; }
+.tinfo b .ico { width: 22px; height: 22px; }
+.toast .ico { width: 18px; height: 18px; }
+.hc .el .ico { width: 18px; height: 18px; }

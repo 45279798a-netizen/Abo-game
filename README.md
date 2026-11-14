@@ -23,7 +23,7 @@ js/vfx/       特效播放、特效庫、獨立特效、命中定格
 js/ui/        app.js（dev.html 用）
 assets/       sprites、sprites_hd、portraits、bg（直式）、hd（橫式背景與主城）
 images/       原始大圖
-tools/        sim.js 平衡模擬、calibrate_campaign.js／sim_campaign.js 主線難度、calibrate_dungeons.js 副本難度、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
+tools/        cut_sheet.py 切圖示表、sim.js 平衡模擬、calibrate_campaign.js／sim_campaign.js 主線難度、calibrate_dungeons.js 副本難度、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
 ```
 
 ## 調數值
@@ -138,3 +138,9 @@ node tools/sim_campaign.js 30             # 用兩支隊伍檢查各章代表關
 
 主線難度的「預期養成」也把裝備算進去了（`Gear.expectedBonus`：第 2 章起有散件、第 3 章起有套裝，品質與強化等級隨進度提高），
 所以主線打到中後期需要穿裝備。經驗藥水、突破石、技能書改成主要從試煉取得，主線首通與掛機給的量相對降低。
+
+## 圖示
+
+`images/ui/` 放生成好的白底圖示表（道具 4×4、選單 4×3、屬性陣營 5×2、裝備 4×3），`python3 tools/cut_sheet.py` 會依格子切開、
+去白底（邊緣與光暈保留半透明）、輸出 `assets/icons/<名稱>.webp`。`js/ui/icons.js` 的 `ICON(名稱)` 回傳 `<img>`，並把屬性、陣營、
+裝備欄位、套裝、試煉的 emoji 換成圖示。裝備圖示＝欄位圖示（依套裝顏色發光）＋左上角套裝徽記＋品質外框。

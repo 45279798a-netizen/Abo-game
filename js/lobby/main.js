@@ -16,15 +16,15 @@
     const fmt = n => n >= 100000 ? (n / 1000).toFixed(0) + 'K' : n.toLocaleString();
 
     const CUR = {
-        gold:      {icon: '🪙', name: '金幣', desc: '升級、強化裝備'},
-        gem:       {icon: '💎', name: '鑽石', desc: '招募、快速掛機'},
-        ticket:    {icon: '🎫', name: '招募券', desc: '常駐招募 1 次'},
-        ltdTicket: {icon: '🌟', name: '限定招募券', desc: 'S1 限定招募 1 次'},
-        exp:       {icon: '🧪', name: '經驗藥水', desc: '英雄升級'},
-        brk:       {icon: '💠', name: '突破石', desc: '每 20 級突破一次，提高等級上限'},
-        book:      {icon: '📘', name: '技能書', desc: '小技能、大招升級'},
-        stone:     {icon: '🔨', name: '強化石', desc: '裝備強化；套裝副本、掛機、分解裝備取得'},
-        dust:      {icon: '✴️', name: '星塵', desc: '滿星英雄的重複碎片轉成；到星塵商店換碎片與道具'},
+        gold:      {icon: ICON('gold'), name: '金幣', desc: '升級、強化裝備'},
+        gem:       {icon: ICON('gem'), name: '鑽石', desc: '招募、快速掛機'},
+        ticket:    {icon: ICON('ticket'), name: '招募券', desc: '常駐招募 1 次'},
+        ltdTicket: {icon: ICON('ltdTicket'), name: '限定招募券', desc: 'S1 限定招募 1 次'},
+        exp:       {icon: ICON('exp'), name: '經驗藥水', desc: '英雄升級'},
+        brk:       {icon: ICON('brk'), name: '突破石', desc: '每 20 級突破一次，提高等級上限'},
+        book:      {icon: ICON('book'), name: '技能書', desc: '小技能、大招升級'},
+        stone:     {icon: ICON('stone'), name: '強化石', desc: '裝備強化；套裝副本、掛機、分解裝備取得'},
+        dust:      {icon: ICON('dust'), name: '星塵', desc: '滿星英雄的重複碎片轉成；到星塵商店換碎片與道具'},
     };
 
     // ───────── 主畫面 ─────────
@@ -85,7 +85,7 @@
     const head = title => `<div class="ph"><h2>${title}</h2><div class="sp"></div><button class="close" data-close>✕</button></div>`;
     function toast(t) {
         const el = $('#toast');
-        el.textContent = t;
+        el.innerHTML = t;   // 可能帶圖示
         el.classList.add('show');
         clearTimeout(toast.t);
         toast.t = setTimeout(() => el.classList.remove('show'), 1800);
@@ -114,7 +114,7 @@
         const open = Campaign.unlocked(S, ch, 1);
         const chestHtml = R.CAMPAIGN.chests.map((x, i) => {
             const got = S.campaign.chests[`${ch}:${i}`], ready = !got && stars >= x.stars;
-            return `<button class="chest ${got ? 'got' : ''} ${ready ? 'ready' : ''}" data-chest="${i}" title="${x.stars} 星寶箱">${got ? '📭' : '🎁'}<b>${x.stars}</b></button>`;
+            return `<button class="chest ${got ? 'got' : ''} ${ready ? 'ready' : ''}" data-chest="${i}" title="${x.stars} 星寶箱">${got ? ICON('chest_open') : ICON('chest')}<b>${x.stars}</b></button>`;
         }).join('');
         const path = NODE_POS.map((q, i) => `${i ? 'L' : 'M'}${q.x} ${q.y}`).join(' ');
         const nodes = NODE_POS.map((q, i) => {
@@ -143,8 +143,8 @@
                 <span class="tp">隊伍戰力 <b>${teamPower().toLocaleString()}</b></span>
                 <button class="btn" data-open="hero">調整隊伍</button>
                 <div class="sp"></div>
-                <button class="btn" id="map-story" ${open ? '' : 'disabled'}>📜 劇情</button>
-                <button class="btn idle-btn" id="map-idle">🏕️ 掛機 <small>${idle.hours.toFixed(1)}h</small></button>
+                <button class="btn" id="map-story" ${open ? '' : 'disabled'}>${ICON('m_story')} 劇情</button>
+                <button class="btn idle-btn" id="map-idle">${ICON('idle')} 掛機 <small>${idle.hours.toFixed(1)}h</small></button>
             </div>
             ${open ? '' : '<div class="ch-lock">先打倒上一章的首領才能進入</div>'}
         </div>`;
@@ -276,12 +276,12 @@
     function showIdle() {
         const p = Campaign.idlePending(S), rate = Campaign.idleRate(S), q = Campaign.quickInfo(S);
         const best = Campaign.progress(S);
-        const m = modal(`<h3>🏕️ 掛機收益</h3>
+        const m = modal(`<h3>${ICON('idle')} 掛機收益</h3>
             <p class="muted">英雄們會在你離開時繼續討伐魔物。收益依最高通關關卡（目前 ${best ? `${Math.ceil(best / NST)}-${(best - 1) % NST + 1}` : '尚未通關'}），最多累積 ${Campaign.IDLE_MAX_H} 小時。</p>
             <div class="idle-bar"><i style="width:${p.hours / Campaign.IDLE_MAX_H * 100}%"></i><span>${p.hours.toFixed(1)} / ${Campaign.IDLE_MAX_H} 小時</span></div>
             <div class="rws"><span class="muted">可領取</span>${rewardHtml(p.reward) || '<span class="muted">還沒有累積</span>'}</div>
-            <div class="rws"><span class="muted">每小時</span>${rewardHtml({gold: Math.floor(rate.gold), exp: Math.floor(rate.exp)})}<span class="rw">${CUR.brk.icon}${rate.brk.toFixed(2)}</span>${rate.stone ? `<span class="rw">🔨${rate.stone.toFixed(1)}</span><span class="rw">🎁 散件裝備 ${rate.gearPerH}</span>` : ''}</div>
-            <div class="row"><button class="btn" id="idle-quick" ${q.cost == null ? 'disabled' : ''}>⚡ 快速掛機 2 小時${q.cost == null ? '（今天用完）' : q.cost ? `（💎${q.cost}）` : '（今日免費）'}</button><div class="sp"></div>
+            <div class="rws"><span class="muted">每小時</span>${rewardHtml({gold: Math.floor(rate.gold), exp: Math.floor(rate.exp)})}<span class="rw">${CUR.brk.icon}${rate.brk.toFixed(2)}</span>${rate.stone ? `<span class="rw">${ICON('stone')}${rate.stone.toFixed(1)}</span><span class="rw">${ICON('chest')} 散件裝備 ${rate.gearPerH}</span>` : ''}</div>
+            <div class="row"><button class="btn" id="idle-quick" ${q.cost == null ? 'disabled' : ''}>⚡ 快速掛機 2 小時${q.cost == null ? '（今天用完）' : q.cost ? `（${ICON('gem')}${q.cost}）` : '（今日免費）'}</button><div class="sp"></div>
             <button class="btn primary" id="idle-claim" ${p.reward.gold > 0 ? '' : 'disabled'}>領取</button></div>`, 'idle');
         m.querySelector('#idle-claim').onclick = () => { const r = Campaign.idleClaim(S); save(); renderCurrency(); m.remove(); toast('領取 ' + rewardText(r.reward) + (r.gear?.length ? `、裝備 ${r.gear.length} 件` : '')); refreshIdle(); if ($('#panel-battle').classList.contains('show')) renderBattle(); };
         m.querySelector('#idle-quick').onclick = () => { const r = Campaign.quickIdle(S); if (!r.ok) { toast(r.reason); return; } save(); renderCurrency(); m.remove(); toast('快速掛機 ' + rewardText(r.reward) + (r.gear?.length ? `、裝備 ${r.gear.length} 件` : '')); };
@@ -289,7 +289,7 @@
     function refreshIdle() {
         const p = Campaign.idlePending(S);
         const el = $('#idle-chip');
-        el.innerHTML = `🏕️ 掛機收益 <b>${p.hours.toFixed(1)}h</b>`;
+        el.innerHTML = `${ICON('idle')} 掛機收益 <b>${p.hours.toFixed(1)}h</b>`;
         el.classList.toggle('ready', p.hours >= 1);
     }
 
@@ -356,7 +356,7 @@
         const inTeam = S.team.includes(id);
         const box = $('#hero-detail');
         const tags = `<span class="tag" style="color:${rc(d.rarity)};border-color:${rc(d.rarity)}">${d.rarity}</span>
-            <span class="tag" style="color:${fac.color}">${fac.name}</span><span class="tag">${el.icon} ${el.name}屬性</span><span class="tag">${R.ROLES[d.role].name}</span>
+            <span class="tag" style="color:${fac.color}">${fac.emblem || ''}${fac.name}</span><span class="tag">${el.icon} ${el.name}屬性</span><span class="tag">${R.ROLES[d.role].name}</span>
             ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span><span class="tag">戰力 ${heroPower(id).toLocaleString()}</span>` : '<span class="tag" style="color:var(--muted)">未擁有：可從招募取得</span>'}`;
         if (detailTab === 'gear' && !gearOpen()) detailTab = 'info';
         const tabs = o ? `<div class="dt-tabs"><button class="${detailTab === 'info' ? 'on' : ''}" data-tab="info">資料</button><button class="${detailTab === 'grow' ? 'on' : ''}" data-tab="grow">養成</button>${gearOpen() ? `<button class="${detailTab === 'gear' ? 'on' : ''}" data-tab="gear">裝備</button>` : '<button disabled title="打完第 1 章開放">裝備 🔒</button>'}</div>` : '';
@@ -459,7 +459,7 @@
     const gearOpen = () => Campaign.progress(S) >= 15;   // 打完第 1 章開放
     const qc = q => GR.QUALITY[q].color;
     const gearName = it => `${GR.QUALITY[it.q].name}${it.set ? GR.SETS[it.set].name : ''}${GR.SLOTS[it.slot].name}`;
-    const gearIcon = (it, extra = '') => `<div class="gi" style="--qc:${qc(it.q)}" ${extra}><span class="gs">${GR.SLOTS[it.slot].icon}</span>${it.lvl ? `<span class="glv">+${it.lvl}</span>` : ''}${it.set ? `<span class="gset">${GR.SETS[it.set].icon}</span>` : ''}${it.hero ? `<img class="gwho" src="${face(R.HEROES[it.hero].img)}" alt="">` : ''}${it.lock ? '<span class="glock">🔒</span>' : ''}</div>`;
+    const gearIcon = (it, extra = '') => `<div class="gi ${it.set ? 'setd' : ''}" style="--qc:${qc(it.q)};--sc:${it.set ? GR.SETS[it.set].color : 'transparent'}" ${extra}><span class="gs">${GR.SLOTS[it.slot].icon}</span>${it.lvl ? `<span class="glv">+${it.lvl}</span>` : ''}${it.set ? `<span class="gset">${GR.SETS[it.set].icon}</span>` : ''}${it.hero ? `<img class="gwho" src="${face(R.HEROES[it.hero].img)}" alt="">` : ''}${it.lock ? `<span class="glock">${ICON('key')}</span>` : ''}</div>`;
     function gearStatsHtml(it) {
         const main = `<div class="gmain">${GR.STATS[it.main.k].name} <b>+${Gear.fmtStat(it.main.k, Gear.mainValue(it))}</b></div>`;
         const subs = it.subs.map(x => `<div class="gsub">${GR.STATS[x.k].name} +${Gear.fmtStat(x.k, x.v)}${x.n > 1 ? `<small>（強化 ${x.n - 1} 次）</small>` : ''}</div>`).join('');
@@ -478,7 +478,7 @@
             ${gearStatsHtml(it)}
             <div class="row">${it.lvl < GR.MAX_LV ? `<span class="gr-cost">${costTxt(c)}</span><button class="btn" data-g="up1">強化 +1</button><button class="btn primary" data-g="up3">強化到 +${Math.min(GR.MAX_LV, Math.floor(it.lvl / 3) * 3 + 3)}</button>` : '<span class="muted">已強化到最高</span>'}</div>
             <div class="row"><button class="btn" data-g="lock">${it.lock ? '解鎖' : '上鎖'}</button>
-                ${it.hero ? '<button class="btn" data-g="off">卸下</button>' : `<button class="btn" data-g="salv" ${it.lock ? 'disabled' : ''}>分解（🔨${Gear.salvageValue(it)}）</button>`}</div>`, 'gear');
+                ${it.hero ? '<button class="btn" data-g="off">卸下</button>' : `<button class="btn" data-g="salv" ${it.lock ? 'disabled' : ''}>分解（${ICON('stone')}${Gear.salvageValue(it)}）</button>`}</div>`, 'gear');
         const done = msg => { save(); renderCurrency(); m.remove(); if (msg) toast(msg); (after || (() => {}))(); };
         m.querySelectorAll('[data-g]').forEach(b => { b.onclick = () => {
             const a = b.dataset.g;
@@ -494,7 +494,7 @@
             }
             if (a === 'lock') { it.lock = !it.lock; save(); m.remove(); showGear(itId, after); return; }
             if (a === 'off') { Gear.unequip(S, it.id); done('已卸下'); return; }
-            if (a === 'salv') { const r = Gear.salvage(S, [it.id]); done(`分解獲得 🔨${r.stone}`); }
+            if (a === 'salv') { const r = Gear.salvage(S, [it.id]); done(`分解獲得 ${ICON('stone')}${r.stone}`); }
         }; });
     }
     // 英雄詳情的「裝備」分頁
@@ -545,7 +545,7 @@
         const list = (S.gear || []).filter(it => bagSlot === 'all' || it.slot === bagSlot).sort((a, b) => b.q - a.q || b.lvl - a.lvl);
         const salvN = q => (S.gear || []).filter(it => !it.hero && !it.lock && it.q <= q && it.lvl === 0).length;
         return `<div class="filters" style="margin-bottom:8px">${[['all', '全部'], ...GR.SLOT_ORDER.map(k => [k, GR.SLOTS[k].icon + GR.SLOTS[k].name])].map(([k, n]) => `<button class="${bagSlot === k ? 'on' : ''}" data-bslot="${k}">${n}</button>`).join('')}
-                <span class="sp"></span><span class="muted">共 ${(S.gear || []).length} 件　🔨${fmt(S.currency.stone || 0)}</span></div>
+                <span class="sp"></span><span class="muted">共 ${(S.gear || []).length} 件　${ICON('stone')}${fmt(S.currency.stone || 0)}</span></div>
             <div class="glist big">${list.map(it => `<button class="gpick" data-bgear="${it.id}">${gearIcon(it)}</button>`).join('') || '<span class="muted">還沒有裝備</span>'}</div>
             <div class="row"><span class="muted">一鍵分解（沒穿、沒上鎖、沒強化過）：</span>
                 <button class="btn" data-salv="1">白＋綠（${salvN(1)}）</button><button class="btn" data-salv="2">藍以下（${salvN(2)}）</button></div>`;
@@ -558,7 +558,7 @@
             const ids = (S.gear || []).filter(it => !it.hero && !it.lock && it.q <= q && it.lvl === 0).map(it => it.id);
             if (!ids.length) { toast('沒有可以分解的裝備'); return; }
             if (!confirm(`分解 ${ids.length} 件裝備？`)) return;
-            const r = Gear.salvage(S, ids); save(); renderBag(); renderCurrency(); toast(`分解 ${r.n} 件，獲得 🔨${r.stone}`);
+            const r = Gear.salvage(S, ids); save(); renderBag(); renderCurrency(); toast(`分解 ${r.n} 件，獲得 ${ICON('stone')}${r.stone}`);
         }; });
     }
 
@@ -592,7 +592,7 @@
     }
     function floorReward(kind, id, f) {
         const r = Dungeon.baseReward(kind, id, f);
-        return rewardHtml(r) + (kind === 'set' ? `<span class="rw">🎁 裝備 ×${Dungeon.dropCount(f)}</span>` : '');
+        return rewardHtml(r) + (kind === 'set' ? `<span class="rw">${ICON('chest')} 裝備 ×${Dungeon.dropCount(f)}</span>` : '');
     }
     function showFloors(kind, id) {
         const d = Dungeon.find(kind, id);
@@ -735,14 +735,14 @@
     function renderBag() {
         const p = $('#panel-bag');
         const shardTotal = Object.values(S.heroes).reduce((a, o) => a + o.shards, 0);
-        const tabs = `<div class="filters" style="margin-bottom:8px"><button class="${bagTab === 'items' ? 'on' : ''}" data-bag="items">道具</button><button class="${bagTab === 'gear' ? 'on' : ''}" data-bag="gear">裝備${gearOpen() ? '' : ' 🔒'}</button><button class="${bagTab === 'shop' ? 'on' : ''}" data-bag="shop">星塵商店　✴️${fmt(S.currency.dust || 0)}</button></div>`;
+        const tabs = `<div class="filters" style="margin-bottom:8px"><button class="${bagTab === 'items' ? 'on' : ''}" data-bag="items">道具</button><button class="${bagTab === 'gear' ? 'on' : ''}" data-bag="gear">裝備${gearOpen() ? '' : ' 🔒'}</button><button class="${bagTab === 'shop' ? 'on' : ''}" data-bag="shop">星塵商店　${ICON('dust')}${fmt(S.currency.dust || 0)}</button></div>`;
         let body;
         if (bagTab === 'gear') {
             body = bagGearHtml();
         } else if (bagTab === 'items') {
             body = `<div class="bag-grid">
                 ${Object.entries(CUR).map(([k, c]) => `<div class="bag-item"><span class="bi">${c.icon}</span><div><b>${c.name}</b><small>${c.desc}</small></div><span class="cnt">${fmt(S.currency[k] || 0)}</span></div>`).join('')}
-                <div class="bag-item"><span class="bi">🧩</span><div><b>英雄碎片</b><small>重複招募取得，用來升星（各英雄的數量在英雄詳情看）</small></div><span class="cnt">${shardTotal}</span></div>
+                <div class="bag-item"><span class="bi">${ICON('shard')}</span><div><b>英雄碎片</b><small>重複招募取得，用來升星（各英雄的數量在英雄詳情看）</small></div><span class="cnt">${shardTotal}</span></div>
             </div>`;
         } else {
             const own = Object.keys(S.heroes).filter(id => S.heroes[id].star < Growth.MAX_STAR);
@@ -751,8 +751,8 @@
             body = `<div class="fac-note" style="margin-bottom:8px">滿星的英雄再抽到時，碎片會變成星塵。星塵可以換任何已擁有、還沒滿星的英雄碎片（1 個碎片 ${Growth.DUST_PER_SHARD} 星塵），或換道具。</div>
                 <div class="shop-wrap"><div class="shop-heroes">${own.map(id => `<button class="face ${id === shopHero ? 'on' : ''}" data-shop="${id}" style="--rc:${rc(R.HEROES[id].rarity)}"><img src="${face(R.HEROES[id].img)}" alt=""></button>`).join('') || '<span style="color:var(--muted)">沒有可以升星的英雄</span>'}</div>
                 ${sh ? `<div class="shop-buy"><b>${short(R.HEROES[shopHero].name)}</b>　碎片 ${sh.shards} / ${Growth.starCost(sh)}
-                    ${[10, 50].map(n => `<button class="btn" data-buy="${n}">換 ${n} 碎片<small style="display:block;font-size:10.5px">✴️${n * Growth.DUST_PER_SHARD}</small></button>`).join('')}</div>` : ''}</div>
-                <div class="bag-grid" style="margin-top:10px">${Growth.DUST_SHOP.map(it => `<div class="bag-item"><span class="bi">${CUR[it.key].icon}</span><div><b>${it.name}</b><small>✴️${it.price}</small></div><button class="btn" data-item="${it.key}" style="margin-left:auto">兌換</button></div>`).join('')}</div>`;
+                    ${[10, 50].map(n => `<button class="btn" data-buy="${n}">換 ${n} 碎片<small style="display:block;font-size:10.5px">${ICON('dust')}${n * Growth.DUST_PER_SHARD}</small></button>`).join('')}</div>` : ''}</div>
+                <div class="bag-grid" style="margin-top:10px">${Growth.DUST_SHOP.map(it => `<div class="bag-item"><span class="bi">${CUR[it.key].icon}</span><div><b>${it.name}</b><small>${ICON('dust')}${it.price}</small></div><button class="btn" data-item="${it.key}" style="margin-left:auto">兌換</button></div>`).join('')}</div>`;
         }
         p.innerHTML = head('背包') + `<div class="pbody">${tabs}${body}</div>`;
         p.querySelectorAll('[data-bag]').forEach(b => { b.onclick = () => { bagTab = b.dataset.bag; renderBag(); }; });
