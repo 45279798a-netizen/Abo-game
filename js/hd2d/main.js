@@ -955,7 +955,7 @@ function showResult(e) {
         <div class="res-sub">${reason}</div>
         <div class="res-stats"><div><b>${Math.min(e.round, Battle.MAX_ROUNDS)}</b><span>回合</span></div><div><b>${b.ults}</b><span>大招</span></div></div>
         ${rows.map(x => `<div class="dmg-row"><span>${x.name}</span><span class="dmg-bar"><i style="width:${x.v / max * 100}%;background:${x.color}"></i></span><span class="dmg-n">${Math.round(x.v)}</span></div>`).join('')}
-        <div class="row-btns"><a class="btn-secondary" href="index.html" style="display:grid;place-items:center;text-decoration:none">換隊伍</a><button class="btn-primary" id="res-again">再打一次</button></div></div>`;
+        <div class="row-btns"><a class="btn-secondary" href="index.html" style="display:grid;place-items:center;text-decoration:none">回大廳</a><button class="btn-primary" id="res-again">再打一次</button></div></div>`;
     r.classList.add('show');
     $('#res-again').onclick = startBattle;
 }

@@ -93,7 +93,7 @@ RES.ENEMIES = {
 RES.ENCOUNTERS = [
     {
         id: 'vanguard', name: '亡靈先鋒', difficulty: '簡單', power: 1.0, bg: '1', bgHD: 'border',
-        desc: '混合屬性的雜兵，先熟悉行動條與連攜',
+        desc: '混合屬性的雜兵，先熟悉行動條、技能與大招',
         front: ['skeleton', 'corpseBomber'], back: ['cryptBat', 'frostLich', 'skeleton'],
     },
     {
@@ -103,7 +103,7 @@ RES.ENCOUNTERS = [
     },
     {
         id: 'lich', name: '巫妖王', difficulty: '首領', power: 1.15, bg: '6', bgHD: 'throne',
-        desc: '會召喚骷髏打斷連攜、凍結並拉條，光屬性與群攻有利',
+        desc: '會召喚骸骨僕從、凍結並拉條，光屬性與群攻有利',
         front: ['lichKing'], back: ['frostLich', 'frostLich'],
     },
 ];

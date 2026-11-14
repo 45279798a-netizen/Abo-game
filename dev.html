@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0907">
+    <title>Project Resonance · 戰鬥測試（開發用）</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">{"imports": {"three": "./vendor/three/three.module.js"}}</script>
+</head>
+<body>
+<div id="app">
+
+    <!-- ───────── 編隊畫面 ───────── -->
+    <section id="screen-setup" class="screen active">
+        <header class="top">
+            <div class="brand">
+                <span class="brand-sub">PROJECT RESONANCE</span>
+                <h1>戰鬥原型 <span class="brand-season">S1 亡靈的甦醒</span></h1>
+            </div>
+            <div class="top-btns">
+                <a href="gallery.html" class="icon-btn" aria-label="特效圖鑑" title="特效圖鑑">✨</a>
+                <button id="btn-help" class="icon-btn" aria-label="玩法說明">?</button>
+            </div>
+        </header>
+
+        <div class="setup-cols">
+        <div class="setup-left">
+        <h2 class="sec">選擇戰鬥</h2>
+        <div id="encounter-list" class="enc-list"></div>
+
+        <h2 class="sec">隊伍 <small>前 2 位站前排，後 3 位站後排</small></h2>
+        <div id="team-slots" class="team-slots"></div>
+        <div id="team-hint" class="team-hint"></div>
+        <div id="presets" class="presets"></div>
+
+        </div>
+        <div class="setup-right">
+        <h2 class="sec">英雄 <small>點一下加入隊伍，ⓘ 看技能</small></h2>
+        <div id="hero-grid" class="hero-grid"></div>
+        </div>
+        </div>
+
+        <div class="start-bar">
+            <div class="opt-col">
+                <label class="auto-toggle"><input type="checkbox" id="chk-auto" checked> 自動戰鬥</label>
+                <label class="auto-toggle">戰鬥畫面
+                    <select id="sel-view">
+                        <option value="hd2d">橫式 HD-2D</option>
+                        <option value="portrait">直式（舊版）</option>
+                    </select>
+                </label>
+                <label class="auto-toggle">主動技
+                    <select id="sel-skill">
+                        <option value="pause">暫停演出</option>
+                        <option value="flash">不停頓</option>
+                        <option value="off">關閉</option>
+                    </select>
+                </label>
+                <label class="auto-toggle">大招演出
+                    <select id="sel-ult">
+                        <option value="full">完整</option>
+                        <option value="short">簡短</option>
+                        <option value="off">關閉</option>
+                    </select>
+                </label>
+            </div>
+            <button id="btn-start" class="btn-primary">開始戰鬥</button>
+        </div>
+    </section>
+
+    <!-- ───────── 戰鬥畫面：場景式，角色站在戰場上 ───────── -->
+    <section id="screen-battle" class="screen">
+        <div id="scene" class="scene">
+            <div id="scene-bg" class="scene-bg"></div>
+            <div class="scene-shade"></div>
+            <div id="stage-sprites" class="stage"></div>
+            <div id="stage-ui" class="stage"></div>
+            <div id="flash" class="flash"></div>
+        </div>
+
+        <div class="b-top">
+            <button id="btn-quit" class="g-btn" aria-label="離開">✕</button>
+            <div class="b-title glass">
+                <div id="b-enc"></div>
+                <div id="b-round"></div>
+            </div>
+            <button id="btn-auto" class="g-btn wide">自動</button>
+            <button id="btn-speed" class="g-btn wide">x1</button>
+            <button id="btn-pause" class="g-btn" aria-label="暫停">❚❚</button>
+        </div>
+
+        <div id="timeline" class="timeline glass"></div>
+        <div id="turn-pill" class="turn-pill"></div>
+
+        <div id="hud" class="hud glass">
+            <div class="res-wrap">
+                <div id="res-label" class="res-label"></div>
+                <div class="res-bar"><i id="res-fill"></i></div>
+                <div id="res-hint" class="res-hint"></div>
+            </div>
+            <button id="btn-ult" class="btn-ult" disabled>
+                <span id="btn-ult-name" class="btn-ult-main">大招</span>
+                <span id="btn-ult-sub" class="btn-ult-sub"></span>
+            </button>
+        </div>
+
+        <div id="skill-cut" class="skill-cut"><div class="sc-face"><img alt=""></div><div class="sc-text"><div class="sc-name"></div><div class="sc-hero"></div></div></div>
+
+        <div id="ult" class="ult">
+            <div class="ult-band"></div>
+            <div id="ult-cast" class="ult-cast"></div>
+            <div class="ult-text">
+                <div class="ult-tag">ULTIMATE</div>
+                <div id="ult-name" class="ult-name"></div>
+                <div id="ult-fac" class="ult-fac"></div>
+            </div>
+            <div class="ult-skip">點一下跳過</div>
+        </div>
+        <div id="banner" class="banner"></div>
+        <div id="result" class="overlay"></div>
+    </section>
+
+    <div id="modal" class="overlay"></div>
+</div>
+
+<script src="js/data/elements.js"></script>
+<script src="js/data/factions.js"></script>
+<script src="js/data/heroes.js"></script>
+<script src="js/data/enemies.js"></script>
+<script src="js/data/vfxcolors.js"></script>
+<script src="js/core/battle.js"></script>
+<script src="js/ui/app.js"></script>
+<script type="module" src="js/vfx/stage3d.js"></script>
+</body>
+</html>

@@ -9,15 +9,19 @@
 ## 檔案結構
 
 ```
-index.html
-css/style.css
-js/data/      elements.js（屬性）  factions.js（陣營被動、能量規則）
-              heroes.js（英雄）    enemies.js（敵人、戰鬥關卡、整體難度）
-js/core/      battle.js（戰鬥引擎，不碰畫面，可無畫面執行）
-js/ui/        app.js（編隊、戰鬥、結算畫面）
-assets/portraits/   壓縮過的角色圖（webp，每張約 50KB）
+index.html    大廳（橫式主城）：出征、英雄、招募、背包、設定
+hd2d.html     橫式 HD-2D 戰鬥
+dev.html      戰鬥測試頁（舊編隊畫面＋直式戰鬥，可任選英雄，不影響存檔）
+gallery.html  特效圖鑑
+js/data/      elements（屬性）factions（陣營被動、能量）heroes（22 位英雄）enemies（敵人、關卡）vfxcolors（重複特效自動換色）
+js/core/      battle.js（戰鬥引擎）save.js（本機存檔）gacha.js（招募機率與保底）
+js/lobby/     main.js（大廳畫面）
+js/hd2d/      main.js（橫式戰場）
+js/vfx/       特效播放、特效庫、獨立特效、命中定格
+js/ui/        app.js（dev.html 用）
+assets/       sprites、sprites_hd、portraits、bg（直式）、hd（橫式背景與主城）
 images/       原始大圖
-tools/sim.js  平衡模擬
+tools/        sim.js 平衡模擬、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
 ```
 
 ## 調數值
@@ -75,3 +79,10 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 ### 特效大小自動調整
 
 地面特效（法陣、爆炸、旋風、煙霧、護盾…）播放時會依目標自動縮放：單體＝剛好蓋住那個角色（首領比較大），群體＝蓋住整群的大部分。依據是 `js/vfx/footprint.js` 裡每個特效實際覆蓋的半徑，由 `tools/footprint.html` 量測。新增特效後，開本機伺服器並用瀏覽器打開 `tools/footprint.html`，把 `window.__result` 的結果更新到 `footprint.js`。資料表裡地面特效的 `size` 改當微調倍率（1 = 剛好）。飛行和光束打群體、打首領時會自動加粗。
+
+## 大廳、存檔、招募
+
+- 存檔存在瀏覽器 localStorage（`abo_s1_save`），格式在 `js/core/save.js`，帶版本號。設定裡可以重置存檔
+- 開局送亞瑟、艾拉、菲、毒鏢客，外加一次免費新手 10 連抽（必出 SSR）、3000 鑽石、常駐券 5、限定券 5
+- 招募機率與保底在 `js/core/gacha.js`：常駐 R55／SR35／SSR10、10 抽必 SR、50 抽必 SSR；S1 限定 UR2%（烏瑟）、80 抽保底、保底延續整季；重複轉碎片 R10／SR20／SSR40／UR80
+- 大廳背景 `assets/hd/lobby_capital.webp`（原檔 `images/lobby_capital.jpg`）
