@@ -473,11 +473,10 @@ function renderHud() {
     const allies = b.units.filter(u => u.side === 'ally');
     if (bar.children.length !== allies.length || [...bar.children].some((el, i) => el.dataset.uid !== allies[i].uid)) {
         bar.innerHTML = allies.map(u => `<button class="hcd" data-uid="${u.uid}" style="--fc:${facColor(u.faction)}">
-            <div class="hc-face"><img src="${spriteSrc(u.img)}" alt="" style="--fy:${-(u.faceY || 0)}%"><span class="hc-el">${elIcon(u.element)}</span><span class="hc-tag"></span></div>
-            <div class="hc-name">${shortName(u.name)}</div>
+            <div class="hc-face"><img src="${spriteSrc(u.img)}" alt=""><span class="hc-el">${elIcon(u.element)}</span><span class="hc-st"></span></div>
+            <div class="hc-info"><div class="hc-top"><span class="hc-name">${shortName(u.name)}</span><span class="hc-en"></span></div>
             <div class="hc-bar hp"><i></i><b></b></div>
-            <div class="hc-bar en"><i></i></div>
-            <div class="hc-st"></div></button>`).join('');
+            <div class="hc-bar en"><i></i></div></div></button>`).join('');
         bar.querySelectorAll('.hcd').forEach(el => { el.onclick = () => tapUlt(el.dataset.uid); });
     }
     for (const el of bar.children) updateCard(b.get(el.dataset.uid), el);
@@ -494,7 +493,7 @@ function updateCard(u, el) {
     hp.classList.toggle('low', hpPct < 25);
     const v = u.alive ? u.energy : 0, ready = b.ultReady(u.uid);
     el.querySelector('.hc-bar.en i').style.width = v + '%';
-    el.querySelector('.hc-tag').textContent = !u.alive ? '倒下' : ready ? (b.pendingUlt === u.uid ? '發動' : '大招') : '';
+    el.querySelector('.hc-en').textContent = !u.alive ? '倒下' : ready ? (b.pendingUlt === u.uid ? '發動！' : '大招 ▶') : Math.floor(v) + '%';
     el.querySelector('.hc-st').innerHTML = u.statuses.map(s => `<span>${Battle.STATUS[s.key].icon}</span>`).join('');
     el.classList.toggle('ready', ready);
     el.classList.toggle('pending', b.pendingUlt === u.uid);

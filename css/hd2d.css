@@ -221,3 +221,21 @@ html, body { background: #000; overflow: hidden; }
 .hcd .hc-name { line-height: 1.25; }
 /* 技能橫幅出現時，上方的行動提示先藏起來（避免同一個技能名出現兩次） */
 #hd:has(.skill-cut.hold:not(.out)) .turn-pill { opacity: 0; }
+/* 英雄卡：橫向長方形（左頭像、右名字＋能量百分比＋生命條＋能量條） */
+.hcd { display: flex; align-items: stretch; gap: 5px; width: 138px; padding: 3px 6px 3px 3px; }
+.hcd .hc-face { width: 44px; height: 44px; flex: none; border-bottom: none; border-left: 3px solid var(--fc); border-radius: 7px; }
+.hcd .hc-face img { object-position: 50% 4%; }
+.hcd .hc-el { left: auto; right: 1px; top: auto; bottom: 0; }
+.hcd .hc-st { position: absolute; left: 1px; top: 1px; right: auto; flex-direction: row; gap: 0; }
+.hcd .hc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.hcd .hc-top { display: flex; align-items: baseline; gap: 4px; }
+.hcd .hc-name { flex: 1; min-width: 0; margin: 0; font-size: 11px; font-weight: 700; }
+.hcd .hc-en { flex: none; font-size: 11px; font-weight: 900; color: color-mix(in srgb, var(--fc) 55%, #fff); font-variant-numeric: tabular-nums; }
+.hcd .hc-bar { height: 6px; }
+.hcd .hc-bar + .hc-bar { margin-top: 0; }
+.hcd .hc-bar.en { height: 5px; background-image: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), rgba(0,0,0,.6) calc(25% - 1px) 25%); }
+.hcd .hc-bar.en i { z-index: 0; }
+.hcd.ready .hc-en { color: #fff; text-shadow: 0 0 6px var(--fc); }
+.hcd.dead .hc-en { color: #999; }
+@media (max-height: 360px) { .hcd { width: 124px; } .hcd .hc-face { width: 38px; height: 38px; } }
+@media (max-width: 760px) { .hcd { width: 118px; } }
