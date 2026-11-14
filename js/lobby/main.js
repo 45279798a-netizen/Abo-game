@@ -1,4 +1,4 @@
-// 大廳（橫式主城）：隊長立繪、貨幣、出征、英雄、招募、背包、設定。
+// 大廳（橫式主城）：隊長立繪、貨幣、出征（主線章節地圖、劇情、掛機）、英雄、招募、背包、設定。
 // 資料存在 Save（js/core/save.js），抽卡邏輯在 Gacha（js/core/gacha.js）。
 (function () {
     const R = window.RES;
@@ -60,7 +60,10 @@
         }).join('');
     }
     function renderMain() {
-        renderLeader(); renderCurrency(); renderTeam();
+        renderLeader(); renderCurrency(); renderTeam(); refreshIdle();
+        const best = Campaign.progress(S);
+        const nx = Math.min(best + 1, R.CAMPAIGN.chapters.length * Campaign.N);
+        $('#battle-sub').textContent = `主線 ${Math.ceil(nx / Campaign.N)}-${(nx - 1) % Campaign.N + 1}`;
         $('#gacha-dot').classList.toggle('on', !S.newbieDone);
         $('#gacha-sub').textContent = S.newbieDone ? 'S1 限定・烏瑟' : '新手招募可以抽了！';
     }
@@ -82,28 +85,207 @@
         toast.t = setTimeout(() => el.classList.remove('show'), 1800);
     }
 
-    // ───────── 出征 ─────────
-    let encSel = 'vanguard';
+    // ───────── 出征：主線章節地圖 ─────────
+    const CH = R.CAMPAIGN.chapters;
+    const NST = Campaign.N;
+    const curChapter = () => Math.min(CH.length, Math.floor(Campaign.progress(S) / NST) + 1);
+    let mapCh = null;
+    // 15 個關卡點沿著蜿蜒的路排列（百分比座標）
+    const NODE_POS = Array.from({length: NST}, (_, i) => {
+        const t = i / (NST - 1);
+        return {x: 7 + t * 83, y: 55 + Math.sin(t * Math.PI * 2.6 + Math.PI * 0.4) * 21};
+    });
+    const unitImg = id => R.HEROES[id] ? R.HEROES[id].img : R.ENEMIES[id].img;
+    const unitName = id => id === 'narrator' ? '' : short((R.HEROES[id] || R.ENEMIES[id]).name);
+    const starsHtml = n => [1, 2, 3].map(k => `<i class="${k <= n ? 'on' : ''}">★</i>`).join('');
+    const rewardHtml = r => Object.entries(r).filter(([, v]) => v > 0).map(([k, v]) => `<span class="rw" title="${CUR[k].name}">${CUR[k].icon}${fmt(v)}</span>`).join('');
+
     function renderBattle() {
         const p = $('#panel-battle');
-        p.innerHTML = head('出征') + `<div class="pbody">
-            <div class="enc-list">${R.ENCOUNTERS.map(e => `<button class="enc ${e.id === encSel ? 'sel' : ''}" data-enc="${e.id}">
-                <div class="ebg" style="background-image:url(assets/hd/land_${e.bgHD}.webp)"><span>${e.difficulty}</span></div>
-                <div class="ebody"><h3>${e.name}</h3><p>${e.desc || ''}</p></div></button>`).join('')}</div>
-            <div class="go-row"><div class="team-mini">${S.team.map(id => id ? `<div class="face" style="--rc:${rc(R.HEROES[id].rarity)}"><img src="${face(R.HEROES[id].img)}" alt=""></div>` : '<div class="face empty"></div>').join('')}</div>
-            <span style="font-size:12px;color:var(--muted)">隊伍戰力 <b style="color:var(--gold-hi);font-size:16px">${teamPower().toLocaleString()}</b></span>
-            <button class="btn" data-open="hero">調整隊伍</button><button class="btn primary" id="go">出戰</button></div>
-            <p style="font-size:11.5px;color:var(--muted);margin:10px 0 0">主線 10 章與掛機會在之後的步驟加入，目前先用這 3 場戰鬥試玩。</p></div>`;
-        p.querySelectorAll('[data-enc]').forEach(b => { b.onclick = () => { encSel = b.dataset.enc; renderBattle(); }; });
-        p.querySelector('#go').onclick = () => {
-            const team = S.team.filter(Boolean);
-            if (!team.length) { toast('隊伍裡至少要有 1 位英雄'); return; }
-            let auto = true;
-            try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
-            const growth = Object.fromEntries(team.map(id => [id, Growth.multipliers(id, S.heroes[id])]));
-            localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), encounter: encSel, auto, growth, from: 'lobby'}));
-            location.href = 'hd2d.html';
-        };
+        if (mapCh == null) mapCh = curChapter();
+        const ch = mapCh, c = CH[ch - 1];
+        const stars = Campaign.chapterStars(S, ch);
+        const open = Campaign.unlocked(S, ch, 1);
+        const chestHtml = R.CAMPAIGN.chests.map((x, i) => {
+            const got = S.campaign.chests[`${ch}:${i}`], ready = !got && stars >= x.stars;
+            return `<button class="chest ${got ? 'got' : ''} ${ready ? 'ready' : ''}" data-chest="${i}" title="${x.stars} 星寶箱">${got ? '📭' : '🎁'}<b>${x.stars}</b></button>`;
+        }).join('');
+        const path = NODE_POS.map((q, i) => `${i ? 'L' : 'M'}${q.x} ${q.y}`).join(' ');
+        const nodes = NODE_POS.map((q, i) => {
+            const st = i + 1, kind = Campaign.kindOf(st), k = Campaign.key(ch, st);
+            const got = S.campaign.stars[k] || 0, un = Campaign.unlocked(S, ch, st), next = un && !got;
+            const inner = kind === 'boss' ? `<img src="${face(R.ENEMIES[c.boss].img)}" alt="">` : `<span>${st}</span>`;
+            return `<button class="node ${kind} ${un ? '' : 'lock'} ${got ? 'done' : ''} ${next ? 'next' : ''}" style="left:${q.x}%;top:${q.y}%" data-st="${st}">
+                ${inner}${got ? `<div class="nstars">${starsHtml(got)}</div>` : ''}${!un ? '<em>🔒</em>' : ''}</button>`;
+        }).join('');
+        const idle = Campaign.idlePending(S);
+        p.innerHTML = `<div class="map" style="background-image:url(assets/hd/land_${c.bgHD}.webp)">
+            <div class="map-shade"></div>
+            <svg class="map-path" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="${path}"/></svg>
+            ${nodes}
+            <div class="map-top">
+                <button class="chv" data-chv="-1" ${ch <= 1 ? 'disabled' : ''}>◀</button>
+                <div class="ch-title"><small>第 ${ch} 章</small><b>${c.name}</b></div>
+                <button class="chv" data-chv="1" ${ch >= CH.length || !Campaign.unlocked(S, ch + 1, 1) ? 'disabled' : ''}>▶</button>
+                <div class="sp"></div>
+                <div class="ch-stars">★ ${stars}<small>/${NST * 3}</small></div>
+                <div class="chests">${chestHtml}</div>
+                <button class="close" data-close>✕</button>
+            </div>
+            <div class="map-bottom">
+                <div class="team-mini">${S.team.map(id => id ? `<div class="face" style="--rc:${rc(R.HEROES[id].rarity)}"><img src="${face(R.HEROES[id].img)}" alt=""></div>` : '<div class="face empty"></div>').join('')}</div>
+                <span class="tp">隊伍戰力 <b>${teamPower().toLocaleString()}</b></span>
+                <button class="btn" data-open="hero">調整隊伍</button>
+                <div class="sp"></div>
+                <button class="btn" id="map-story" ${open ? '' : 'disabled'}>📜 劇情</button>
+                <button class="btn idle-btn" id="map-idle">🏕️ 掛機 <small>${idle.hours.toFixed(1)}h</small></button>
+            </div>
+            ${open ? '' : '<div class="ch-lock">先打倒上一章的首領才能進入</div>'}
+        </div>`;
+        p.querySelectorAll('[data-chv]').forEach(b => { b.onclick = () => { mapCh = Math.max(1, Math.min(CH.length, ch + Number(b.dataset.chv))); renderBattle(); maybeChapterStory(); }; });
+        p.querySelectorAll('[data-st]').forEach(b => { b.onclick = () => { const st = Number(b.dataset.st); if (!Campaign.unlocked(S, ch, st)) { toast('先通過前一關'); return; } showStage(ch, st); }; });
+        p.querySelectorAll('[data-chest]').forEach(b => {
+            b.onclick = () => {
+                const i = Number(b.dataset.chest), x = R.CAMPAIGN.chests[i];
+                const r = Campaign.openChest(S, ch, i);
+                if (!r.ok) { toast(`${x.stars} 星寶箱：${rewardText(x.reward)}（${r.reason}）`); return; }
+                save(); renderBattle(); renderCurrency();
+                toast('獲得 ' + rewardText(r.reward));
+            };
+        });
+        p.querySelector('#map-story').onclick = () => storyMenu(ch);
+        p.querySelector('#map-idle').onclick = showIdle;
+    }
+    const rewardText = r => Object.entries(r).filter(([, v]) => v > 0).map(([k, v]) => `${CUR[k].icon}${fmt(v)}`).join(' ');
+
+    // 章節開頭劇情：第一次進到這章時播
+    function maybeChapterStory() {
+        const ch = mapCh;
+        if (!Campaign.unlocked(S, ch, 1) || S.campaign.story[`${ch}:start`]) return;
+        playStory(ch, 'start');
+    }
+    function storyMenu(ch) {
+        const m = modal(`<h3>第 ${ch} 章・${CH[ch - 1].name}</h3><p class="muted">重看這一章的劇情</p>
+            <div class="row"><button class="btn" data-s="start">序章</button><button class="btn" data-s="boss" ${S.campaign.story[`${ch}:boss`] ? '' : 'disabled'}>首領戰前</button></div>`);
+        m.querySelectorAll('[data-s]').forEach(b => { b.onclick = () => { m.remove(); playStory(ch, b.dataset.s); }; });
+    }
+
+    // 劇情播放：左右立繪＋對話框；點一下下一句，右上「跳過」
+    function playStory(ch, part) {
+        return new Promise(resolve => {
+            const lines = CH[ch - 1].story[part];
+            const bg = part === 'boss' && CH[ch - 1].bossBgHD ? CH[ch - 1].bossBgHD : CH[ch - 1].bgHD;
+            const el = h('div', 'story');
+            el.innerHTML = `<div class="sbg" style="background-image:url(assets/hd/land_${bg}.webp)"></div>
+                <img class="spl" alt=""><img class="spr" alt="">
+                <div class="sbox"><div class="sname"></div><div class="stext"></div><div class="snext">▼</div></div>
+                <div class="stitle">第 ${ch} 章・${CH[ch - 1].name}${part === 'boss' ? '<small>首領戰</small>' : ''}</div>
+                <button class="sskip">跳過 ▶▶</button>`;
+            $('#lobby').appendChild(el);
+            let i = -1, typing = null, left = null, right = null;
+            const finish = () => { clearInterval(typing); el.classList.add('out'); setTimeout(() => el.remove(), 300); S.campaign.story[`${ch}:${part}`] = true; save(); resolve(); };
+            function show() {
+                i++;
+                if (i >= lines.length) { finish(); return; }
+                const [who, text] = lines[i];
+                const box = el.querySelector('.sbox');
+                box.classList.toggle('narr', who === 'narrator');
+                el.querySelector('.sname').textContent = unitName(who);
+                if (who !== 'narrator') {
+                    // 英雄站左邊、敵人站右邊；說話的人亮、另一邊變暗
+                    const isEnemy = !R.HEROES[who];
+                    if (isEnemy) right = who; else left = who;
+                    const L = el.querySelector('.spl'), Rr = el.querySelector('.spr');
+                    if (left) { const src = sprite(unitImg(left)); if (!L.src.endsWith(src)) L.src = src; L.classList.add('on'); }
+                    if (right) { const src = sprite(unitImg(right)); if (!Rr.src.endsWith(src)) Rr.src = src; Rr.classList.add('on'); }
+                    L.classList.toggle('dim', isEnemy); Rr.classList.toggle('dim', !isEnemy);
+                }
+                const t = el.querySelector('.stext');
+                let n = 0;
+                clearInterval(typing);
+                typing = setInterval(() => { n++; t.textContent = text.slice(0, n); if (n >= text.length) { clearInterval(typing); typing = null; } }, 28);
+                el.dataset.full = text;
+            }
+            el.onclick = e => {
+                if (e.target.closest('.sskip')) { finish(); return; }
+                if (typing) { clearInterval(typing); typing = null; el.querySelector('.stext').textContent = el.dataset.full; return; }
+                show();
+            };
+            show();
+        });
+    }
+
+    function modal(html, cls = '') {
+        const m = h('div', 'modal ' + cls);
+        m.innerHTML = `<div class="mbox">${html}<button class="mclose">✕</button></div>`;
+        m.onclick = e => { if (e.target === m || e.target.closest('.mclose')) m.remove(); };
+        $('#lobby').appendChild(m);
+        return m;
+    }
+
+    // 關卡資訊
+    function showStage(ch, st) {
+        const s = Campaign.stage(ch, st), k = s.key;
+        const got = S.campaign.stars[k] || 0;
+        const rec = Campaign.recommend(ch, st), tp = teamPower();
+        const foes = [...s.front, ...s.back];
+        const uniq = [...new Set(foes)];
+        const left = Campaign.sweepLeft(S);
+        const m = modal(`<div class="st-head"><span class="kind ${s.kind}">${s.difficulty}</span><h3>${ch}-${st}　${s.kind === 'boss' ? s.name : CH[ch - 1].name}</h3><div class="st-stars">${starsHtml(got)}</div></div>
+            <div class="foes">${uniq.map(id => `<div class="face ${R.ENEMIES[id].boss ? 'boss' : ''}" title="${R.ENEMIES[id].name}"><img src="${face(R.ENEMIES[id].img)}" alt=""><span>${foes.filter(x => x === id).length > 1 ? '×' + foes.filter(x => x === id).length : ''}</span></div>`).join('')}</div>
+            <div class="pow">推薦戰力 <b>${rec.toLocaleString()}</b>　隊伍戰力 <b class="${tp >= rec ? 'ok' : 'low'}">${tp.toLocaleString()}</b></div>
+            <ul class="conds">
+                <li class="${got >= 1 ? 'ok' : ''}">★ 通關</li>
+                <li>★ 沒有英雄陣亡</li>
+                <li>★ ${s.rounds} 回合內通關</li>
+            </ul>
+            <div class="rws"><span class="muted">${got ? '重打獎勵' : '首通獎勵'}</span>${rewardHtml(got ? Campaign.repeatReward(ch, st) : Campaign.firstReward(ch, st))}</div>
+            <div class="row">
+                ${got >= 3 ? `<button class="btn" data-sweep="1" ${left ? '' : 'disabled'}>掃蕩 ×1</button><button class="btn" data-sweep="10" ${left ? '' : 'disabled'}>掃蕩 ×${Math.min(10, left) || 10}</button><span class="muted" style="font-size:11px">今日剩 ${left}</span>` : '<span class="muted" style="font-size:11px">3 星通關後可以掃蕩</span>'}
+                <div class="sp"></div><button class="btn primary" id="st-go">出戰</button>
+            </div>`, 'stage');
+        m.querySelectorAll('[data-sweep]').forEach(b => {
+            b.onclick = () => {
+                const r = Campaign.sweep(S, ch, st, Number(b.dataset.sweep));
+                if (!r.ok) { toast(r.reason); return; }
+                save(); renderCurrency(); m.remove(); showStage(ch, st);
+                toast(`掃蕩 ${r.times} 次：${rewardText(r.reward)}`);
+            };
+        });
+        m.querySelector('#st-go').onclick = () => { m.remove(); launchStage(ch, st); };
+    }
+
+    async function launchStage(ch, st) {
+        const team = S.team.filter(Boolean);
+        if (!team.length) { toast('隊伍裡至少要有 1 位英雄'); return; }
+        if (st === 1 && !S.campaign.story[`${ch}:start`]) await playStory(ch, 'start');
+        if (st === NST && !S.campaign.story[`${ch}:boss`]) await playStory(ch, 'boss');
+        let auto = true;
+        try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
+        const growth = Object.fromEntries(team.map(id => [id, Growth.multipliers(id, S.heroes[id])]));
+        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), stage: {ch, st}, auto, growth, from: 'lobby'}));
+        location.href = 'hd2d.html';
+    }
+
+    // ───────── 掛機 ─────────
+    function showIdle() {
+        const p = Campaign.idlePending(S), rate = Campaign.idleRate(S), q = Campaign.quickInfo(S);
+        const best = Campaign.progress(S);
+        const m = modal(`<h3>🏕️ 掛機收益</h3>
+            <p class="muted">英雄們會在你離開時繼續討伐魔物。收益依最高通關關卡（目前 ${best ? `${Math.ceil(best / NST)}-${(best - 1) % NST + 1}` : '尚未通關'}），最多累積 ${Campaign.IDLE_MAX_H} 小時。</p>
+            <div class="idle-bar"><i style="width:${p.hours / Campaign.IDLE_MAX_H * 100}%"></i><span>${p.hours.toFixed(1)} / ${Campaign.IDLE_MAX_H} 小時</span></div>
+            <div class="rws"><span class="muted">可領取</span>${rewardHtml(p.reward) || '<span class="muted">還沒有累積</span>'}</div>
+            <div class="rws"><span class="muted">每小時</span>${rewardHtml({gold: Math.floor(rate.gold), exp: Math.floor(rate.exp)})}<span class="rw">${CUR.brk.icon}${rate.brk.toFixed(2)}</span></div>
+            <div class="row"><button class="btn" id="idle-quick" ${q.cost == null ? 'disabled' : ''}>⚡ 快速掛機 2 小時${q.cost == null ? '（今天用完）' : q.cost ? `（💎${q.cost}）` : '（今日免費）'}</button><div class="sp"></div>
+            <button class="btn primary" id="idle-claim" ${p.reward.gold > 0 ? '' : 'disabled'}>領取</button></div>`, 'idle');
+        m.querySelector('#idle-claim').onclick = () => { const r = Campaign.idleClaim(S); save(); renderCurrency(); m.remove(); toast('領取 ' + rewardText(r.reward)); refreshIdle(); if ($('#panel-battle').classList.contains('show')) renderBattle(); };
+        m.querySelector('#idle-quick').onclick = () => { const r = Campaign.quickIdle(S); if (!r.ok) { toast(r.reason); return; } save(); renderCurrency(); m.remove(); toast('快速掛機 ' + rewardText(r.reward)); };
+    }
+    function refreshIdle() {
+        const p = Campaign.idlePending(S);
+        const el = $('#idle-chip');
+        el.innerHTML = `🏕️ 掛機收益 <b>${p.hours.toFixed(1)}h</b>`;
+        el.classList.toggle('ready', p.hours >= 1);
     }
 
     const teamPower = () => S.team.filter(Boolean).reduce((a, id) => a + Growth.power(id, S.heroes[id]), 0);
@@ -415,7 +597,7 @@
     // ───────── 事件 ─────────
     document.addEventListener('click', e => {
         const o = e.target.closest('[data-open]');
-        if (o) { e.preventDefault(); $('#hero-detail').classList.remove('show'); openPanel(o.dataset.open); return; }
+        if (o) { e.preventDefault(); $('#hero-detail').classList.remove('show'); document.querySelectorAll('.modal').forEach(m => m.remove()); openPanel(o.dataset.open); if (o.dataset.open === 'battle') maybeChapterStory(); return; }
         if (e.target.closest('[data-close]')) closePanels();
     });
     $('#leader').onclick = say;
@@ -427,8 +609,18 @@
     $('#rotate-ok').onclick = () => { orient.ok = true; orient(); };
     addEventListener('resize', orient);
     orient();
+    $('#idle-chip').onclick = showIdle;
+    setInterval(refreshIdle, 30000);
     renderMain();
     setTimeout(say, 800);
-    if (!S.newbieDone) setTimeout(() => toast('新手招募：免費 10 連抽，去「招募」看看！'), 1600);
-    window.__lobby = {get save() { return S; }, openPanel, reload: () => { S = Save.load(); renderMain(); }};   // 測試用
+    // 從戰鬥回來：#map 打開地圖；#go=章-關 直接出戰下一關（會先播該播的劇情）
+    const hm = location.hash.match(/^#(map|go)(?:=(\d+)-(\d+))?/);
+    if (hm) {
+        history.replaceState(null, '', location.pathname);
+        if (hm[2]) mapCh = Number(hm[2]);
+        openPanel('battle');
+        if (hm[1] === 'go' && hm[2]) launchStage(Number(hm[2]), Number(hm[3]));
+        else maybeChapterStory();
+    } else if (!S.newbieDone) setTimeout(() => { if (!document.querySelector('.story')) toast('新手招募：免費 10 連抽，去「招募」看看！'); }, 1600);
+    window.__lobby = {get save() { return S; }, openPanel, playStory, showStage, showIdle, reload: () => { S = Save.load(); renderMain(); }};   // 測試用
 })();

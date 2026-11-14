@@ -375,9 +375,11 @@ async function startBattle() {
     units.clear();
     slotsUsed.clear();
     $('#result').classList.remove('show');
-    const b = Battle.create({team: cfg.team, encounterId: cfg.encounter, auto: state.auto, growth: cfg.growth});   // growth：從大廳帶來的養成倍率
+    // 主線關卡（cfg.stage）用 Campaign 產生關卡；growth：從大廳帶來的養成倍率
+    const stageEnc = cfg.stage ? Campaign.stage(cfg.stage.ch, cfg.stage.st) : null;
+    const b = Battle.create({team: cfg.team, encounterId: cfg.encounter, encounter: stageEnc, auto: state.auto, growth: cfg.growth});
     state.battle = b;
-    $('#b-enc').textContent = `${b.encounter.name}・${b.encounter.difficulty}`;
+    $('#b-enc').textContent = stageEnc ? `${stageEnc.key}　${stageEnc.kind === 'boss' ? stageEnc.name : R.CAMPAIGN.chapters[stageEnc.ch - 1].name}・${stageEnc.difficulty}` : `${b.encounter.name}・${b.encounter.difficulty}`;
     await Promise.all(b.units.map(u => addUnit(u)));
     const d = defaultPose();
     cam.pos.copy(d.pos).add(new THREE.Vector3(0, 1.5, 6));
@@ -941,21 +943,65 @@ async function playEvents(events, id) {
     if (usedSkill && !b.over) camHome(500);
 }
 
+// 主線結算：寫進存檔（星數、首通／重打獎勵），回傳要顯示的內容
+function settleStage(win, round) {
+    if (!cfg.stage) return null;
+    const b = state.battle;
+    const S = Save.load();
+    const noDeath = b.units.filter(u => u.side === 'ally').every(u => u.alive);
+    const res = Campaign.settle(S, cfg.stage.ch, cfg.stage.st, win, {noDeath, rounds: round});
+    Save.save(S);
+    res.noDeath = noDeath;
+    res.S = S;
+    return res;
+}
+const CUR_ICON = {gold: '🪙', gem: '💎', ticket: '🎫', ltdTicket: '🌟', exp: '🧪', brk: '💠', book: '📘', dust: '✴️'};
+
 function showResult(e) {
     const b = state.battle;
     const win = e.result === 'win';
+    const round = Math.min(e.round, Battle.MAX_ROUNDS);
     const reason = win ? `${e.round} 回合內擊敗所有敵人` : (e.reason === 'timeout' ? `${Battle.MAX_ROUNDS} 回合內沒有打完` : '全隊倒下');
     const allies = b.units.filter(u => u.side === 'ally');
     const rows = allies.map(u => ({name: shortName(u.name), v: u.stats.dmg, color: facColor(u.faction)}));
     rows.sort((a, c) => c.v - a.v);
     const max = Math.max(1, ...rows.map(r => r.v));
+    const st = settleStage(win, round);
+    let stageHtml = '', btns = `<a class="btn-secondary" href="index.html" style="display:grid;place-items:center;text-decoration:none;color:inherit">回大廳</a><button class="btn-primary" id="res-again">再打一次</button>`;
+    if (cfg.stage) {
+        const s = Campaign.stage(cfg.stage.ch, cfg.stage.st);
+        const conds = [['通關', win], ['沒有英雄陣亡', win && st.noDeath], [`${s.rounds} 回合內通關`, win && round <= s.rounds]];
+        stageHtml = `<div class="res-stars">${conds.map(([t, ok], i) => `<div class="${ok ? 'on' : ''}" style="animation-delay:${0.25 + i * 0.25}s"><i>★</i><span>${t}</span></div>`).join('')}</div>`;
+        if (win) stageHtml += `<div class="res-rw"><span>${st.first ? '首通獎勵' : '獎勵'}</span>${Object.entries(st.reward).filter(([, v]) => v > 0).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('')}</div>`;
+        else stageHtml += `<div class="res-tip">提示：回大廳幫英雄升級、突破，或調整隊伍再挑戰</div>`;
+        const idx = Campaign.idxOf(cfg.stage.ch, cfg.stage.st);
+        const last = R.CAMPAIGN.chapters.length * Campaign.N;
+        const nx = win && idx < last ? {ch: Math.ceil((idx + 1) / Campaign.N), st: idx % Campaign.N + 1} : null;
+        btns = `<a class="btn-secondary" href="index.html#map=${cfg.stage.ch}-1" style="display:grid;place-items:center;text-decoration:none;color:inherit">回地圖</a><button class="btn-secondary" id="res-again">再打一次</button>${nx ? '<button class="btn-primary" id="res-next">下一關 ▶</button>' : ''}`;
+        if (nx) setTimeout(() => {
+            $('#res-next').onclick = () => {
+                // 下一關有劇情（新章節開頭或首領戰）就回大廳播劇情再出戰；沒有就直接重新載入戰場
+                const needStory = (nx.st === 1 && !st.S.campaign.story[`${nx.ch}:start`]) || (nx.st === Campaign.N && !st.S.campaign.story[`${nx.ch}:boss`]);
+                if (needStory || nx.ch !== cfg.stage.ch) { location.href = `index.html#go=${nx.ch}-${nx.st}`; return; }
+                cfg.stage = nx;
+                try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ }
+                location.reload();
+            };
+        });
+    }
     const r = $('#result');
-    r.innerHTML = `<div class="sheet">
-        <div class="res-title ${win ? 'win' : 'lose'}">${win ? '勝利' : '敗北'}</div>
-        <div class="res-sub">${reason}</div>
-        <div class="res-stats"><div><b>${Math.min(e.round, Battle.MAX_ROUNDS)}</b><span>回合</span></div><div><b>${b.ults}</b><span>大招</span></div></div>
-        ${rows.map(x => `<div class="dmg-row"><span>${x.name}</span><span class="dmg-bar"><i style="width:${x.v / max * 100}%;background:${x.color}"></i></span><span class="dmg-n">${Math.round(x.v)}</span></div>`).join('')}
-        <div class="row-btns"><a class="btn-secondary" href="index.html" style="display:grid;place-items:center;text-decoration:none">回大廳</a><button class="btn-primary" id="res-again">再打一次</button></div></div>`;
+    // 左：結果、星級、獎勵、按鈕；右：回合與輸出統計（橫向螢幕並排，直向上下排）
+    r.innerHTML = `<div class="sheet res-sheet">
+        <div class="res-l">
+            <div class="res-title ${win ? 'win' : 'lose'}">${win ? '勝利' : '敗北'}</div>
+            <div class="res-sub">${reason}</div>
+            ${stageHtml}
+            <div class="row-btns">${btns}</div>
+        </div>
+        <div class="res-r">
+            <div class="res-stats"><div><b>${round}</b><span>回合</span></div><div><b>${b.ults}</b><span>大招</span></div></div>
+            ${rows.map(x => `<div class="dmg-row"><span>${x.name}</span><span class="dmg-bar"><i style="width:${x.v / max * 100}%;background:${x.color}"></i></span><span class="dmg-n">${Math.round(x.v)}</span></div>`).join('')}
+        </div></div>`;
     r.classList.add('show');
     $('#res-again').onclick = startBattle;
 }
@@ -1008,8 +1054,8 @@ function frame(now) {
 
 // ───────── 開始 ─────────
 (async function init() {
-    const enc = R.ENCOUNTERS.find(e => e.id === cfg.encounter) || R.ENCOUNTERS[0];
-    cfg.encounter = enc.id;
+    const enc = cfg.stage ? Campaign.stage(cfg.stage.ch, cfg.stage.st) : (R.ENCOUNTERS.find(e => e.id === cfg.encounter) || R.ENCOUNTERS[0]);
+    if (!cfg.stage) cfg.encounter = enc.id;
     resize();
     setupPost();
     const d = defaultPose();

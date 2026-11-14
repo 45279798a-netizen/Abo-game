@@ -68,15 +68,16 @@
         });
     }
 
-    function makeEnemy(id, uid, power) {
+    // power：攻擊倍率；hpPower：生命與防禦倍率（主線關卡分開調，讓難度高時戰鬥不會拖太長；沒給就跟 power 一樣）
+    function makeEnemy(id, uid, power, hpPower = power) {
         const d = R.ENEMIES[id];
         const s = d.stats;
         return buildUnit({
             uid, id, side: 'enemy', name: d.name, faction: d.faction, element: d.element, role: d.role,
             img: d.img, boss: !!d.boss, elite: !!d.elite,
             base: {
-                hp: Math.round(s.hp * power * R.ENEMY_SCALE.hp), atk: Math.round(s.atk * power * R.ENEMY_SCALE.atk),
-                def: Math.round(s.def * power * R.ENEMY_SCALE.def),
+                hp: Math.round(s.hp * hpPower * R.ENEMY_SCALE.hp), atk: Math.round(s.atk * power * R.ENEMY_SCALE.atk),
+                def: Math.round(s.def * hpPower * R.ENEMY_SCALE.def),
                 spd: s.spd, crit: s.crit ?? 0.1, critDmg: 0.5, hit: 0, res: s.res || 0,
             },
             skills: d.skills || [], passives: d.passives || [],
@@ -84,8 +85,8 @@
     }
 
     class BattleState {
-        constructor({team, encounterId, seed, auto, growth}) {
-            this.encounter = R.ENCOUNTERS.find(e => e.id === encounterId);
+        constructor({team, encounterId, encounter, seed, auto, growth}) {
+            this.encounter = encounter || R.ENCOUNTERS.find(e => e.id === encounterId);   // encounter：主線關卡直接傳整個關卡物件
             this.rand = makeRng(seed ?? (Date.now() & 0xffffffff));
             this.auto = auto !== false;
             this.units = [];
@@ -148,7 +149,7 @@
 
         // ───────── 查詢 ─────────
         addEnemy(id, row, atb) {
-            const u = makeEnemy(id, 'e' + (this.seq++), this.encounter.power);
+            const u = makeEnemy(id, 'e' + (this.seq++), this.encounter.power, this.encounter.hpPower);
             u.row = row;
             if (atb != null) u.atb = atb;
             this.units.push(u);

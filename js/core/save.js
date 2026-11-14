@@ -3,15 +3,15 @@
 (function () {
     const R = window.RES;
     const KEY = 'abo_s1_save';
-    const VERSION = 1;
+    const VERSION = 2;
 
     // 開局：送 4 位英雄＋起始資源（新手 10 連抽另外給，見 gacha.js）
     const START = {
         heroes: ['arthur', 'elara', 'faye', 'dart'],
         team: ['arthur', 'faye', 'elara', 'dart', null],
         leader: 'arthur',
-        // 經驗藥水、突破石、技能書先給一些試玩用的量；主線與掛機做好後改成從關卡取得
-        currency: {gold: 60000, gem: 3000, ticket: 5, ltdTicket: 5, exp: 600, brk: 10, book: 10, dust: 0},
+        // 之後的資源主要從主線首通、章節寶箱與掛機取得
+        currency: {gold: 20000, gem: 1500, ticket: 3, ltdTicket: 1, exp: 120, brk: 0, book: 1, dust: 0},
     };
     // 初始星級：R 1★、SR 2★、SSR 3★、UR 4★
     const START_STAR = {R: 1, SR: 2, SSR: 3, UR: 4};
@@ -23,6 +23,8 @@
             currency: {...START.currency},
             pity: {std: {sr: 0, ssr: 0}, ltd: {sr: 0, ur: 0}},
             newbieDone: false, pulls: 0,
+            campaign: {stars: {}, chests: {}, story: {}},   // 主線：每關最高星數、已領寶箱、看過的劇情
+            idle: {last: Date.now(), quickDay: '', quickUsed: 0},
         };
         START.heroes.forEach(id => addHero(s, id));
         return s;
@@ -35,8 +37,10 @@
     }
 
     function migrate(s) {
-        // 目前只有第 1 版；之後改格式在這裡把舊存檔轉成新格式
+        // 第 2 版：加入主線進度與掛機
         s.v = VERSION;
+        s.campaign = s.campaign || {stars: {}, chests: {}, story: {}};
+        s.idle = s.idle || {last: Date.now(), quickDay: '', quickUsed: 0};
         s.pity = s.pity || {std: {sr: 0, ssr: 0}, ltd: {sr: 0, ur: 0}};
         // 養成欄位（養成功能加入前的存檔沒有）
         for (const [k, v] of Object.entries(START.currency)) if (s.currency[k] == null) s.currency[k] = v;

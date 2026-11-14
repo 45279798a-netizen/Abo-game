@@ -59,6 +59,7 @@ RES.FACTIONS = {
     },
     // 敵方陣營（S1 玩家不能使用）
     undead: {name: '亡靈天災', short: '亡靈', color: '#84cc16', passive: null},
+    beast: {name: '荒野魔物', short: '魔物', color: '#a16207', passive: null},
 };
 
 // 能量與個人大招：

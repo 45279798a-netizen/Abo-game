@@ -416,3 +416,21 @@ a.icon-btn { text-decoration: none; color: inherit; }
 .skill-box { background: var(--panel-2); border-radius: 8px; padding: 8px 10px; margin-top: 8px; font-size: 12.5px; line-height: 1.55; }
 .skill-box b { color: var(--gold-hi); }
 .skill-box .k { font-size: 10px; color: var(--muted); margin-right: 4px; }
+
+/* 主線結算：星級條件、獎勵 */
+.res-stars { display: flex; justify-content: center; gap: 14px; margin: 2px 0 10px; }
+.res-stars div { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10.5px; color: #8a7d68; }
+.res-stars i { font-style: normal; font-size: 30px; line-height: 1; color: #3a2e22; }
+.res-stars div.on { color: var(--gold-hi); }
+.res-stars div.on i { color: var(--gold-hi); text-shadow: 0 0 14px rgba(252,211,77,.8); animation: starPop .45s backwards; animation-delay: inherit; }
+@keyframes starPop { 0% { transform: scale(2.4); opacity: 0; } 70% { transform: scale(.9); } }
+.res-rw { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
+.res-rw b { padding: 2px 8px; border-radius: 9px; background: rgba(255,255,255,.08); color: #f3ead9; font-size: 12.5px; }
+.res-tip { text-align: center; font-size: 12px; color: #fca5a5; margin-bottom: 10px; }
+.res-sheet { max-width: 720px; display: grid; grid-template-columns: 1fr; gap: 6px 22px; }
+.res-sheet .row-btns > * { flex: 1; }
+@media (orientation: landscape) and (max-height: 600px) {
+    .res-sheet { grid-template-columns: 1.15fr 1fr; align-items: center; }
+    .res-sheet .res-r { border-left: 1px solid rgba(255,255,255,.08); padding-left: 18px; }
+    .res-sheet .res-stats { margin-top: 0; }
+}

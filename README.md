@@ -9,11 +9,12 @@
 ## 檔案結構
 
 ```
-index.html    大廳（橫式主城）：出征、英雄、招募、背包、設定
+index.html    大廳（橫式主城）：出征（主線地圖、劇情、掛機）、英雄、招募、背包、設定
 hd2d.html     橫式 HD-2D 戰鬥
 dev.html      戰鬥測試頁（舊編隊畫面＋直式戰鬥，可任選英雄，不影響存檔）
 gallery.html  特效圖鑑
-js/data/      elements（屬性）factions（陣營被動、能量）heroes（22 位英雄）enemies（敵人、關卡）vfxcolors（重複特效自動換色）
+js/data/      elements（屬性）factions（陣營被動、能量）heroes（22 位英雄）enemies（敵人、首領）vfxcolors（重複特效自動換色）
+              campaign（主線 10 章、劇情、獎勵、掛機）campaign_table（各關難度，校準工具產生）
 js/core/      battle.js（戰鬥引擎）save.js（本機存檔）gacha.js（招募機率與保底）growth.js（養成）
 js/lobby/     main.js（大廳畫面）
 js/hd2d/      main.js（橫式戰場）
@@ -21,7 +22,7 @@ js/vfx/       特效播放、特效庫、獨立特效、命中定格
 js/ui/        app.js（dev.html 用）
 assets/       sprites、sprites_hd、portraits、bg（直式）、hd（橫式背景與主城）
 images/       原始大圖
-tools/        sim.js 平衡模擬、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
+tools/        sim.js 平衡模擬、calibrate_campaign.js／sim_campaign.js 主線難度、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
 ```
 
 ## 調數值
@@ -83,7 +84,7 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 ## 大廳、存檔、招募
 
 - 存檔存在瀏覽器 localStorage（`abo_s1_save`），格式在 `js/core/save.js`，帶版本號。設定裡可以重置存檔
-- 開局送亞瑟、艾拉、菲、毒鏢客，外加一次免費新手 10 連抽（必出 SSR）、3000 鑽石、常駐券 5、限定券 5
+- 開局送亞瑟、艾拉、菲、毒鏢客，外加一次免費新手 10 連抽（必出 SSR）、1500 鑽石、常駐券 3、限定券 1；之後的資源主要從主線與掛機取得
 - 招募機率與保底在 `js/core/gacha.js`：常駐 R55／SR35／SSR10、10 抽必 SR、50 抽必 SSR；S1 限定 UR2%（烏瑟）、80 抽保底、保底延續整季；重複轉碎片 R10／SR20／SSR40／UR80
 - 大廳背景 `assets/hd/lobby_capital.webp`（原檔 `images/lobby_capital.jpg`）
 
@@ -95,3 +96,24 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 - 技能等級 1～5：小技能、大招分開升，用技能書＋金幣，每級效果 +8%（傷害、治療、護盾）
 - 滿星後重複抽到的碎片轉成星塵；星塵商店：1 碎片 = 2 星塵（任選已擁有、未滿星的英雄），也能換技能書、突破石、經驗藥水
 - 出戰時大廳把每位英雄的養成倍率（全能力、小技能、大招）傳給戰鬥引擎
+
+## 主線與掛機
+
+資料在 `js/data/campaign.js`：
+- 10 章 × 15 關。每 5 關是菁英關，第 15 關是章節首領（骸骨騎士、亡靈督軍、毒蛛女王、瘟疫使者、巨沙蟲、冰霜巫妖領主、虛空魔、墮落魔王、骨龍、巫妖王）
+- 一般關卡依章節的敵人池自動組隊，同一關每次都一樣
+- 每章開頭與首領戰前各有一段劇情（立繪＋對話，可跳過，地圖上的「劇情」可以重看）
+- 星級：1★ 通關、2★ 沒有英雄陣亡、3★ 在指定回合內通關。每章 15／30／45 星各有一個寶箱
+- 首通給鑽石、金幣、經驗藥水、突破石，菁英與首領另給技能書，首領再給限定券；重打給少量金幣與藥水
+- 沒有體力。3★ 關卡可以掃蕩，每天共 30 次
+- 掛機：依最高通關關卡計算每小時收益，最多累積 12 小時；快速掛機每天第 1 次免費，之後 50、100 鑽石
+
+難度：`js/data/campaign_table.js` 記錄每關的敵人攻擊倍率、3★ 回合數、敵人生命防禦倍率，由校準工具產生——
+用一支參考隊伍在「預期養成」（第 i 關約 1+0.62i 級，每 60 關多 1★）下，二分搜尋讓勝率落在一般 90%、菁英 80%、首領 65%，
+戰鬥太長時自動壓低敵人生命。前兩章再打折，讓只有初始英雄也能過。改了英雄、敵人或養成數值後重跑：
+
+```
+node tools/calibrate_campaign.js          # 全部重算（約 10 分鐘）
+node tools/calibrate_campaign.js 3,4      # 只算第 3、4 章
+node tools/sim_campaign.js 30             # 用兩支隊伍檢查各章代表關卡的勝率與 3 星率
+```
