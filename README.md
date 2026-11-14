@@ -11,7 +11,7 @@
 ```
 index.html
 css/style.css
-js/data/      elements.js（屬性）  factions.js（陣營、合體技、連攜規則）
+js/data/      elements.js（屬性）  factions.js（陣營被動、能量規則）
               heroes.js（英雄）    enemies.js（敵人、戰鬥關卡、整體難度）
 js/core/      battle.js（戰鬥引擎，不碰畫面，可無畫面執行）
 js/ui/        app.js（編隊、戰鬥、結算畫面）
@@ -22,7 +22,7 @@ tools/sim.js  平衡模擬
 
 ## 調數值
 
-數值都在 `js/data/` 裡。改完後執行平衡模擬，看各隊伍勝率、回合數、合體技次數：
+數值都在 `js/data/` 裡。改完後執行平衡模擬，看各隊伍勝率、回合數、大招次數：
 
 ```
 node tools/sim.js 300
@@ -51,7 +51,7 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 會把新特效加進 `vfx-src/`，並重新產生 `js/vfx/library.js`（共用程式只留一份）。
 
 - **用在技能**：在 `js/data/heroes.js`、`enemies.js` 的技能填 `vfx: {id: '特效 id', at: 'targets'|'foes'|'friends', color: '#...'}`
-- **用在合體技（大招）**：在 `js/data/factions.js` 的合體技填 `vfx: {id: '特效 id'}`；觸發時會暫停戰鬥，播放立繪切入＋特效
+- **用在大招**：在 `js/data/heroes.js` 英雄的 `ult.vfx` 填多段特效；能量滿時放出，會暫停戰鬥播放立繪切入＋特效
 - **調手感**：`js/vfx/player.js` 的 `TUNE`（播放速度、大小、命中時間），直式版與 HD-2D 版共用
 - **預覽**：開 `gallery.html`（特效圖鑑），可以看全部特效與目前被哪一招使用
 - 沒填特效的技能用 2D 特效；同時最多播 2 個 3D 特效，超過的改用 2D；裝置不支援 WebGL 時全部改用 2D

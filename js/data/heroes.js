@@ -10,6 +10,7 @@
 //      id 特效庫 id；at 對準 targets 打到的目標（預設）／foes 對手全體中心／friends 自己隊伍中心／self 自己；
 //      each:true 每個目標各放一個；delay 延後毫秒；main:true 這段命中時才跳傷害（沒標就用第一段）；
 //      sky:true 光束從天而降；reverse:true 飛行／光束從目標飛回施放者；color 顏色；size 大小倍率；speed 播放速度倍率。
+// ult：大招（能量滿 100 時放），格式同 skill；impactFrame 命中時畫面定格。
 // show：整段技能演出的長度（毫秒，1500～3500），依特效長短決定；沒填 vfx 的技能用 2D 特效。
 // faceY：立繪切入時臉往上移多少（%），有翅膀或頭頂裝飾比較高的角色才需要
 window.RES = window.RES || {};
@@ -42,6 +43,14 @@ RES.HEROES = {
                 {type: 'shield', target: 'self', pctMaxHp: 0.20},
             ],
         },
+        ult: {
+            name: '獅王壁壘', desc: '全隊獲得最大生命 20% 的護盾，自己嘲諷 2 回合',
+            show: 3600, vfx: [{id: 'astral-gate', at: 'friends', color: '#93c5fd', size: 1.3}, {id: 'prism-guard', at: 'friends', color: '#60a5fa', size: 1.7, delay: 600, main: true}, {id: 'magic-barrier', at: 'self', color: '#60a5fa', size: 1.2, delay: 900}],
+            effects: [
+                {type: 'shield', target: 'allies', pctMaxHp: 0.20},
+                {type: 'status', target: 'self', status: 'taunt', turns: 2, chance: 1},
+            ],
+        },
         passive: {name: '鐵壁', desc: '防禦 +25%', type: 'statUp', stat: 'def', pct: 0.25},
     },
     reina: {
@@ -51,6 +60,14 @@ RES.HEROES = {
             effects: [
                 {type: 'damage', target: 'enemyFront', mult: 1.5},
                 {type: 'status', target: 'same', status: 'burn', turns: 2, chance: 0.7, dotMult: 0.3},
+            ],
+        },
+        ult: {
+            name: '焚天斬', desc: '對敵方前排造成 300% 傷害，90% 機率燃燒 2 回合',
+            show: 3600, impactFrame: true, vfx: [{id: 'flame-surge', size: 1.3}, {id: 'billowing-airburst', delay: 500, size: 1.1, main: true}, {id: 'magma-fissure', delay: 800, size: 1.2}],
+            effects: [
+                {type: 'damage', target: 'enemyFront', mult: 3.0},
+                {type: 'status', target: 'same', status: 'burn', turns: 2, chance: 0.9, dotMult: 0.35},
             ],
         },
         passive: {name: '乘勝追擊', desc: '擊倒敵人時，自己推條 30%', type: 'onKillPush', pct: 0.3},
@@ -64,6 +81,13 @@ RES.HEROES = {
                 {type: 'status', target: 'self', status: 'taunt', turns: 1, chance: 1},
             ],
         },
+        ult: {
+            name: '天穹聖域', desc: '全隊受到的傷害 -30%（2 回合）',
+            show: 3600, vfx: [{id: 'radiant-beam', at: 'friends', sky: true, color: '#fde68a', size: 1.4}, {id: 'magic-barrier', at: 'friends', color: '#fde68a', size: 1.9, delay: 500, main: true}, {id: 'prism-parry', at: 'friends', each: true, delay: 800, stagger: 90}],
+            effects: [
+                {type: 'status', target: 'allies', status: 'guard', turns: 2, chance: 1},
+            ],
+        },
         passive: {name: '衝鋒號角', desc: '戰鬥開始時，我方全體推條 10%', type: 'startPushAllies', pct: 0.10},
     },
 
@@ -74,6 +98,14 @@ RES.HEROES = {
             name: '治癒之泉', cd: 2, show: 2400, vfx: [{id: 'healing-field', at: 'friends', size: 1.2, main: true}, {id: 'revival-bloom', at: 'friends', delay: 450, size: 0.8}], desc: '回復我方全體 200% 攻擊力的生命', healOnly: true,
             effects: [{type: 'heal', target: 'allies', mult: 2.0}],
         },
+        ult: {
+            name: '生命聖泉', desc: '回復我方全體 300% 攻擊力的生命，並淨化全部減益',
+            show: 3800, vfx: [{id: 'sacred-relic-descent', at: 'friends', main: true}, {id: 'revival-bloom', at: 'friends', each: true, delay: 1500, stagger: 100, size: 0.7}],
+            effects: [
+                {type: 'heal', target: 'allies', mult: 3.0},
+                {type: 'cleanse', target: 'allies', count: 9},
+            ],
+        },
         passive: {name: '淨化之觸', desc: '普攻時，淨化一名隊友的 1 個減益', type: 'cleanseOnBasic'},
     },
     zeke: {
@@ -83,6 +115,14 @@ RES.HEROES = {
             effects: [
                 {type: 'damage', target: 'enemies', mult: 0.9},
                 {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 0.3},
+            ],
+        },
+        ult: {
+            name: '萬雷天罰', desc: '對敵方全體造成 180% 傷害，50% 機率減速 2 回合',
+            show: 3800, impactFrame: true, vfx: [{id: 'charged-beam', at: 'foes', color: '#93c5fd'}, {id: 'thunder-strike', at: 'foes', each: true, delay: 600, stagger: 140, size: 1.3, main: true}, {id: 'energy-burst', at: 'foes', delay: 1000, size: 1.3}],
+            effects: [
+                {type: 'damage', target: 'enemies', mult: 1.8},
+                {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 0.5},
             ],
         },
         passive: {name: '驅魔', desc: '對亡靈天災傷害 +20%', type: 'dmgVsFaction', faction: 'undead', pct: 0.2},
@@ -96,6 +136,14 @@ RES.HEROES = {
                 {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
             ],
         },
+        ult: {
+            name: '熾天審判', desc: '對敵方全體造成 150% 傷害，我方全體攻擊 +20%（2 回合）',
+            show: 4600, impactFrame: true, vfx: [{id: 'starblade-cataclysm', at: 'foes', main: true}, {id: 'starblade-explosion', at: 'foes', size: 1.2, delay: 2250}],
+            effects: [
+                {type: 'damage', target: 'enemies', mult: 1.5},
+                {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
+            ],
+        },
         passive: {name: '光之加護', desc: '我方全體效果抵抗 +15%', type: 'auraRes', pct: 0.15},
     },
 
@@ -105,6 +153,14 @@ RES.HEROES = {
         skill: {
             name: '疾風樂章', cd: 2, show: 2600, vfx: [{id: 'painterly-grass', at: 'friends', size: 0.9}, {id: 'wind-vortex', at: 'friends', delay: 250, main: true}], desc: '我方全體加速（速度 +30%）2 回合',
             effects: [{type: 'status', target: 'allies', status: 'haste', turns: 2, chance: 1}],
+        },
+        ult: {
+            name: '風之狂想曲', desc: '其他隊友推條 30%，我方全體加速 2 回合',
+            show: 3400, vfx: [{id: 'dust-devil', at: 'friends', color: '#86efac', size: 1.3}, {id: 'wind-vortex', at: 'friends', size: 1.8, delay: 400, main: true}, {id: 'spiral-gale', at: 'foes', delay: 900}],
+            effects: [
+                {type: 'push', target: 'allyOthers', pct: 0.3},
+                {type: 'status', target: 'allies', status: 'haste', turns: 2, chance: 1},
+            ],
         },
         passive: {name: '旅人之歌', desc: '行動後，隨機一名隊友推條 10%（優先同陣營）', type: 'pushAllyAfterTurn', pct: 0.10},
     },
@@ -117,6 +173,14 @@ RES.HEROES = {
                 {type: 'pull', target: 'same', pct: 0.3},
             ],
         },
+        ult: {
+            name: '萬藤箭雨', desc: '對敵方全體造成 140% 傷害，並拉條 20%',
+            show: 3600, vfx: [{id: 'electric-magic-arrow-strike', at: 'foes', each: true, stagger: 120, color: '#86efac'}, {id: 'thorn-crown', at: 'foes', each: true, delay: 700, stagger: 100, main: true}, {id: 'binding-curse', at: 'foes', color: '#34d399', size: 1.4, delay: 900}],
+            effects: [
+                {type: 'damage', target: 'enemies', mult: 1.4},
+                {type: 'pull', target: 'same', pct: 0.2},
+            ],
+        },
         passive: {name: '鷹眼', desc: '暴擊率 +15%', type: 'statUp', stat: 'crit', flat: 0.15},
     },
     gaia: {
@@ -126,6 +190,15 @@ RES.HEROES = {
             effects: [
                 {type: 'damage', target: 'enemies', mult: 0.7},
                 {type: 'pull', target: 'same', pct: 0.15},
+            ],
+        },
+        ult: {
+            name: '大地崩裂', desc: '對敵方全體造成 120% 傷害，拉條 20% 並減速 2 回合',
+            show: 3600, vfx: [{id: 'tidal-surge', at: 'foes', size: 1.3, main: true}, {id: 'magma-fissure', at: 'foes', each: true, delay: 500, stagger: 120}],
+            effects: [
+                {type: 'damage', target: 'enemies', mult: 1.2},
+                {type: 'pull', target: 'same', pct: 0.2},
+                {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 1},
             ],
         },
         passive: {name: '生生不息', desc: '每次行動開始時，回復最大生命 6%', type: 'regenOnTurn', pct: 0.06},
@@ -141,6 +214,14 @@ RES.HEROES = {
                 {type: 'status', target: 'same', status: 'poison', turns: 2, chance: 0.8, dotMult: 0.3},
             ],
         },
+        ult: {
+            name: '劇毒風暴', desc: '對敵方全體造成 100% 傷害，並中毒 3 回合',
+            show: 3400, vfx: [{id: 'venom-stream', at: 'foes'}, {id: 'ground-fog', at: 'foes', color: '#a3e635', size: 1.4, delay: 300}, {id: 'venom-pool', at: 'foes', each: true, delay: 600, stagger: 100, main: true}],
+            effects: [
+                {type: 'damage', target: 'enemies', mult: 1.0},
+                {type: 'status', target: 'same', status: 'poison', turns: 3, chance: 1, dotMult: 0.3},
+            ],
+        },
         passive: {name: '塗毒', desc: '普攻有 30% 機率使目標中毒 2 回合', type: 'poisonOnBasic', chance: 0.3, dotMult: 0.25},
     },
     shadow: {
@@ -149,6 +230,13 @@ RES.HEROES = {
             name: '影襲', cd: 2, show: 1800, vfx: [{id: 'smoke-puff', at: 'self', size: 0.8}, {id: 'dimensional-rend', delay: 200, main: true}, {id: 'spatial-smear', delay: 150, color: '#a78bfa'}], desc: '對生命比例最低的敵人造成 260% 傷害',
             effects: [{type: 'damage', target: 'enemyLowest', mult: 2.6}],
         },
+        ult: {
+            name: '千刃影殺', desc: '對生命比例最低的敵人造成 400% 傷害，生命低於 25% 直接斬殺（首領除外）',
+            show: 3400, impactFrame: true, vfx: [{id: 'black-hole', size: 0.6}, {id: 'spatial-smear', color: '#a78bfa', delay: 600}, {id: 'dimensional-rend', delay: 800, size: 1.2, main: true}, {id: 'azure-sweep', color: '#a78bfa', delay: 950}],
+            effects: [
+                {type: 'damage', target: 'enemyLowest', mult: 4.0, execute: 0.25},
+            ],
+        },
         passive: {name: '伺機而動', desc: '攻擊滿血的目標時，暴擊率 +30%', type: 'critVsFullHp', pct: 0.3},
     },
     lilith: {
@@ -156,6 +244,13 @@ RES.HEROES = {
         skill: {
             name: '血契', cd: 2, show: 2400, vfx: [{id: 'soul-siphon', color: '#ff2d55', main: true}, {id: 'soul-siphon', reverse: true, color: '#ff2d55', delay: 500}], desc: '對單體造成 150% 傷害，我方全體回復該傷害的 50%',
             effects: [{type: 'damage', target: 'enemy', mult: 1.5, teamHealPct: 0.5}],
+        },
+        ult: {
+            name: '血月契約', desc: '對敵方全體造成 130% 傷害，我方全體回復傷害的 30%',
+            show: 3600, impactFrame: true, vfx: [{id: 'soul-siphon', at: 'foes', color: '#ff2d55'}, {id: 'darkchain-detonation', at: 'foes', color: '#ff2d55', delay: 500, main: true}, {id: 'revival-bloom', at: 'friends', color: '#ff2d55', delay: 1100}],
+            effects: [
+                {type: 'damage', target: 'enemies', mult: 1.3, teamHealPct: 0.3},
+            ],
         },
         passive: {name: '暗之渴望', desc: '造成傷害的 20% 轉為自身生命', type: 'lifesteal', pct: 0.2},
     },

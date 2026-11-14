@@ -137,10 +137,12 @@
         const lines = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([f, n]) => {
             const fac = R.FACTIONS[f];
             const name = `<b style="color:${fac.color}">${fac.name}</b>`;
-            if (n >= R.RESONANCE.minMembers) return `${name} ×${n}：有共鳴條，集滿可放大招「${fac.combo.name}」`;
-            return `${name} ×${n}：再 ${R.RESONANCE.minMembers - n} 位同陣營，才能放大招「${fac.combo.name}」`;
+            const tiers = fac.passive?.tiers || {};
+            const tier = Object.keys(tiers).map(Number).filter(t => n >= t).sort((a, b) => b - a)[0];
+            if (tier) return `${name} ×${n}：陣營被動「${fac.passive.name}」—${tiers[tier].desc}` + (tiers[5] && tier < 5 ? `（5 人更強）` : '');
+            return `${name} ×${n}：再 ${3 - n} 位同陣營，可獲得陣營被動「${fac.passive?.name || ''}」`;
         });
-        $('#team-hint').innerHTML = lines.join('<br>') || '選 5 位英雄。同陣營 3 位以上就能放該陣營的大招。';
+        $('#team-hint').innerHTML = lines.join('<br>') || '選 5 位英雄。同陣營 3 位（或 5 位）時，全隊獲得陣營被動加成。';
     }
 
     function showHeroInfo(id) {
@@ -164,7 +166,8 @@
             </div>
             <div class="skill-box"><span class="k">主動・冷卻 ${d.skill.cd}</span><b>${d.skill.name}</b><br>${d.skill.desc}</div>
             <div class="skill-box"><span class="k">被動</span><b>${d.passive.name}</b><br>${d.passive.desc}</div>
-            <div class="skill-box"><span class="k">陣營合體技</span><b style="color:${fac.color}">${fac.combo.name}</b><br>${fac.combo.desc}</div>
+            ${d.ult ? `<div class="skill-box"><span class="k">大招・能量 ${R.ENERGY.max}</span><b style="color:${fac.color}">${d.ult.name}</b><br>${d.ult.desc}</div>` : ''}
+            <div class="skill-box"><span class="k">陣營被動（同陣營 3／5 人）</span><b style="color:${fac.color}">${fac.passive.name}</b><br>3 人：${fac.passive.tiers[3].desc}<br>5 人：${fac.passive.tiers[5].desc}</div>
             <div class="row-btns"><button class="btn-secondary" data-close>關閉</button></div>`);
     }
 
@@ -174,8 +177,9 @@
             <ul>
                 <li><b>行動順序</b>：每個角色依速度輪流出手，上方的頭像列是接下來誰會動。</li>
                 <li><b>主動技</b>：每位英雄冷卻好了就自動施放。</li>
-                <li><b>大招（陣營合體技）</b>：隊伍裡同陣營有 3 位以上，下方就會出現該陣營的共鳴條。這幾位每出手一次，共鳴 +${R.RESONANCE.gainPerAction}%；集滿 100% 時按下大招按鈕，戰鬥會暫停播放演出，大招立刻插隊放出、不佔回合。自動模式下集滿就會自動放。</li>
-                <li><b>屬性克制</b>：🔥火 → 🌪️風 → 💧水 → 🔥火，☀️光 ↔ 🌑暗。克制方傷害 ×1.3，被剋 ×0.85。大招不受屬性影響。</li>
+                <li><b>大招</b>：每位英雄有一條能量條，自己出手 +${R.ENERGY.perAction}、被打 +${R.ENERGY.perHit}，滿 ${R.ENERGY.max} 就能放。手動模式點下方頭像放，自動模式滿了就放。大招會立刻插隊放出、不佔回合。</li>
+                <li><b>陣營被動</b>：隊伍裡同陣營 3 位（或 5 位）時，全隊獲得該陣營的加成。</li>
+                <li><b>屬性克制</b>：🔥火 → 🌪️風 → 💧水 → 🔥火，☀️光 ↔ 🌑暗。克制方傷害 ×1.3，被剋 ×0.85。</li>
                 <li><b>站位</b>：一般攻擊先打前排；射手打生命比例最低的、刺客打生命最少的。</li>
                 <li><b>推條／拉條</b>：讓目標更早／更晚出手。首領被拉條效果減半。</li>
                 <li>${Battle.MAX_ROUNDS} 回合內沒打完算輸。</li>
@@ -360,34 +364,34 @@
         });
     }
 
-    // 下方面板：共鳴條與大招按鈕（一隊 5 人最多只會有一個陣營達到 3 人）
+    // 下方面板（直式舊版）：顯示能量最高的英雄，滿了按按鈕放他的大招
+    function ultCandidate() {
+        const b = state.battle;
+        return b.allies().filter(u => u.ult).sort((a, c) => c.energy - a.energy)[0] || null;
+    }
     function renderHud() {
         const b = state.battle;
-        const f = Object.keys(b.resonance)[0];
+        const u = ultCandidate();
         const btn = $('#btn-ult');
-        if (!f) {
+        const fb = b.factionBonus;
+        if (!u) {
             $('#res-label').textContent = '沒有大招';
             $('#res-fill').style.width = '0%';
-            $('#res-hint').textContent = '隊伍裡同陣營 3 人以上才能放大招';
+            $('#res-hint').textContent = '';
             btn.disabled = true;
-            btn.style.removeProperty('--fc');
-            $('#btn-ult-name').textContent = '大招';
-            $('#btn-ult-sub').textContent = '';
             return;
         }
-        const fac = R.FACTIONS[f];
-        const v = b.resonance[f];
-        const ready = b.ultReady(f);
-        const members = b.units.filter(u => u.side === 'ally' && u.faction === f).map(u => shortName(u.name)).join('、');
-        $('#res-label').innerHTML = `<span style="color:${fac.color}">${fac.name}</span>・共鳴 ${Math.round(v)}%`;
-        $('#res-fill').style.width = v + '%';
-        $('#res-fill').style.background = fac.color;
-        $('#res-hint').textContent = ready ? '集滿了！按右邊的按鈕放大招' : `${members} 每出手一次 +${R.RESONANCE.gainPerAction}%`;
-        btn.style.setProperty('--fc', fac.color);
+        const color = facColor(u.faction);
+        const ready = b.ultReady(u.uid);
+        $('#res-label').innerHTML = `<span style="color:${color}">${shortName(u.name)}</span>・能量 ${Math.round(u.energy)}%`;
+        $('#res-fill').style.width = u.energy + '%';
+        $('#res-fill').style.background = color;
+        $('#res-hint').textContent = fb ? `${R.FACTIONS[fb.faction].passive.name}：${fb.desc}` : '同陣營 3 人以上可獲得陣營被動';
+        btn.style.setProperty('--fc', color);
         btn.disabled = !ready || !!b.pendingUlt;
         btn.classList.toggle('ready', ready);
-        $('#btn-ult-name').textContent = fac.combo.name;
-        $('#btn-ult-sub').textContent = b.pendingUlt ? '發動中…' : ready ? '點我放大招' : `${Math.round(v)}%`;
+        $('#btn-ult-name').textContent = u.ult.name;
+        $('#btn-ult-sub').textContent = b.pendingUlt ? '發動中…' : ready ? '點我放大招' : `${Math.round(u.energy)}%`;
     }
 
     function showUnitInfo(u) {
@@ -546,14 +550,14 @@
         await wait(80);
     }
 
-    // ───────── 大招（合體技）演出：時間停止 → 立繪切入 → 3D 特效 → 傷害爆發 ─────────
-    // 這場戰鬥會用到的 3D 特效：合體技、雙方技能、首領可能召喚的單位
+    // ───────── 大招演出：時間停止 → 立繪切入 → 3D 特效 → 傷害爆發 ─────────
+    // 這場戰鬥會用到的 3D 特效：大招、雙方技能、首領可能召喚的單位
     function battleVfxIds() {
         const b = state.battle;
         const ids = new Set();
         const counts = {};
         b.units.filter(u => u.side === 'ally').forEach(u => { counts[u.faction] = (counts[u.faction] || 0) + 1; });
-        Object.keys(b.resonance).forEach(f => { const v = mainVfx(R.FACTIONS[f].combo?.vfx); if (v) ids.add(v.id); });
+        b.allies().forEach(u => { const v = mainVfx(u.ult?.vfx); if (v) ids.add(v.id); });
         b.units.forEach(u => u.skills.forEach(s => { const v = mainVfx(s.vfx); if (v) ids.add(v.id); }));
         return [...ids];
     }
@@ -590,56 +594,56 @@
     }
 
     async function playUltimate(e) {
-        const f = R.FACTIONS[e.faction];
-        e.members.forEach(m => sprites.get(m)?.sprite.classList.add('acting'));
+        const b = state.battle;
+        const hero = b.get(e.uid);
+        const ult = hero.ult;
+        const color = facColor(hero.faction);
+        sprites.get(hero.uid)?.sprite.classList.add('acting');
         let mode = state.ultMode;
         if (mode === 'full' && state.speed >= 2) mode = 'short';
         if (mode === 'off') {
             animate($('#flash'), [{opacity: 0}, {opacity: .5}, {opacity: 0}], 380);
             shakeScreen(8);
-            await showBanner(f.color, 'RESONANCE', f.combo.name, f.combo.desc, f.name);
+            await showBanner(color, 'ULTIMATE', ult.name, ult.desc, hero.name);
             return;
         }
         const short = mode === 'short';
         const skip = makeSkip();
         state.ultSkip = skip;
-        const ult = $('#ult');
-        ult.style.setProperty('--fc', f.color);
-        const b = state.battle;
-        $('#ult-cast').innerHTML = e.members.slice(0, 3).map((uid, i) => {
-            const u = b.get(uid);
-            return `<div class="cut" style="left:${-4 + i * 29}%;animation-delay:${i * (short ? 0.06 : 0.13)}s"><img src="${spriteSrc(u.img)}" alt=""></div>`;
-        }).join('');
-        $('#ult-name').textContent = f.combo.name;
-        $('#ult-fac').textContent = f.name;
-        ult.classList.remove('leaving', 'fxphase');
-        ult.classList.add('show');
+        const el = $('#ult');
+        el.style.setProperty('--fc', color);
+        $('#ult-cast').innerHTML = `<div class="cut" style="left:10%;width:60%"><img src="${spriteSrc(hero.img)}" alt=""></div>`;
+        $('#ult-name').textContent = ult.name;
+        $('#ult-fac').textContent = hero.name;
+        el.classList.remove('leaving', 'fxphase');
+        el.classList.add('show');
         $('#scene').classList.add('ult-dim');
+        const ultEl = el;
 
         // 1. 立繪切入
         await waitOrSkip(short ? 700 : 1400, skip);
-        ult.classList.add('leaving');
+        ultEl.classList.add('leaving');
         await sleep(200);
-        ult.classList.add('fxphase');
+        ultEl.classList.add('fxphase');
 
         // 2. 特效：有 3D 特效就播 3D，沒有就用 2D 備用演出
-        const at = comboAnchor(f.combo);
-        const cv = mainVfx(f.combo.vfx);
+        const at = comboAnchor(ult);
+        const cv = mainVfx(ult.vfx);
         const run = (cv && window.VFX3D)
             ? window.VFX3D.play(cv.id, {at, color: cv.color, sizeMult: cv.size || 1, speedMult: short ? 1.8 : 1, skip, priority: true})
             : null;
         if (run) {
             await Promise.race([run.impact, waitOrSkip(4000, skip)]);
         } else {
-            const targets = f.combo.effects[0]?.target?.startsWith('enem') ? state.battle.enemies() : state.battle.allies();
-            targets.forEach(t => playRing(t.uid, f.color));
+            const targets = ult.effects[0]?.target?.startsWith('enem') ? state.battle.enemies() : state.battle.allies();
+            targets.forEach(t => playRing(t.uid, color));
             await waitOrSkip(short ? 250 : 450, skip);
         }
 
         // 3. 打中：閃光、震動，接著跳傷害數字（特效本身會在背景播完）
         animate($('#flash'), [{opacity: 0}, {opacity: .5}, {opacity: 0}], 380);
         shakeScreen(10);
-        ult.classList.remove('show', 'leaving', 'fxphase');
+        ultEl.classList.remove('show', 'leaving', 'fxphase');
         $('#scene').classList.remove('ult-dim');
         state.ultSkip = null;
     }
@@ -692,12 +696,11 @@
                 case 'basic':
                     await performAction(u, events.slice(i), false);
                     break;
-                case 'resonance':
+                case 'energy':
                     renderHud();
-                    if (e.ready) { $('#hud').classList.remove('pulse'); void $('#hud').offsetWidth; $('#hud').classList.add('pulse'); }
                     break;
                 case 'damage': {
-                    let cls = e.kind === 'dot' ? 'dot' : e.kind === 'combo' ? 'combo' : (e.crit ? 'crit' : 'dmg');
+                    let cls = e.kind === 'dot' ? 'dot' : e.kind === 'ult' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                     if (e.rel) cls += ' ' + e.rel;
                     float(fx, (e.crit ? '暴擊 ' : '') + e.amount, cls);
                     if (e.kind !== 'dot') hitFlash(e.uid, e.crit);
@@ -731,7 +734,7 @@
                     addSprite(u, true);
                     float(sprites.get(u.uid)?.plate.querySelector('.fx'), '召喚', 'info');
                     break;
-                case 'combo':
+                case 'ult':
                     await playUltimate(e);
                     break;
                 case 'end':
@@ -810,7 +813,6 @@
         const reason = win ? `${e.round} 回合內擊敗所有敵人` : (e.reason === 'timeout' ? `${Battle.MAX_ROUNDS} 回合內沒有打完` : '全隊倒下');
         const allies = b.units.filter(u => u.side === 'ally');
         const rows = allies.map(u => ({name: shortName(u.name), v: u.stats.dmg, color: facColor(u.faction)}));
-        if (b.comboDamage > 0) rows.push({name: '合體技', v: b.comboDamage, color: '#f0abfc'});
         rows.sort((a, c) => c.v - a.v);
         const max = Math.max(1, ...rows.map(r => r.v));
         const heal = allies.reduce((s, u) => s + u.stats.heal, 0);
@@ -820,7 +822,7 @@
             <div class="res-sub">${reason}</div>
             <div class="res-stats">
                 <div><b>${Math.min(e.round, Battle.MAX_ROUNDS)}</b><span>回合</span></div>
-                <div><b>${b.combos}</b><span>合體技</span></div>
+                <div><b>${b.ults}</b><span>大招</span></div>
                 <div><b>${Math.round(heal)}</b><span>治療量</span></div>
             </div>
             ${rows.map(x => `<div class="dmg-row"><span>${x.name}</span><span class="dmg-bar"><i style="width:${x.v / max * 100}%;background:${x.color}"></i></span><span class="dmg-n">${Math.round(x.v)}</span></div>`).join('')}
@@ -888,8 +890,8 @@
     };
     $('#btn-ult').onclick = () => {
         const b = state.battle;
-        const f = b && Object.keys(b.resonance)[0];
-        if (!f || !b.useUltimate(f)) return;
+        const u = b && ultCandidate();
+        if (!u || !b.useUltimate(u.uid)) return;
         renderHud();
     };
 

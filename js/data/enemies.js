@@ -2,7 +2,7 @@
 window.RES = window.RES || {};
 
 // 全體敵人能力倍率（調整整體難度用）
-RES.ENEMY_SCALE = {hp: 1.6, atk: 1.3, def: 1.0};
+RES.ENEMY_SCALE = {hp: 1.8, atk: 1.35, def: 1.0};
 
 RES.ENEMIES = {
     skeleton: {
@@ -97,12 +97,12 @@ RES.ENCOUNTERS = [
         front: ['skeleton', 'corpseBomber'], back: ['cryptBat', 'frostLich', 'skeleton'],
     },
     {
-        id: 'plague', name: '瘟疫軍團', difficulty: '普通', power: 1.25, bg: '4', bgHD: 'forest',
+        id: 'plague', name: '瘟疫軍團', difficulty: '普通', power: 1.1, bg: '4', bgHD: 'forest',
         desc: '督軍會嘲諷，瘟疫使者讓全隊中毒',
         front: ['warlord', 'skeleton'], back: ['plagueBringer', 'frostLich', 'cryptBat'],
     },
     {
-        id: 'lich', name: '巫妖王', difficulty: '首領', power: 1.0, bg: '6', bgHD: 'throne',
+        id: 'lich', name: '巫妖王', difficulty: '首領', power: 1.15, bg: '6', bgHD: 'throne',
         desc: '會召喚骷髏打斷連攜、凍結並拉條，光屬性與群攻有利',
         front: ['lichKing'], back: ['frostLich', 'frostLich'],
     },

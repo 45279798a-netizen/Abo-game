@@ -74,3 +74,24 @@ html, body { background: #000; overflow: hidden; }
 
 /* 命中定格期間：畫面變成黑白剪影，血條與介面先藏起來 */
 #hd.impact #plates, #hd.impact .hud, #hd.impact #turn-pill { opacity: 0; transition: none; }
+
+/* 下方：陣營被動＋我方頭像（能量環，滿了點頭像放大招） */
+#hd .hud { flex-direction: column; align-items: stretch; gap: 5px; padding: 6px 8px; width: auto; right: auto; }
+#hd .fac-bonus { font-size: 10.5px; color: #b9ab93; display: flex; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 330px; }
+#hd .fac-bonus b { font-weight: 700; flex: none; }
+#hd .fac-bonus span { overflow: hidden; text-overflow: ellipsis; }
+#hd .ult-bar { display: flex; gap: 8px; }
+#hd .ult-hero { position: relative; width: 54px; height: 54px; border-radius: 50%; padding: 0; border: none; background: rgba(20,14,10,.85); overflow: visible; cursor: pointer; }
+#hd .ult-hero svg { position: absolute; inset: -3px; width: 60px; height: 60px; transform: rotate(-90deg); pointer-events: none; }
+#hd .ult-hero .ring-bg { fill: none; stroke: rgba(255,255,255,.12); stroke-width: 3; }
+#hd .ult-hero .ring { fill: none; stroke: var(--fc); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0 100; transition: stroke-dasharray .35s ease-out; }
+#hd .ult-hero img { position: absolute; inset: 3px; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; object-position: 50% 4%; }
+#hd .ult-hero .ult-pct { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); font-size: 9.5px; font-weight: 700; padding: 0 5px; border-radius: 6px; background: rgba(0,0,0,.75); color: #e7dcc8; white-space: nowrap; }
+#hd .ult-hero.ready { box-shadow: 0 0 0 2px var(--fc), 0 0 16px var(--fc); animation: ultReady 1.1s ease-in-out infinite; }
+#hd .ult-hero.ready .ult-pct { background: var(--fc); color: #120c08; }
+#hd .ult-hero.pending { animation: none; box-shadow: 0 0 0 3px #fff, 0 0 22px var(--fc); }
+#hd .ult-hero.dead { filter: grayscale(1) brightness(.45); pointer-events: none; }
+@keyframes ultReady { 50% { transform: scale(1.07); } }
+#hd .ult-cast .cut.solo { left: 6%; width: 48%; height: 70%; bottom: 22%; }
+#hd .ult-cast .cut.solo img { height: 165%; top: -6%; transform: translate(-50%, var(--fy, 0%)); }
+@media (max-height: 360px) { #hd .ult-hero { width: 46px; height: 46px; } #hd .ult-hero svg { width: 52px; height: 52px; } #hd .ult-hero img { width: 40px; height: 40px; } }

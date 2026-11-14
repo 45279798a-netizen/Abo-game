@@ -1,5 +1,5 @@
 // 平衡模擬：node tools/sim.js [場數]
-// 用跟遊戲完全相同的資料與戰鬥引擎，無畫面跑大量戰鬥，統計勝率、回合數、合體技次數。
+// 用跟遊戲完全相同的資料與戰鬥引擎，無畫面跑大量戰鬥，統計勝率、回合數、大招次數。
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -15,20 +15,20 @@ const {RES, Battle} = ctx;
 const N = Number(process.argv[2] || 300);
 
 function run(team, encounterId, auto = true) {
-    let win = 0, rounds = 0, combos = 0, comboDmg = 0, totalDmg = 0;
+    let win = 0, rounds = 0, ults = 0, ultDmg = 0, totalDmg = 0;
     for (let i = 0; i < N; i++) {
         const b = Battle.simulate({team, encounterId, seed: i * 7919 + 13, auto});
         if (b.result === 'win') win++;
         rounds += Math.min(b.round(), Battle.MAX_ROUNDS);
-        combos += b.combos;
-        comboDmg += b.comboDamage;
-        totalDmg += b.comboDamage + b.units.filter(u => u.side === 'ally').reduce((s, u) => s + u.stats.dmg, 0);
+        ults += b.ults;
+        ultDmg += b.ultDamage;
+        totalDmg += b.units.filter(u => u.side === 'ally').reduce((s, u) => s + u.stats.dmg, 0);
     }
-    return {win: win / N, rounds: rounds / N, combos: combos / N, comboShare: comboDmg / totalDmg};
+    return {win: win / N, rounds: rounds / N, ults: ults / N, ultShare: ultDmg / totalDmg};
 }
 
 const pct = x => (x * 100).toFixed(0).padStart(3) + '%';
-const fmt = r => `勝率 ${pct(r.win)}  回合 ${r.rounds.toFixed(1).padStart(4)}  合體技 ${r.combos.toFixed(2)}  合體技傷害占比 ${pct(r.comboShare)}`;
+const fmt = r => `勝率 ${pct(r.win)}  回合 ${r.rounds.toFixed(1).padStart(4)}  大招 ${r.ults.toFixed(1).padStart(4)} 次（每回合 ${(r.ults / r.rounds).toFixed(2)}）  大招傷害占比 ${pct(r.ultShare)}`;
 
 const teams = {
     '教團＋王國（預設）': ['arthur', 'reina', 'zeke', 'seraph', 'elara'],
@@ -38,7 +38,7 @@ const teams = {
     '暗夜 3＋王國 2': ['arthur', 'valkyrie', 'shadow', 'dart', 'lilith'],
     '王國 3＋翠林 2': ['arthur', 'valkyrie', 'reina', 'faye', 'lyra'],
     '翠林 3＋教團 2': ['gaia', 'valkyrie', 'faye', 'lyra', 'zeke'].map((x, i) => i === 1 ? 'elara' : x),
-    '四陣營混搭（湊不到 3）': ['arthur', 'gaia', 'zeke', 'shadow', 'faye'],
+    '四陣營混搭（沒有陣營被動）': ['arthur', 'gaia', 'zeke', 'shadow', 'faye'],
 };
 
 for (const enc of RES.ENCOUNTERS) {

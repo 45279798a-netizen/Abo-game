@@ -391,8 +391,7 @@ async function startBattle() {
 
 function preloadVfx(b) {
     const ids = new Set();
-    Object.keys(b.resonance).forEach(f => stepsOf(R.FACTIONS[f].combo?.vfx).forEach(st => ids.add(st.id)));
-    b.units.forEach(u => { u.skills.forEach(s => stepsOf(s.vfx).forEach(st => ids.add(st.id))); basicSteps(u).forEach(st => ids.add(st.id)); });
+    b.units.forEach(u => { u.skills.forEach(s => stepsOf(s.vfx).forEach(st => ids.add(st.id))); stepsOf(u.ult?.vfx).forEach(st => ids.add(st.id)); basicSteps(u).forEach(st => ids.add(st.id)); });
     vfx.preload(renderer, camera, [...ids]).catch(() => {});
 }
 
@@ -432,32 +431,44 @@ function renderTimeline() {
     });
 }
 
+// 下方：我方頭像＋能量環，能量滿了點頭像放大招
 function renderHud() {
     const b = state.battle;
-    const f = Object.keys(b.resonance)[0];
-    const btn = $('#btn-ult');
-    if (!f) {
-        $('#res-label').textContent = '沒有大招';
-        $('#res-fill').style.width = '0%';
-        $('#res-hint').textContent = '隊伍裡同陣營 3 人以上才能放大招';
-        btn.disabled = true;
-        $('#btn-ult-name').textContent = '大招';
-        $('#btn-ult-sub').textContent = '';
+    const fb = b.factionBonus;
+    const fbEl = $('#fac-bonus');
+    if (fb) {
+        const f = R.FACTIONS[fb.faction];
+        fbEl.innerHTML = `<b style="color:${f.color}">${f.short}×${fb.tier}・${f.passive.name}</b><span>${fb.desc}</span>`;
+    } else fbEl.innerHTML = '<span>同陣營 3 人以上可獲得陣營被動</span>';
+    const bar = $('#ult-bar');
+    const allies = b.units.filter(u => u.side === 'ally');
+    if (bar.children.length !== allies.length) {
+        bar.innerHTML = allies.map(u => `<button class="ult-hero" data-uid="${u.uid}" style="--fc:${facColor(u.faction)}">
+            <svg viewBox="0 0 40 40"><circle class="ring-bg" cx="20" cy="20" r="18"/><circle class="ring" cx="20" cy="20" r="18" pathLength="100"/></svg>
+            <img src="${spriteSrc(u.img)}" alt="" style="--fy:${-(u.faceY || 0)}%"><span class="ult-pct"></span></button>`).join('');
+        bar.querySelectorAll('.ult-hero').forEach(el => { el.onclick = () => tapUlt(el.dataset.uid); });
+    }
+    for (const el of bar.children) {
+        const u = b.get(el.dataset.uid);
+        const v = u.alive ? u.energy : 0;
+        const ready = b.ultReady(u.uid);
+        el.querySelector('.ring').style.strokeDasharray = `${v} 100`;
+        el.querySelector('.ult-pct').textContent = !u.alive ? '' : ready ? (b.pendingUlt === u.uid ? '發動' : '大招') : Math.round(v) + '%';
+        el.classList.toggle('ready', ready);
+        el.classList.toggle('pending', b.pendingUlt === u.uid);
+        el.classList.toggle('dead', !u.alive);
+        el.title = u.ult ? `${u.ult.name}：${u.ult.desc}` : '';
+    }
+}
+function tapUlt(uid) {
+    const b = state.battle;
+    if (!b || b.over) return;
+    if (!b.useUltimate(uid)) {
+        const u = b.get(uid);
+        if (u?.ult) setPill(`${shortName(u.name)}・<span class="sk">${u.ult.name}</span>　能量 ${Math.round(u.energy)}%`);
         return;
     }
-    const fac = R.FACTIONS[f];
-    const v = b.resonance[f];
-    const ready = b.ultReady(f);
-    const members = b.units.filter(u => u.side === 'ally' && u.faction === f).map(u => shortName(u.name)).join('、');
-    $('#res-label').innerHTML = `<span style="color:${fac.color}">${fac.name}</span>・共鳴 ${Math.round(v)}%`;
-    $('#res-fill').style.width = v + '%';
-    $('#res-fill').style.background = fac.color;
-    $('#res-hint').textContent = ready ? '集滿了！按右邊的按鈕放大招' : `${members} 每出手一次 +${R.RESONANCE.gainPerAction}%`;
-    btn.style.setProperty('--fc', fac.color);
-    btn.disabled = !ready || !!b.pendingUlt;
-    btn.classList.toggle('ready', ready);
-    $('#btn-ult-name').textContent = fac.combo.name;
-    $('#btn-ult-sub').textContent = b.pendingUlt ? '發動中…' : ready ? '點我放大招' : `${Math.round(v)}%`;
+    renderHud();
 }
 
 function setPill(html, enemy) {
@@ -670,9 +681,11 @@ function endSkillCutIn() {
 
 // 大招（長篇演出）：時間停止 → 三人立繪切入 → 鏡頭先看我方蓄力、再推向敵陣 → 多段 3D 特效 → 命中定格＋閃光震動 → 傷害一次爆出
 async function playUltimate(e, events) {
-    const f = R.FACTIONS[e.faction];
     const b = state.battle;
-    e.members.forEach(m => setActing(m, true));
+    const hero = b.get(e.uid);
+    const ult = hero.ult;
+    const fc = facColor(hero.faction);
+    setActing(hero.uid, true);
     let mode = state.ultMode;
     if (mode === 'full' && state.speed >= 2) mode = 'short';
     const short = mode === 'short';
@@ -680,43 +693,38 @@ async function playUltimate(e, events) {
     state.skip = skip;
     const t0 = performance.now();
     if (mode !== 'off') {
-        const ult = $('#ult');
-        ult.style.setProperty('--fc', f.color);
-        $('#ult-cast').innerHTML = e.members.slice(0, 3).map((uid, i) => {
-            const u = b.get(uid);
-            return `<div class="cut" style="left:${4 + i * 24}%;animation-delay:${i * (short ? 0.06 : 0.13)}s"><img src="${spriteHD(u.img)}" alt=""></div>`;
-        }).join('');
-        $('#ult-name').textContent = f.combo.name;
-        $('#ult-fac').textContent = f.name;
-        ult.classList.remove('leaving', 'fxphase');
-        ult.classList.add('show');
+        const el = $('#ult');
+        el.style.setProperty('--fc', fc);
+        $('#ult-cast').innerHTML = `<div class="cut solo" style="--fy:${-(hero.faceY || 0)}%"><img src="${spriteHD(hero.img)}" alt=""></div>`;
+        $('#ult-name').textContent = ult.name;
+        $('#ult-fac').textContent = hero.name;
+        el.classList.remove('leaving', 'fxphase');
+        el.classList.add('show');
         $('#hd').classList.add('cine');
-        await waitOrSkip(short ? 700 : 1500, skip);
-        ult.classList.add('leaving');
+        // 鏡頭先推近施放者
+        const me = units.get(hero.uid);
+        if (me) { const c = chestWorld(me); moveCam(dollyTo(c, 0.5), c, 500); }
+        await waitOrSkip(short ? 650 : 1250, skip);
+        el.classList.add('leaving');
         await sleep(200);
-        ult.classList.add('fxphase');
+        el.classList.add('fxphase');
     }
-    const hits = [...new Set(events.filter(x => x.type === 'damage' && x.kind === 'combo').map(x => x.uid))];
-    const onFoes = (f.combo.effects[0]?.target || '').startsWith('enem');
+    const hits = [...new Set(events.filter(x => x.type === 'damage' && x.kind === 'ult' && x.srcUid === hero.uid).map(x => x.uid))];
+    const onFoes = (ult.effects[0]?.target || '').startsWith('enem');
     const dests = hits.length ? hits : (onFoes ? b.enemies() : b.allies()).map(u => u.uid);
-    const allyC = centerOf(b.allies().map(u => u.uid));
     const at = centerOf(dests);
-    const steps = stepsOf(f.combo.vfx);
-    const show = (f.combo.show || 3500) * (short ? 0.55 : 1);
-    // 鏡頭：先看我方（蓄力），再沿預設視線推向目標（只推近、不橫移，畫面才不會超出戰場原畫）
-    if (mode !== 'off' && onFoes) {
-        const lookA = allyC.clone().setY(1.4);
-        moveCam(dollyTo(lookA, 0.62), lookA, 500);
-    }
-    const run = steps.length ? playSteps(steps, {actor: b.get(e.members[0]), events, hits: dests, priority: true, sizeMult: 1.1, speedMult: short ? 1.6 : 0.85, skip}) : null;
+    const steps = stepsOf(ult.vfx);
+    const show = (ult.show || 3500) * (short ? 0.55 : 1);
+    // 鏡頭：切入時已推近施放者，接著沿預設視線推向目標（只推近、不橫移，畫面才不會超出戰場原畫）
+    const run = steps.length ? playSteps(steps, {actor: hero, events, hits: dests, priority: true, sizeMult: 1.1, speedMult: short ? 1.6 : 0.85, skip}) : null;
     const lookB = at.clone().setY(1.2);
-    setTimeout(() => moveCam(dollyTo(lookB, onFoes ? 0.45 : 0.78), lookB, short ? 500 : 1100), mode === 'off' || !onFoes ? 0 : (short ? 250 : 700));
+    setTimeout(() => moveCam(dollyTo(lookB, onFoes ? 0.45 : 0.78), lookB, short ? 450 : 900), mode === 'off' ? 0 : (short ? 150 : 350));
     if (run) await Promise.race([run.main, waitOrSkip(5000, skip)]);
     else await waitOrSkip(500, skip);
     // 命中瞬間
-    const framed = f.combo.impactFrame && mode === 'full' && !skip.skipped && triggerImpact(at.clone().setY(1.3), onFoes ? dests : e.members);
-    $('#flash').animate([{opacity: 0}, {opacity: framed ? .25 : .5}, {opacity: 0}], {duration: 380});
-    shake(0.3, 520);
+    const framed = ult.impactFrame && mode === 'full' && !skip.skipped && triggerImpact(at.clone().setY(1.3), onFoes ? dests : [hero.uid]);
+    $('#flash').animate([{opacity: 0}, {opacity: framed ? .25 : onFoes ? .45 : .2}, {opacity: 0}], {duration: 380});
+    if (onFoes) shake(0.3, 520);
     if (framed) {   // 定格期間藏起血條、不跳傷害，結束才爆數字
         $('#hd').classList.add('impact');
         await sleep(420);
@@ -727,7 +735,7 @@ async function playUltimate(e, events) {
     // 讓後段特效播完（傷害數字照常跳），整段長度依大招設定
     state.holdUntil = Math.max(state.holdUntil || 0, t0 + show / state.speed);
     state.skip = null;
-    e.members.forEach(m => setActing(m, false));
+    setActing(hero.uid, false);
 }
 
 async function playEvents(events, id) {
@@ -761,12 +769,11 @@ async function playEvents(events, id) {
             case 'basic':
                 await performAction(u, events.slice(i), null);
                 break;
-            case 'resonance':
+            case 'energy':
                 renderHud();
-                if (e.ready) { $('#hud').classList.remove('pulse'); void $('#hud').offsetWidth; $('#hud').classList.add('pulse'); }
                 break;
             case 'damage': {
-                let cls = e.kind === 'dot' ? 'dot' : e.kind === 'combo' ? 'combo' : (e.crit ? 'crit' : 'dmg');
+                let cls = e.kind === 'dot' ? 'dot' : e.kind === 'ult' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                 if (e.rel) cls += ' ' + e.rel;
                 float(rec, (e.crit ? '暴擊 ' : '') + e.amount, cls);
                 if (e.kind !== 'dot') hitFlash(e.uid, e.crit);
@@ -791,8 +798,8 @@ async function playEvents(events, id) {
             case 'enrage': float(rec, '狂暴！', 'callout'); shake(0.2, 500); await wait(500); break;
             case 'death': updateUnit(u); break;
             case 'summon': await addUnit(u, true); float(units.get(u.uid), '召喚', 'info'); break;
-            case 'combo':
-                setPill(`✨ ${R.FACTIONS[e.faction].name}大招・<span class="sk">${e.name}</span>`);
+            case 'ult':
+                setPill(`✨ ${shortName(u.name)}・<span class="sk">${e.name}</span>`);
                 await playUltimate(e, events.slice(i));
                 usedSkill = true;
                 break;
@@ -817,14 +824,13 @@ function showResult(e) {
     const reason = win ? `${e.round} 回合內擊敗所有敵人` : (e.reason === 'timeout' ? `${Battle.MAX_ROUNDS} 回合內沒有打完` : '全隊倒下');
     const allies = b.units.filter(u => u.side === 'ally');
     const rows = allies.map(u => ({name: shortName(u.name), v: u.stats.dmg, color: facColor(u.faction)}));
-    if (b.comboDamage > 0) rows.push({name: '大招', v: b.comboDamage, color: '#f0abfc'});
     rows.sort((a, c) => c.v - a.v);
     const max = Math.max(1, ...rows.map(r => r.v));
     const r = $('#result');
     r.innerHTML = `<div class="sheet">
         <div class="res-title ${win ? 'win' : 'lose'}">${win ? '勝利' : '敗北'}</div>
         <div class="res-sub">${reason}</div>
-        <div class="res-stats"><div><b>${Math.min(e.round, Battle.MAX_ROUNDS)}</b><span>回合</span></div><div><b>${b.combos}</b><span>大招</span></div></div>
+        <div class="res-stats"><div><b>${Math.min(e.round, Battle.MAX_ROUNDS)}</b><span>回合</span></div><div><b>${b.ults}</b><span>大招</span></div></div>
         ${rows.map(x => `<div class="dmg-row"><span>${x.name}</span><span class="dmg-bar"><i style="width:${x.v / max * 100}%;background:${x.color}"></i></span><span class="dmg-n">${Math.round(x.v)}</span></div>`).join('')}
         <div class="row-btns"><a class="btn-secondary" href="index.html" style="display:grid;place-items:center;text-decoration:none">換隊伍</a><button class="btn-primary" id="res-again">再打一次</button></div></div>`;
     r.classList.add('show');
@@ -843,12 +849,6 @@ $('#btn-auto').onclick = () => { state.auto = !state.auto; if (state.battle) sta
 $('#btn-speed').onclick = () => { state.speed = SPEEDS[(SPEEDS.indexOf(state.speed) + 1) % SPEEDS.length]; syncControls(); };
 $('#btn-pause').onclick = () => { state.paused = !state.paused; syncControls(); };
 $('#btn-quality').onclick = () => { state.quality = state.quality === 'high' ? 'low' : 'high'; savePref('hdQuality', state.quality); setupPost(); resize(); syncControls(); };
-$('#btn-ult').onclick = () => {
-    const b = state.battle;
-    const f = b && Object.keys(b.resonance)[0];
-    if (!f || !b.useUltimate(f)) return;
-    renderHud();
-};
 $('#ult').addEventListener('click', () => state.skip?.fire());
 $('#hd').addEventListener('click', e => {
     if (state.skip && $('#skill-cut').classList.contains('hold') && !e.target.closest('button')) { state.skip.fire(); e.stopPropagation(); }
@@ -895,8 +895,8 @@ function frame(now) {
     await startBattle();
     $('#loading').classList.add('done');
     window.__hd = {state, camera, cam, units,   // 測試用：__hd.ult('church')、__hd.skill(uid) 直接播演出（不影響戰鬥結果）
-        impactActive: () => !!impact?.active,
-        ult: f => playUltimate({faction: f, members: state.battle.allies().filter(u => u.faction === f).map(u => u.uid)}, []),
+        impactActive: () => !!impact?.active, renderHud,
+        ult: uid => { const u = state.battle.get(uid); return playUltimate({uid, name: u.ult.name}, []); },
         skill: async uid => { const u = state.battle.get(uid); const sk = u.skills[0]; if (sk.show) state.holdUntil = performance.now() + sk.show; if (u.side === 'ally') await skillCutIn(u, sk.name); await performAction(u, [], sk); endSkillCutIn(); },
     };
 })().catch(e => {

@@ -1,4 +1,4 @@
-// 戰鬥引擎：行動條、陣營共鳴（合體技）、屬性克制、狀態效果。
+// 戰鬥引擎：行動條、個人大招（能量）、陣營被動、屬性克制、狀態效果。
 // 完全不碰畫面，可以在瀏覽器或 node 裡無畫面執行（掛機、掃蕩、平衡模擬都用這個）。
 // 用法：const b = Battle.create({team, encounterId, seed, auto}); 然後重複呼叫 b.step()，
 // 每次會回傳這一手發生的事件陣列，直到 b.over 為 true。
@@ -15,6 +15,7 @@
         haste:   {name: '加速', icon: '💨', debuff: false},
         atkUp:   {name: '攻擊提升', icon: '⚔️', debuff: false},
         taunt:   {name: '嘲諷', icon: '🛡️', debuff: false},
+        guard:   {name: '聖域', icon: '✨', debuff: false},   // 受到的傷害 -30%
     };
 
     const ATB_MAX = 1000;
@@ -37,6 +38,7 @@
         const u = Object.assign(o, {
             shield: 0, atb: 0, statuses: [], alive: true, enraged: false,
             cds: o.skills.map(s => Math.max(0, s.cd - 1)),
+            energy: 0, fac: {},
             stats: {dmg: 0, heal: 0, taken: 0, kills: 0},
         });
         for (const p of u.passives) {
@@ -60,7 +62,7 @@
                 hp: Math.round(role.hp * m), atk: Math.round(role.atk * m), def: Math.round(role.def * m),
                 spd: role.spd + (d.spdBonus || 0), crit: 0.15, critDmg: 0.5, hit: 0, res: 0,
             },
-            skills: d.skill ? [d.skill] : [], passives: d.passive ? [d.passive] : [],
+            skills: d.skill ? [d.skill] : [], passives: d.passive ? [d.passive] : [], ult: d.ult || null,
         });
     }
 
@@ -87,12 +89,12 @@
             this.units = [];
             this.time = 0;
             this.actionId = 0;
-            this.resonance = {};        // 陣營 → 共鳴值（0～100），只有同陣營 3 人以上的陣營才有
-            this.pendingUlt = null;     // 玩家按下大招、等下一手放出的陣營
+            this.pendingUlt = null;     // 玩家按下大招、等下一手放出的英雄 uid
+            this.factionBonus = null;   // 生效中的陣營被動 {faction, tier, ...效果}
             this.over = false;
             this.result = null;
-            this.combos = 0;
-            this.comboDamage = 0;
+            this.ults = 0;
+            this.ultDamage = 0;
             this.seq = 0;
             this.events = [];
 
@@ -106,11 +108,24 @@
             enc.front.forEach(id => this.addEnemy(id, 'front'));
             enc.back.forEach(id => this.addEnemy(id, 'back'));
 
-            // 共鳴條：同陣營達到人數門檻才有
+            // 陣營被動：同陣營 3 人／5 人時全隊獲得加成（取人數最多、達到門檻的陣營）
             const counts = {};
             this.allies().forEach(u => { counts[u.faction] = (counts[u.faction] || 0) + 1; });
-            for (const f of Object.keys(counts)) {
-                if (counts[f] >= R.RESONANCE.minMembers && R.FACTIONS[f].combo) this.resonance[f] = 0;
+            for (const [f, n] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
+                const tiers = R.FACTIONS[f]?.passive?.tiers;
+                if (!tiers) continue;
+                const tier = Object.keys(tiers).map(Number).filter(t => n >= t).sort((a, b) => b - a)[0];
+                if (tier) { this.factionBonus = {faction: f, tier, ...tiers[tier]}; break; }
+            }
+            const fb = this.factionBonus || {};
+            for (const u of this.allies()) {
+                u.fac = fb;
+                if (fb.defUp) u.base.def = Math.round(u.base.def * (1 + fb.defUp));
+                if (fb.spdUp) u.base.spd = Math.round(u.base.spd * (1 + fb.spdUp));
+                if (fb.crit) u.base.crit += fb.crit;
+                if (fb.critDmg) u.base.critDmg += fb.critDmg;
+                if (fb.startShield) u.shield = Math.round(u.maxHp * fb.startShield);
+                u.energy = R.ENERGY.start;
             }
 
             // 光環類被動
@@ -121,6 +136,7 @@
             }
             // 開場行動條隨機分散，避免整隊擠在一起連續出手
             for (const u of this.units) u.atb = Math.floor(this.rand() * R.START_ATB_SPREAD);
+            if (fb.startPush) for (const u of this.allies()) u.atb = Math.min(ATB_MAX, u.atb + fb.startPush * ATB_MAX);
             for (const u of this.allies()) {
                 for (const p of u.passives) {
                     if (p.type === 'startPushAllies') this.allies().forEach(a => { a.atb = Math.min(ATB_MAX, a.atb + p.pct * ATB_MAX); });
@@ -151,7 +167,11 @@
             if (u.enraged) s *= 1 + (u.passives.find(p => p.type === 'enrage')?.spdPct || 0);
             return s;
         }
-        atkOf(u) { return u.base.atk * (this.has(u, 'atkUp') ? 1.2 : 1); }
+        atkOf(u) {
+            let a = u.base.atk * (this.has(u, 'atkUp') ? 1.2 : 1);
+            if (u.fac?.lowHpAtk && u.hp < u.maxHp * 0.5) a *= 1 + u.fac.lowHpAtk;
+            return a;
+        }
         defOf(u) { return u.base.def * (this.has(u, 'defDown') ? 0.7 : 1); }
 
         // 預測接下來 n 個行動者（不考慮之後的推拉條變化）
@@ -176,25 +196,30 @@
             return a.u.side === 'ally' && b.u.side !== 'ally';
         }
 
-        // ───────── 連攜指令 ─────────
-        // ───────── 共鳴與大招 ─────────
-        ultReady(faction) {
-            return !this.over && this.resonance[faction] >= R.RESONANCE.max
-                && this.allies().some(u => u.faction === faction);
+        // ───────── 能量與個人大招 ─────────
+        ultReady(uid) {
+            const u = this.get(uid);
+            return !this.over && !!u && u.alive && u.side === 'ally' && !!u.ult && u.energy >= R.ENERGY.max && !this.has(u, 'freeze');
         }
-        // 玩家按下大招：下一手立刻插隊放出
-        useUltimate(faction) {
-            if (!this.ultReady(faction) || this.pendingUlt) return false;
-            this.pendingUlt = faction;
+        // 玩家點頭像放大招：下一手立刻插隊放出
+        useUltimate(uid) {
+            if (!this.ultReady(uid) || this.pendingUlt) return false;
+            this.pendingUlt = uid;
             return true;
         }
-        gainResonance(u) {
-            if (!(u.faction in this.resonance)) return;
-            const before = this.resonance[u.faction];
-            this.resonance[u.faction] = Math.min(R.RESONANCE.max, before + R.RESONANCE.gainPerAction);
-            if (this.resonance[u.faction] !== before) {
-                this.emit({type: 'resonance', faction: u.faction, value: this.resonance[u.faction], ready: this.resonance[u.faction] >= R.RESONANCE.max});
-            }
+        gainEnergy(u, amt) {
+            if (u.side !== 'ally' || !u.ult || !u.alive) return;
+            const before = u.energy;
+            u.energy = Math.min(R.ENERGY.max, before + amt);
+            if (u.energy !== before) this.emit({type: 'energy', uid: u.uid, value: u.energy, ready: u.energy >= R.ENERGY.max});
+        }
+        ultimate(uid) {
+            const u = this.get(uid);
+            this.ults++;
+            u.energy = 0;
+            this.emit({type: 'ult', uid, name: u.ult.name});
+            this.emit({type: 'energy', uid, value: 0, ready: false});
+            this.runEffects(u, u.ult.effects, {ult: true});
         }
 
         emit(e) { this.events.push(e); }
@@ -219,15 +244,15 @@
             this.events = [];
             if (this.over) return this.events;
 
-            // 大招插隊：玩家按下的，或自動模式下集滿的
+            // 大招插隊：玩家點的，或自動模式下能量滿的
             if (!this.pendingUlt && this.auto) {
-                const ready = Object.keys(this.resonance).find(f => this.ultReady(f));
-                if (ready) this.pendingUlt = ready;
+                const ready = this.allies().find(u => this.ultReady(u.uid));
+                if (ready) this.pendingUlt = ready.uid;
             }
             if (this.pendingUlt) {
-                const f = this.pendingUlt;
+                const uid = this.pendingUlt;
                 this.pendingUlt = null;
-                if (this.ultReady(f)) { this.combo(f); return this.endStep(); }
+                if (this.ultReady(uid)) { this.ultimate(uid); return this.endStep(); }
             }
 
             const u = this.nextActor();
@@ -238,6 +263,7 @@
 
             // 回合開始：再生、持續傷害、冷卻
             for (const p of u.passives) if (p.type === 'regenOnTurn') this.heal(u, u, u.maxHp * p.pct);
+            if (u.fac?.regen) this.heal(u, u, u.maxHp * u.fac.regen);
             for (const s of u.statuses.filter(s => s.key === 'burn' || s.key === 'poison')) {
                 this.applyDamage(u, Math.round(s.value), {kind: 'dot', status: s.key, srcUid: s.src});
                 if (!u.alive) break;
@@ -252,8 +278,8 @@
                 return this.endStep();
             }
 
-            // 我方英雄出手：所屬陣營共鳴增加
-            if (u.side === 'ally') this.gainResonance(u);
+            // 我方英雄出手：能量增加
+            this.gainEnergy(u, R.ENERGY.perAction);
 
             // 行動
             const idx = this.pickSkill(u);
@@ -377,8 +403,7 @@
                     case 'damage':
                         for (const t of targets) {
                             this.dealDamage(src, t, e.mult, {
-                                atkOverride: ctx.atkOverride, neutral: ctx.combo,
-                                noCrit: ctx.combo, combo: ctx.combo, execute: e.execute,
+                                ult: ctx.ult, execute: e.execute,
                                 bonus: e.bonusVsFaction?.[t.faction] || 0, teamHealPct: e.teamHealPct,
                             });
                         }
@@ -419,15 +444,15 @@
         }
 
         dealDamage(src, tgt, mult, o = {}) {
-            const atk = o.atkOverride ?? this.atkOf(src);
+            const atk = this.atkOf(src);
             let dmg = atk * mult * DEF_K / (DEF_K + this.defOf(tgt));
-            const rel = o.neutral ? null : R.elementRelation(src.element, tgt.element);
+            const rel = R.elementRelation(src.element, tgt.element);
             if (rel === 'adv') dmg *= R.ELEMENT_ADV;
             if (rel === 'dis') dmg *= R.ELEMENT_DIS;
             dmg *= 1 + (o.bonus || 0);
-            if (!o.combo) {
-                for (const p of src.passives) if (p.type === 'dmgVsFaction' && tgt.faction === p.faction) dmg *= 1 + p.pct;
-            }
+            if (src.fac?.vsUndead && tgt.faction === 'undead') dmg *= 1 + src.fac.vsUndead;
+            for (const p of src.passives) if (p.type === 'dmgVsFaction' && tgt.faction === p.faction) dmg *= 1 + p.pct;
+            if (this.has(tgt, 'guard')) dmg *= 0.7;
             let crit = false;
             if (!o.noCrit) {
                 let rate = src.base.crit;
@@ -437,12 +462,10 @@
             dmg *= 0.95 + this.rand() * 0.1;
             dmg = Math.max(1, Math.round(dmg));
 
-            const dealt = this.applyDamage(tgt, dmg, {kind: o.combo ? 'combo' : 'hit', crit, rel, srcUid: src.uid});
-            if (o.combo) this.comboDamage += dealt; else src.stats.dmg += dealt;
-
-            if (!o.combo) {
-                for (const p of src.passives) if (p.type === 'lifesteal' && src.alive) this.heal(src, src, dealt * p.pct);
-            }
+            const dealt = this.applyDamage(tgt, dmg, {kind: o.ult ? 'ult' : 'hit', crit, rel, srcUid: src.uid});
+            src.stats.dmg += dealt;
+            if (o.ult) this.ultDamage += dealt;
+            for (const p of src.passives) if (p.type === 'lifesteal' && src.alive) this.heal(src, src, dealt * p.pct);
             if (o.teamHealPct) this.friendsOf(src).forEach(a => this.heal(src, a, dealt * o.teamHealPct));
             if (o.execute && tgt.alive && !tgt.boss && tgt.hp / tgt.maxHp < o.execute) {
                 this.emit({type: 'execute', uid: tgt.uid});
@@ -468,6 +491,7 @@
             tgt.hp = Math.max(0, tgt.hp - rest);
             tgt.stats.taken += dmg;
             this.emit(Object.assign({type: 'damage', uid: tgt.uid, amount: dmg, absorbed}, info));
+            if (info.kind !== 'dot') this.gainEnergy(tgt, R.ENERGY.perHit);
             if (tgt.hp <= 0) this.onDeath(tgt, info.srcUid ? this.get(info.srcUid) : null);
             else {
                 for (const p of tgt.passives) {
@@ -546,18 +570,6 @@
             if (n) this.emit({type: 'cleanse', uid: t.uid});
         }
 
-        // 合體技（大招）：該陣營還活著的英雄合力放出，威力以他們的平均攻擊力計算
-        combo(faction) {
-            const f = R.FACTIONS[faction];
-            const members = this.allies().filter(u => u.faction === faction);
-            const avgAtk = members.reduce((s, m) => s + this.atkOf(m), 0) / members.length;
-            const trigger = members[Math.floor(this.rand() * members.length)];
-            this.combos++;
-            this.resonance[faction] = 0;
-            this.emit({type: 'combo', faction, name: f.combo.name, members: members.map(m => m.uid)});
-            this.emit({type: 'resonance', faction, value: 0, ready: false});
-            this.runEffects(trigger, f.combo.effects, {combo: true, atkOverride: avgAtk, trigger});
-        }
     }
 
     function simulate(opts) {
