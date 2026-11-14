@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!-- 量測每個地面特效「實際覆蓋半徑」（世界單位）。用法：開這頁，等它跑完，把結果存到 js/vfx/footprint.js（tools/measure_footprint.py 會自動做） -->
+<html><head><meta charset="UTF-8">
+<script type="importmap">{"imports": {"three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/"}}</script>
+</head><body style="margin:0;background:#000">
+<canvas id="c" width="256" height="256"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import {loadLib, TUNE_BY_CATEGORY, TUNE, isGroundEffect} from '../js/vfx/player.js';
+const W = 256, HALF = 12;   // 畫面 = 24×24 世界單位
+const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('c'), preserveDrawingBuffer: true});
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const cam = new THREE.OrthographicCamera(-HALF, HALF, HALF, -HALF, 0.1, 100);
+cam.position.set(0, 50, 0); cam.up.set(0, 0, -1); cam.lookAt(0, 0, 0);
+// 側面：看寬度（法陣從上面看、護盾／傳送門這種直立的要從側面看）
+const side = new THREE.OrthographicCamera(-HALF, HALF, HALF * 2 - 2, -2, 0.1, 100);
+side.position.set(0, 0, 50); side.lookAt(0, 0, 0);
+side.top = 22; side.bottom = -2; side.updateProjectionMatrix();
+const gl = renderer.getContext();
+const px = new Uint8Array(W * W * 4);
+const {create, PRESETS} = await loadLib();
+const out = {};
+for (const id of Object.keys(PRESETS)) {
+    if (!isGroundEffect(id)) continue;
+    const p = PRESETS[id];
+    const tune = {...TUNE_BY_CATEGORY[p.category], ...TUNE[id]};
+    const rate = tune.speed || 2;
+    let fx;
+    try { fx = create(id, {...(tune.options || {}), speed: rate, size: tune.size || 1}); } catch (e) { continue; }
+    if (tune.hideObject && fx.setObject) { try { fx.setObject(new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), new THREE.MeshBasicMaterial({transparent: true, opacity: 0}))); } catch (e) {} }
+    const scene = new THREE.Scene();
+    scene.add(fx.group);
+    const life = p.lifecycle || {start: 0.4};
+    const impactAt = (tune.impact ?? life.start) / rate;
+    const cover = new Uint8Array(W * W), cols = new Uint8Array(W);
+    let t = 0;
+    const dt = 1 / 30;
+    while (t < impactAt + 0.7) {
+        fx.update(dt); t += dt;
+        if (t < impactAt - 0.15) continue;
+        renderer.render(scene, cam);
+        gl.readPixels(0, 0, W, W, gl.RGBA, gl.UNSIGNED_BYTE, px);
+        for (let i = 0; i < W * W; i++) if (px[i * 4] + px[i * 4 + 1] + px[i * 4 + 2] > 60) cover[i] = 1;
+        renderer.render(scene, side);
+        gl.readPixels(0, 0, W, W, gl.RGBA, gl.UNSIGNED_BYTE, px);
+        for (let i = 0; i < W * W; i++) if (px[i * 4] + px[i * 4 + 1] + px[i * 4 + 2] > 60) cols[i % W] = 1;
+    }
+    let first = -1, last = -1;
+    for (let x = 0; x < W; x++) if (cols[x]) { if (first < 0) first = x; last = x; }
+    const halfW = first < 0 ? 0 : (last - first + 1) * (2 * HALF / W) / 2;
+    let n = 0;
+    for (let i = 0; i < W * W; i++) n += cover[i];
+    const area = n * (2 * HALF / W) ** 2;
+    out[id] = +Math.max(Math.sqrt(area / Math.PI), halfW * 0.8).toFixed(2);
+    fx.dispose?.();
+}
+window.__result = out;
+document.title = 'done';
+</script></body></html>

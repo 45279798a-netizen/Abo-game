@@ -71,3 +71,7 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 ## 技能演出
 
 技能特效寫在 `js/data/heroes.js`、`enemies.js`、`factions.js` 的 `vfx`：可以是多段特效依序播放（delay、each、sky、reverse、main），`show` 是整段演出長度（1.5～3.5 秒，大招約 4～5 秒）。普攻特效依職業（近戰揮砍）與屬性（遠程飛彈）自動決定，在 `js/hd2d/main.js` 的 `BASIC_MELEE`、`BASIC_SHOT`。
+
+### 特效大小自動調整
+
+地面特效（法陣、爆炸、旋風、煙霧、護盾…）播放時會依目標自動縮放：單體＝剛好蓋住那個角色（首領比較大），群體＝蓋住整群的大部分。依據是 `js/vfx/footprint.js` 裡每個特效實際覆蓋的半徑，由 `tools/footprint.html` 量測。新增特效後，開本機伺服器並用瀏覽器打開 `tools/footprint.html`，把 `window.__result` 的結果更新到 `footprint.js`。資料表裡地面特效的 `size` 改當微調倍率（1 = 剛好）。飛行和光束打群體、打首領時會自動加粗。

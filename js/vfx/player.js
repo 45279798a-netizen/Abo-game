@@ -14,6 +14,7 @@
 //   options 其他特效參數（例如 spread 範圍）
 //   hideObject 把內建的暫代模型藏起來
 import * as THREE from 'three';
+import {FOOTPRINT} from './footprint.js';
 
 export const TUNE_BY_CATEGORY = {
     projectile: {speed: 2.2, size: 1.4, flight: 0.32},
@@ -111,7 +112,15 @@ export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
             const cat = preset.category;
             const tune = {...TUNE_BY_CATEGORY[cat], ...TUNE[id]};
             const rate = (tune.speed || 2) * (o.speedMult || 1);
-            const opts = {...(tune.options || {}), speed: rate, size: (tune.size || 1) * (o.sizeMult || 1) * sizeScale};
+            // o.fit：希望特效蓋住的半徑（世界單位）。有量測資料的地面特效依此自動縮放
+            let mult = o.sizeMult || 1, extra = 1;
+            if (o.fit && FOOTPRINT[id] && !['projectile', 'beam', 'cinematic'].includes(cat)) {
+                mult = THREE.MathUtils.clamp(o.fit / (FOOTPRINT[id] * sizeScale), 0.45, 2.4) * (o.fitScale || 1);
+            }
+            let size = (tune.size || 1) * mult * sizeScale;
+            if (size > 2) { extra = size / 2; size = 2; }        // 特效本身的大小上限是 2，超過的部分用整體放大
+            if (size < 0.25) { extra = size / 0.25; size = 0.25; }
+            const opts = {...(tune.options || {}), speed: rate, size};
             if (o.color) opts.color = o.color;
             const fx = create(id, opts);
             if (tune.hideObject && fx.setObject) {
@@ -162,6 +171,7 @@ export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
                 };
             } else {
                 fx.group.position.copy(o.at);
+                if (extra !== 1) fx.group.scale.multiplyScalar(extra);
                 const impactAt = (tune.impact ?? life.start) / rate;
                 const cutoffAt = tune.cutoff != null ? tune.cutoff / rate : impactAt + (tune.cutoffAfterImpact || 1);
                 a.tick = dt => {

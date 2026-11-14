@@ -540,6 +540,16 @@ function basicSteps(u) {
     if (MELEE.includes(u.role)) return [{id: BASIC_MELEE[u.role], color, size: u.boss ? 1.1 : 0.75, speed: 1.3, main: true}];
     return [{id: BASIC_SHOT[u.element] || 'plasma-bolt', color: u.element === 'fire' ? undefined : color, size: 0.6, speed: 1.2, main: true}];
 }
+// 一群目標要蓋住的半徑：單體看角色身形，群體＝最遠的人到中心的距離＋半個身形
+function fitRadius(uids) {
+    const rs = uids.map(id => units.get(id)).filter(Boolean);
+    if (!rs.length) return 1;
+    const body = r => r.w * 0.55;
+    if (rs.length === 1) return Math.max(0.8, body(rs[0]));
+    const c = centerOf(uids);
+    // 群體不用整片蓋滿（會擋住角色的臉），蓋住大部分就好
+    return Math.min(3.2, 0.75 * Math.max(...rs.map(r => Math.hypot(r.group.position.x - c.x, r.group.position.z - c.z) + body(r))));
+}
 const stepsOf = v => !v ? [] : Array.isArray(v) ? v : [{...v, main: true}];
 
 // 依序播放多段特效（技能、普攻、大招共用）。回傳「主要那段命中」的 Promise；all 等全部播完（最多 maxMs）。
@@ -565,16 +575,20 @@ function playSteps(steps, ctx) {
             const dests = pick(st.at || 'targets').filter(id => units.get(id));
             if (!dests.length) return;
             const base = {color: st.color, sizeMult: (st.size || 1) * (ctx.sizeMult || 1), speedMult: (st.speed || 1) * speed, skip: ctx.skip, priority: ctx.priority};
+            // 地面特效依目標自動決定大小：單體＝蓋住那個角色，群體＝蓋住整群；st.size 改當微調倍率
+            const fitOf = g => ({fit: fitRadius(g), fitScale: (st.size || 1) * (ctx.sizeMult || 1)});
+            // 飛行／光束：打群體、打首領時加粗
             const origin = me ? chestWorld(me) : centerOf(mine, true);
             const runs = [];
             const cat = categoryOf(st.id);
             const groups = st.each ? dests.map(d => [d]) : [dests];
+            if (!isGroundEffect(st.id)) base.sizeMult *= (dests.length > 2 && !st.each ? 1.35 : 1) * (dests.some(d => b.get(d)?.boss) ? 1.3 : 1);
             for (let gi = 0; gi < groups.length; gi++) {
                 const g = groups[gi];
                 if (gi && st.stagger) await sleep(st.stagger / state.speed);
                 let run;
                 if (cat === 'cinematic') run = vfx.play(st.id, {...base, from: centerOf(mine), to: centerOf(g)});
-                else if (isGroundEffect(st.id)) run = vfx.play(st.id, {...base, at: centerOf(g)});
+                else if (isGroundEffect(st.id)) run = vfx.play(st.id, {...base, ...fitOf(g), at: centerOf(g)});
                 else if (st.sky) { const at = centerOf(g); run = vfx.play(st.id, {...base, from: at.clone().setY(9), to: at}); }
                 else if (g.length <= 2 && !st.each) g.forEach(d => { const t = chestWorld(units.get(d)); runs.push(st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t})); });
                 else { const t = centerOf(g, true); run = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t}); }
