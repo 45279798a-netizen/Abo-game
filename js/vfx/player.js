@@ -102,9 +102,11 @@ export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
         pending++;
         let counted = true;
         const unpend = () => { if (counted) { counted = false; pending--; } };
-        let resolveImpact, resolveDone;
+        let resolveImpact, resolveDone, resolveStopped;
         const impact = new Promise(r => { resolveImpact = r; });
         const done = new Promise(r => { resolveDone = r; });
+        const stopped = new Promise(r => { resolveStopped = r; });   // 主要演出播完（開始淡出）
+        done.then(() => resolveStopped());
         loadLib().then(({create, PRESETS}) => {
             unpend();
             const preset = PRESETS[id];
@@ -130,7 +132,7 @@ export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
             const life = preset.lifecycle || {start: 0.4, end: 0.6};
             const skip = o.skip || {};
             const doImpact = () => { if (!a.hit) { a.hit = true; a.hitAt = a.t; resolveImpact(); } };
-            const doStop = () => { if (a.stopAt === null) { a.stopAt = a.t; fx.stop(); } };
+            const doStop = () => { if (a.stopAt === null) { a.stopAt = a.t; fx.stop(); resolveStopped(); } };
 
             if (cat === 'projectile') {
                 const dir = o.to.clone().sub(o.from);
@@ -141,6 +143,7 @@ export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
                     a.t += dt;
                     fx.update(dt);
                     if (!a.hit && (a.t >= flight || skip.skipped)) { fx.hit(o.to); doImpact(); }
+                    if (a.hit && a.t - a.hitAt > 0.35) resolveStopped();
                     if (fx.finished || (a.hit && a.t - a.hitAt > 1.4)) finish(a);
                 };
             } else if (cat === 'cinematic') {
@@ -189,7 +192,7 @@ export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
             console.warn('特效播放失敗', id, e);
             resolveImpact(); resolveDone();
         });
-        return {impact, done};
+        return {impact, done, stopped};
     }
 
     function update(dt) {

@@ -590,7 +590,11 @@ function playSteps(steps, ctx) {
     const mainIdx = Math.max(0, steps.findIndex(st => st.main));
     let resolveMain;
     const main = new Promise(r => { resolveMain = r; });
-    const all = [];
+    const all = [], stops = [];
+    const hitAt = new Map();   // 目標 uid → 打到他的那一下（主要那段特效）的命中時間點，傷害數字跟著它跳
+    let resolveStops;
+    const stopsReady = new Promise(r => { resolveStops = r; });
+    let pendingSteps = steps.length;
     const speed = (ctx.speedMult || 1) * state.speed;
     steps.forEach((st, i) => {
         const p = (async () => {
@@ -618,25 +622,39 @@ function playSteps(steps, ctx) {
                     if (run && st.pull) pullIn(g, at, st.pull);
                 }
                 else if (st.sky) { const at = centerOf(g); run = vfx.play(st.id, {...base, from: at.clone().setY(9), to: at}); }
-                else if (g.length <= 2 && !st.each) g.forEach(d => { const t = chestWorld(units.get(d)); runs.push(st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t})); });
+                else if (g.length <= 2 && !st.each) g.forEach(d => {
+                    const t = chestWorld(units.get(d));
+                    const one = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t});
+                    if (one) { runs.push(one); if (i === mainIdx) hitAt.set(d, one.impact); }
+                });
                 else { const t = centerOf(g, true); run = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t}); }
-                if (run) runs.push(run);
+                if (run) {
+                    runs.push(run);
+                    if (i === mainIdx) g.forEach(d => hitAt.set(d, run.impact));
+                }
+                // 第一個命中就先放行（之後每個目標的傷害數字等自己那一下）
+                if (i === mainIdx && gi === 0) Promise.race([...runs.map(r => r.impact), sleep(3500)]).then(resolveMain);
             }
             const ok = runs.filter(Boolean);
             if (ok.length && st.dark) darken(st.dark / state.speed);
-            if (i === mainIdx) Promise.race([Promise.all(ok.map(r => r.impact)), sleep(3500)]).then(resolveMain);
+            stops.push(...ok.map(r => r.stopped));
+            if (--pendingSteps === 0) resolveStops();
             await Promise.all(ok.map(r => r.done));
-        })().catch(e => console.warn('特效失敗', st.id, e));
+        })().catch(e => { console.warn('特效失敗', st.id, e); if (--pendingSteps === 0) resolveStops(); });
         all.push(p);
         if (i === mainIdx) p.then(() => resolveMain());   // 主要那段放不出來時也不要卡住
     });
-    return {main, all: Promise.all(all)};
+    // 全部特效「主要演出」播完（不含最後淡出）
+    const stopped = stopsReady.then(() => Promise.all(stops));
+    return {main, all: Promise.all(all), stopped, hitAt};
 }
 
 async function playSkillVfx(actor, skill, events) {
     const steps = skill ? stepsOf(skill.vfx) : basicSteps(actor);
     if (!steps.length) return false;
     const run = playSteps(steps, {actor, events, priority: !!skill, speedMult: skill ? 0.8 : 1});
+    state.hitWait = run.hitAt;
+    if (skill) state.fxStopped = run.stopped;
     await Promise.race([run.main, sleep(skill ? 3500 : 1200)]);
     return true;
 }
@@ -762,7 +780,7 @@ async function playUltimate(e, events) {
     const run = steps.length ? playSteps(steps, {actor: hero, events, hits: dests, priority: true, sizeMult: 1.1, speedMult: short ? 1.6 : 0.85, skip}) : null;
     const lookB = at.clone().setY(1.2);
     setTimeout(() => moveCam(dollyTo(lookB, onFoes ? 0.45 : 0.78), lookB, short ? 450 : 900), mode === 'off' ? 0 : (short ? 150 : 350));
-    if (run) await Promise.race([run.main, waitOrSkip(5000, skip)]);
+    if (run) { state.hitWait = run.hitAt; state.fxStopped = run.stopped; await Promise.race([run.main, waitOrSkip(5000, skip)]); }
     else await waitOrSkip(500, skip);
     // 命中瞬間
     const framed = ult.impactFrame && mode === 'full' && !skip.skipped && triggerImpact(at.clone().setY(1.3), onFoes ? dests : [hero.uid]);
@@ -774,7 +792,7 @@ async function playUltimate(e, events) {
         setTimeout(() => $('#hd').classList.remove('impact'), 150);
     }
     $('#ult').classList.remove('show', 'leaving', 'fxphase');
-    setTimeout(() => $('#hd').classList.remove('cine'), 500 / state.speed);
+    state.ultCine = true;   // 介面等整段大招特效播完才回來（在 playEvents 最後收）
     // 讓後段特效播完（傷害數字照常跳），整段長度依大招設定
     state.holdUntil = Math.max(state.holdUntil || 0, t0 + show / state.speed);
     state.skip = null;
@@ -784,6 +802,8 @@ async function playUltimate(e, events) {
 async function playEvents(events, id) {
     const b = state.battle;
     for (const r of units.values()) if (r.acting) setActing(r.u.uid, false);
+    state.hitWait = null;
+    state.fxStopped = null;
     let actor = null;
     let usedSkill = false;
     for (let i = 0; i < events.length; i++) {
@@ -816,6 +836,9 @@ async function playEvents(events, id) {
                 renderHud();
                 break;
             case 'damage': {
+                // 多段／多目標的招式：等打到這個目標的那一下特效命中才跳數字
+                const hw = (e.kind === 'hit' || e.kind === 'ult') && state.hitWait?.get(e.uid);
+                if (hw) await Promise.race([hw, sleep(2500)]);
                 let cls = e.kind === 'dot' ? 'dot' : e.kind === 'ult' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                 if (e.rel) cls += ' ' + e.rel;
                 float(rec, (e.crit ? '暴擊 ' : '') + e.amount, cls);
@@ -863,10 +886,14 @@ async function playEvents(events, id) {
                 break;
         }
     }
-    // 技能／大招演出還沒播完：停在這裡讓特效播完再換下一位
+    // 技能／大招演出還沒播完：停在這裡，等所有特效播完（加上設定的最短長度）才換下一位
+    if (state.fxStopped && id === state.runId) await Promise.race([state.fxStopped, sleep(state.ultCine ? 6000 : 4000)]);
     const left = (state.holdUntil || 0) - performance.now();
-    state.holdUntil = 0;
     if (left > 0 && id === state.runId) await sleep(Math.min(left, 4000));
+    state.holdUntil = 0;
+    state.fxStopped = null;
+    state.hitWait = null;
+    if (state.ultCine) { state.ultCine = false; $('#hd').classList.remove('cine'); }
     if (usedSkill && !b.over) camHome(500);
 }
 
