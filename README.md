@@ -61,3 +61,10 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 
 - 3D 特效（`js/vfx/library.js`、`vfx-src/`）：00GameDevs，MIT License（授權文字保留在檔案開頭與 `vfx-src/LICENSE.txt`）
 - Three.js 0.187.0（`vendor/three/`，含後製模組 `vendor/three/addons/`）：MIT License，見 `vendor/three/LICENSE`
+
+### 特殊匯出檔（尚未接入）
+
+`vfx-src/special/` 放的是格式不同的匯出檔，不能用 build_vfx.py 合併：
+
+- `impact-frame.js`：命中定格（畫面後製效果，要接到 EffectComposer，指定角色剪影），適合大招命中瞬間
+- `verdant-restoration.js` 森光治癒、`aegis-weave.js` 織光護盾、`sustained-arc.js` 連續雷流：另一套「支援特效」程式，自帶光暈並會接管整個場景的繪製，需要另外改寫才能和現有畫面共存

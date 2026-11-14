@@ -52,7 +52,7 @@ THE SOFTWARE.
 */
 // ═══════════════════════════════════════════════════════════════
 // 特效庫：由 tools/build_vfx.py 自動產生，請勿手動修改。
-// 共 41 種特效，共用同一份程式（原本每個匯出檔都各帶一份）。
+// 共 57 種特效，共用同一份程式（原本每個匯出檔都各帶一份）。
 // 用法：import {create, PRESETS} from './library.js'; const fx = create('fireball', {speed: 2});
 // ═══════════════════════════════════════════════════════════════
 // 各特效原始使用說明：
@@ -100,6 +100,56 @@ THE SOFTWARE.
 // quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 星紋之門 / Gate of Astral Tracery
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 蒼刃迴斬 / Azure Blade Sweep
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 烈焰空爆 / Billowing Airburst
+// 載入時預先建立所需實例並呼叫 fx.prewarm(renderer,camera)；同步準備，勿在起爆那一幀呼叫。
+// Prepare instances during loading: fx.prewarm(renderer,camera), using the playback renderer.
+// 播放完以 reset() 重用；離開場景才 dispose()。預熱不推進時間、不更換種子。
+// Reuse finished instances via reset(); dispose only at teardown. Warmup preserves time and seed.
+// Context restored or renderer/output changed: prewarm again before playback.
+// 烈焰空爆 / Billowing Airburst
+// 2.4 視覺秒的單次空中爆炸；建立後由 update(deltaSeconds) 立即推進，不需呼叫 hit()。
+// A 2.4-visual-second airburst starts on update(deltaSeconds); hit() is not a trigger.
+// 局部原點是爆心，+Y 朝上；所有圖層隨 size 同步縮放，沒有地面痕跡。
+// Local origin is the blast center, +Y is up. size scales every layer; no ground effect is included.
+// quantity 控制 2–6 條主煙尾（預設 4）；density 只改裝飾火星。
+// quantity selects 2–6 smoke jets (default 4); density changes decorative embers only.
+// detail 控制表面起伏與紋理強度；speed 控制完整演出的時間。
+// detail controls surface billowing and texture strength; speed scales the full timeline.
+// 在遊戲既有迴圈持續 update 至 finished，再 dispose；reset 保留位置、方向、設定，並產生新的隨機煙尾。
+// Continue your existing update loop until finished, then dispose. reset preserves transform/settings and samples new smoke jets.
+// 讀取 variationSeed；reset({variationSeed}) 可精確重播同一爆炸，倒帶時使用同一種子。
+// Read variationSeed and pass reset({variationSeed}) to reproduce one burst, including timeline seeks.
+// No textures, scene capture, required postprocessing, collision logic or separate animation loop.
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 鉤咒縛陣 / Hooked Binding Sigil
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
@@ -111,6 +161,19 @@ THE SOFTWARE.
 // quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 渦光黑洞 / Luminous Vortex Black Hole
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 引力透鏡使用 Three.js 內建透射取樣真實背景與不透明物件；不保證扭曲其他透明物件。
+// Gravitational lensing samples the actual background and opaque scene via native Three.js transmission. Other transparent objects may be excluded.
 // 炎紋灼地 / Flame-Etched Ground
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
@@ -144,7 +207,74 @@ THE SOFTWARE.
 // quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 闇鏈崩陣 / Darkchain Sigil Rupture
+// 闇鏈崩陣 / Darkchain Sigil Rupture
+// A local 1.5-second neutral refraction pulse rebounds ten times at detonation, with stronger exponential damping and a smooth opacity tail; the last few rebounds are deliberately softer. Its radius remains fixed at 4.2 * size, and the entire lens fades smoothly; displacement power is reduced to 30 percent of the stronger revision. Native transmission captures opaque scene content only; transparent VFX are not in that capture. Scene complexity affects capture cost.
+// Chains and flying links use instanced procedural billboard sprites: black ring pixels write depth, holes are discarded, and purple halos do not write depth.
+// Local origin is the lower circle center; +Y is up. Upper circle height: 4.4 * size; radii: lower 2.3, upper 6.21 times size (upper diameter increased by 35 percent).
+// 5.15-second single shot: circles, twelve independently growing chains, inward black aura, thirty absorption pulses, detonation.
+// speed scales the complete timeline; density changes only decorative particles.
+// Six separate chains grow downward and six upward, each reaching its own distinct endpoint on the opposite sigil. Strands never splice together: each grows along a bowed path, all connect by 0.85s, then jointly tighten with a damped rebound and settle straight by 1.25s. Link spacing and shape stretch with the curve; anchors stay fixed. At 3.65s the final pulse immediately releases the blast, launching 252 short black energy jets to radius 4.2 in 0.08s; curved open ribbons stretch outward with torn flowing edges, then their motion eases out and their tails fade over 1.30s. Six surface discharge groups (one fork each) keep a fixed path for 50-90ms, brighten for 40ms on release, and extinguish by 160ms. A cyan-violet membrane visibly churns and deforms around dark cavities, using continuous time-driven advection independent of the thirty scale pulses; a thick black traveling wave outline flows around the core in the same opaque pass; its contour deformation and wave amplitude are five times stronger, with the black band bounded to keep the center visible. Black chain bodies occlude an expanded back-face purple halo, keeping the bloom outside their silhouette; no screen-space bloom pass is required. Fifty-four primary jets and 198 quieter supports share the existing two passes. Sixteen outer brush strokes and twelve inward trails reuse two batches, with a doubled 7.8–10.1 * size starting radius distributed over a full spherical volume above, below, in front and behind the core. Ink moves continuously inward from its appearance, easing from slow to fast through an independently tilted, single-direction 1–2-turn spiral per stroke. There is no orbit-only wait or per-cycle respawn; tails follow prior inward positions and remain independent of orb pulses. Thirty-six fine independent branched black-purple discharges cover the lower sigil interior, with area-distributed roots up to 94.6 percent of its radius for 70-110ms each, using one preallocated batch. On detonation, these same strips scatter into short 0.48-1.10-unit lightning fragments around radius 3.1-5.15; they flicker independently for 1.30s instead of connecting back to the center. Chains connect in 0.40s (0.45-0.85s). Sigils have transparent gaps, black strokes and a purple corona in the same two passes. Twenty-four original stroke glyphs form two varied magic-text rings, with triangular construction, concentric tracks, diamonds and corner engravings. No filled black backing or external font/texture is used. Their motion histories are twice as long, with stronger inward rotation, narrower solid ink bodies and velocity-aligned heads; they use their own clock rather than orb pulses. A black hand-brushed pressure sheet (4.3 * size wide, 0.18 * size thick) uses radial opacity gradients and a deeply torn, fine-grained perimeter with radial dry-brush streaks. It expands from the orb center (y = 2.24 * size) toward radius 10.6 * size with a 0.80s quintic ease-out while fading over the same 0.80s; allow 10.9 * size of horizontal framing. Explosion jet count is tripled again (84 to 252; nine times the initial 28) and length is one fifth of the previous length; widths stay at one quarter, with outward range preserved. Incoming ink trail widths are halved, and the joint chain recoil is larger and lasts 0.40s. Fractures propagate from the nearest impact point toward both chain ends within 0.12s, throwing differently sized chain fragments outward. Detached chunks are scaled to 50 percent (another 29 percent reduction) and receive a 6.4 outward impulse (about 30 percent farther than the previous revision). Explosion debris has a black body and a soft purple corona in one pass. Both particle streams align with their projected velocity; inward particles use an independent clock and a fixed center destination, not the pulsing orb radius. Density never changes chains or the thirty pulses; no textures, postprocessing, character or scene are included.
+// Call update(deltaSeconds) until finished; reset() replays at the current transform.
+// stop() follows the existing single-shot contract and does not interrupt the sequence.
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 裂空碎斬 / Rift-Shattering Slashes
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// panelCount 控制獨立三角扭曲板數量（0–32），預設 9；不改變刀光或碎片數量。
+// 空間錯位使用 Three.js 內建透射；支援背景、不透明場景與本素材刀光，其他透明物件不保證被扭曲。
+// Spatial distortion samples the background, opaque scene and this effect's blade; other transparent objects may be excluded.
 // 飛砂風旋 / Sand-Swept Vortex
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 金刃雷矢 / Golden-Bladed Lightning Arrow
+// 金刃雷矢 / Golden-Bladed Lightning Arrow
+// Local +X is forward; the arrow tip is x = 1.7 * settings.size.
+// Charge: 1.2 visual seconds; hit/stop drain: 1.4 visual seconds.
+// Four separated solid blades; 90-140 ms seeded leaders, shorter attached forks.
+// Full ribbon envelopes: arrow radial 1.6 * size, impact radius 3.5 * size.
+// Impact energy peaks at 5x for 12ms, then returns to normal by 90ms; range is unchanged.
+// Heavy impact births stop at 0.45s; rings begin at 0.08s and 0.18s.
+// Eight reusable draw layers; no new allocations on a discharge or replay.
+// const fx = createVFX(); scene.add(fx.group);
+// In your existing loop: fx.update(deltaSeconds);
+// Once fx.phase === "active", call fx.setDirection(directionInParentSpace, travelSpeed).
+// setDirection moves immediately; wait for active when charging at a fixed point.
+// Your collision system calls fx.hit(worldContact, worldNormal).
+// Continue update until finished; reset preserves transform/settings; dispose releases the effect.
+// variationSeed is the read-only uint32 seed of this cast.
+// reset() chooses a new variation; reset({ variationSeed: savedSeed }) reproduces one.
+// Example: const savedSeed = fx.variationSeed; fx.reset({ variationSeed: savedSeed });
+// Sampling the same cast must keep this seed; do not call unseeded reset every frame.
+// The sigil stays at the release point and fades; stop fades without an impact.
+// speed changes visual timing, not world travel speed. density affects decorative sparks only.
+// The website target, target recoil, camera, controls and demo scheduling are excluded.
+// No textures, postprocessing, collision detection or additional animation loop are included.
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
 // 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
@@ -236,7 +366,47 @@ THE SOFTWARE.
 // quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 霜矛落陣 / Falling Frost Spear Array
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 晶齒冰輪 / Crystal-Toothed Ice Wheel
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 金鏈驟雨 / Golden Chain Rain
+// 金鏈驟雨 / Golden Chain Rain
+// Single shot: three waves at 0, 1.1 and 2.2 visual seconds; complete by 7.5 seconds.
+// Local origin is the ground center, +Y is up, and impact points lie on local y = 0.
+// quantity is chains per wave (1-12, default 8); each wave launches across 0.4 seconds.
+// Each chain travels for 0.35s, holds for 0.75s, erodes for 0.75s, then clears its final sparks within 0.35s.
+// size scales the whole effect once. spread changes horizontal layout only; density changes decorative chips only.
+// spriteChains (boolean, default true) switches only links and their thin halos to instanced axis-aligned sprite rings. Endpoint clipping uses the rendered positions at the source, arrow tail and ground; no cut across interpolated corner flags. Keeps flowing liquid patterns and timing; close-up depth is approximate. setOptions switches at the current time; reset preserves the mode.
+// textureDensity controls chain-surface pattern density (0.25-3, default 0.7); independent of particle density and chain count.
+// Dark ochre sprite links preserve holes and depth occlusion; solid 3D links remain optional; irregular golden liquid contours continuously flow and deform across the links. Separate thin halos need no bloom pass.
+// Only aerial source endpoints carry golden water; no ground ripples or impact flash. Eight yellow-gold fissures per contact use a separate rounded, soft local bloom layer without scene capture or a required full-screen pass. They reveal outward in 0.18s and remain for 3s from each contact, including a final 0.3s fade. Rising crack chips are 8x the previous allocation (616 default / 1232 maximum), preserving erosion chips (179 / 358). Existing decorative capacity is 1590; each rising chip lives 1.95s (200% longer), with movement halved again to 25% of the original. After its existing 0.105s fade-in, each chip keeps full size and brightness through age 1.6s, then fades opacity over 0.35s without shrinking. The same fixed pool recycles after each full life, stops births by 3s from contact, and lets existing chips fade naturally; all chips clear by 7.45s. Spin, pool size and impact shards are unchanged. Impact shard size is 0.5x the initial burst version (visible length about 0.04-0.08 local units); count, paths and timing are unchanged. Separate golden impact shards burst within 0-0.025s of contact, arc outward and fall before 0.65s: 3-24 per contact, 12 default. Total 1083 default / 2454 global maximum, preserving the previous chip counts. No terrain deformation.
+// Aerial ripple cores, soft edges and halos fade together over strand ages 1.10-1.55s, retaining the held size and peak opacity. Golden water uses fine irregular moving ripples, opaque white-gold centers, soft outer edges and misty local bloom; no scene capture or refraction.
+// Glowing chips peel from the progressing erosion band; density changes erosion, rising and impact chips only, never source ripples, arrows or ground cracks.
+// Call update(deltaSeconds) in the existing game loop until finished; reset replays the same seeded layout at the current transform.
+// stop follows the single-shot contract and does not interrupt the cast. hit is a compatibility method, not terrain or damage detection.
+// Arrowheads share the chain dark-gold base, animated irregular liquid texture and textureDensity/detail/color controls; arrow facets use continuous model-space texture sampling at 3x their previous spatial density; chain density and time coefficients are unchanged.
+// Solid gold arrowheads lead the attached chain without piercing. Contact at 0.35s is followed by a 0.08s ease-out penetration of 0.32 along the flight axis (half the 0.64 arrow length). Both link modes remain attached to the arrow tail. Arrowheads stay fixed, then erode with the chain; all buried surfaces clip at local y=0.
+// Impact rebound amplitude is doubled from the previous revision (six times the initial version); contact timing, frequency and damping are unchanged.
+// No terrain fitting, character binding, physics, external textures, extra postprocessing, camera or extra animation loop is included.
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
 // 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
@@ -313,6 +483,17 @@ THE SOFTWARE.
 // quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 風拂草地 / Windswept Meadow
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 電漿尖矢 / Plasma Dart
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
@@ -369,6 +550,17 @@ THE SOFTWARE.
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 日輪輝柱 / Solar Halo Beam
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 生機光綻 / Vitality Blossom
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
 // 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
@@ -455,6 +647,69 @@ THE SOFTWARE.
 // quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 暗能汲流 / Dark Energy Siphon
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 裂空刃影 / Riftblade Trail
+// 武器軌跡接入 / Weapon trail setup
+// 展示劍、滑鼠控制與自動演示僅供預覽，不包含在此模組。
+// The preview sword, pointer input and automatic demo are excluded.
+// const fx = createVFX();
+// scene.add(fx.group);
+// fx.attachWeapon(sword, { base: [0, 0, 0], tip: [0, 1, 0] });
+// base／tip 為武器本地座標的刀根／刀尖，可傳入 Vector3 或 [x,y,z]。
+// Blade base and tip use sword-local coordinates (Vector3 or [x,y,z]).
+// 每幀先更新武器動作，再呼叫 fx.update(deltaSeconds)。
+// Update the weapon animation first, then fx.update(deltaSeconds).
+// stop() 停止記錄並淡出；reset() 保留綁定並開始新軌跡。
+// stop() drains the trail; reset() starts a fresh stroke with the current weapon.
+// detachWeapon() 解除武器參照；dispose() 只釋放特效，不釋放武器。
+// detachWeapon() releases the binding; dispose() releases only the effect.
+// size 控制刀身覆蓋比例；speed 控制拖影淡出速度，不改武器動作。
+// size controls blade coverage; speed controls trail fading, not weapon motion.
+// Riftblade Trail: native transmission samples the background and opaque objects.
+// 空間拖影折射真實背景與不透明物件；其他透明物件不保證被扭曲。
+// detail changes distortion; color tints only the edge and fine streaks.
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 裂空迴斬 / Riftblade Sweep
+// 裂空迴斬 / Riftblade Sweep
+// Native Three.js transmission samples the real background and opaque objects.
+// 折射取樣真實背景及不透明物件；其他透明物件不保證被扭曲。
+// Keep background meshes opaque when they should appear in the distortion.
+// 展示劍不包含在匯出；group 可掛到武器或角色的揮斬起點。
+// The preview sword is excluded. Position/orient group at the swing origin.
+// Blade plane: local XZ, height 1 * size, outer radius 3 * size; clockwise from above.
+// Leading width: 1.6 * size, extending back from the tip; only the tail tapers.
+// Animate with update(deltaSeconds); reset() replays the 0.85s sweep.
+// detail controls refraction strength; color only tints the edge and fine streaks.
+// No external textures, postprocessing or host render hook are required.
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 旋流風矛 / Spiraling Wind Spear
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
@@ -511,6 +766,44 @@ THE SOFTWARE.
 // spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
 // 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
 // 沸泡毒陣 / Bubbling Venom Sigil
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 濺蝕毒流 / Corrosive Venom Jet
+// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
+// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
+// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
+// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。
+// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。
+// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。
+// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。
+// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。
+// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。
+// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。
+// 流光刃影 / Gleaming Blade Trail
+// 武器軌跡接入 / Weapon trail setup
+// 展示劍、滑鼠控制與自動演示僅供預覽，不包含在此模組。
+// The preview sword, pointer input and automatic demo are excluded.
+// const fx = createVFX();
+// scene.add(fx.group);
+// fx.attachWeapon(sword, { base: [0, 0, 0], tip: [0, 1, 0] });
+// base／tip 為武器本地座標的刀根／刀尖，可傳入 Vector3 或 [x,y,z]。
+// Blade base and tip use sword-local coordinates (Vector3 or [x,y,z]).
+// 每幀先更新武器動作，再呼叫 fx.update(deltaSeconds)。
+// Update the weapon animation first, then fx.update(deltaSeconds).
+// stop() 停止記錄並淡出；reset() 保留綁定並開始新軌跡。
+// stop() drains the trail; reset() starts a fresh stroke with the current weapon.
+// detachWeapon() 解除武器參照；dispose() 只釋放特效，不釋放武器。
+// detachWeapon() releases the binding; dispose() releases only the effect.
+// size 控制刀身覆蓋比例；speed 控制拖影淡出速度，不改武器動作。
+// size controls blade coverage; speed controls trail fading, not weapon motion.
 // Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping
 // 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。
 // 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。
@@ -12694,6 +12987,90 @@ export const PRESETS = {
   "previewTime": 0.35,
   "thumbnailTime": 0.35
  },
+ "astral-gate": {
+  "id": "astral-gate",
+  "lifecycle": {
+   "start": 0.8,
+   "end": 0.8
+  },
+  "name": "星紋之門",
+  "english": "Gate of Astral Tracery",
+  "category": "portal",
+  "color": "#c1b8ff",
+  "description": "發光門框一段段展開，門內星光流動，停止使用後慢慢關上。",
+  "tags": "門 傳送 空間 星界 Astral 星隙門扉 Astral gate",
+  "maxParticles": 512,
+  "kind": 8,
+  "variant": 0,
+  "duration": 5,
+  "burst": false,
+  "seed": 385854,
+  "schools": [
+   "astral"
+  ],
+  "previewTime": 1.4,
+  "thumbnailTime": 1.4
+ },
+ "azure-sweep": {
+  "id": "azure-sweep",
+  "name": "蒼刃迴斬",
+  "english": "Azure Blade Sweep",
+  "category": "area",
+  "kind": 2,
+  "variant": 10,
+  "schools": [
+   "arcane"
+  ],
+  "color": "#2878ff",
+  "seed": 829641,
+  "duration": 0.85,
+  "burst": true,
+  "maxParticles": 12,
+  "defaultDensity": 0.5,
+  "lifecycle": {
+   "start": 0.08,
+   "end": 0.43
+  },
+  "previewTime": 0.32,
+  "thumbnailTime": 0.32,
+  "description": "藍白刀光掃出接近一整圈，停留一下後，尾巴追上前端並消失。",
+  "tags": "斬擊 迴旋 刀光 劍氣 藍色 奧術 slash sweep sword blade arc azure spin arcane 蒼藍迴旋斬 Azure Sweep"
+ },
+ "billowing-airburst": {
+  "id": "billowing-airburst",
+  "name": "烈焰空爆",
+  "english": "Billowing Airburst",
+  "category": "burst",
+  "kind": 3,
+  "variant": 11,
+  "schools": [
+   "fire"
+  ],
+  "color": "#ff7a24",
+  "seed": 829648,
+  "duration": 2.4,
+  "burst": true,
+  "renderStyle": "toon",
+  "maxParticles": 128,
+  "defaultDensity": 0.5,
+  "lifecycle": {
+   "start": 0.15,
+   "end": 1.8
+  },
+  "previewTime": 0.22,
+  "thumbnailTime": 0.22,
+  "quantity": {
+   "min": 2,
+   "max": 6,
+   "default": 4,
+   "label": "噴出煙尾",
+   "unit": "條",
+   "help": "調整向外噴出的主煙尾數量；密度只改變裝飾火星，不減少煙尾或爆心。",
+   "previewTime": 0.22
+  },
+  "description": "火球在空中炸開，粗大的煙尾往四周噴出，火焰慢慢變成煙霧散去。",
+  "tags": "火焰 爆炸 空爆 煙霧 煙尾 噴發 命中 火球 飛彈 fire explosion airburst billowing smoke jets impact 烈焰空爆 Billowing Airburst"
+ },
  "binding-curse": {
   "id": "binding-curse",
   "quantity": {
@@ -12725,6 +13102,42 @@ export const PRESETS = {
   "seed": 352154,
   "previewTime": 1.4,
   "thumbnailTime": 1.4
+ },
+ "black-hole": {
+  "id": "black-hole",
+  "name": "渦光黑洞",
+  "english": "Luminous Vortex Black Hole",
+  "category": "area",
+  "kind": 2,
+  "variant": 9,
+  "schools": [
+   "astral"
+  ],
+  "color": "#ffab42",
+  "seed": 719903,
+  "duration": 6,
+  "burst": false,
+  "maxParticles": 256,
+  "defaultDensity": 1,
+  "lifecycle": {
+   "start": 1.1,
+   "end": 1.4
+  },
+  "previewTime": 2.2,
+  "thumbnailTime": 2.2,
+  "sizeRange": {
+   "min": 0.25,
+   "max": 12,
+   "default": 6
+  },
+  "detailRange": {
+   "min": 0.25,
+   "max": 4,
+   "default": 2
+  },
+  "previewActiveDuration": 13.7,
+  "description": "黑洞周圍的亮光不斷往內捲，後面的景物也像被吸力拉彎。",
+  "tags": "黑洞 引力 重力 吸積盤 扭曲 星界 black hole gravity gravitational lens accretion distortion astral 黑洞 Black Hole"
  },
  "burning-ground": {
   "id": "burning-ground",
@@ -12786,6 +13199,81 @@ export const PRESETS = {
   "burst": false,
   "seed": 45935
  },
+ "darkchain-detonation": {
+  "id": "darkchain-detonation",
+  "name": "闇鏈崩陣",
+  "english": "Darkchain Sigil Rupture",
+  "category": "area",
+  "kind": 2,
+  "variant": 14,
+  "schools": [
+   "dark"
+  ],
+  "color": "#8300ff",
+  "seed": 829645,
+  "duration": 5.15,
+  "burst": true,
+  "maxParticles": 384,
+  "defaultDensity": 0.5,
+  "lifecycle": {
+   "start": 0.45,
+   "end": 1.35
+  },
+  "previewTime": 3.3,
+  "thumbnailTime": 3.3,
+  "description": "魔法陣把鎖鏈和煙吸向黑球，黑球縮小後炸開，震散鎖鏈並噴出紅紫閃電。",
+  "tags": "闇鏈 聚爆 黑暗 紫色 魔法陣 鎖鏈 聚集 蓄力 脈動 能量球 爆炸 darkchain detonation dark purple lightning discharge magic circle sigil chains charge pulse orb explosion 暗能 雷裂 電弧 壓力波 闇鏈聚爆 Darkchain Detonation"
+ },
+ "dimensional-rend": {
+  "id": "dimensional-rend",
+  "name": "裂空碎斬",
+  "english": "Rift-Shattering Slashes",
+  "category": "area",
+  "kind": 6,
+  "variant": 1,
+  "schools": [
+   "astral"
+  ],
+  "color": "#729dff",
+  "seed": 671423,
+  "duration": 3.4,
+  "burst": true,
+  "maxParticles": 128,
+  "defaultDensity": 0.3,
+  "lifecycle": {
+   "start": 0.2,
+   "end": 2.4
+  },
+  "previewTime": 0.64,
+  "thumbnailTime": 0.64,
+  "sizeRange": {
+   "min": 0.25,
+   "max": 4,
+   "default": 2
+  },
+  "panelCount": {
+   "min": 0,
+   "max": 32,
+   "default": 9
+  },
+  "quantity": {
+   "min": 1,
+   "max": 32,
+   "default": 18,
+   "label": "斬痕數量",
+   "unit": "道",
+   "help": "一次施放劃出的斬痕總數；空間切片由粒子密度控制。"
+  },
+  "spread": {
+   "min": 0.5,
+   "max": 4,
+   "default": 2,
+   "label": "散布範圍",
+   "help": "只改變斬痕之間的距離，不改斬痕長度、數量或演出時間。"
+  },
+  "description": "刀光劃過時，背景像碎玻璃一樣錯開、散開，再慢慢恢復。",
+  "tags": "斬擊 次元 空間 裂縫 連斬 星界 slash cut rift dimensional rend spatial astral 次元裂斬 Dimensional Rend"
+ },
  "dust-devil": {
   "id": "dust-devil",
   "lifecycle": {
@@ -12808,6 +13296,31 @@ export const PRESETS = {
   "schools": [
    "sand"
   ]
+ },
+ "electric-magic-arrow-strike": {
+  "id": "electric-magic-arrow-strike",
+  "name": "金刃雷矢",
+  "english": "Golden-Bladed Lightning Arrow",
+  "category": "projectile",
+  "kind": 0,
+  "variant": 7,
+  "schools": [
+   "storm"
+  ],
+  "color": "#ffd36a",
+  "seed": 829646,
+  "duration": 5,
+  "burst": false,
+  "maxParticles": 256,
+  "defaultDensity": 0.5,
+  "lifecycle": {
+   "start": 1.2,
+   "end": 1.4
+  },
+  "previewTime": 1.15,
+  "thumbnailTime": 1.15,
+  "description": "金色箭身纏著閃電往前飛，打中時炸出雷光與兩道光圈。",
+  "tags": "雷光 魔箭 雷電 魔法箭 蓄力 命中 弓箭 投射物 電擊 電流 金色 electric magic arrow strike lightning charge impact projectile golden 雷光魔箭 Electric Magic Arrow Strike"
  },
  "energy-burst": {
   "id": "energy-burst",
@@ -12987,6 +13500,45 @@ export const PRESETS = {
    "ice"
   ]
  },
+ "frost-lance-rain": {
+  "id": "frost-lance-rain",
+  "spread": {
+   "min": 0.5,
+   "max": 3,
+   "default": 1,
+   "label": "落點散布範圍",
+   "help": "從中心向外拉開冰槍落點；冰槍大小、落下高度與碎裂大小不變。"
+  },
+  "quantity": {
+   "min": 1,
+   "max": 18,
+   "default": 9,
+   "label": "冰槍數量",
+   "unit": "支",
+   "help": "每次施放落下的冰槍總數。碎裂與霜痕跟隨各支冰槍；可用落點散布範圍拉開間距。"
+  },
+  "lifecycle": {
+   "start": 0.24,
+   "end": 1.08
+  },
+  "name": "霜矛落陣",
+  "english": "Falling Frost Spear Array",
+  "category": "burst",
+  "color": "#a9dfff",
+  "description": "冰槍從空中接連落下，碰地後碎成小冰塊，霜痕再慢慢消失。",
+  "tags": "冰槍 落冰 冰雨 冰霜 Ice 冰槍驟雨 Frost lance rain",
+  "maxParticles": 512,
+  "kind": 3,
+  "variant": 10,
+  "duration": 2.4,
+  "burst": true,
+  "seed": 413415,
+  "schools": [
+   "ice"
+  ],
+  "previewTime": 0.9,
+  "thumbnailTime": 0.9
+ },
  "frost-wheel": {
   "id": "frost-wheel",
   "lifecycle": {
@@ -13010,6 +13562,61 @@ export const PRESETS = {
   "seed": 312126,
   "previewTime": 1.2,
   "thumbnailTime": 1.2
+ },
+ "golden-chain-rain": {
+  "textureDensity": {
+   "min": 0.25,
+   "max": 3,
+   "default": 0.7
+  },
+  "crackBloom": {
+   "min": 0,
+   "max": 5,
+   "default": 0.15
+  },
+  "crackBloomSpread": {
+   "min": 0.25,
+   "max": 3,
+   "default": 1
+  },
+  "id": "golden-chain-rain",
+  "name": "金鏈驟雨",
+  "english": "Golden Chain Rain",
+  "category": "area",
+  "kind": 2,
+  "variant": 15,
+  "schools": [
+   "light"
+  ],
+  "color": "#ffd166",
+  "seed": 829647,
+  "duration": 7.5,
+  "burst": true,
+  "maxParticles": 2454,
+  "defaultDensity": 0.5,
+  "lifecycle": {
+   "start": 0.35,
+   "end": 1.1
+  },
+  "previewTime": 1.65,
+  "thumbnailTime": 1.65,
+  "quantity": {
+   "min": 1,
+   "max": 12,
+   "default": 8,
+   "label": "每波鎖鏈數量",
+   "unit": "條",
+   "help": "每波落下的鎖鏈條數，固定連續三波；裝飾密度不會減少鎖鏈或鏈節。"
+  },
+  "spread": {
+   "min": 0.5,
+   "max": 2,
+   "default": 1,
+   "label": "落點散布範圍",
+   "help": "拉開鎖鏈起點與落點的水平間距；鏈節粗細、落下高度與演出時間不變。"
+  },
+  "description": "金鏈連落三波，箭頭插地炸出金色碎片；地裂散出柔光，碎片沿裂縫緩緩浮起。",
+  "tags": "金鏈 鎖鏈 驟雨 聖光 金色 落擊 三波 範圍 地裂 插地 漣漪 水波 碎片 golden chain rain holy light gold cracks embedded arrows ripples fragments"
  },
  "ground-fog": {
   "id": "ground-fog",
@@ -13158,6 +13765,32 @@ export const PRESETS = {
   ],
   "previewTime": 0.65,
   "thumbnailTime": 0.65
+ },
+ "painterly-grass": {
+  "id": "painterly-grass",
+  "name": "風拂草地",
+  "english": "Windswept Meadow",
+  "category": "environment",
+  "kind": 10,
+  "variant": 0,
+  "schools": [
+   "nature"
+  ],
+  "color": "#829544",
+  "maxParticles": 512,
+  "defaultDensity": 0.75,
+  "seed": 607319,
+  "duration": 5,
+  "burst": false,
+  "lifecycle": {
+   "start": 0.6,
+   "end": 0.8
+  },
+  "previewMode": "continuous",
+  "previewTime": 2.2,
+  "thumbnailTime": 2.2,
+  "description": "像畫筆畫出的草地，點綴白色小花，草尖和花朵會隨風輕輕擺動。",
+  "tags": "草地 草叢 白花 手繪 油畫 筆觸 植被 環境 自然 grass painterly meadow foliage flowers wind Nature 手繪草地 Painterly Grass"
  },
  "plasma-bolt": {
   "id": "plasma-bolt",
@@ -13327,6 +13960,39 @@ export const PRESETS = {
   "previewTime": 1.2,
   "thumbnailTime": 1.2
  },
+ "revival-bloom": {
+  "id": "revival-bloom",
+  "quantity": {
+   "min": 1,
+   "max": 28,
+   "default": 14,
+   "label": "光瓣數量",
+   "unit": "片",
+   "help": "上下兩層光瓣的總數，調整後保持環形分布與向上綻放。"
+  },
+  "lifecycle": {
+   "start": 0.22,
+   "end": 0.99
+  },
+  "name": "生機光綻",
+  "english": "Vitality Blossom",
+  "category": "burst",
+  "color": "#ff8fbd",
+  "description": "柔光從低處聚起，再像花朵往上綻放，適合復活或補血。",
+  "tags": "復活 復甦 治療 生命 自然 Nature 聖光 Light 生命回綻 Revival bloom",
+  "maxParticles": 512,
+  "kind": 3,
+  "variant": 9,
+  "duration": 2.2,
+  "burst": true,
+  "seed": 404228,
+  "schools": [
+   "nature",
+   "light"
+  ],
+  "previewTime": 1,
+  "thumbnailTime": 1
+ },
  "sacred-relic-descent": {
   "id": "sacred-relic-descent",
   "name": "聖遺物・治癒降臨",
@@ -13440,6 +14106,94 @@ export const PRESETS = {
   "duration": 3.5,
   "burst": true,
   "seed": 220488
+ },
+ "soul-siphon": {
+  "id": "soul-siphon",
+  "quantity": {
+   "min": 1,
+   "max": 18,
+   "default": 9,
+   "label": "每輪能量珠",
+   "unit": "顆",
+   "help": "每輪回流的能量珠數量，分股回到施法端；不等於同時可見數。"
+  },
+  "lifecycle": {
+   "start": 0.35,
+   "end": 0.65
+  },
+  "name": "暗能汲流",
+  "english": "Dark Energy Siphon",
+  "category": "beam",
+  "color": "#a883e8",
+  "description": "一股股黑暗魔力從目標流回使用者，停止後把剩下的魔力收完。",
+  "tags": "汲取 吸收 靈魂 黑暗 Dark 靈魂汲流 Soul siphon",
+  "maxParticles": 512,
+  "kind": 1,
+  "variant": 5,
+  "duration": 5,
+  "burst": false,
+  "seed": 395041,
+  "schools": [
+   "dark"
+  ],
+  "previewTime": 1.2,
+  "thumbnailTime": 1.2
+ },
+ "spatial-smear": {
+  "id": "spatial-smear",
+  "name": "裂空刃影",
+  "english": "Riftblade Trail",
+  "category": "area",
+  "kind": 2,
+  "variant": 13,
+  "schools": [
+   "astral"
+  ],
+  "color": "#e9f5ff",
+  "seed": 829644,
+  "duration": 4,
+  "burst": false,
+  "maxParticles": 0,
+  "defaultDensity": 0.5,
+  "lifecycle": {
+   "start": 0.001,
+   "end": 0.18
+  },
+  "previewMode": "continuous",
+  "previewTime": 0.18,
+  "thumbnailTime": 0.18,
+  "sizeRange": {
+   "min": 0.25,
+   "max": 1,
+   "default": 1
+  },
+  "description": "揮劍時留下透明光痕，讓後面的景物跟著拉彎，停手後很快消失。",
+  "tags": "空間 斬擊 拖影 武器 透明 扭曲 折射 滑鼠 spatial slash smear refraction distortion weapon sword trail astral 空間斬拖影 Spatial Slash Smear"
+ },
+ "spatial-sweep": {
+  "id": "spatial-sweep",
+  "name": "裂空迴斬",
+  "english": "Riftblade Sweep",
+  "category": "area",
+  "kind": 2,
+  "variant": 12,
+  "schools": [
+   "astral"
+  ],
+  "color": "#e9f5ff",
+  "seed": 829643,
+  "duration": 0.85,
+  "burst": true,
+  "maxParticles": 8,
+  "defaultDensity": 0.5,
+  "lifecycle": {
+   "start": 0.08,
+   "end": 0.43
+  },
+  "previewTime": 0.32,
+  "thumbnailTime": 0.32,
+  "description": "透明刀光掃過一圈，後面的景物被拉扯、錯開，再跟著刀光消失。",
+  "tags": "斬擊 迴旋 透明 空間 扭曲 折射 高速 衝擊 動漫 spatial sweep slash refraction distortion shock anime astral 空間迴旋斬 Spatial Sweep"
  },
  "spiral-gale": {
   "id": "spiral-gale",
@@ -13599,6 +14353,69 @@ export const PRESETS = {
   "previewTime": 1.6,
   "thumbnailTime": 1.6
  },
+ "venom-stream": {
+  "id": "venom-stream",
+  "quantity": {
+   "min": 1,
+   "max": 16,
+   "default": 8,
+   "label": "每輪液團",
+   "unit": "團",
+   "help": "每輪噴出的主要液團數量；零星液滴與末端濺蝕保留，不等於同時可見數。"
+  },
+  "lifecycle": {
+   "start": 0.25,
+   "end": 0.7
+  },
+  "name": "濺蝕毒流",
+  "english": "Corrosive Venom Jet",
+  "category": "beam",
+  "color": "#acdc6f",
+  "description": "毒液往目標噴去，途中濺出水滴，停止後剩下的毒液會流完。",
+  "tags": "噴流 毒液 腐蝕 劇毒 Poison 劇毒噴流 Venom stream",
+  "maxParticles": 512,
+  "kind": 1,
+  "variant": 6,
+  "duration": 5,
+  "burst": false,
+  "seed": 422602,
+  "schools": [
+   "poison"
+  ],
+  "previewTime": 1.2,
+  "thumbnailTime": 1.2
+ },
+ "weapon-smear": {
+  "id": "weapon-smear",
+  "name": "流光刃影",
+  "english": "Gleaming Blade Trail",
+  "category": "area",
+  "kind": 2,
+  "variant": 11,
+  "schools": [
+   "arcane"
+  ],
+  "color": "#2878ff",
+  "seed": 829642,
+  "duration": 4,
+  "burst": false,
+  "maxParticles": 0,
+  "defaultDensity": 0.5,
+  "lifecycle": {
+   "start": 0.001,
+   "end": 0.18
+  },
+  "previewMode": "continuous",
+  "previewTime": 0.45,
+  "thumbnailTime": 0.45,
+  "sizeRange": {
+   "min": 0.25,
+   "max": 1,
+   "default": 1
+  },
+  "description": "揮劍時留下透明的藍色光痕，停手後很快消失。",
+  "tags": "武器 拖影 殘影 斬擊 刀光 smear slash weapon trail sword blade arcane 武器拖影 Slash Smear"
+ },
  "wind-vortex": {
   "id": "wind-vortex",
   "lifecycle": {
@@ -13657,6 +14474,28 @@ export const DEFAULTS = {
   "density": 0.5,
   "quantity": 10
  },
+ "astral-gate": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#c1b8ff",
+  "size": 1,
+  "density": 0.5
+ },
+ "azure-sweep": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#2878ff",
+  "size": 1,
+  "density": 0.5
+ },
+ "billowing-airburst": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ff7a24",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 4
+ },
  "binding-curse": {
   "speed": 1,
   "detail": 1,
@@ -13664,6 +14503,13 @@ export const DEFAULTS = {
   "size": 1,
   "density": 0.5,
   "quantity": 3
+ },
+ "black-hole": {
+  "speed": 1,
+  "detail": 2,
+  "color": "#ffab42",
+  "size": 6,
+  "density": 1
  },
  "burning-ground": {
   "speed": 1,
@@ -13686,10 +14532,34 @@ export const DEFAULTS = {
   "size": 1,
   "density": 0.5
  },
+ "darkchain-detonation": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#8300ff",
+  "size": 1,
+  "density": 0.5
+ },
+ "dimensional-rend": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#729dff",
+  "size": 2,
+  "density": 0.3,
+  "panelCount": 9,
+  "quantity": 18,
+  "spread": 2
+ },
  "dust-devil": {
   "speed": 1,
   "detail": 1,
   "color": "#dcbb87",
+  "size": 1,
+  "density": 0.5
+ },
+ "electric-magic-arrow-strike": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ffd36a",
   "size": 1,
   "density": 0.5
  },
@@ -13744,12 +14614,34 @@ export const DEFAULTS = {
   "size": 1,
   "density": 0.5
  },
+ "frost-lance-rain": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#a9dfff",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 9,
+  "spread": 1
+ },
  "frost-wheel": {
   "speed": 1,
   "detail": 1,
   "color": "#a9dfff",
   "size": 1,
   "density": 0.5
+ },
+ "golden-chain-rain": {
+  "spriteChains": true,
+  "speed": 1,
+  "detail": 1,
+  "color": "#ffd166",
+  "size": 1,
+  "density": 0.5,
+  "crackBloomSpread": 1,
+  "crackBloom": 0.15,
+  "textureDensity": 0.7,
+  "quantity": 8,
+  "spread": 1
  },
  "ground-fog": {
   "speed": 1,
@@ -13794,6 +14686,13 @@ export const DEFAULTS = {
   "size": 1,
   "density": 0.5,
   "quantity": 13
+ },
+ "painterly-grass": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#829544",
+  "size": 1,
+  "density": 0.75
  },
  "plasma-bolt": {
   "speed": 1,
@@ -13841,6 +14740,14 @@ export const DEFAULTS = {
   "size": 1,
   "density": 0.5
  },
+ "revival-bloom": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#ff8fbd",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 14
+ },
  "sacred-relic-descent": {
   "speed": 1,
   "detail": 1,
@@ -13874,6 +14781,28 @@ export const DEFAULTS = {
   "speed": 1,
   "detail": 1,
   "color": "#b1afc8",
+  "size": 1,
+  "density": 0.5
+ },
+ "soul-siphon": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#a883e8",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 9
+ },
+ "spatial-smear": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#e9f5ff",
+  "size": 1,
+  "density": 0.5
+ },
+ "spatial-sweep": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#e9f5ff",
   "size": 1,
   "density": 0.5
  },
@@ -13920,6 +14849,21 @@ export const DEFAULTS = {
   "size": 1,
   "density": 0.5,
   "quantity": 7
+ },
+ "venom-stream": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#acdc6f",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 8
+ },
+ "weapon-smear": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#2878ff",
+  "size": 1,
+  "density": 0.5
  },
  "wind-vortex": {
   "speed": 1,

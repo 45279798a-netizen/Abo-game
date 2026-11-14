@@ -23,6 +23,8 @@ export const TUNE_BY_CATEGORY = {
     vortex:     {speed: 2.6, size: 0.45, impact: 1.0, cutoffAfterImpact: 0.9},
     smoke:      {speed: 2.0, size: 0.6, cutoffAfterImpact: 1.0},
     shield:     {speed: 2.0, size: 0.6, cutoffAfterImpact: 1.2},
+    portal:     {speed: 2.0, size: 0.6, cutoffAfterImpact: 1.2},
+    environment:{speed: 1.5, size: 0.6, cutoffAfterImpact: 1.5},
 };
 export const TUNE = {
     'sacred-relic-descent': {speed: 1.8, impact: 1.45, cutoff: 4.95, size: 0.62, hideObject: true, options: {spread: 0.7}},
@@ -33,6 +35,11 @@ export const TUNE = {
     'charged-beam':         {hold: 0.5},
     'prism-parry':          {speed: 1.0},   // 原本只有 0.55 秒，放慢才看得到
     'magma-fissure':        {speed: 1.2},
+    'azure-sweep':          {speed: 1.0},   // 原本不到 1 秒
+    'spatial-sweep':        {speed: 1.0},
+    'darkchain-detonation': {size: 0.35},   // 原尺寸會蓋滿整個戰場
+    'billowing-airburst':   {size: 0.4},
+    'golden-chain-rain':    {size: 0.5},
 };
 
 let libPromise = null, presetCache = null;
