@@ -125,6 +125,29 @@ a.icon-btn { text-decoration: none; color: inherit; }
 }
 .auto-toggle { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 
+/* 編隊畫面：橫向螢幕改成左右兩欄（左：戰鬥與隊伍；右：英雄），兩欄各自捲動 */
+@media (orientation: landscape) and (min-width: 640px) {
+    #app { max-width: 1100px; }
+    #screen-setup.active { display: flex; flex-direction: column; height: 100dvh; padding-bottom: 0; padding-left: calc(14px + env(safe-area-inset-left, 0px)); padding-right: calc(14px + env(safe-area-inset-right, 0px)); }
+    #screen-setup .top { flex: none; }
+    .setup-cols { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(300px, 42%) 1fr; gap: 18px; }
+    .setup-left, .setup-right { overflow-y: auto; padding-bottom: 90px; }
+    .setup-left .sec:first-child, .setup-right .sec:first-child { margin-top: 10px; }
+    .hero-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+    .start-bar { max-width: 1100px; padding-top: 6px; padding-bottom: calc(6px + var(--safe-bottom)); background: linear-gradient(transparent, #0b0907 40%); }
+    .start-bar .opt-col { flex-direction: row; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+    .start-bar .btn-primary { flex: none; width: 200px; height: 42px; font-size: 16px; }
+    .start-bar { justify-content: space-between; }
+    .setup-left, .setup-right { padding-bottom: 64px; }
+    #screen-setup .brand h1 { font-size: 17px; }
+    #screen-setup .top { padding-top: 2px; }
+    .sec { margin: 12px 0 6px; }
+    .enc { min-height: 0; padding: 6px 8px; }
+    .enc-desc { font-size: 10.5px; }
+    .hero-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
+    .team-slots { max-width: 360px; }
+}
+
 /* ───────── 戰鬥畫面（場景式）───────── */
 #screen-battle { position: fixed; inset: 0; max-width: 520px; margin: 0 auto; overflow: hidden; background: #000; }
 #screen-battle.active { display: block; }

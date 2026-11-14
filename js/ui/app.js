@@ -14,7 +14,7 @@
         paused: false,
         ultMode: loadPref('ultMode', 'full'),     // 大招演出：full 完整／short 簡短／off 關閉
         skillMode: loadPref('skillMode', 'pause'), // 主動技演出：pause 暫停演出／flash 不停頓／off 關閉
-        view: loadPref('view', 'portrait'),        // 戰鬥畫面：portrait 直式／hd2d 橫式 HD-2D（試做）
+        view: loadPref('view', 'hd2d'),            // 戰鬥畫面：hd2d 橫式 HD-2D（主要）／portrait 直式舊版
         ultSkip: null,
         battle: null,
         runId: 0,

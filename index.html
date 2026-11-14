@@ -24,6 +24,8 @@
             </div>
         </header>
 
+        <div class="setup-cols">
+        <div class="setup-left">
         <h2 class="sec">選擇戰鬥</h2>
         <div id="encounter-list" class="enc-list"></div>
 
@@ -32,16 +34,20 @@
         <div id="team-hint" class="team-hint"></div>
         <div id="presets" class="presets"></div>
 
+        </div>
+        <div class="setup-right">
         <h2 class="sec">英雄 <small>點一下加入隊伍，ⓘ 看技能</small></h2>
         <div id="hero-grid" class="hero-grid"></div>
+        </div>
+        </div>
 
         <div class="start-bar">
             <div class="opt-col">
                 <label class="auto-toggle"><input type="checkbox" id="chk-auto" checked> 自動戰鬥</label>
                 <label class="auto-toggle">戰鬥畫面
                     <select id="sel-view">
-                        <option value="portrait">直式</option>
-                        <option value="hd2d">橫式 HD-2D（試做）</option>
+                        <option value="hd2d">橫式 HD-2D</option>
+                        <option value="portrait">直式（舊版）</option>
                     </select>
                 </label>
                 <label class="auto-toggle">主動技
