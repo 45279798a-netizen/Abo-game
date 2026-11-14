@@ -118,7 +118,7 @@ export function createVfxPlayer(scene, {maxActive = 2, sizeScale = 1} = {}) {
             // o.fit：希望特效蓋住的半徑（世界單位）。有量測資料的地面特效依此自動縮放
             let mult = o.sizeMult || 1, extra = 1;
             if (o.fit && FOOTPRINT[id] && !['projectile', 'beam', 'cinematic'].includes(cat)) {
-                mult = THREE.MathUtils.clamp(o.fit / (FOOTPRINT[id] * sizeScale), 0.45, 2.4) * (o.fitScale || 1);
+                mult = THREE.MathUtils.clamp(o.fit / (FOOTPRINT[id] * sizeScale), 0.8, 2.4) * (o.fitScale || 1);   // 下限 0.8：量測含外圍粒子，單體時不要把特效縮到看不見
             }
             let size = (tune.size || 1) * mult * sizeScale;
             if (size > 2) { extra = size / 2; size = 2; }        // 特效本身的大小上限是 2，超過的部分用整體放大

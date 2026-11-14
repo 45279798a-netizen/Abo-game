@@ -570,7 +570,7 @@ function fitRadius(uids) {
     const rs = uids.map(id => units.get(id)).filter(Boolean);
     if (!rs.length) return 1;
     const body = r => r.w * 0.55;
-    if (rs.length === 1) return Math.max(0.8, body(rs[0]));
+    if (rs.length === 1) return Math.max(1.2, body(rs[0]) * 1.2);
     const c = centerOf(uids);
     // 群體不用整片蓋滿（會擋住角色的臉），蓋住大部分就好
     return Math.min(3.2, 0.75 * Math.max(...rs.map(r => Math.hypot(r.group.position.x - c.x, r.group.position.z - c.z) + body(r))));
@@ -805,7 +805,10 @@ async function playUltimate(e, events) {
     // 鏡頭：切入時已推近施放者，接著沿預設視線推向目標（只推近、不橫移，畫面才不會超出戰場原畫）
     const run = steps.length ? playSteps(steps, {actor: hero, events, hits: dests, priority: true, sizeMult: 1.1, speedMult: short ? 1.6 : 0.85, skip}) : null;
     const lookB = at.clone().setY(1.2);
-    setTimeout(() => moveCam(dollyTo(lookB, onFoes ? 0.45 : 0.78), lookB, short ? 450 : 900), mode === 'off' ? 0 : (short ? 150 : 350));
+    setTimeout(() => {
+        if (onFoes) moveCam(dollyTo(lookB, 0.45), lookB, short ? 450 : 900);
+        else { const d = defaultPose(); moveCam(d.pos.clone().lerp(lookB, 0.12), d.look.clone().lerp(lookB, 0.3), short ? 450 : 900); }   // 對我方：只稍微靠近，不轉向，畫面才不會看到戰場原畫外面
+    }, mode === 'off' ? 0 : (short ? 150 : 350));
     // 主要那一下（最重的一擊）命中時：命中定格＋閃光震動。不擋住流程，其他段的傷害數字照各自命中時間跳
     const finisher = () => {
         if (skip.skipped && mode === 'full') return;
@@ -976,10 +979,11 @@ $('#hd').addEventListener('click', e => {
 $('#rotate-ok').onclick = () => { state.rotateOk = true; $('#rotate-hint').classList.remove('show'); };
 
 // ───────── 每幀繪製 ─────────
-let last = performance.now();
+let last = performance.now(), frameCount = 0;
 function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const dt = window.__fixedDt || Math.min(0.05, (now - last) / 1000);   // __fixedDt：測試環境太慢時用固定步長
     last = now;
+    frameCount++;
     stepTweens(dt);
     vfx.update(dt);
     if (motes) motes.rotation.y += dt * 0.02;
@@ -1015,7 +1019,7 @@ function frame(now) {
     await startBattle();
     $('#loading').classList.add('done');
     window.__hd = {state, camera, cam, units,   // 測試用：__hd.ult('church')、__hd.skill(uid) 直接播演出（不影響戰鬥結果）
-        impactActive: () => !!impact?.active, renderHud,
+        impactActive: () => !!impact?.active, renderHud, vfx, scene, frames: () => frameCount,
         ult: (uid, tgt) => { const u = state.battle.get(uid); return playUltimate({uid, name: u.ult.name}, tgt ? [{type: 'damage', kind: 'ult', srcUid: uid, uid: tgt}] : []); },
         skill: async uid => { const u = state.battle.get(uid); const sk = u.skills[0]; if (sk.show) state.holdUntil = performance.now() + sk.show; if (u.side === 'ally') await skillCutIn(u, sk.name); await performAction(u, [], sk); endSkillCutIn(); },
     };

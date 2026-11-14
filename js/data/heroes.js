@@ -37,7 +37,7 @@ RES.HEROES = {
     arthur: {
         name: '重裝鐵衛·亞瑟', rarity: 'SR', faction: 'kingdom', element: 'water', role: 'tank', img: 'h_arthur',
         skill: {
-            name: '堅盾號令', cd: 2, show: 2000, vfx: [{id: 'prism-guard', at: 'self', color: '#60a5fa', main: true}, {id: 'shockwave', at: 'self', color: '#93c5fd', delay: 250}], desc: '嘲諷敵人 2 回合，並獲得最大生命 20% 的護盾',
+            name: '堅盾號令', cd: 2, show: 2000, vfx: [{id: 'shockwave', at: 'self', color: '#93c5fd'}, {id: 'energy-vortex', at: 'self', color: '#60a5fa', size: 1.2, delay: 150, main: true}], desc: '嘲諷敵人 2 回合，並獲得最大生命 20% 的護盾',
             effects: [
                 {type: 'status', target: 'self', status: 'taunt', turns: 2, chance: 1},
                 {type: 'shield', target: 'self', pctMaxHp: 0.20},
@@ -45,7 +45,7 @@ RES.HEROES = {
         },
         ult: {
             name: '獅王壁壘', desc: '全隊獲得最大生命 20% 的護盾，自己嘲諷 2 回合',
-            show: 3600, vfx: [{id: 'astral-gate', at: 'friends', color: '#93c5fd'}, {id: 'prism-guard', at: 'friends', color: '#60a5fa', delay: 600, main: true}, {id: 'magic-barrier', at: 'self', color: '#60a5fa', delay: 900}],
+            show: 3600, vfx: [{id: 'shockwave', at: 'self', color: '#93c5fd'}, {id: 'radiant-beam', at: 'friends', sky: true, color: '#93c5fd', size: 1.4, delay: 300}, {id: 'energy-vortex', at: 'friends', color: '#60a5fa', delay: 700, main: true}, {id: 'magic-barrier', at: 'friends', each: true, color: '#93c5fd', delay: 1000, stagger: 100}],
             effects: [
                 {type: 'shield', target: 'allies', pctMaxHp: 0.20},
                 {type: 'status', target: 'self', status: 'taunt', turns: 2, chance: 1},
@@ -83,7 +83,7 @@ RES.HEROES = {
         },
         ult: {
             name: '天穹聖域', desc: '全隊受到的傷害 -30%（2 回合）',
-            show: 3600, vfx: [{id: 'radiant-beam', at: 'friends', sky: true, color: '#fde68a', size: 1.4}, {id: 'magic-barrier', at: 'friends', color: '#fde68a', delay: 500, main: true}, {id: 'prism-parry', at: 'friends', each: true, delay: 800, stagger: 90}],
+            show: 3600, vfx: [{id: 'radiant-beam', at: 'friends', sky: true, color: '#fde68a', size: 1.4}, {id: 'magic-barrier', at: 'friends', color: '#fde68a', delay: 500, main: true}, {id: 'energy-vortex', at: 'friends', color: '#fde68a', delay: 800}],
             effects: [
                 {type: 'status', target: 'allies', status: 'guard', turns: 2, chance: 1},
             ],
