@@ -400,14 +400,20 @@
                 const targets = this.pickTargets(src, e.target, ctx, prev).filter(t => t.alive);
                 prev = targets;
                 switch (e.type) {
-                    case 'damage':
-                        for (const t of targets) {
-                            this.dealDamage(src, t, e.mult, {
-                                ult: ctx.ult, execute: e.execute,
-                                bonus: e.bonusVsFaction?.[t.faction] || 0, teamHealPct: e.teamHealPct,
-                            });
-                        }
+                    case 'damage': {
+                        // hits：多段傷害，總倍率依比例拆成幾下（例如 [0.3, 0.7]），每一下各自判定暴擊；斬殺只在最後一下判定
+                        const hits = e.hits || [1];
+                        hits.forEach((w, hi) => {
+                            for (const t of targets) {
+                                if (!t.alive) continue;
+                                this.dealDamage(src, t, e.mult * w, {
+                                    ult: ctx.ult, execute: hi === hits.length - 1 ? e.execute : 0, hit: hi,
+                                    bonus: e.bonusVsFaction?.[t.faction] || 0, teamHealPct: e.teamHealPct,
+                                });
+                            }
+                        });
                         break;
+                    }
                     case 'heal':
                         for (const t of targets) this.heal(src, t, e.mult * this.atkOf(src));
                         break;
@@ -462,7 +468,7 @@
             dmg *= 0.95 + this.rand() * 0.1;
             dmg = Math.max(1, Math.round(dmg));
 
-            const dealt = this.applyDamage(tgt, dmg, {kind: o.ult ? 'ult' : 'hit', crit, rel, srcUid: src.uid});
+            const dealt = this.applyDamage(tgt, dmg, {kind: o.ult ? 'ult' : 'hit', crit, rel, srcUid: src.uid, hit: o.hit || 0});
             src.stats.dmg += dealt;
             if (o.ult) this.ultDamage += dealt;
             for (const p of src.passives) if (p.type === 'lifesteal' && src.alive) this.heal(src, src, dealt * p.pct);

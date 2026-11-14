@@ -8,7 +8,7 @@
 // 效果類型：damage / heal / shield / push（推條）/ pull（拉條）/ status / cleanse / summon
 // vfx：技能特效，可以是一個或一串（依序播放的多段特效）。每段：
 //      id 特效庫 id；at 對準 targets 打到的目標（預設）／foes 對手全體中心／friends 自己隊伍中心／self 自己；
-//      each:true 每個目標各放一個；delay 延後毫秒；main:true 這段命中時才跳傷害（沒標就用第一段）；
+//      each:true 每個目標各放一個；hit:n 這段命中時跳第 n 下傷害（配合 effects 裡 damage 的 hits 多段比例）；delay 延後毫秒；main:true 這段命中時才跳傷害（沒標就用第一段）；
 //      sky:true 光束從天而降；pull:毫秒 目標被吸向特效中心；dark:毫秒 畫面周圍變暗；reverse:true 飛行／光束從目標飛回施放者；color 顏色；size 大小倍率；speed 播放速度倍率。
 // ult：大招（能量滿 100 時放），格式同 skill；impactFrame 命中時畫面定格。
 // show：整段技能演出的長度（毫秒，1500～3500），依特效長短決定；沒填 vfx 的技能用 2D 特效。
@@ -56,17 +56,17 @@ RES.HEROES = {
     reina: {
         name: '烈焰騎士·蕾娜', rarity: 'SSR', faction: 'kingdom', element: 'fire', role: 'warrior', img: 'h_reina',
         skill: {
-            name: '烈焰突擊', cd: 2, show: 2200, vfx: [{id: 'flame-surge', main: true}, {id: 'burning-ground', delay: 350}], desc: '對敵方前排造成 150% 傷害，70% 機率燃燒 2 回合',
+            name: '烈焰突擊', cd: 2, show: 2200, vfx: [{id: 'flame-surge', main: true, hit: 0}, {id: 'burning-ground', delay: 350, hit: 1}], desc: '對敵方前排造成 150% 傷害（2 段），70% 機率燃燒 2 回合',
             effects: [
-                {type: 'damage', target: 'enemyFront', mult: 1.5},
+                {type: 'damage', target: 'enemyFront', mult: 1.5, hits: [0.6, 0.4]},
                 {type: 'status', target: 'same', status: 'burn', turns: 2, chance: 0.7, dotMult: 0.3},
             ],
         },
         ult: {
-            name: '焚天斬', desc: '對敵方前排造成 300% 傷害，90% 機率燃燒 2 回合',
-            show: 3600, impactFrame: true, vfx: [{id: 'flame-surge'}, {id: 'billowing-airburst', delay: 500, main: true}, {id: 'magma-fissure', delay: 800}],
+            name: '焚天斬', desc: '對敵方前排造成 300% 傷害（3 段），90% 機率燃燒 2 回合',
+            show: 3600, impactFrame: true, vfx: [{id: 'flame-surge', hit: 0}, {id: 'billowing-airburst', delay: 500, main: true, hit: 1}, {id: 'magma-fissure', delay: 800, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemyFront', mult: 3.0},
+                {type: 'damage', target: 'enemyFront', mult: 3.0, hits: [0.25, 0.45, 0.3]},
                 {type: 'status', target: 'same', status: 'burn', turns: 2, chance: 0.9, dotMult: 0.35},
             ],
         },
@@ -111,17 +111,17 @@ RES.HEROES = {
     zeke: {
         name: '雷霆審判者·吉克', rarity: 'SSR', faction: 'church', element: 'wind', role: 'mage', img: 'h_zeke',
         skill: {
-            name: '雷霆審判', cd: 2, show: 2800, vfx: [{id: 'arc-ray', at: 'foes', speed: 0.8}, {id: 'thunder-strike', at: 'foes', each: true, delay: 300, stagger: 160, main: true}], desc: '對敵方全體造成 90% 傷害，30% 機率減速 2 回合',
+            name: '雷霆審判', cd: 2, show: 2800, vfx: [{id: 'arc-ray', at: 'foes', speed: 0.8, hit: 0}, {id: 'thunder-strike', at: 'foes', each: true, delay: 300, stagger: 160, main: true, hit: 1}], desc: '對敵方全體造成 90% 傷害（2 段），30% 機率減速 2 回合',
             effects: [
-                {type: 'damage', target: 'enemies', mult: 0.9},
+                {type: 'damage', target: 'enemies', mult: 0.9, hits: [0.35, 0.65]},
                 {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 0.3},
             ],
         },
         ult: {
-            name: '萬雷天罰', desc: '對敵方全體造成 180% 傷害，50% 機率減速 2 回合',
-            show: 3800, impactFrame: true, vfx: [{id: 'charged-beam', at: 'foes', color: '#93c5fd'}, {id: 'thunder-strike', at: 'foes', each: true, delay: 600, stagger: 140, main: true}, {id: 'energy-burst', at: 'foes', delay: 1000}],
+            name: '萬雷天罰', desc: '對敵方全體造成 180% 傷害（3 段），50% 機率減速 2 回合',
+            show: 3800, impactFrame: true, vfx: [{id: 'charged-beam', at: 'foes', color: '#93c5fd', hit: 0}, {id: 'thunder-strike', at: 'foes', each: true, delay: 600, stagger: 140, main: true, hit: 1}, {id: 'energy-burst', at: 'foes', delay: 1000, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.8},
+                {type: 'damage', target: 'enemies', mult: 1.8, hits: [0.2, 0.5, 0.3]},
                 {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 0.5},
             ],
         },
@@ -137,10 +137,10 @@ RES.HEROES = {
             ],
         },
         ult: {
-            name: '熾天審判', desc: '對敵方全體造成 150% 傷害，我方全體攻擊 +20%（2 回合）',
-            show: 4600, impactFrame: true, vfx: [{id: 'starblade-cataclysm', at: 'foes', main: true}, {id: 'starblade-explosion', at: 'foes', delay: 2250}],
+            name: '熾天審判', desc: '對敵方全體造成 150% 傷害（2 段），我方全體攻擊 +20%（2 回合）',
+            show: 4600, impactFrame: true, vfx: [{id: 'starblade-cataclysm', at: 'foes', main: true, hit: 0}, {id: 'starblade-explosion', at: 'foes', delay: 2250, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.5},
+                {type: 'damage', target: 'enemies', mult: 1.5, hits: [0.6, 0.4]},
                 {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
             ],
         },
@@ -167,17 +167,17 @@ RES.HEROES = {
     faye: {
         name: '精靈射手·菲', rarity: 'SR', faction: 'forest', element: 'wind', role: 'archer', img: 'h_faye',
         skill: {
-            name: '纏藤箭', cd: 2, show: 2200, vfx: [{id: 'spiral-gale', color: '#86efac', main: true}, {id: 'thorn-crown', delay: 380}], desc: '對單體造成 170% 傷害，並拉條 30%',
+            name: '纏藤箭', cd: 2, show: 2200, vfx: [{id: 'spiral-gale', color: '#86efac', main: true, hit: 0}, {id: 'thorn-crown', delay: 380, hit: 1}], desc: '對單體造成 170% 傷害（2 段），並拉條 30%',
             effects: [
-                {type: 'damage', target: 'enemy', mult: 1.7},
+                {type: 'damage', target: 'enemy', mult: 1.7, hits: [0.6, 0.4]},
                 {type: 'pull', target: 'same', pct: 0.3},
             ],
         },
         ult: {
-            name: '萬藤箭雨', desc: '對敵方全體造成 140% 傷害，並拉條 20%',
-            show: 3600, vfx: [{id: 'electric-magic-arrow-strike', at: 'foes', each: true, stagger: 120, color: '#86efac'}, {id: 'thorn-crown', at: 'foes', each: true, delay: 700, stagger: 100, main: true}, {id: 'binding-curse', at: 'foes', color: '#34d399', delay: 900}],
+            name: '萬藤箭雨', desc: '對敵方全體造成 140% 傷害（3 段），並拉條 20%',
+            show: 3600, vfx: [{id: 'electric-magic-arrow-strike', at: 'foes', each: true, stagger: 120, color: '#86efac', hit: 0}, {id: 'thorn-crown', at: 'foes', each: true, delay: 700, stagger: 100, main: true, hit: 1}, {id: 'binding-curse', at: 'foes', color: '#34d399', delay: 900, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.4},
+                {type: 'damage', target: 'enemies', mult: 1.4, hits: [0.3, 0.45, 0.25]},
                 {type: 'pull', target: 'same', pct: 0.2},
             ],
         },
@@ -186,17 +186,17 @@ RES.HEROES = {
     gaia: {
         name: '大地之母·蓋亞', rarity: 'SSR', faction: 'forest', element: 'water', role: 'tank', img: 'h_gaia',
         skill: {
-            name: '大地之握', cd: 3, show: 2600, vfx: [{id: 'quicksand-seal', at: 'foes', main: true}, {id: 'shockwave', at: 'foes', delay: 450}], desc: '對敵方全體造成 70% 傷害，並拉條 15%',
+            name: '大地之握', cd: 3, show: 2600, vfx: [{id: 'quicksand-seal', at: 'foes', main: true, hit: 0}, {id: 'shockwave', at: 'foes', delay: 450, hit: 1}], desc: '對敵方全體造成 70% 傷害（2 段），並拉條 15%',
             effects: [
-                {type: 'damage', target: 'enemies', mult: 0.7},
+                {type: 'damage', target: 'enemies', mult: 0.7, hits: [0.5, 0.5]},
                 {type: 'pull', target: 'same', pct: 0.15},
             ],
         },
         ult: {
-            name: '大地崩裂', desc: '對敵方全體造成 120% 傷害，拉條 20% 並減速 2 回合',
-            show: 3600, vfx: [{id: 'tidal-surge', at: 'foes', main: true}, {id: 'magma-fissure', at: 'foes', each: true, delay: 500, stagger: 120}],
+            name: '大地崩裂', desc: '對敵方全體造成 120% 傷害（2 段），拉條 20% 並減速 2 回合',
+            show: 3600, vfx: [{id: 'tidal-surge', at: 'foes', main: true, hit: 0}, {id: 'magma-fissure', at: 'foes', each: true, delay: 500, stagger: 120, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.2},
+                {type: 'damage', target: 'enemies', mult: 1.2, hits: [0.55, 0.45]},
                 {type: 'pull', target: 'same', pct: 0.2},
                 {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 1},
             ],
@@ -208,17 +208,17 @@ RES.HEROES = {
     dart: {
         name: '毒鏢客', rarity: 'R', faction: 'night', element: 'wind', role: 'assassin', img: 'h_dart',
         skill: {
-            name: '淬毒飛鏢', cd: 2, show: 2000, vfx: [{id: 'arcane-missile', color: '#a3e635', main: true}, {id: 'venom-pool', delay: 300}], desc: '對隨機 2 個敵人造成 100% 傷害，80% 機率中毒 2 回合',
+            name: '淬毒飛鏢', cd: 2, show: 2000, vfx: [{id: 'arcane-missile', color: '#a3e635', main: true, hit: 0}, {id: 'venom-pool', delay: 300, hit: 1}], desc: '對隨機 2 個敵人造成 100% 傷害（2 段），80% 機率中毒 2 回合',
             effects: [
-                {type: 'damage', target: 'enemyRandom2', mult: 1.0},
+                {type: 'damage', target: 'enemyRandom2', mult: 1.0, hits: [0.7, 0.3]},
                 {type: 'status', target: 'same', status: 'poison', turns: 2, chance: 0.8, dotMult: 0.3},
             ],
         },
         ult: {
-            name: '劇毒風暴', desc: '對敵方全體造成 100% 傷害，並中毒 3 回合',
-            show: 3400, vfx: [{id: 'venom-stream', at: 'foes'}, {id: 'ground-fog', at: 'foes', color: '#a3e635', delay: 300}, {id: 'venom-pool', at: 'foes', each: true, delay: 600, stagger: 100, main: true}],
+            name: '劇毒風暴', desc: '對敵方全體造成 100% 傷害（3 段），並中毒 3 回合',
+            show: 3400, vfx: [{id: 'venom-stream', at: 'foes', hit: 0}, {id: 'ground-fog', at: 'foes', color: '#a3e635', delay: 300, hit: 1}, {id: 'venom-pool', at: 'foes', each: true, delay: 600, stagger: 100, main: true, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.0},
+                {type: 'damage', target: 'enemies', mult: 1.0, hits: [0.3, 0.2, 0.5]},
                 {type: 'status', target: 'same', status: 'poison', turns: 3, chance: 1, dotMult: 0.3},
             ],
         },
@@ -227,14 +227,14 @@ RES.HEROES = {
     shadow: {
         name: '無形者·影', rarity: 'SSR', faction: 'night', element: 'water', role: 'assassin', img: 'h_shadow',
         skill: {
-            name: '影襲', cd: 2, show: 1800, vfx: [{id: 'smoke-puff', at: 'self'}, {id: 'dimensional-rend', delay: 200, main: true}, {id: 'spatial-smear', delay: 150, color: '#a78bfa'}], desc: '對生命比例最低的敵人造成 260% 傷害',
-            effects: [{type: 'damage', target: 'enemyLowest', mult: 2.6}],
+            name: '影襲', cd: 2, show: 1800, vfx: [{id: 'smoke-puff', at: 'self'}, {id: 'dimensional-rend', delay: 200, main: true, hit: 0}, {id: 'spatial-smear', delay: 150, color: '#a78bfa', hit: 1}], desc: '對生命比例最低的敵人造成 260% 傷害（2 段）',
+            effects: [{type: 'damage', target: 'enemyLowest', mult: 2.6, hits: [0.6, 0.4]}],
         },
         ult: {
-            name: '千刃影殺', desc: '對生命比例最低的敵人造成 400% 傷害，生命低於 25% 直接斬殺（首領除外）',
-            show: 4400, impactFrame: true, vfx: [{id: 'black-hole', size: 1.7, speed: 0.55, pull: 1400, dark: 1700}, {id: 'spatial-smear', color: '#a78bfa', delay: 1250}, {id: 'dimensional-rend', delay: 1450, size: 1.3, main: true}, {id: 'energy-burst', color: '#c084fc', delay: 1480, size: 1.5}, {id: 'azure-sweep', color: '#a78bfa', delay: 1600}],
+            name: '千刃影殺', desc: '對生命比例最低的敵人造成 400% 傷害（5 段），生命低於 25% 直接斬殺（首領除外）',
+            show: 4800, impactFrame: true, vfx: [{id: 'black-hole', size: 1.7, speed: 0.55, pull: 1400, dark: 1700, hit: 0}, {id: 'spatial-smear', color: '#a78bfa', delay: 1250, hit: 1}, {id: 'dimensional-rend', delay: 1550, size: 1.3, hit: 2}, {id: 'azure-sweep', color: '#a78bfa', delay: 1850, hit: 3}, {id: 'energy-burst', color: '#c084fc', delay: 2150, size: 1.5, main: true, hit: 4}],
             effects: [
-                {type: 'damage', target: 'enemyLowest', mult: 4.0, execute: 0.25},
+                {type: 'damage', target: 'enemyLowest', mult: 4.0, execute: 0.25, hits: [0.1, 0.15, 0.2, 0.2, 0.35]},
             ],
         },
         passive: {name: '伺機而動', desc: '攻擊滿血的目標時，暴擊率 +30%', type: 'critVsFullHp', pct: 0.3},
@@ -242,14 +242,14 @@ RES.HEROES = {
     lilith: {
         name: '暗影牧師·莉莉絲', rarity: 'SSR', faction: 'night', element: 'dark', role: 'support', img: 'h_lilith',
         skill: {
-            name: '血契', cd: 2, show: 2400, vfx: [{id: 'soul-siphon', color: '#ff2d55', main: true}, {id: 'soul-siphon', reverse: true, color: '#ff2d55', delay: 500}], desc: '對單體造成 150% 傷害，我方全體回復該傷害的 50%',
-            effects: [{type: 'damage', target: 'enemy', mult: 1.5, teamHealPct: 0.5}],
+            name: '血契', cd: 2, show: 2400, vfx: [{id: 'soul-siphon', color: '#ff2d55', main: true, hit: 0}, {id: 'soul-siphon', reverse: true, color: '#ff2d55', delay: 500, hit: 1}], desc: '對單體造成 150% 傷害（2 段），我方全體回復該傷害的 50%',
+            effects: [{type: 'damage', target: 'enemy', mult: 1.5, teamHealPct: 0.5, hits: [0.6, 0.4]}],
         },
         ult: {
-            name: '血月契約', desc: '對敵方全體造成 130% 傷害，我方全體回復傷害的 30%',
-            show: 3600, impactFrame: true, vfx: [{id: 'soul-siphon', at: 'foes', color: '#ff2d55'}, {id: 'darkchain-detonation', at: 'foes', color: '#ff2d55', delay: 500, main: true}, {id: 'revival-bloom', at: 'friends', color: '#ff2d55', delay: 1100}],
+            name: '血月契約', desc: '對敵方全體造成 130% 傷害（2 段），我方全體回復傷害的 30%',
+            show: 3600, impactFrame: true, vfx: [{id: 'soul-siphon', at: 'foes', color: '#ff2d55', hit: 0}, {id: 'darkchain-detonation', at: 'foes', color: '#ff2d55', delay: 500, main: true, hit: 1}, {id: 'revival-bloom', at: 'friends', color: '#ff2d55', delay: 1100}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.3, teamHealPct: 0.3},
+                {type: 'damage', target: 'enemies', mult: 1.3, teamHealPct: 0.3, hits: [0.3, 0.7]},
             ],
         },
         passive: {name: '暗之渴望', desc: '造成傷害的 20% 轉為自身生命', type: 'lifesteal', pct: 0.2},

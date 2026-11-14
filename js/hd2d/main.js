@@ -588,8 +588,11 @@ function playSteps(steps, ctx) {
     const mine = b.units.filter(u => u.side === side && u.alive).map(u => u.uid);
     const pick = at => at === 'self' ? (actor ? [actor.uid] : mine) : at === 'friends' ? mine : at === 'foes' ? foes : (hitsFrom.length ? hitsFrom : foes);
     const mainIdx = Math.max(0, steps.findIndex(st => st.main));
-    let resolveMain;
+    let resolveMain, resolveFirst;
     const main = new Promise(r => { resolveMain = r; });
+    const first = new Promise(r => { resolveFirst = r; });   // 第一下傷害命中
+    main.then(() => resolveFirst());
+    const anyHit = steps.some(st => st.hit != null);
     const all = [], stops = [];
     const hitAt = new Map();   // 目標 uid → 打到他的那一下（主要那段特效）的命中時間點，傷害數字跟著它跳
     let resolveStops;
@@ -609,6 +612,8 @@ function playSteps(steps, ctx) {
             const origin = me ? chestWorld(me) : centerOf(mine, true);
             const runs = [];
             const cat = categoryOf(st.id);
+            // 這段對應第幾下傷害：有寫 hit 就用；沒有任何一段寫 hit 時，主要那段算第 0 下
+            const hitIdx = st.hit != null ? st.hit : (!anyHit && i === mainIdx ? 0 : null);
             const groups = st.each ? dests.map(d => [d]) : [dests];
             if (!isGroundEffect(st.id)) base.sizeMult *= (dests.length > 2 && !st.each ? 1.35 : 1) * (dests.some(d => b.get(d)?.boss) ? 1.3 : 1);
             for (let gi = 0; gi < groups.length; gi++) {
@@ -625,14 +630,15 @@ function playSteps(steps, ctx) {
                 else if (g.length <= 2 && !st.each) g.forEach(d => {
                     const t = chestWorld(units.get(d));
                     const one = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t});
-                    if (one) { runs.push(one); if (i === mainIdx) hitAt.set(d, one.impact); }
+                    if (one) { runs.push(one); if (hitIdx != null) hitAt.set(d + ':' + hitIdx, one.impact); }
                 });
                 else { const t = centerOf(g, true); run = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t}); }
                 if (run) {
                     runs.push(run);
-                    if (i === mainIdx) g.forEach(d => hitAt.set(d, run.impact));
+                    if (hitIdx != null) g.forEach(d => hitAt.set(d + ':' + hitIdx, run.impact));
                 }
-                // 第一個命中就先放行（之後每個目標的傷害數字等自己那一下）
+                // 第一個命中就先放行（之後每個目標、每一段的傷害數字等自己那一下）
+                if (hitIdx != null && gi === 0) Promise.race([...runs.map(r => r.impact), sleep(3500)]).then(resolveFirst);
                 if (i === mainIdx && gi === 0) Promise.race([...runs.map(r => r.impact), sleep(3500)]).then(resolveMain);
             }
             const ok = runs.filter(Boolean);
@@ -646,7 +652,7 @@ function playSteps(steps, ctx) {
     });
     // 全部特效「主要演出」播完（不含最後淡出）
     const stopped = stopsReady.then(() => Promise.all(stops));
-    return {main, all: Promise.all(all), stopped, hitAt};
+    return {main, first, all: Promise.all(all), stopped, hitAt};
 }
 
 async function playSkillVfx(actor, skill, events) {
@@ -655,7 +661,7 @@ async function playSkillVfx(actor, skill, events) {
     const run = playSteps(steps, {actor, events, priority: !!skill, speedMult: skill ? 0.8 : 1});
     state.hitWait = run.hitAt;
     if (skill) state.fxStopped = run.stopped;
-    await Promise.race([run.main, sleep(skill ? 3500 : 1200)]);
+    await Promise.race([run.first, sleep(skill ? 3500 : 1200)]);
     return true;
 }
 
@@ -780,17 +786,20 @@ async function playUltimate(e, events) {
     const run = steps.length ? playSteps(steps, {actor: hero, events, hits: dests, priority: true, sizeMult: 1.1, speedMult: short ? 1.6 : 0.85, skip}) : null;
     const lookB = at.clone().setY(1.2);
     setTimeout(() => moveCam(dollyTo(lookB, onFoes ? 0.45 : 0.78), lookB, short ? 450 : 900), mode === 'off' ? 0 : (short ? 150 : 350));
-    if (run) { state.hitWait = run.hitAt; state.fxStopped = run.stopped; await Promise.race([run.main, waitOrSkip(5000, skip)]); }
-    else await waitOrSkip(500, skip);
-    // 命中瞬間
-    const framed = ult.impactFrame && mode === 'full' && !skip.skipped && triggerImpact(at.clone().setY(1.3), onFoes ? dests : [hero.uid]);
-    $('#flash').animate([{opacity: 0}, {opacity: framed ? .25 : onFoes ? .45 : .2}, {opacity: 0}], {duration: 380});
-    if (onFoes) shake(0.3, 520);
-    if (framed) {   // 定格期間藏起血條、不跳傷害，結束才爆數字
-        $('#hd').classList.add('impact');
-        await sleep(420);
-        setTimeout(() => $('#hd').classList.remove('impact'), 150);
-    }
+    // 主要那一下（最重的一擊）命中時：命中定格＋閃光震動。不擋住流程，其他段的傷害數字照各自命中時間跳
+    const finisher = () => {
+        if (skip.skipped && mode === 'full') return;
+        const framed = ult.impactFrame && mode === 'full' && triggerImpact(at.clone().setY(1.3), onFoes ? dests : [hero.uid]);
+        $('#flash').animate([{opacity: 0}, {opacity: framed ? .25 : onFoes ? .45 : .2}, {opacity: 0}], {duration: 380});
+        if (onFoes) shake(0.3, 520);
+        if (framed) { $('#hd').classList.add('impact'); setTimeout(() => $('#hd').classList.remove('impact'), 570); }
+    };
+    if (run) {
+        state.hitWait = run.hitAt;
+        state.fxStopped = run.stopped;
+        run.main.then(finisher);
+        await Promise.race([run.first, waitOrSkip(5000, skip)]);
+    } else { await waitOrSkip(500, skip); finisher(); }
     $('#ult').classList.remove('show', 'leaving', 'fxphase');
     state.ultCine = true;   // 介面等整段大招特效播完才回來（在 playEvents 最後收）
     // 讓後段特效播完（傷害數字照常跳），整段長度依大招設定
@@ -837,7 +846,7 @@ async function playEvents(events, id) {
                 break;
             case 'damage': {
                 // 多段／多目標的招式：等打到這個目標的那一下特效命中才跳數字
-                const hw = (e.kind === 'hit' || e.kind === 'ult') && state.hitWait?.get(e.uid);
+                const hw = (e.kind === 'hit' || e.kind === 'ult') && state.hitWait?.get(e.uid + ':' + (e.hit || 0));
                 if (hw) await Promise.race([hw, sleep(2500)]);
                 let cls = e.kind === 'dot' ? 'dot' : e.kind === 'ult' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                 if (e.rel) cls += ' ' + e.rel;

@@ -17,9 +17,9 @@ RES.ENEMIES = {
         name: '冰霜巫妖', faction: 'undead', element: 'water', role: 'mage', img: 'm10',
         stats: {hp: 1050, atk: 210, def: 70, spd: 100},
         skills: [{
-            name: '寒冰箭', cd: 3, show: 1800, vfx: [{id: 'frost-wheel', main: true}, {id: 'ice-shatter', delay: 250}], desc: '單體 130% 傷害，35% 機率凍結 1 回合',
+            name: '寒冰箭', cd: 3, show: 1800, vfx: [{id: 'frost-wheel', main: true, hit: 0}, {id: 'ice-shatter', delay: 250, hit: 1}], desc: '單體 130% 傷害（2 段），35% 機率凍結 1 回合',
             effects: [
-                {type: 'damage', target: 'enemy', mult: 1.3},
+                {type: 'damage', target: 'enemy', mult: 1.3, hits: [0.7, 0.3]},
                 {type: 'status', target: 'same', status: 'freeze', turns: 1, chance: 0.35},
             ],
         }],
@@ -55,9 +55,9 @@ RES.ENEMIES = {
         name: '瘟疫使者', faction: 'undead', element: 'fire', role: 'mage', img: 'h_s1_ssr2', elite: true,
         stats: {hp: 1800, atk: 230, def: 90, spd: 104, res: 0.1},
         skills: [{
-            name: '瘟疫之雲', cd: 3, show: 2200, vfx: [{id: 'venom-stream', at: 'foes', main: true}, {id: 'ground-fog', at: 'foes', color: '#86efac', delay: 300}], desc: '全體 60% 傷害，60% 機率中毒 2 回合',
+            name: '瘟疫之雲', cd: 3, show: 2200, vfx: [{id: 'venom-stream', at: 'foes', main: true, hit: 0}, {id: 'ground-fog', at: 'foes', color: '#86efac', delay: 300, hit: 1}], desc: '全體 60% 傷害（2 段），60% 機率中毒 2 回合',
             effects: [
-                {type: 'damage', target: 'enemies', mult: 0.6},
+                {type: 'damage', target: 'enemies', mult: 0.6, hits: [0.6, 0.4]},
                 {type: 'status', target: 'same', status: 'poison', turns: 2, chance: 0.6, dotMult: 0.3},
             ],
         }],
@@ -71,9 +71,9 @@ RES.ENEMIES = {
                 effects: [{type: 'summon', unit: 'boneMinion', count: 2, atb: 0.7}],
             },
             {
-                name: '死亡凍結', cd: 3, show: 2800, vfx: [{id: 'frost-field', at: 'foes'}, {id: 'frost-lance-rain', at: 'foes', delay: 350, main: true}], desc: '全體 80% 傷害並拉條 30%，隨機 1 人 60% 機率凍結',
+                name: '死亡凍結', cd: 3, show: 2800, vfx: [{id: 'frost-field', at: 'foes', hit: 0}, {id: 'frost-lance-rain', at: 'foes', delay: 350, main: true, hit: 1}], desc: '全體 80% 傷害（2 段）並拉條 30%，隨機 1 人 60% 機率凍結',
                 effects: [
-                    {type: 'damage', target: 'enemies', mult: 0.8},
+                    {type: 'damage', target: 'enemies', mult: 0.8, hits: [0.4, 0.6]},
                     {type: 'pull', target: 'same', pct: 0.3},
                     {type: 'status', target: 'enemyRandom1', status: 'freeze', turns: 1, chance: 0.6},
                 ],
