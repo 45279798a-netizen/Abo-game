@@ -607,7 +607,9 @@ function playSteps(steps, ctx) {
     const speed = (ctx.speedMult || 1) * state.speed;
     const stepKeys = steps.map((st, i) => {
         const h = hitIdxOf(st, i);
-        return h == null ? [] : pick(st.at || 'targets').map(d => { defer(d + ':' + h); return d + ':' + h; });
+        if (h == null) return [];
+        const idxs = [h, ...(st.ticks || [])];
+        return pick(st.at || 'targets').flatMap(d => idxs.map(n => { defer(d + ':' + n); return d + ':' + n; }));
     });
     const release = keys => keys.forEach(k => hitDefer.get(k)?.r());
     steps.forEach((st, i) => {
@@ -625,7 +627,12 @@ function playSteps(steps, ctx) {
             const cat = categoryOf(st.id);
             // 這段對應第幾下傷害：有寫 hit 就用；沒有任何一段寫 hit 時，主要那段算第 0 下
             const hitIdx = hitIdxOf(st, i);
-            const hook = (d, impact) => { if (hitIdx != null) impact.then(defer(d + ':' + hitIdx).r); };
+            // ticks：同一段特效命中後，每隔 tick 毫秒再算下一下（吸取、持續光束）
+            const hook = (d, impact) => {
+                if (hitIdx == null) return;
+                impact.then(defer(d + ':' + hitIdx).r);
+                (st.ticks || []).forEach((n, k) => impact.then(() => sleep((k + 1) * (st.tick || 250) / state.speed)).then(defer(d + ':' + n).r));
+            };
             const groups = st.each ? dests.map(d => [d]) : [dests];
             if (!isGroundEffect(st.id)) base.sizeMult *= (dests.length > 2 && !st.each ? 1.35 : 1) * (dests.some(d => b.get(d)?.boss) ? 1.3 : 1);
             for (let gi = 0; gi < groups.length; gi++) {
@@ -642,13 +649,13 @@ function playSteps(steps, ctx) {
                 else if (g.length <= 2 && !st.each) g.forEach(d => {
                     const t = chestWorld(units.get(d));
                     const one = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t});
-                    if (one) { runs.push(one); hook(d, one.impact); } else if (hitIdx != null) defer(d + ':' + hitIdx).r();
+                    if (one) { runs.push(one); hook(d, one.impact); } else if (hitIdx != null) [hitIdx, ...(st.ticks || [])].forEach(n => defer(d + ':' + n).r());
                 });
                 else { const t = centerOf(g, true); run = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t}); }
                 if (run) {
                     runs.push(run);
                     g.forEach(d => hook(d, run.impact));
-                } else if (hitIdx != null && !(g.length <= 2 && !st.each && !isGroundEffect(st.id) && cat !== 'cinematic' && !st.sky)) g.forEach(d => defer(d + ':' + hitIdx).r());
+                } else if (hitIdx != null && !(g.length <= 2 && !st.each && !isGroundEffect(st.id) && cat !== 'cinematic' && !st.sky)) g.forEach(d => [hitIdx, ...(st.ticks || [])].forEach(n => defer(d + ':' + n).r()));
                 // 第一個命中就先放行（之後每個目標、每一段的傷害數字等自己那一下）
                 if (hitIdx != null && gi === 0) Promise.race([...runs.map(r => r.impact), sleep(3500)]).then(resolveFirst);
                 if (i === mainIdx && gi === 0) Promise.race([...runs.map(r => r.impact), sleep(3500)]).then(resolveMain);
@@ -874,7 +881,7 @@ async function playEvents(events, id) {
                 }
                 let cls = e.kind === 'dot' ? 'dot' : e.kind === 'ult' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                 if (e.rel) cls += ' ' + e.rel;
-                float(rec, (e.hits > 1 ? `${e.hit + 1}HIT ` : '') + (e.crit ? '暴擊 ' : '') + e.amount, cls, e.hits > 1 ? (e.hit % 2 ? 16 : -16) : 0);
+                float(rec, (e.crit ? '暴擊 ' : '') + e.amount, cls, e.hits > 1 ? (e.hit % 2 ? 16 : -16) : 0);
                 if (e.hits > 1 && e.hit === e.hits - 1 && rec) { const sum = rec.hitSum; setTimeout(() => float(rec, `總計 ${sum}`, 'total'), 260 / state.speed); }
                 if (e.kind !== 'dot') hitFlash(e.uid, e.crit);
                 if (e.crit) shake(0.08, 220);

@@ -8,7 +8,7 @@
 // 效果類型：damage / heal / shield / push（推條）/ pull（拉條）/ status / cleanse / summon
 // vfx：技能特效，可以是一個或一串（依序播放的多段特效）。每段：
 //      id 特效庫 id；at 對準 targets 打到的目標（預設）／foes 對手全體中心／friends 自己隊伍中心／self 自己；
-//      each:true 每個目標各放一個；hit:n 這段命中時跳第 n 下傷害（配合 effects 裡 damage 的 hits 多段比例）；delay 延後毫秒；main:true 這段命中時才跳傷害（沒標就用第一段）；
+//      each:true 每個目標各放一個；hit:n 這段命中時跳第 n 下傷害（配合 effects 裡 damage 的 hits 多段比例）；ticks:[…]＋tick:毫秒 同一段之後每隔 tick 再跳這幾下（吸取、持續光束）；delay 延後毫秒；main:true 這段命中時才跳傷害（沒標就用第一段）；
 //      sky:true 光束從天而降；pull:毫秒 目標被吸向特效中心；dark:毫秒 畫面周圍變暗；reverse:true 飛行／光束從目標飛回施放者；color 顏色；size 大小倍率；speed 播放速度倍率。
 // ult：大招（能量滿 100 時放），格式同 skill；impactFrame 命中時畫面定格。
 // show：整段技能演出的長度（毫秒，1500～3500），依特效長短決定；沒填 vfx 的技能用 2D 特效。
@@ -242,14 +242,14 @@ RES.HEROES = {
     lilith: {
         name: '暗影牧師·莉莉絲', rarity: 'SSR', faction: 'night', element: 'dark', role: 'support', img: 'h_lilith',
         skill: {
-            name: '血契', cd: 2, show: 2400, vfx: [{id: 'soul-siphon', color: '#ff2d55', main: true, hit: 0}, {id: 'soul-siphon', reverse: true, color: '#ff2d55', delay: 500, hit: 1}], desc: '對單體造成 150% 傷害（2 段），我方全體回復該傷害的 50%',
-            effects: [{type: 'damage', target: 'enemy', mult: 1.5, teamHealPct: 0.5, hits: [0.6, 0.4]}],
+            name: '血契', cd: 2, show: 2800, vfx: [{id: 'soul-siphon', color: '#ff2d55', main: true, hit: 0, ticks: [1, 2, 3], tick: 260}, {id: 'soul-siphon', reverse: true, color: '#ff2d55', delay: 1150, hit: 4}], desc: '吸取單體生命，造成 150% 傷害（5 段），我方全體回復該傷害的 50%',
+            effects: [{type: 'damage', target: 'enemy', mult: 1.5, teamHealPct: 0.5, hits: [0.15, 0.15, 0.15, 0.15, 0.4]}],
         },
         ult: {
-            name: '血月契約', desc: '對敵方全體造成 130% 傷害（2 段），我方全體回復傷害的 30%',
-            show: 3600, impactFrame: true, vfx: [{id: 'soul-siphon', at: 'foes', color: '#ff2d55', hit: 0}, {id: 'darkchain-detonation', at: 'foes', color: '#ff2d55', delay: 500, main: true, hit: 1}, {id: 'revival-bloom', at: 'friends', color: '#ff2d55', delay: 1100}],
+            name: '血月契約', desc: '對敵方全體造成 130% 傷害（6 段），我方全體回復傷害的 30%',
+            show: 4400, impactFrame: true, vfx: [{id: 'soul-siphon', at: 'foes', color: '#ff2d55', hit: 0, ticks: [1, 2, 3], tick: 260}, {id: 'darkchain-detonation', at: 'foes', color: '#ff2d55', delay: 1250, main: true, hit: 4}, {id: 'energy-burst', at: 'foes', color: '#ff2d55', delay: 1700, hit: 5}, {id: 'revival-bloom', at: 'friends', color: '#ff2d55', delay: 1900}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.3, teamHealPct: 0.3, hits: [0.3, 0.7]},
+                {type: 'damage', target: 'enemies', mult: 1.3, teamHealPct: 0.3, hits: [0.1, 0.1, 0.1, 0.1, 0.35, 0.25]},
             ],
         },
         passive: {name: '暗之渴望', desc: '造成傷害的 20% 轉為自身生命', type: 'lifesteal', pct: 0.2},

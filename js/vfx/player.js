@@ -35,6 +35,7 @@ export const TUNE = {
     'arc-ray':              {size: 1.0},
     'fireball':             {size: 0.85, flight: 0.42},
     'charged-beam':         {hold: 0.5},
+    'soul-siphon':          {hold: 1.1},   // 吸取：光束維持久一點，配合多段傷害
     'prism-parry':          {speed: 1.0},   // 原本只有 0.55 秒，放慢才看得到
     'magma-fissure':        {speed: 1.2},
     'azure-sweep':          {speed: 1.0},   // 原本不到 1 秒
