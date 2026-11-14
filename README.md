@@ -28,6 +28,15 @@ tools/sim.js  平衡模擬
 node tools/sim.js 300
 ```
 
+## 橫式 HD-2D 戰鬥（試做）
+
+編隊畫面的「戰鬥畫面」選「橫式 HD-2D」，開始戰鬥會進入 `hd2d.html`：
+2D 全身立繪當成立牌放在 3D 戰場上（`js/hd2d/main.js`），有遠景柔焦、霧、泛光，鏡頭會在主動技與大招時移動，特效與角色在同一個 3D 場景裡。
+
+- 背景：`assets/hd/bg*_far.webp`（遠景）與 `bg*_ground.webp`（地面），由原本的直式背景裁切而成；之後換成橫式原畫效果會更好
+- 畫質「高」會開泛光（bloom），手機跑不動可切「低」
+- 戰鬥規則與直式版共用 `js/core/battle.js`；特效播放共用 `js/vfx/player.js`
+
 ## 3D 特效
 
 特效來自 00GameDevs 的匯出檔。每個匯出檔都帶一份相同的共用程式，所以先用工具合併成一個特效庫：
@@ -40,7 +49,7 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 
 - **用在技能**：在 `js/data/heroes.js`、`enemies.js` 的技能填 `vfx: {id: '特效 id', at: 'targets'|'foes'|'friends', color: '#...'}`
 - **用在合體技（大招）**：在 `js/data/factions.js` 的合體技填 `vfx: {id: '特效 id'}`；觸發時會暫停戰鬥，播放立繪切入＋特效
-- **調手感**：`js/vfx/stage3d.js` 的 `TUNE`（播放速度、大小、命中時間）
+- **調手感**：`js/vfx/player.js` 的 `TUNE`（播放速度、大小、命中時間），直式版與 HD-2D 版共用
 - **預覽**：開 `gallery.html`（特效圖鑑），可以看全部特效與目前被哪一招使用
 - 沒填特效的技能用 2D 特效；同時最多播 2 個 3D 特效，超過的改用 2D；裝置不支援 WebGL 時全部改用 2D
 - 大招演出可在編隊畫面設定「完整／簡短／關閉」，戰鬥中點一下可跳過
@@ -48,4 +57,4 @@ python3 tools/build_vfx.py 匯出檔1.txt 匯出檔2.txt ...
 ## 授權與來源
 
 - 3D 特效（`js/vfx/library.js`、`vfx-src/`）：00GameDevs，MIT License（授權文字保留在檔案開頭與 `vfx-src/LICENSE.txt`）
-- Three.js 0.187.0（`vendor/three/`）：MIT License，見 `vendor/three/LICENSE`
+- Three.js 0.187.0（`vendor/three/`，含後製模組 `vendor/three/addons/`）：MIT License，見 `vendor/three/LICENSE`

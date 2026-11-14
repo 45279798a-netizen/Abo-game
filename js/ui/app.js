@@ -14,6 +14,7 @@
         paused: false,
         ultMode: loadPref('ultMode', 'full'),     // 大招演出：full 完整／short 簡短／off 關閉
         skillMode: loadPref('skillMode', 'pause'), // 主動技演出：pause 暫停演出／flash 不停頓／off 關閉
+        view: loadPref('view', 'portrait'),        // 戰鬥畫面：portrait 直式／hd2d 橫式 HD-2D（試做）
         ultSkip: null,
         battle: null,
         runId: 0,
@@ -222,6 +223,12 @@
     }
 
     function startBattle() {
+        // 選了橫式 HD-2D：把隊伍與關卡帶到 hd2d.html
+        if (state.view === 'hd2d') {
+            savePref('hd2dBattle', JSON.stringify({team: state.team.slice(), encounter: state.encounter, auto: state.auto}));
+            location.href = 'hd2d.html';
+            return;
+        }
         state.runId++;
         state.paused = false;
         const b = Battle.create({team: state.team.slice(), encounterId: state.encounter, auto: state.auto});
@@ -852,6 +859,8 @@
     $('#chk-auto').onchange = e => { state.auto = e.target.checked; };
     $('#sel-ult').value = state.ultMode;
     $('#sel-skill').value = state.skillMode;
+    $('#sel-view').value = state.view;
+    $('#sel-view').onchange = e => { state.view = e.target.value; savePref('view', state.view); };
     $('#sel-skill').onchange = e => { state.skillMode = e.target.value; savePref('skillMode', state.skillMode); };
     $('#sel-ult').onchange = e => { state.ultMode = e.target.value; savePref('ultMode', state.ultMode); };
     $('#ult').addEventListener('click', () => state.ultSkip?.fire());
