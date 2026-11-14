@@ -407,7 +407,7 @@
                             for (const t of targets) {
                                 if (!t.alive) continue;
                                 this.dealDamage(src, t, e.mult * w, {
-                                    ult: ctx.ult, execute: hi === hits.length - 1 ? e.execute : 0, hit: hi,
+                                    ult: ctx.ult, execute: hi === hits.length - 1 ? e.execute : 0, hit: hi, hitCount: hits.length,
                                     bonus: e.bonusVsFaction?.[t.faction] || 0, teamHealPct: e.teamHealPct,
                                 });
                             }
@@ -468,7 +468,7 @@
             dmg *= 0.95 + this.rand() * 0.1;
             dmg = Math.max(1, Math.round(dmg));
 
-            const dealt = this.applyDamage(tgt, dmg, {kind: o.ult ? 'ult' : 'hit', crit, rel, srcUid: src.uid, hit: o.hit || 0});
+            const dealt = this.applyDamage(tgt, dmg, {kind: o.ult ? 'ult' : 'hit', crit, rel, srcUid: src.uid, hit: o.hit || 0, hits: o.hitCount || 1});
             src.stats.dmg += dealt;
             if (o.ult) this.ultDamage += dealt;
             for (const p of src.passives) if (p.type === 'lifesteal' && src.alive) this.heal(src, src, dealt * p.pct);

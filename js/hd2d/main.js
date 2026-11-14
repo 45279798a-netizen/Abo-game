@@ -478,12 +478,13 @@ function setPill(html, enemy) {
     p.classList.add('show');
 }
 
-function float(rec, text, cls) {
+function float(rec, text, cls, dx = 0) {
     if (!rec) return;
     const f = document.createElement('span');
     f.className = 'float ' + cls;
     f.textContent = text;
     f.style.top = (-rec.fx.children.length * 18) + 'px';
+    if (dx) f.style.marginLeft = dx + 'px';
     rec.fx.appendChild(f);
     setTimeout(() => f.remove(), 1150);
 }
@@ -588,23 +589,33 @@ function playSteps(steps, ctx) {
     const mine = b.units.filter(u => u.side === side && u.alive).map(u => u.uid);
     const pick = at => at === 'self' ? (actor ? [actor.uid] : mine) : at === 'friends' ? mine : at === 'foes' ? foes : (hitsFrom.length ? hitsFrom : foes);
     const mainIdx = Math.max(0, steps.findIndex(st => st.main));
+    const hitAt = new Map();   // 「目標 uid:第幾下」→ 那一下特效的命中時間點，傷害數字跟著它跳
     let resolveMain, resolveFirst;
     const main = new Promise(r => { resolveMain = r; });
     const first = new Promise(r => { resolveFirst = r; });   // 第一下傷害命中
     main.then(() => resolveFirst());
     const anyHit = steps.some(st => st.hit != null);
+    // 先替每一段、每個目標建好「命中」的等待點：傷害事件可能比該段特效開始播放還早被處理（該段有 delay），
+    // 若等到特效開始才登記，那一下的數字就會提早跳出來
+    const hitIdxOf = (st, i) => st.hit != null ? st.hit : (!anyHit && i === mainIdx ? 0 : null);
+    const hitDefer = new Map();
+    const defer = key => { if (!hitDefer.has(key)) { let r; const p = new Promise(res => { r = res; }); hitDefer.set(key, {p, r}); hitAt.set(key, p); } return hitDefer.get(key); };
     const all = [], stops = [];
-    const hitAt = new Map();   // 目標 uid → 打到他的那一下（主要那段特效）的命中時間點，傷害數字跟著它跳
     let resolveStops;
     const stopsReady = new Promise(r => { resolveStops = r; });
     let pendingSteps = steps.length;
     const speed = (ctx.speedMult || 1) * state.speed;
+    const stepKeys = steps.map((st, i) => {
+        const h = hitIdxOf(st, i);
+        return h == null ? [] : pick(st.at || 'targets').map(d => { defer(d + ':' + h); return d + ':' + h; });
+    });
+    const release = keys => keys.forEach(k => hitDefer.get(k)?.r());
     steps.forEach((st, i) => {
         const p = (async () => {
             if (st.delay) await waitOrSkip(st.delay / state.speed, ctx.skip || {waiters: []});
             await loadLib();
             const dests = pick(st.at || 'targets').filter(id => units.get(id));
-            if (!dests.length) return;
+            if (!dests.length) { release(stepKeys[i]); return; }
             const base = {color: st.color, sizeMult: (st.size || 1) * (ctx.sizeMult || 1), speedMult: (st.speed || 1) * speed, skip: ctx.skip, priority: ctx.priority};
             // 地面特效依目標自動決定大小：單體＝蓋住那個角色，群體＝蓋住整群；st.size 改當微調倍率
             const fitOf = g => ({fit: fitRadius(g), fitScale: (st.size || 1) * (ctx.sizeMult || 1)});
@@ -613,7 +624,8 @@ function playSteps(steps, ctx) {
             const runs = [];
             const cat = categoryOf(st.id);
             // 這段對應第幾下傷害：有寫 hit 就用；沒有任何一段寫 hit 時，主要那段算第 0 下
-            const hitIdx = st.hit != null ? st.hit : (!anyHit && i === mainIdx ? 0 : null);
+            const hitIdx = hitIdxOf(st, i);
+            const hook = (d, impact) => { if (hitIdx != null) impact.then(defer(d + ':' + hitIdx).r); };
             const groups = st.each ? dests.map(d => [d]) : [dests];
             if (!isGroundEffect(st.id)) base.sizeMult *= (dests.length > 2 && !st.each ? 1.35 : 1) * (dests.some(d => b.get(d)?.boss) ? 1.3 : 1);
             for (let gi = 0; gi < groups.length; gi++) {
@@ -630,23 +642,24 @@ function playSteps(steps, ctx) {
                 else if (g.length <= 2 && !st.each) g.forEach(d => {
                     const t = chestWorld(units.get(d));
                     const one = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t});
-                    if (one) { runs.push(one); if (hitIdx != null) hitAt.set(d + ':' + hitIdx, one.impact); }
+                    if (one) { runs.push(one); hook(d, one.impact); } else if (hitIdx != null) defer(d + ':' + hitIdx).r();
                 });
                 else { const t = centerOf(g, true); run = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t}); }
                 if (run) {
                     runs.push(run);
-                    if (hitIdx != null) g.forEach(d => hitAt.set(d + ':' + hitIdx, run.impact));
-                }
+                    g.forEach(d => hook(d, run.impact));
+                } else if (hitIdx != null && !(g.length <= 2 && !st.each && !isGroundEffect(st.id) && cat !== 'cinematic' && !st.sky)) g.forEach(d => defer(d + ':' + hitIdx).r());
                 // 第一個命中就先放行（之後每個目標、每一段的傷害數字等自己那一下）
                 if (hitIdx != null && gi === 0) Promise.race([...runs.map(r => r.impact), sleep(3500)]).then(resolveFirst);
                 if (i === mainIdx && gi === 0) Promise.race([...runs.map(r => r.impact), sleep(3500)]).then(resolveMain);
             }
             const ok = runs.filter(Boolean);
+            if (!ok.length) release(stepKeys[i]);
             if (ok.length && st.dark) darken(st.dark / state.speed);
             stops.push(...ok.map(r => r.stopped));
             if (--pendingSteps === 0) resolveStops();
             await Promise.all(ok.map(r => r.done));
-        })().catch(e => { console.warn('特效失敗', st.id, e); if (--pendingSteps === 0) resolveStops(); });
+        })().catch(e => { console.warn('特效失敗', st.id, e); release(stepKeys[i]); if (--pendingSteps === 0) resolveStops(); });
         all.push(p);
         if (i === mainIdx) p.then(() => resolveMain());   // 主要那段放不出來時也不要卡住
     });
@@ -848,9 +861,21 @@ async function playEvents(events, id) {
                 // 多段／多目標的招式：等打到這個目標的那一下特效命中才跳數字
                 const hw = (e.kind === 'hit' || e.kind === 'ult') && state.hitWait?.get(e.uid + ':' + (e.hit || 0));
                 if (hw) await Promise.race([hw, sleep(2500)]);
+                // 同一個目標的下一段至少隔一小段時間，數字才不會疊在一起像同時跳
+                if (e.hit > 0 && rec) {
+                    const gap = 280 / state.speed - (performance.now() - (rec.lastHitAt || 0));
+                    if (gap > 0) await sleep(gap);
+                }
+                if (rec) rec.lastHitAt = performance.now();
+                // 多段：累計傷害，最後一下後顯示總計
+                if (e.hits > 1 && rec) {
+                    if (!e.hit) rec.hitSum = 0;
+                    rec.hitSum = (rec.hitSum || 0) + e.amount;
+                }
                 let cls = e.kind === 'dot' ? 'dot' : e.kind === 'ult' ? 'combo' : (e.crit ? 'crit' : 'dmg');
                 if (e.rel) cls += ' ' + e.rel;
-                float(rec, (e.crit ? '暴擊 ' : '') + e.amount, cls);
+                float(rec, (e.hits > 1 ? `${e.hit + 1}HIT ` : '') + (e.crit ? '暴擊 ' : '') + e.amount, cls, e.hits > 1 ? (e.hit % 2 ? 16 : -16) : 0);
+                if (e.hits > 1 && e.hit === e.hits - 1 && rec) { const sum = rec.hitSum; setTimeout(() => float(rec, `總計 ${sum}`, 'total'), 260 / state.speed); }
                 if (e.kind !== 'dot') hitFlash(e.uid, e.crit);
                 if (e.crit) shake(0.08, 220);
                 updateUnit(u);

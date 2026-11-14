@@ -98,3 +98,6 @@ html, body { background: #000; overflow: hidden; }
 
 /* 黑洞、蓄力時畫面四周壓暗 */
 .hd-vignette { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; background: radial-gradient(ellipse at 60% 50%, transparent 25%, rgba(10,0,25,.55) 60%, rgba(0,0,0,.9) 100%); }
+
+/* 多段傷害的總計 */
+.float.total { color: #fff7d6; font-size: 20px; font-weight: 900; text-shadow: 0 0 10px #f59e0b, 0 2px 0 #000; }
