@@ -1,0 +1,43 @@
+{
+ "preset": {
+  "id": "prism-guard",
+  "quantity": {
+   "min": 1,
+   "max": 7,
+   "default": 7,
+   "label": "護盾盾片數量",
+   "unit": "片",
+   "help": "盾片與各自稜光一起增減；最多保留完整七片盾面。"
+  },
+  "lifecycle": {
+   "start": 0.3,
+   "end": 0.65
+  },
+  "name": "稜晶護壁",
+  "english": "Prismatic Crystal Bulwark",
+  "category": "shield",
+  "color": "#73e3ff",
+  "description": "幾片水晶盾拼成彎曲護牆，停止使用後再一片片收回。",
+  "tags": "護盾 防禦 格擋 保護 聖光 Light 稜光護盾 Prism guard",
+  "maxParticles": 512,
+  "kind": 7,
+  "variant": 0,
+  "duration": 5,
+  "burst": false,
+  "seed": 367480,
+  "schools": [
+   "light"
+  ],
+  "previewTime": 1.2,
+  "thumbnailTime": 1.2
+ },
+ "defaults": {
+  "speed": 1,
+  "detail": 1,
+  "color": "#73e3ff",
+  "size": 1,
+  "density": 0.5,
+  "quantity": 7
+ },
+ "notes": "// 稜晶護壁 / Prismatic Crystal Bulwark\n// Three.js 0.187.0 / WebGL2 / SRGBColorSpace / NoToneMapping\n// 將 group 加入場景，在既有遊戲循環呼叫 update(deltaSeconds)，結束時 dispose()。\n// 建立後起始 → 持續；由遊戲碰撞呼叫 hit(worldPosition?, worldNormal?)，或 stop() 自然收尾。\n// hit() 預設從彈體前端觸發；指定世界座標時將前端對準接觸點，根物件中心可能偏移。\n// 持續 update 至 finished 後 dispose()；phase 提供階段。reset() 保留目前位置。\n// 單次效果自行結束；不包含碰撞判斷或網站自動展示排程。\n// size 控制核心或草葉尺寸；speed 控制視覺動畫速度；detail 控制裝飾或筆觸強度。\n// quantity 僅用於支援款的主體總數／每輪數量；density 控制裝飾粒子或植被密度。\n// spread 僅用於支援款的散布範圍，預設值見 defaultOptions；不改主體大小、數量或演出時間。\n// 無外部貼圖；Fireball 的 render 包含光暈合成，其他素材依各自說明。不同渲染設定可能影響外觀。"
+}

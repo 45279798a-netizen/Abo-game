@@ -4,7 +4,7 @@
 // 特效用法（依特效本身的類型自動判斷）：
 //   projectile 飛行：從 from 飛向 to，抵達時「命中」
 //   beam       光束：from 與 to 之間拉一條光束
-//   area／burst／vortex  在地面 at 展開（法陣、爆炸、旋風）
+//   area／burst／vortex／smoke／shield  在 at 位置展開（法陣、爆炸、旋風、煙霧、護盾）
 //
 // 每種特效的播放手感在 TUNE 調整：
 //   speed   播放倍速（原始特效通常較長，加速才適合戰鬥節奏）
@@ -21,6 +21,8 @@ export const TUNE_BY_CATEGORY = {
     area:       {speed: 2.2, size: 0.7, cutoffAfterImpact: 1.1},
     burst:      {speed: 1.8, size: 0.75, cutoffAfterImpact: 1.4},
     vortex:     {speed: 2.6, size: 0.45, impact: 1.0, cutoffAfterImpact: 0.9},
+    smoke:      {speed: 2.0, size: 0.6, cutoffAfterImpact: 1.0},
+    shield:     {speed: 2.0, size: 0.6, cutoffAfterImpact: 1.2},
 };
 export const TUNE = {
     'sacred-relic-descent': {speed: 1.8, impact: 1.45, cutoff: 4.95, size: 0.62, hideObject: true, options: {spread: 0.7}},
@@ -29,6 +31,8 @@ export const TUNE = {
     'arc-ray':              {size: 1.0},
     'fireball':             {size: 0.85, flight: 0.42},
     'charged-beam':         {hold: 0.5},
+    'prism-parry':          {speed: 1.0},   // 原本只有 0.55 秒，放慢才看得到
+    'magma-fissure':        {speed: 1.2},
 };
 
 let libPromise = null, presetCache = null;
