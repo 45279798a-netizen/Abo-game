@@ -9,7 +9,7 @@
 // vfx：技能特效，可以是一個或一串（依序播放的多段特效）。每段：
 //      id 特效庫 id；at 對準 targets 打到的目標（預設）／foes 對手全體中心／friends 自己隊伍中心／self 自己；
 //      each:true 每個目標各放一個；delay 延後毫秒；main:true 這段命中時才跳傷害（沒標就用第一段）；
-//      sky:true 光束從天而降；reverse:true 飛行／光束從目標飛回施放者；color 顏色；size 大小倍率；speed 播放速度倍率。
+//      sky:true 光束從天而降；pull:毫秒 目標被吸向特效中心；dark:毫秒 畫面周圍變暗；reverse:true 飛行／光束從目標飛回施放者；color 顏色；size 大小倍率；speed 播放速度倍率。
 // ult：大招（能量滿 100 時放），格式同 skill；impactFrame 命中時畫面定格。
 // show：整段技能演出的長度（毫秒，1500～3500），依特效長短決定；沒填 vfx 的技能用 2D 特效。
 // faceY：立繪切入時臉往上移多少（%），有翅膀或頭頂裝飾比較高的角色才需要
@@ -232,7 +232,7 @@ RES.HEROES = {
         },
         ult: {
             name: '千刃影殺', desc: '對生命比例最低的敵人造成 400% 傷害，生命低於 25% 直接斬殺（首領除外）',
-            show: 3400, impactFrame: true, vfx: [{id: 'black-hole'}, {id: 'spatial-smear', color: '#a78bfa', delay: 600}, {id: 'dimensional-rend', delay: 800, main: true}, {id: 'azure-sweep', color: '#a78bfa', delay: 950}],
+            show: 4400, impactFrame: true, vfx: [{id: 'black-hole', size: 1.7, speed: 0.55, pull: 1400, dark: 1700}, {id: 'spatial-smear', color: '#a78bfa', delay: 1250}, {id: 'dimensional-rend', delay: 1450, size: 1.3, main: true}, {id: 'energy-burst', color: '#c084fc', delay: 1480, size: 1.5}, {id: 'azure-sweep', color: '#a78bfa', delay: 1600}],
             effects: [
                 {type: 'damage', target: 'enemyLowest', mult: 4.0, execute: 0.25},
             ],

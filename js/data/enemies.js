@@ -67,7 +67,7 @@ RES.ENEMIES = {
         stats: {hp: 10500, atk: 250, def: 150, spd: 100, res: 0.3},
         skills: [
             {
-                name: '骸骨召喚', cd: 5, show: 2400, vfx: [{id: 'black-hole', at: 'self', main: true}], desc: '召喚 2 隻高速骸骨僕從插進時間軸',
+                name: '骸骨召喚', cd: 5, show: 2400, vfx: [{id: 'black-hole', at: 'self', size: 1.6, speed: 0.6, dark: 1500, main: true}], desc: '召喚 2 隻高速骸骨僕從插進時間軸',
                 effects: [{type: 'summon', unit: 'boneMinion', count: 2, atb: 0.7}],
             },
             {

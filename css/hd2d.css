@@ -95,3 +95,6 @@ html, body { background: #000; overflow: hidden; }
 #hd .ult-cast .cut.solo { left: 6%; width: 48%; height: 70%; bottom: 22%; }
 #hd .ult-cast .cut.solo img { height: 165%; top: -6%; transform: translate(-50%, var(--fy, 0%)); }
 @media (max-height: 360px) { #hd .ult-hero { width: 46px; height: 46px; } #hd .ult-hero svg { width: 52px; height: 52px; } #hd .ult-hero img { width: 40px; height: 40px; } }
+
+/* 黑洞、蓄力時畫面四周壓暗 */
+.hd-vignette { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; background: radial-gradient(ellipse at 60% 50%, transparent 25%, rgba(10,0,25,.55) 60%, rgba(0,0,0,.9) 100%); }

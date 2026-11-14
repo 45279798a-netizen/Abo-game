@@ -540,6 +540,30 @@ function basicSteps(u) {
     if (MELEE.includes(u.role)) return [{id: BASIC_MELEE[u.role], color, size: u.boss ? 1.1 : 0.75, speed: 1.3, main: true}];
     return [{id: BASIC_SHOT[u.element] || 'plasma-bolt', color: u.element === 'fire' ? undefined : color, size: 0.6, speed: 1.2, main: true}];
 }
+// 黑洞類：目標被吸向中心（往中心偏移、被拉扁、發抖），時間到彈回原位
+function pullIn(uids, at, ms) {
+    uids.forEach(id => {
+        const r = units.get(id);
+        if (!r || r.u.boss) return;
+        const dx = (at.x - r.group.position.x) * 0.35, dz = (at.z - r.group.position.z) * 0.35;
+        tween(ms, t => {
+            const k = Math.sin(Math.min(1, t * 1.15) * Math.PI / 2);
+            const back = t > 0.9 ? 1 - (t - 0.9) / 0.1 : 1;
+            r.mesh.position.x = (dx * k + Math.sin(t * 60) * 0.04 * k) * back;
+            r.mesh.position.z = dz * k * back;
+            r.mesh.scale.set(1 - 0.22 * k * back, 1 + 0.08 * k * back, 1);
+            r.mesh.rotation.z = Math.sin(t * 40) * 0.05 * k * back;
+        }, x => x).then(() => { r.mesh.position.x = 0; r.mesh.position.z = 0; r.mesh.scale.set(1, 1, 1); r.mesh.rotation.z = 0; });
+    });
+}
+// 畫面四周壓暗（黑洞、蓄力）
+function darken(ms) {
+    const el = $('#vignette');
+    if (!el) return;
+    el.getAnimations().forEach(a => a.cancel());
+    el.animate([{opacity: 0}, {opacity: 1, offset: 0.25}, {opacity: 1, offset: 0.8}, {opacity: 0}], {duration: ms, easing: 'ease-in-out'});
+}
+
 // 一群目標要蓋住的半徑：單體看角色身形，群體＝最遠的人到中心的距離＋半個身形
 function fitRadius(uids) {
     const rs = uids.map(id => units.get(id)).filter(Boolean);
@@ -588,13 +612,18 @@ function playSteps(steps, ctx) {
                 if (gi && st.stagger) await sleep(st.stagger / state.speed);
                 let run;
                 if (cat === 'cinematic') run = vfx.play(st.id, {...base, from: centerOf(mine), to: centerOf(g)});
-                else if (isGroundEffect(st.id)) run = vfx.play(st.id, {...base, ...fitOf(g), at: centerOf(g)});
+                else if (isGroundEffect(st.id)) {
+                    const at = centerOf(g);
+                    run = vfx.play(st.id, {...base, ...fitOf(g), at});
+                    if (run && st.pull) pullIn(g, at, st.pull);
+                }
                 else if (st.sky) { const at = centerOf(g); run = vfx.play(st.id, {...base, from: at.clone().setY(9), to: at}); }
                 else if (g.length <= 2 && !st.each) g.forEach(d => { const t = chestWorld(units.get(d)); runs.push(st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t})); });
                 else { const t = centerOf(g, true); run = st.reverse ? vfx.play(st.id, {...base, from: t, to: origin}) : vfx.play(st.id, {...base, from: origin, to: t}); }
                 if (run) runs.push(run);
             }
             const ok = runs.filter(Boolean);
+            if (ok.length && st.dark) darken(st.dark / state.speed);
             if (i === mainIdx) Promise.race([Promise.all(ok.map(r => r.impact)), sleep(3500)]).then(resolveMain);
             await Promise.all(ok.map(r => r.done));
         })().catch(e => console.warn('特效失敗', st.id, e));
@@ -910,7 +939,7 @@ function frame(now) {
     $('#loading').classList.add('done');
     window.__hd = {state, camera, cam, units,   // 測試用：__hd.ult('church')、__hd.skill(uid) 直接播演出（不影響戰鬥結果）
         impactActive: () => !!impact?.active, renderHud,
-        ult: uid => { const u = state.battle.get(uid); return playUltimate({uid, name: u.ult.name}, []); },
+        ult: (uid, tgt) => { const u = state.battle.get(uid); return playUltimate({uid, name: u.ult.name}, tgt ? [{type: 'damage', kind: 'ult', srcUid: uid, uid: tgt}] : []); },
         skill: async uid => { const u = state.battle.get(uid); const sk = u.skills[0]; if (sk.show) state.holdUntil = performance.now() + sk.show; if (u.side === 'ally') await skillCutIn(u, sk.name); await performAction(u, [], sk); endSkillCutIn(); },
     };
 })().catch(e => {
