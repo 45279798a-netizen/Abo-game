@@ -234,8 +234,10 @@ function slotPos(u, slot) {
 
 async function addUnit(u, spawn) {
     const tex = await loadTex(spriteHD(u.img)).catch(() => loadTex(spriteSrc(u.img)));
-    const h = u.boss ? 4.8 : u.side === 'ally' ? 2.75 : (u.elite ? 2.9 : 2.4);
-    const w = h * tex.image.width / tex.image.height;
+    const aspect = tex.image.width / tex.image.height;
+    let h = (u.boss ? 4.8 : u.side === 'ally' ? 2.75 : (u.elite ? 2.9 : 2.4)) * (u.side === 'enemy' ? (R.ENEMIES[u.id]?.size || 1) : 1);
+    if (aspect > 1.1) h *= 1.1 / aspect;   // 橫向的寬圖（史萊姆之類）縮小，不要比別人寬一大截
+    const w = h * aspect;
     const geo = new THREE.PlaneGeometry(w, h);
     geo.translate(0, h / 2, 0);
     const mat = new THREE.ShaderMaterial({
@@ -315,13 +317,51 @@ function toScreen(x, y, z) {
 const chestWorld = r => new THREE.Vector3(r.group.position.x + r.mesh.position.x, r.h * 0.55, r.group.position.z + r.mesh.position.z);
 const footWorld = r => new THREE.Vector3(r.group.position.x, 0.05, r.group.position.z);
 
+// 血條位置：預設在腳下；會壓到其他角色或下方 HUD 時，依序試頭頂、腳下偏左、偏右，都會壓到就選壓得最少的
+function spriteRect(r) {
+    // 用站位（不含衝刺、跳躍的位移），攻擊時別人的血條才不會跟著跳
+    const gx = r.group.position.x, gz = r.group.position.z;
+    const foot = toScreen(gx, 0, gz), head = toScreen(gx, r.h * 0.84, gz);
+    const side = toScreen(gx + r.w * 0.3, 0, gz);
+    const half = Math.abs(side.x - foot.x);
+    return {l: foot.x - half, r: foot.x + half, t: head.y, b: foot.y, depth: foot.y};
+}
+function overlapArea(a, b) {
+    const w = Math.min(a.r, b.r) - Math.max(a.l, b.l), h = Math.min(a.b, b.b) - Math.max(a.t, b.t);
+    return w > 0 && h > 0 ? w * h : 0;
+}
+function placePlate(r) {
+    if (!r.u.alive) return;
+    const pw = r.plate.offsetWidth || 84, ph = r.plate.offsetHeight || 22;
+    const me = spriteRect(r);
+    const fx = me.l + (me.r - me.l) / 2;
+    const cands = [{x: fx, y: me.b + 4}, {x: fx, y: me.t - ph}, {x: fx - pw * 0.6, y: me.b + 4}, {x: fx + pw * 0.6, y: me.b + 4}];
+    // 會擋住的：下方的 HUD（大招列），以及還活著、在畫面上比自己更靠下（離鏡頭較近）的角色
+    const front = [];
+    const hud = $('#hud');
+    if (hud && hud.offsetParent) { const b = hud.getBoundingClientRect(); front.push({l: b.left, r: b.right, t: b.top + 4, b: b.bottom, weight: 4}); }
+    // 其他角色都算障礙，站在前面的壓到更明顯（權重 2）；只看身體中段，避開圖片四周的透明邊
+    for (const o of units.values()) if (o !== r && o.u.alive && !o.dying) {
+        const s = spriteRect(o), hgt = s.b - s.t;
+        front.push({l: s.l, r: s.r, t: s.t + hgt * 0.08, b: s.b - hgt * 0.04, weight: s.depth > me.depth + 2 ? 2 : 1});
+    }
+    let best = cands[0], bestHit = Infinity;
+    for (const c of cands) {
+        const box = {l: c.x - pw / 2, r: c.x + pw / 2, t: c.y, b: c.y + ph};
+        const hit = front.reduce((a, s) => a + overlapArea(box, s) * (s.weight || 1), 0) + (box.t < 50 ? 5000 : 0);
+        if (hit < bestHit - 1) { best = c; bestHit = hit; }
+        if (!hit) break;
+    }
+    // 位置變了才寫，避免每幀改樣式
+    const k = Math.round(best.x) + ',' + Math.round(best.y);
+    if (r.plateKey !== k) { r.plateKey = k; r.plate.style.left = best.x + 'px'; r.plate.style.top = best.y + 'px'; }
+}
+
 function syncOverlays() {
     for (const r of units.values()) {
         // 立牌永遠面向鏡頭（只轉水平方向）
         r.mesh.rotation.y = Math.atan2(camera.position.x - r.group.position.x, camera.position.z - r.group.position.z);
-        const f = toScreen(r.group.position.x, 0, r.group.position.z);
-        r.plate.style.left = f.x + 'px';
-        r.plate.style.top = (f.y + 6) + 'px';
+        placePlate(r);
         const c = toScreen(r.group.position.x + r.mesh.position.x, r.h * 0.62, r.group.position.z);
         r.fx.style.left = c.x + 'px';
         r.fx.style.top = c.y + 'px';

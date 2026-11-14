@@ -1,3 +1,4 @@
+// size：戰場上的大小倍率（原圖比例特殊的小型魔物用，預設 1）
 // 敵人：亡靈天災（S1 的敵方陣營）與主線前幾章的野獸、魔物。敵人可以有多個技能（依順序挑第一個冷卻好的）。
 window.RES = window.RES || {};
 
@@ -87,16 +88,16 @@ RES.ENEMIES = {
     },
     // ───────── 主線新增：一般敵人（前幾章不全是亡靈） ─────────
     slime: {
-        name: '水晶史萊姆', faction: 'beast', element: 'water', role: 'tank', img: 'm1',
+        name: '水晶史萊姆', faction: 'beast', element: 'water', role: 'tank', img: 'm1', size: 0.55,
         stats: {hp: 1300, atk: 120, def: 110, spd: 92},
         passives: [{name: '再生黏液', desc: '每次輪到自己時回復 6% 生命', type: 'regenOnTurn', pct: 0.06}],
     },
     wolf: {
-        name: '荒原狼', faction: 'beast', element: 'wind', role: 'assassin', img: 'm2',
+        name: '荒原狼', faction: 'beast', element: 'wind', role: 'assassin', img: 'm2', size: 0.8,
         stats: {hp: 850, atk: 175, def: 55, spd: 132},
     },
     goblin: {
-        name: '哥布林', faction: 'beast', element: 'fire', role: 'warrior', img: 'm3',
+        name: '哥布林', faction: 'beast', element: 'fire', role: 'warrior', img: 'm3', size: 0.78,
         stats: {hp: 950, atk: 165, def: 70, spd: 112},
         skills: [{
             name: '投擲火罐', cd: 3, show: 1600, vfx: [{id: 'fireball', main: true, hit: 0}, {id: 'burning-ground', delay: 300, hit: 1}], desc: '單體 120% 傷害（2 段），50% 機率燃燒 2 回合',
@@ -119,7 +120,7 @@ RES.ENEMIES = {
         }],
     },
     imp: {
-        name: '小惡魔', faction: 'undead', element: 'fire', role: 'mage', img: 'm7',
+        name: '小惡魔', faction: 'undead', element: 'fire', role: 'mage', img: 'm7', size: 0.8,
         stats: {hp: 900, atk: 200, def: 60, spd: 108},
         skills: [{
             name: '地獄火雨', cd: 3, show: 2000, vfx: [{id: 'flame-surge', at: 'foes', main: true, hit: 0}, {id: 'fire-explosion', at: 'foes', delay: 350, hit: 1}], desc: '全體 60% 傷害（2 段）',
@@ -135,7 +136,7 @@ RES.ENEMIES = {
         }],
     },
     spider: {
-        name: '劇毒蛛', faction: 'beast', element: 'wind', role: 'assassin', img: 'm11',
+        name: '劇毒蛛', faction: 'beast', element: 'wind', role: 'assassin', img: 'm11', size: 0.85,
         stats: {hp: 900, atk: 170, def: 60, spd: 124},
         passives: [{name: '毒牙', desc: '普攻 50% 機率中毒 2 回合', type: 'poisonOnBasic', chance: 0.5, dotMult: 0.25}],
     },
@@ -145,7 +146,7 @@ RES.ENEMIES = {
         passives: [{name: '熔岩爆裂', desc: '死亡時對敵方全體造成 60% 傷害', type: 'deathExplode', mult: 0.6}],
     },
     smallSpider: {
-        name: '小蛛', faction: 'beast', element: 'wind', role: 'assassin', img: 'm11', summoned: true,
+        name: '小蛛', faction: 'beast', element: 'wind', role: 'assassin', img: 'm11', size: 0.55, summoned: true,
         stats: {hp: 450, atk: 120, def: 40, spd: 128},
     },
 
