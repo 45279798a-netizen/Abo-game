@@ -23,6 +23,7 @@
         exp:       {icon: '🧪', name: '經驗藥水', desc: '英雄升級'},
         brk:       {icon: '💠', name: '突破石', desc: '每 20 級突破一次，提高等級上限'},
         book:      {icon: '📘', name: '技能書', desc: '小技能、大招升級'},
+        stone:     {icon: '🔨', name: '強化石', desc: '裝備強化；套裝副本、掛機、分解裝備取得'},
         dust:      {icon: '✴️', name: '星塵', desc: '滿星英雄的重複碎片轉成；到星塵商店換碎片與道具'},
     };
 
@@ -64,6 +65,11 @@
         const best = Campaign.progress(S);
         const nx = Math.min(best + 1, R.CAMPAIGN.chapters.length * Campaign.N);
         $('#battle-sub').textContent = `主線 ${Math.ceil(nx / Campaign.N)}-${(nx - 1) % Campaign.N + 1}`;
+        $('#trial-sub').textContent = best >= 15 ? `副本・素材　掃蕩 ${Dungeon.sweepLeft(S)}` : '打完第 1 章開放';
+        // 第一次打完第 1 章：提示裝備與試煉開放
+        S.flags = S.flags || {};
+        if (best >= 15 && !S.flags.gearIntro) { S.flags.gearIntro = true; save(); setTimeout(() => toast('裝備與素材試煉開放了！到「試煉」刷素材，英雄詳情有「裝備」分頁'), 900); }
+        if (best >= 30 && !S.flags.setIntro) { S.flags.setIntro = true; save(); setTimeout(() => toast('套裝副本開放了！'), 2800); }
         $('#gacha-dot').classList.toggle('on', !S.newbieDone);
         $('#gacha-sub').textContent = S.newbieDone ? 'S1 限定・烏瑟' : '新手招募可以抽了！';
     }
@@ -72,7 +78,7 @@
     function openPanel(name) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
         const p = $('#panel-' + name);
-        ({battle: renderBattle, hero: renderHero, gacha: renderGacha, bag: renderBag, settings: renderSettings})[name]?.();
+        ({battle: renderBattle, trial: renderTrial, hero: renderHero, gacha: renderGacha, bag: renderBag, settings: renderSettings})[name]?.();
         p.classList.add('show');
     }
     function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('show')); renderMain(); }
@@ -262,8 +268,7 @@
         if (st === NST && !S.campaign.story[`${ch}:boss`]) await playStory(ch, 'boss');
         let auto = true;
         try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
-        const growth = Object.fromEntries(team.map(id => [id, Growth.multipliers(id, S.heroes[id])]));
-        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), stage: {ch, st}, auto, growth, from: 'lobby'}));
+        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), stage: {ch, st}, auto, growth: battleGrowth(team), from: 'lobby'}));
         location.href = 'hd2d.html';
     }
 
@@ -275,11 +280,11 @@
             <p class="muted">英雄們會在你離開時繼續討伐魔物。收益依最高通關關卡（目前 ${best ? `${Math.ceil(best / NST)}-${(best - 1) % NST + 1}` : '尚未通關'}），最多累積 ${Campaign.IDLE_MAX_H} 小時。</p>
             <div class="idle-bar"><i style="width:${p.hours / Campaign.IDLE_MAX_H * 100}%"></i><span>${p.hours.toFixed(1)} / ${Campaign.IDLE_MAX_H} 小時</span></div>
             <div class="rws"><span class="muted">可領取</span>${rewardHtml(p.reward) || '<span class="muted">還沒有累積</span>'}</div>
-            <div class="rws"><span class="muted">每小時</span>${rewardHtml({gold: Math.floor(rate.gold), exp: Math.floor(rate.exp)})}<span class="rw">${CUR.brk.icon}${rate.brk.toFixed(2)}</span></div>
+            <div class="rws"><span class="muted">每小時</span>${rewardHtml({gold: Math.floor(rate.gold), exp: Math.floor(rate.exp)})}<span class="rw">${CUR.brk.icon}${rate.brk.toFixed(2)}</span>${rate.stone ? `<span class="rw">🔨${rate.stone.toFixed(1)}</span><span class="rw">🎁 散件裝備 ${rate.gearPerH}</span>` : ''}</div>
             <div class="row"><button class="btn" id="idle-quick" ${q.cost == null ? 'disabled' : ''}>⚡ 快速掛機 2 小時${q.cost == null ? '（今天用完）' : q.cost ? `（💎${q.cost}）` : '（今日免費）'}</button><div class="sp"></div>
             <button class="btn primary" id="idle-claim" ${p.reward.gold > 0 ? '' : 'disabled'}>領取</button></div>`, 'idle');
-        m.querySelector('#idle-claim').onclick = () => { const r = Campaign.idleClaim(S); save(); renderCurrency(); m.remove(); toast('領取 ' + rewardText(r.reward)); refreshIdle(); if ($('#panel-battle').classList.contains('show')) renderBattle(); };
-        m.querySelector('#idle-quick').onclick = () => { const r = Campaign.quickIdle(S); if (!r.ok) { toast(r.reason); return; } save(); renderCurrency(); m.remove(); toast('快速掛機 ' + rewardText(r.reward)); };
+        m.querySelector('#idle-claim').onclick = () => { const r = Campaign.idleClaim(S); save(); renderCurrency(); m.remove(); toast('領取 ' + rewardText(r.reward) + (r.gear?.length ? `、裝備 ${r.gear.length} 件` : '')); refreshIdle(); if ($('#panel-battle').classList.contains('show')) renderBattle(); };
+        m.querySelector('#idle-quick').onclick = () => { const r = Campaign.quickIdle(S); if (!r.ok) { toast(r.reason); return; } save(); renderCurrency(); m.remove(); toast('快速掛機 ' + rewardText(r.reward) + (r.gear?.length ? `、裝備 ${r.gear.length} 件` : '')); };
     }
     function refreshIdle() {
         const p = Campaign.idlePending(S);
@@ -288,7 +293,10 @@
         el.classList.toggle('ready', p.hours >= 1);
     }
 
-    const teamPower = () => S.team.filter(Boolean).reduce((a, id) => a + Growth.power(id, S.heroes[id]), 0);
+    const heroPower = id => Growth.power(id, S.heroes[id], Gear.bonus(S, id));
+    const teamPower = () => S.team.filter(Boolean).reduce((a, id) => a + heroPower(id), 0);
+    // 出戰時傳給戰鬥引擎：養成倍率＋裝備加成
+    const battleGrowth = team => Object.fromEntries(team.map(id => [id, {...Growth.multipliers(id, S.heroes[id]), gear: Gear.bonus(S, id)}]));
 
     // ───────── 英雄 ─────────
     let heroFilter = 'all';
@@ -344,16 +352,18 @@
         const d = R.HEROES[id], o = S.heroes[id];
         if (!o) detailTab = 'info';
         const fac = R.FACTIONS[d.faction], el = R.ELEMENTS[d.element];
-        const st = Growth.stats(id, o);
+        const st = Growth.stats(id, o, o ? Gear.bonus(S, id) : null);
         const inTeam = S.team.includes(id);
         const box = $('#hero-detail');
         const tags = `<span class="tag" style="color:${rc(d.rarity)};border-color:${rc(d.rarity)}">${d.rarity}</span>
             <span class="tag" style="color:${fac.color}">${fac.name}</span><span class="tag">${el.icon} ${el.name}屬性</span><span class="tag">${R.ROLES[d.role].name}</span>
-            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span><span class="tag">戰力 ${Growth.power(id, o).toLocaleString()}</span>` : '<span class="tag" style="color:var(--muted)">未擁有：可從招募取得</span>'}`;
-        const tabs = o ? `<div class="dt-tabs"><button class="${detailTab === 'info' ? 'on' : ''}" data-tab="info">資料</button><button class="${detailTab === 'grow' ? 'on' : ''}" data-tab="grow">養成</button></div>` : '';
+            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span><span class="tag">戰力 ${heroPower(id).toLocaleString()}</span>` : '<span class="tag" style="color:var(--muted)">未擁有：可從招募取得</span>'}`;
+        if (detailTab === 'gear' && !gearOpen()) detailTab = 'info';
+        const tabs = o ? `<div class="dt-tabs"><button class="${detailTab === 'info' ? 'on' : ''}" data-tab="info">資料</button><button class="${detailTab === 'grow' ? 'on' : ''}" data-tab="grow">養成</button>${gearOpen() ? `<button class="${detailTab === 'gear' ? 'on' : ''}" data-tab="gear">裝備</button>` : '<button disabled title="打完第 1 章開放">裝備 🔒</button>'}</div>` : '';
         let body = '';
         if (detailTab === 'info') {
-            body = `<div class="dt-stats"><div>生命<b>${st.hp}</b></div><div>攻擊<b>${st.atk}</b></div><div>防禦<b>${st.def}</b></div><div>速度<b>${st.spd}</b></div></div>
+            body = `<div class="dt-stats"><div>生命<b>${st.hp}</b></div><div>攻擊<b>${st.atk}</b></div><div>防禦<b>${st.def}</b></div><div>速度<b>${st.spd}</b></div>
+                <div>暴擊率<b>${Math.round(st.crit * 100)}%</b></div><div>暴擊傷害<b>${Math.round(st.critDmg * 100)}%</b></div><div>效果命中<b>${Math.round(st.hit * 100)}%</b></div><div>效果抵抗<b>${Math.round(st.res * 100)}%</b></div></div>
                 <div class="sk"><span class="k">小技能・Lv.${o?.sk || 1}・冷卻 ${d.skill.cd}</span><b>${d.skill.name}</b><br>${d.skill.desc}</div>
                 ${d.ult ? `<div class="sk"><span class="k">大招・Lv.${o?.ul || 1}・能量 ${R.ENERGY.max}</span><b style="color:${fac.color}">${d.ult.name}</b><br>${d.ult.desc}</div>` : ''}
                 <div class="sk"><span class="k">被動</span><b>${d.passive.name}</b><br>${d.passive.desc}</div>
@@ -361,6 +371,8 @@
                     ${inTeam ? '<button class="btn" data-act="out">下陣</button>' : '<button class="btn primary" data-act="in">上陣</button>'}
                     ${S.leader === id ? '<button class="btn" disabled>目前隊長</button>' : '<button class="btn" data-act="lead">設為隊長</button>'}
                 </div>` : ''}`;
+        } else if (detailTab === 'gear') {
+            body = gearTabHtml(id);
         } else {
             body = growHtml(id, o);
         }
@@ -388,9 +400,10 @@
             }
             save(); showDetail(id); renderHero(); renderMain();
         }; });
+        if (detailTab === 'gear') bindGearTab(id, box);
         box.querySelectorAll('[data-grow]').forEach(b => { b.onclick = () => {
             const [act, arg] = b.dataset.grow.split(':');
-            const before = Growth.power(id, o);
+            const before = heroPower(id);
             let r;
             if (act === 'lv') r = Growth.levelUp(S, id, +arg);
             else if (act === 'brk') r = Growth.breakThrough(S, id);
@@ -398,7 +411,7 @@
             else r = Growth.skillUp(S, id, act);
             if (!r.ok) { toast(r.reason); return; }
             save();
-            const after = Growth.power(id, o);
+            const after = heroPower(id);
             toast(act === 'star' ? `升到 ${o.star}★！戰力 +${after - before}` : act === 'brk' ? `突破成功！等級上限 ${Growth.lvCap(o)}` : act === 'lv' ? `升到 Lv.${o.lv}　戰力 +${after - before}` : `技能升級！戰力 +${after - before}`);
             showDetail(id); renderHero(); renderCurrency();
         }; });
@@ -437,7 +450,178 @@
             <div class="gr"><div class="gr-h"><b>星級</b><span style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span></div><div class="gr-r">${starRow}</div></div>
             ${skRow('sk', '小技能', R.HEROES[id].skill.name)}
             ${R.HEROES[id].ult ? skRow('ul', '大招', R.HEROES[id].ult.name) : ''}
-            <div class="fac-note" style="margin-top:6px">碎片來自重複招募，也可以用星塵在背包的「星塵商店」換。經驗藥水、突破石、技能書目前先給試玩用的量，主線與掛機做好後從關卡取得。</div>`;
+            <div class="fac-note" style="margin-top:6px">碎片來自重複招募，也可以用星塵在背包的「星塵商店」換。經驗藥水、突破石、技能書主要從「試煉」取得，主線首通與掛機也會給一些。</div>`;
+    }
+
+
+    // ───────── 裝備 ─────────
+    const GR = R.GEAR;
+    const gearOpen = () => Campaign.progress(S) >= 15;   // 打完第 1 章開放
+    const qc = q => GR.QUALITY[q].color;
+    const gearName = it => `${GR.QUALITY[it.q].name}${it.set ? GR.SETS[it.set].name : ''}${GR.SLOTS[it.slot].name}`;
+    const gearIcon = (it, extra = '') => `<div class="gi" style="--qc:${qc(it.q)}" ${extra}><span class="gs">${GR.SLOTS[it.slot].icon}</span>${it.lvl ? `<span class="glv">+${it.lvl}</span>` : ''}${it.set ? `<span class="gset">${GR.SETS[it.set].icon}</span>` : ''}${it.hero ? `<img class="gwho" src="${face(R.HEROES[it.hero].img)}" alt="">` : ''}${it.lock ? '<span class="glock">🔒</span>' : ''}</div>`;
+    function gearStatsHtml(it) {
+        const main = `<div class="gmain">${GR.STATS[it.main.k].name} <b>+${Gear.fmtStat(it.main.k, Gear.mainValue(it))}</b></div>`;
+        const subs = it.subs.map(x => `<div class="gsub">${GR.STATS[x.k].name} +${Gear.fmtStat(x.k, x.v)}${x.n > 1 ? `<small>（強化 ${x.n - 1} 次）</small>` : ''}</div>`).join('');
+        const left = 4 - it.subs.length;
+        const next = it.lvl < GR.MAX_LV ? `<div class="gnote">下一次 +${Math.ceil((it.lvl + 1) / 3) * 3}：${left > 0 ? '新增一條副屬性' : '隨機加強一條副屬性'}</div>` : '';
+        const set = it.set ? `<div class="gsetd" style="color:${GR.SETS[it.set].color}">${GR.SETS[it.set].icon} ${GR.SETS[it.set].name}套裝　2 件：${GR.SETS[it.set].desc2}　4 件：${GR.SETS[it.set].desc4}</div>` : '<div class="gnote">散件：沒有套裝效果</div>';
+        return main + subs + next + set;
+    }
+    // 一件裝備的詳細資料：強化、上鎖、卸下、分解
+    function showGear(itId, after) {
+        const it = Gear.byId(S, itId);
+        if (!it) return;
+        const c = Gear.enhanceCost(it);
+        const m = modal(`<div class="g-head">${gearIcon(it)}<div><h3 style="color:${qc(it.q)}">${gearName(it)} ${it.lvl ? '+' + it.lvl : ''}</h3>
+                <div class="muted">${it.hero ? `穿在 ${short(R.HEROES[it.hero].name)} 身上` : '沒有人穿'}</div></div></div>
+            ${gearStatsHtml(it)}
+            <div class="row">${it.lvl < GR.MAX_LV ? `<span class="gr-cost">${costTxt(c)}</span><button class="btn" data-g="up1">強化 +1</button><button class="btn primary" data-g="up3">強化到 +${Math.min(GR.MAX_LV, Math.floor(it.lvl / 3) * 3 + 3)}</button>` : '<span class="muted">已強化到最高</span>'}</div>
+            <div class="row"><button class="btn" data-g="lock">${it.lock ? '解鎖' : '上鎖'}</button>
+                ${it.hero ? '<button class="btn" data-g="off">卸下</button>' : `<button class="btn" data-g="salv" ${it.lock ? 'disabled' : ''}>分解（🔨${Gear.salvageValue(it)}）</button>`}</div>`, 'gear');
+        const done = msg => { save(); renderCurrency(); m.remove(); if (msg) toast(msg); (after || (() => {}))(); };
+        m.querySelectorAll('[data-g]').forEach(b => { b.onclick = () => {
+            const a = b.dataset.g;
+            if (a === 'up1' || a === 'up3') {
+                const target = a === 'up1' ? it.lvl + 1 : Math.min(GR.MAX_LV, Math.floor(it.lvl / 3) * 3 + 3);
+                let r, notes = [];
+                while (it.lvl < target) { r = Gear.enhance(S, it); if (!r.ok) break; if (r.note) notes.push(r.note === 'new' ? `新增${GR.STATS[it.subs[it.subs.length - 1].k].name}` : `${GR.STATS[r.note].name}提升`); }
+                save(); renderCurrency();
+                if (r && !r.ok && it.lvl < target) toast(r.reason);
+                else toast(`強化到 +${it.lvl}${notes.length ? '！' + notes.join('、') : ''}`);
+                m.remove(); showGear(itId, after); (after || (() => {}))();
+                return;
+            }
+            if (a === 'lock') { it.lock = !it.lock; save(); m.remove(); showGear(itId, after); return; }
+            if (a === 'off') { Gear.unequip(S, it.id); done('已卸下'); return; }
+            if (a === 'salv') { const r = Gear.salvage(S, [it.id]); done(`分解獲得 🔨${r.stone}`); }
+        }; });
+    }
+    // 英雄詳情的「裝備」分頁
+    let gearSlotSel = 'weapon';
+    function gearTabHtml(id) {
+        const eq = Gear.equipped(S, id), b = Gear.bonus(S, id);
+        const slots = GR.SLOT_ORDER.map(sl => `<button class="gslot ${sl === gearSlotSel ? 'on' : ''}" data-gslot="${sl}">${eq[sl] ? gearIcon(eq[sl]) : `<div class="gi empty"><span class="gs">${GR.SLOTS[sl].icon}</span></div>`}<small>${GR.SLOTS[sl].name}</small></button>`).join('');
+        const sets = Object.entries(b.sets).filter(([, n]) => n >= 2).map(([k, n]) => `<span style="color:${GR.SETS[k].color}">${GR.SETS[k].icon}${GR.SETS[k].name} ${n >= 4 ? '4 件' : '2 件'}：${n >= 4 ? GR.SETS[k].desc2 + '、' + GR.SETS[k].desc4 : GR.SETS[k].desc2}</span>`).join('<br>') || '<span class="muted">沒有套裝效果（同套裝 2 件／4 件生效）</span>';
+        const role = R.HEROES[id].role;
+        const cand = (S.gear || []).filter(it => it.slot === gearSlotSel && it.hero !== id).sort((x, y) => (!!x.hero - !!y.hero) || Gear.score(y, role) - Gear.score(x, role)).slice(0, 24);
+        const cur = eq[gearSlotSel];
+        return `<div class="gslots">${slots}</div>
+            <div class="gsets">${sets}</div>
+            <div class="dt-btns"><button class="btn primary" data-gact="auto">一鍵穿最好</button><button class="btn" data-gact="off">全部卸下</button><button class="btn" data-gact="move">整套給…</button></div>
+            ${cur ? `<div class="gcur"><div class="g-head">${gearIcon(cur, `data-gview="${cur.id}"`)}<div><b style="color:${qc(cur.q)}">${gearName(cur)} ${cur.lvl ? '+' + cur.lvl : ''}</b><div class="muted">點圖示可以強化</div></div></div>${gearStatsHtml(cur)}</div>` : ''}
+            <div class="gh">可換的${GR.SLOTS[gearSlotSel].name}（${cand.length}）</div>
+            <div class="glist">${cand.map(it => `<button class="gpick" data-gpick="${it.id}">${gearIcon(it)}<span>${GR.STATS[it.main.k].name} +${Gear.fmtStat(it.main.k, Gear.mainValue(it))}</span></button>`).join('') || '<span class="muted">背包裡沒有這個欄位的裝備，去「試煉」的套裝副本拿</span>'}</div>`;
+    }
+    function bindGearTab(id, box) {
+        const re = () => { save(); showDetail(id, 'gear'); renderHero(); };
+        box.querySelectorAll('[data-gslot]').forEach(b => { b.onclick = () => { gearSlotSel = b.dataset.gslot; showDetail(id, 'gear'); }; });
+        box.querySelectorAll('[data-gview]').forEach(b => { b.onclick = () => showGear(b.dataset.gview, () => showDetail(id, 'gear')); });
+        box.querySelectorAll('[data-gpick]').forEach(b => { b.onclick = () => {
+            const it = Gear.byId(S, b.dataset.gpick);
+            const cur = Gear.equipped(S, id)[it.slot];
+            const m = modal(`<h3>換上這件？</h3><div class="gcmp"><div>${cur ? `<b style="color:${qc(cur.q)}">目前：${gearName(cur)} +${cur.lvl}</b>${gearStatsHtml(cur)}` : '<b>目前沒有裝備</b>'}</div>
+                <div><b style="color:${qc(it.q)}">${gearName(it)} +${it.lvl}</b>${gearStatsHtml(it)}${it.hero ? `<div class="gnote" style="color:#fca5a5">會從 ${short(R.HEROES[it.hero].name)} 身上拿過來</div>` : ''}</div></div>
+                <div class="row"><button class="btn" data-x2="view">強化這件</button><div class="sp"></div><button class="btn primary" data-x2="on">穿上</button></div>`, 'gear');
+            m.querySelector('[data-x2="on"]').onclick = () => { Gear.equip(S, id, it.id); m.remove(); re(); toast('已穿上'); };
+            m.querySelector('[data-x2="view"]').onclick = () => { m.remove(); showGear(it.id, () => showDetail(id, 'gear')); };
+        }; });
+        box.querySelectorAll('[data-gact]').forEach(b => { b.onclick = () => {
+            const a = b.dataset.gact;
+            if (a === 'auto') { const before = heroPower(id); const n = Gear.autoEquip(S, id); re(); toast(n ? `穿上 ${n} 件，戰力 ${before.toLocaleString()} → ${heroPower(id).toLocaleString()}` : '背包裡沒有可以穿的裝備'); }
+            else if (a === 'off') { Gear.unequipAll(S, id); re(); toast('已全部卸下'); }
+            else {
+                const others = Object.keys(S.heroes).filter(h => h !== id);
+                const m = modal(`<h3>把整套裝備給誰？</h3><p class="muted">對方身上原本的裝備會卸下。</p>
+                    <div class="mv-list">${others.map(h => `<button class="face" data-mv="${h}" style="--rc:${rc(R.HEROES[h].rarity)}"><img src="${face(R.HEROES[h].img)}" alt="">${S.team.includes(h) ? '<span class="lead">隊伍</span>' : ''}</button>`).join('')}</div>`);
+                m.querySelectorAll('[data-mv]').forEach(x => { x.onclick = () => { const n = Gear.moveAll(S, id, x.dataset.mv); m.remove(); save(); renderHero(); showDetail(x.dataset.mv, 'gear'); toast(n ? `${n} 件裝備給了 ${short(R.HEROES[x.dataset.mv].name)}` : '身上沒有裝備'); }; });
+            }
+        }; });
+    }
+    // 背包的「裝備」分頁
+    let bagSlot = 'all';
+    function bagGearHtml() {
+        if (!gearOpen()) return '<div class="fac-note">打完第 1 章後開放裝備。</div>';
+        const list = (S.gear || []).filter(it => bagSlot === 'all' || it.slot === bagSlot).sort((a, b) => b.q - a.q || b.lvl - a.lvl);
+        const salvN = q => (S.gear || []).filter(it => !it.hero && !it.lock && it.q <= q && it.lvl === 0).length;
+        return `<div class="filters" style="margin-bottom:8px">${[['all', '全部'], ...GR.SLOT_ORDER.map(k => [k, GR.SLOTS[k].icon + GR.SLOTS[k].name])].map(([k, n]) => `<button class="${bagSlot === k ? 'on' : ''}" data-bslot="${k}">${n}</button>`).join('')}
+                <span class="sp"></span><span class="muted">共 ${(S.gear || []).length} 件　🔨${fmt(S.currency.stone || 0)}</span></div>
+            <div class="glist big">${list.map(it => `<button class="gpick" data-bgear="${it.id}">${gearIcon(it)}</button>`).join('') || '<span class="muted">還沒有裝備</span>'}</div>
+            <div class="row"><span class="muted">一鍵分解（沒穿、沒上鎖、沒強化過）：</span>
+                <button class="btn" data-salv="1">白＋綠（${salvN(1)}）</button><button class="btn" data-salv="2">藍以下（${salvN(2)}）</button></div>`;
+    }
+    function bindBagGear(p) {
+        p.querySelectorAll('[data-bslot]').forEach(b => { b.onclick = () => { bagSlot = b.dataset.bslot; renderBag(); }; });
+        p.querySelectorAll('[data-bgear]').forEach(b => { b.onclick = () => showGear(b.dataset.bgear, renderBag); });
+        p.querySelectorAll('[data-salv]').forEach(b => { b.onclick = () => {
+            const q = +b.dataset.salv;
+            const ids = (S.gear || []).filter(it => !it.hero && !it.lock && it.q <= q && it.lvl === 0).map(it => it.id);
+            if (!ids.length) { toast('沒有可以分解的裝備'); return; }
+            if (!confirm(`分解 ${ids.length} 件裝備？`)) return;
+            const r = Gear.salvage(S, ids); save(); renderBag(); renderCurrency(); toast(`分解 ${r.n} 件，獲得 🔨${r.stone}`);
+        }; });
+    }
+
+    // ───────── 試煉：套裝副本與素材試煉 ─────────
+    const DG = R.DUNGEONS;
+    function renderTrial() {
+        const p = $('#panel-trial');
+        const left = Dungeon.sweepLeft(S);
+        const card = (kind, d) => {
+            const open = Dungeon.unlockedDungeon(S, kind, d.id), best = Dungeon.best(S, kind, d.id);
+            const boss = R.ENEMIES[d.boss];
+            const lockTxt = d.unlock === 15 ? '打完第 1 章開放' : d.unlock === 30 ? '打完第 2 章開放' : `打完第 ${d.unlock / 15} 章開放`;
+            return `<button class="tcard ${open ? '' : 'lock'}" data-dg="${kind}:${d.id}">
+                <img class="tboss" src="${sprite(boss.img)}" alt="">
+                <div class="tinfo"><b>${kind === 'trial' ? d.icon + ' ' : ''}${d.name}</b><small>${kind === 'set' ? d.sets.map(k => `<span style="color:${GR.SETS[k].color}">${GR.SETS[k].icon}${GR.SETS[k].name}</span>`).join(' ') : d.desc}</small>
+                <span class="tbest">${open ? `最高 ${best} / ${DG.floors} 層` : '🔒 ' + lockTxt}</span></div></button>`;
+        };
+        p.innerHTML = `<div class="trial" style="background-image:url(assets/hd/dungeon_bg.webp)"><div class="map-shade"></div>
+            <div class="map-top"><div class="ch-title"><small>TRIALS</small><b>試煉</b></div><div class="sp"></div>
+                <div class="ch-stars">今日掃蕩 ${left}<small>/${DG.sweepPerDay}</small></div><button class="close" data-close>✕</button></div>
+            <div class="tbody">
+                <h4>套裝副本 <small>掉落套裝裝備與強化石</small></h4><div class="trow">${DG.sets.map(d => card('set', d)).join('')}</div>
+                <h4>素材試煉 <small>金幣、經驗藥水、突破石、技能書</small></h4><div class="trow">${DG.trials.map(d => card('trial', d)).join('')}</div>
+                <p class="muted" style="text-shadow:0 1px 3px #000">不需要入場券，手動挑戰不限次數；3 星的層數可以掃蕩，副本和試煉每天共用 ${DG.sweepPerDay} 次。</p>
+            </div></div>`;
+        p.querySelectorAll('[data-dg]').forEach(b => { b.onclick = () => {
+            const [kind, id] = b.dataset.dg.split(':');
+            if (!Dungeon.unlockedDungeon(S, kind, id)) { toast('還沒開放'); return; }
+            showFloors(kind, id);
+        }; });
+    }
+    function floorReward(kind, id, f) {
+        const r = Dungeon.baseReward(kind, id, f);
+        return rewardHtml(r) + (kind === 'set' ? `<span class="rw">🎁 裝備 ×${Dungeon.dropCount(f)}</span>` : '');
+    }
+    function showFloors(kind, id) {
+        const d = Dungeon.find(kind, id);
+        const best = Dungeon.best(S, kind, id), left = Dungeon.sweepLeft(S);
+        const rows = Array.from({length: DG.floors}, (_, i) => i + 1).map(f => {
+            const st = Dungeon.starsOf(S, kind, id, f), open = Dungeon.unlockedFloor(S, kind, id, f);
+            return `<div class="frow ${open ? '' : 'lock'} ${f === best + 1 ? 'next' : ''}"><b>第 ${f} 層</b><span class="st-stars">${starsHtml(st)}</span>
+                <span class="rws">${floorReward(kind, id, f)}</span><div class="sp"></div>
+                ${st >= 3 ? `<button class="btn" data-fs="${f}:1" ${left ? '' : 'disabled'}>掃蕩</button><button class="btn" data-fs="${f}:5" ${left ? '' : 'disabled'}>×5</button>` : ''}
+                ${open ? `<button class="btn primary" data-fgo="${f}">出戰</button>` : '<span class="muted">🔒</span>'}</div>`;
+        }).join('');
+        const m = modal(`<h3>${d.name}</h3><p class="muted">首領：${R.ENEMIES[d.boss].name}　${kind === 'set' ? '掉落 ' + d.sets.map(k => GR.SETS[k].name).join('、') + ' 套裝，層數越高品質越好' : d.desc}。星數越高獎勵越多（1★ 60%、2★ 80%、3★ 全額）。今日掃蕩剩 ${left} 次。</p>
+            <div class="flist">${rows}</div>`, 'floors');
+        m.querySelectorAll('[data-fgo]').forEach(b => { b.onclick = () => { m.remove(); launchDungeon(kind, id, +b.dataset.fgo); }; });
+        m.querySelectorAll('[data-fs]').forEach(b => { b.onclick = () => {
+            const [f, n] = b.dataset.fs.split(':').map(Number);
+            const r = Dungeon.sweep(S, kind, id, f, n);
+            if (!r.ok) { toast(r.reason); return; }
+            save(); renderCurrency(); m.remove(); renderTrial(); showFloors(kind, id);
+            toast(`掃蕩 ${r.times} 次：${rewardText(r.reward)}${r.gear.length ? `、裝備 ${r.gear.length} 件` : ''}`);
+        }; });
+    }
+    function launchDungeon(kind, id, floor) {
+        const team = S.team.filter(Boolean);
+        if (!team.length) { toast('隊伍裡至少要有 1 位英雄'); return; }
+        let auto = true;
+        try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
+        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), dungeon: {kind, id, floor}, auto, growth: battleGrowth(team), from: 'lobby'}));
+        location.href = 'hd2d.html';
     }
 
     // ───────── 招募 ─────────
@@ -551,9 +735,11 @@
     function renderBag() {
         const p = $('#panel-bag');
         const shardTotal = Object.values(S.heroes).reduce((a, o) => a + o.shards, 0);
-        const tabs = `<div class="filters" style="margin-bottom:8px"><button class="${bagTab === 'items' ? 'on' : ''}" data-bag="items">道具</button><button class="${bagTab === 'shop' ? 'on' : ''}" data-bag="shop">星塵商店　✴️${fmt(S.currency.dust || 0)}</button></div>`;
+        const tabs = `<div class="filters" style="margin-bottom:8px"><button class="${bagTab === 'items' ? 'on' : ''}" data-bag="items">道具</button><button class="${bagTab === 'gear' ? 'on' : ''}" data-bag="gear">裝備${gearOpen() ? '' : ' 🔒'}</button><button class="${bagTab === 'shop' ? 'on' : ''}" data-bag="shop">星塵商店　✴️${fmt(S.currency.dust || 0)}</button></div>`;
         let body;
-        if (bagTab === 'items') {
+        if (bagTab === 'gear') {
+            body = bagGearHtml();
+        } else if (bagTab === 'items') {
             body = `<div class="bag-grid">
                 ${Object.entries(CUR).map(([k, c]) => `<div class="bag-item"><span class="bi">${c.icon}</span><div><b>${c.name}</b><small>${c.desc}</small></div><span class="cnt">${fmt(S.currency[k] || 0)}</span></div>`).join('')}
                 <div class="bag-item"><span class="bi">🧩</span><div><b>英雄碎片</b><small>重複招募取得，用來升星（各英雄的數量在英雄詳情看）</small></div><span class="cnt">${shardTotal}</span></div>
@@ -570,6 +756,7 @@
         }
         p.innerHTML = head('背包') + `<div class="pbody">${tabs}${body}</div>`;
         p.querySelectorAll('[data-bag]').forEach(b => { b.onclick = () => { bagTab = b.dataset.bag; renderBag(); }; });
+        if (bagTab === 'gear') bindBagGear(p);
         p.querySelectorAll('[data-shop]').forEach(b => { b.onclick = () => { shopHero = b.dataset.shop; renderBag(); }; });
         p.querySelectorAll('[data-buy]').forEach(b => { b.onclick = () => { const r = Growth.buyShards(S, shopHero, +b.dataset.buy); if (!r.ok) return toast(r.reason); save(); toast('兌換成功'); renderBag(); renderCurrency(); }; });
         p.querySelectorAll('[data-item]').forEach(b => { b.onclick = () => { const r = Growth.buyItem(S, b.dataset.item); if (!r.ok) return toast(r.reason); save(); toast('兌換成功'); renderBag(); renderCurrency(); }; });
@@ -614,13 +801,13 @@
     renderMain();
     setTimeout(say, 800);
     // 從戰鬥回來：#map 打開地圖；#go=章-關 直接出戰下一關（會先播該播的劇情）
-    const hm = location.hash.match(/^#(map|go)(?:=(\d+)-(\d+))?/);
+    const hm = location.hash.match(/^#(map|go|trial)(?:=(\d+)-(\d+))?/);
     if (hm) {
         history.replaceState(null, '', location.pathname);
         if (hm[2]) mapCh = Number(hm[2]);
-        openPanel('battle');
+        openPanel(hm[1] === 'trial' ? 'trial' : 'battle');
         if (hm[1] === 'go' && hm[2]) launchStage(Number(hm[2]), Number(hm[3]));
-        else maybeChapterStory();
+        else if (hm[1] !== 'trial') maybeChapterStory();
     } else if (!S.newbieDone) setTimeout(() => { if (!document.querySelector('.story')) toast('新手招募：免費 10 連抽，去「招募」看看！'); }, 1600);
     window.__lobby = {get save() { return S; }, openPanel, playStory, showStage, showIdle, reload: () => { S = Save.load(); renderMain(); }};   // 測試用
 })();

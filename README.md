@@ -15,14 +15,15 @@ dev.html      戰鬥測試頁（舊編隊畫面＋直式戰鬥，可任選英雄
 gallery.html  特效圖鑑
 js/data/      elements（屬性）factions（陣營被動、能量）heroes（22 位英雄）enemies（敵人、首領）vfxcolors（重複特效自動換色）
               campaign（主線 10 章、劇情、獎勵、掛機）campaign_table（各關難度，校準工具產生）
-js/core/      battle.js（戰鬥引擎）save.js（本機存檔）gacha.js（招募機率與保底）growth.js（養成）
+              gear（裝備欄位、品質、屬性、套裝）dungeons（套裝副本、素材試煉）dungeon_table（各層難度）
+js/core/      battle.js（戰鬥引擎）save.js（本機存檔）gacha.js（招募機率與保底）growth.js（養成）gear.js（裝備）
 js/lobby/     main.js（大廳畫面）
 js/hd2d/      main.js（橫式戰場）
 js/vfx/       特效播放、特效庫、獨立特效、命中定格
 js/ui/        app.js（dev.html 用）
 assets/       sprites、sprites_hd、portraits、bg（直式）、hd（橫式背景與主城）
 images/       原始大圖
-tools/        sim.js 平衡模擬、calibrate_campaign.js／sim_campaign.js 主線難度、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
+tools/        sim.js 平衡模擬、calibrate_campaign.js／sim_campaign.js 主線難度、calibrate_dungeons.js 副本難度、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
 ```
 
 ## 調數值
@@ -117,3 +118,23 @@ node tools/calibrate_campaign.js          # 全部重算（約 10 分鐘）
 node tools/calibrate_campaign.js 3,4      # 只算第 3、4 章
 node tools/sim_campaign.js 30             # 用兩支隊伍檢查各章代表關卡的勝率與 3 星率
 ```
+
+## 裝備
+
+資料在 `js/data/gear.js`，規則在 `js/core/gear.js`。打完第 1 章開放：
+- 4 個欄位，主屬性固定：武器攻擊%、頭盔生命%、盔甲防禦%；飾品隨機（速度、暴擊率、暴擊傷害、效果命中、效果抵抗）
+- 品質白／綠／藍／紫／橙，初始副屬性 0～4 條；強化 +0～+15（強化石＋金幣），每 +3 新增或加強一條副屬性；不要的分解成強化石
+- 6 種套裝（2 件／4 件）：疾風（速度／開場推條）、共鳴（攻擊／開場能量＋大招傷害）、壁壘（防禦／開場護盾）、狂怒（暴擊率／暴擊傷害）、生命（生命／每回合回血）、封印（命中／控制時拉條）
+- 英雄詳情的「裝備」分頁：換裝、一鍵穿最好（依職業權重＋套裝加分）、全部卸下、整套給另一位英雄；背包的「裝備」分頁可以強化、上鎖、分解
+- 掛機在打完第 1 章後也給強化石，偶爾掉散件（沒有套裝）
+
+## 試煉（套裝副本、素材試煉）
+
+資料在 `js/data/dungeons.js`。沒有入場券，手動挑戰不限次數；3 星的層數可以掃蕩，副本和試煉每天共用 20 次。
+- 套裝副本（打完第 2 章開放）：疾風回廊（疾風、共鳴）、鐵壁要塞（壁壘、生命）、血月祭壇（狂怒、封印），各 10 層，層數越高掉越多、品質越好
+- 素材試煉（打完第 1 章開放）：金幣、經驗、突破石，技能書（打完第 3 章開放），各 10 層
+- 星數越多獎勵越多（1★ 60%、2★ 80%、3★ 全額），首通另給鑽石
+- 難度：`node tools/calibrate_dungeons.js` 依「第 f 層 ≈ 主線第 15(f+1)−5 關的預期養成」校準，寫進 `js/data/dungeon_table.js`
+
+主線難度的「預期養成」也把裝備算進去了（`Gear.expectedBonus`：第 2 章起有散件、第 3 章起有套裝，品質與強化等級隨進度提高），
+所以主線打到中後期需要穿裝備。經驗藥水、突破石、技能書改成主要從試煉取得，主線首通與掛機給的量相對降低。

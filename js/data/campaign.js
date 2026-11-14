@@ -254,15 +254,16 @@ RES.CAMPAIGN = {
     // 推薦戰力：校準用的參考隊伍在預期養成下的戰力（需要 Growth，只在大廳用）
     function recommend(ch, st) {
         const e = expected(idxOf(ch, st));
-        const sum = REF_TEAM.reduce((a, id) => a + window.Growth.power(id, {lv: e.lv, star: window.Save.START_STAR[R.HEROES[id].rarity] + e.star, sk: e.sk, ul: e.sk}), 0);
+        const gb = window.Gear ? window.Gear.expectedBonus(idxOf(ch, st)) : null;
+        const sum = REF_TEAM.reduce((a, id) => a + window.Growth.power(id, {lv: e.lv, star: window.Save.START_STAR[R.HEROES[id].rarity] + e.star, sk: e.sk, ul: e.sk}, gb), 0);
         return Math.round(sum / 100) * 100;
     }
 
     function firstReward(ch, st) {
         const i = idxOf(ch, st), kind = kindOf(st);
-        if (kind === 'boss') return {gem: 150, gold: 4000 + i * 80, exp: 50 + Math.round(i * 0.6), brk: 10, book: 3, ltdTicket: 1};
-        if (kind === 'elite') return {gem: 50, gold: 1200 + i * 45, exp: 25 + Math.round(i * 0.4), brk: 4, book: 1};
-        return {gem: 30, gold: 600 + i * 30, exp: 15 + Math.round(i * 0.3), brk: 1};
+        if (kind === 'boss') return {gem: 150, gold: 4000 + i * 80, exp: 30 + Math.round(i * 0.35), brk: 6, book: 2, ltdTicket: 1};
+        if (kind === 'elite') return {gem: 50, gold: 1200 + i * 45, exp: 15 + Math.round(i * 0.25), brk: 2, book: 1};
+        return {gem: 30, gold: 600 + i * 30, exp: 8 + Math.round(i * 0.18)};
     }
     // 重打／掃蕩：沒有鑽石，金幣與藥水少一點
     function repeatReward(ch, st) {
@@ -329,18 +330,31 @@ RES.CAMPAIGN = {
     // 每小時收益：依最高通關關卡
     function idleRate(S) {
         const i = progress(S);
-        return {gold: 250 + i * 20, exp: 3 + i * 0.2, brk: 0.08 + i * 0.004};
+        // 打完第 1 章（裝備解鎖）後，掛機也給強化石、偶爾掉散件裝備
+        const gear = i >= 15;
+        return {gold: 250 + i * 20, exp: 2 + i * 0.12, brk: 0.04 + i * 0.002, stone: gear ? 1 + i * 0.03 : 0, gearPerH: gear ? 0.25 : 0};
+    }
+    const idleReward = (r, h) => ({gold: Math.floor(r.gold * h), exp: Math.floor(r.exp * h), brk: Math.floor(r.brk * h), stone: Math.floor(r.stone * h)});
+    // 掛機掉的散件：沒有套裝，品質依最高通關的章節
+    function idleGear(S, h, rand = Math.random) {
+        const r = idleRate(S), out = [];
+        if (!r.gearPerH || !window.Gear) return out;
+        let n = Math.floor(r.gearPerH * h + rand());
+        const floor = Math.max(1, Math.floor(progress(S) / 15));
+        while (n-- > 0) out.push(window.Gear.make(S, rand, {q: Math.min(3, window.Gear.rollQuality(rand, floor))}));
+        return out;
     }
     function idlePending(S, now = Date.now()) {
         S.idle = S.idle || {last: now, quickDay: '', quickUsed: 0};
         const h = Math.min(IDLE_MAX_H, (now - S.idle.last) / 3600000);
         const r = idleRate(S);
-        return {hours: h, reward: {gold: Math.floor(r.gold * h), exp: Math.floor(r.exp * h), brk: Math.floor(r.brk * h)}};
+        return {hours: h, reward: idleReward(r, h)};
     }
     function idleClaim(S, now = Date.now()) {
         const p = idlePending(S, now);
         for (const [k, v] of Object.entries(p.reward)) S.currency[k] = (S.currency[k] || 0) + v;
         S.idle.last = now;
+        p.gear = idleGear(S, p.hours);
         return p;
     }
     // 快速掛機：立即領 2 小時。每天免費 1 次，之後 50、100 鑽石各 1 次
@@ -359,9 +373,9 @@ RES.CAMPAIGN = {
         S.currency.gem -= q.cost;
         S.idle.quickUsed++;
         const r = idleRate(S);
-        const reward = {gold: Math.floor(r.gold * 2), exp: Math.floor(r.exp * 2), brk: Math.floor(r.brk * 2)};
+        const reward = idleReward(r, 2);
         for (const [k, v] of Object.entries(reward)) S.currency[k] = (S.currency[k] || 0) + v;
-        return {ok: true, reward};
+        return {ok: true, reward, gear: idleGear(S, 2)};
     }
 
     window.Campaign = {stage, recommend, expected, REF_TEAM, firstReward, repeatReward, settle, sweep, progress, unlocked, chapterStars, openChest, idxOf, key, kindOf, power,

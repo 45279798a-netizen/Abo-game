@@ -312,6 +312,93 @@ RES.ENEMIES = {
         ],
         passives: [{name: '狂暴', desc: '生命低於 30% 後速度 +30%', type: 'enrage', hpBelow: 0.3, spdPct: 0.3}],
     },
+
+    // ───────── 套裝副本首領 ─────────
+    stormBandit: {
+        name: '風暴盜賊王', faction: 'beast', element: 'wind', role: 'assassin', img: 'm13', boss: true,
+        stats: {hp: 8000, atk: 230, def: 120, spd: 122, res: 0.2},
+        skills: [
+            {
+                name: '旋風亂舞', cd: 3, show: 2400, vfx: [{id: 'spiral-gale', at: 'foes', hit: 0}, {id: 'azure-sweep', at: 'foes', delay: 400, hit: 1}, {id: 'wind-vortex', at: 'foes', delay: 750, hit: 2}], desc: '敵方全體 90% 傷害（3 段），拉條 15%',
+                effects: [{type: 'damage', target: 'enemies', mult: 0.9, hits: [0.3, 0.3, 0.4]}, {type: 'pull', target: 'same', pct: 0.15}],
+            },
+            {
+                name: '割喉', cd: 2, show: 1800, vfx: [{id: 'weapon-smear', hit: 0}, {id: 'spatial-smear', delay: 300, hit: 1}], desc: '生命比例最低的敵人 200% 傷害（2 段）',
+                effects: [{type: 'damage', target: 'enemyLowest', mult: 2.0, hits: [0.5, 0.5]}],
+            },
+        ],
+        passives: [{name: '疾風步', desc: '速度 +10%', type: 'statUp', stat: 'spd', pct: 0.1}],
+    },
+    ironGolem: {
+        name: '鐵壁魔像', faction: 'beast', element: 'water', role: 'tank', img: 'h_iron', boss: true,
+        stats: {hp: 9000, atk: 210, def: 220, spd: 86, res: 0.25},
+        skills: [
+            {
+                name: '鋼鐵震擊', cd: 3, show: 2400, vfx: [{id: 'shockwave', at: 'foes', hit: 0}, {id: 'magma-fissure', at: 'foes', delay: 450, hit: 1}], desc: '敵方全體 80% 傷害（2 段），40% 機率減速',
+                effects: [{type: 'damage', target: 'enemies', mult: 0.8, hits: [0.5, 0.5]}, {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 0.4}],
+            },
+            {
+                name: '堡壘模式', cd: 4, show: 1800, vfx: [{id: 'magic-barrier', at: 'self', main: true}], desc: '獲得最大生命 20% 的護盾，嘲諷 2 回合',
+                effects: [{type: 'shield', target: 'self', pctMaxHp: 0.2}, {type: 'status', target: 'self', status: 'taunt', turns: 2, chance: 1}],
+            },
+        ],
+        passives: [{name: '自我修復', desc: '每次輪到自己時回復 3% 生命', type: 'regenOnTurn', pct: 0.03}],
+    },
+    bloodWarlock: {
+        name: '血月術士', faction: 'undead', element: 'dark', role: 'mage', img: 'h_void', boss: true,
+        stats: {hp: 7800, atk: 250, def: 110, spd: 106, res: 0.2},
+        skills: [
+            {
+                name: '血月降臨', cd: 4, show: 2800, vfx: [{id: 'black-hole', at: 'foes', pull: 900, dark: 1200, hit: 0}, {id: 'darkchain-detonation', at: 'foes', delay: 1000, hit: 1}], desc: '敵方全體 110% 傷害（2 段），40% 機率沉默',
+                effects: [{type: 'damage', target: 'enemies', mult: 1.1, hits: [0.4, 0.6]}, {type: 'status', target: 'same', status: 'silence', turns: 1, chance: 0.4}],
+            },
+            {
+                name: '血之詛咒', cd: 2, show: 1800, vfx: [{id: 'binding-curse', main: true, hit: 0}, {id: 'soul-siphon', delay: 300, hit: 1}], desc: '單體 170% 傷害（2 段），破甲 2 回合',
+                effects: [{type: 'damage', target: 'enemy', mult: 1.7, hits: [0.5, 0.5]}, {type: 'status', target: 'same', status: 'defDown', turns: 2, chance: 0.8}],
+            },
+        ],
+    },
+
+    // ───────── 素材試煉首領 ─────────
+    goldGuardian: {
+        name: '黃金守衛', faction: 'beast', element: 'light', role: 'warrior', img: 'dm_gold', boss: true,
+        stats: {hp: 8500, atk: 220, def: 160, spd: 96, res: 0.2},
+        skills: [{
+            name: '黃金審判', cd: 3, show: 2400, vfx: [{id: 'golden-chain-rain', at: 'foes', hit: 0}, {id: 'radiant-beam', at: 'foes', delay: 450, hit: 1}], desc: '敵方全體 90% 傷害（2 段）',
+            effects: [{type: 'damage', target: 'enemies', mult: 0.9, hits: [0.5, 0.5]}],
+        }],
+    },
+    expSpirit: {
+        name: '經驗之靈', faction: 'beast', element: 'water', role: 'mage', img: 'dm_exp', boss: true,
+        stats: {hp: 7500, atk: 240, def: 110, spd: 108, res: 0.2},
+        skills: [{
+            name: '靈魂潮汐', cd: 3, show: 2400, vfx: [{id: 'tidal-surge', at: 'foes', hit: 0}, {id: 'ice-shatter', at: 'foes', each: true, delay: 450, hit: 1}], desc: '敵方全體 90% 傷害（2 段），25% 機率凍結',
+            effects: [{type: 'damage', target: 'enemies', mult: 0.9, hits: [0.5, 0.5]}, {type: 'status', target: 'same', status: 'freeze', turns: 1, chance: 0.25}],
+        }],
+    },
+    stoneGiant: {
+        name: '熔岩石魔', faction: 'beast', element: 'fire', role: 'tank', img: 'dm_stone', boss: true,
+        stats: {hp: 9500, atk: 210, def: 200, spd: 88, res: 0.25},
+        skills: [{
+            name: '熔岩重擊', cd: 3, show: 2400, vfx: [{id: 'magma-fissure', at: 'foes', hit: 0}, {id: 'fire-explosion', at: 'foes', delay: 450, hit: 1}], desc: '敵方全體 85% 傷害（2 段），50% 機率燃燒',
+            effects: [{type: 'damage', target: 'enemies', mult: 0.85, hits: [0.5, 0.5]}, {type: 'status', target: 'same', status: 'burn', turns: 2, chance: 0.5, dotMult: 0.25}],
+        }],
+        passives: [{name: '岩石之軀', desc: '每次輪到自己時回復 3% 生命', type: 'regenOnTurn', pct: 0.03}],
+    },
+    bookBurner: {
+        name: '焚書者', faction: 'undead', element: 'fire', role: 'mage', img: 'h_ignis', boss: true,
+        stats: {hp: 7800, atk: 255, def: 110, spd: 110, res: 0.25},
+        skills: [
+            {
+                name: '焚書烈焰', cd: 3, show: 2600, vfx: [{id: 'fire-vortex', at: 'foes', hit: 0}, {id: 'flame-surge', at: 'foes', delay: 450, hit: 1}, {id: 'fire-explosion', at: 'foes', delay: 800, hit: 2}], desc: '敵方全體 100% 傷害（3 段），50% 機率燃燒',
+                effects: [{type: 'damage', target: 'enemies', mult: 1.0, hits: [0.3, 0.3, 0.4]}, {type: 'status', target: 'same', status: 'burn', turns: 2, chance: 0.5, dotMult: 0.3}],
+            },
+            {
+                name: '禁咒', cd: 2, show: 1800, vfx: [{id: 'arcane-missile', main: true, hit: 0}, {id: 'energy-burst', delay: 300, hit: 1}], desc: '單體 160% 傷害（2 段），50% 機率沉默',
+                effects: [{type: 'damage', target: 'enemy', mult: 1.6, hits: [0.5, 0.5]}, {type: 'status', target: 'same', status: 'silence', turns: 1, chance: 0.5}],
+            },
+        ],
+    },
 };
 
 // 原型的三場戰鬥。rows：front 最多 2 格、back 最多 3 格（首領也佔 1 格）

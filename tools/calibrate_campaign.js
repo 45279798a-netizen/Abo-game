@@ -1,7 +1,7 @@
 // 主線難度校準：node tools/calibrate_campaign.js [章節,章節...]
 // 每一關用二分搜尋找出「普通養成的隊伍在預期養成下勝率剛好落在目標」的敵人強度，
 // 並用該強度下的平均回合數決定 3 星回合數。結果寫進 js/data/campaign_table.js（遊戲直接讀這張表）。
-// 預期養成與 tools/sim_campaign.js 相同；改了英雄、敵人或養成數值後重跑一次。
+// 預期養成（等級、星級、技能、裝備）與 tools/sim_campaign.js 相同；改了英雄、敵人或養成數值後重跑一次。
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -10,12 +10,13 @@ const root = path.join(__dirname, '..');
 const ctx = {console, Math, Date};
 ctx.window = ctx;
 vm.createContext(ctx);
-for (const f of ['js/data/elements.js', 'js/data/factions.js', 'js/data/heroes.js', 'js/data/enemies.js', 'js/data/campaign.js', 'js/core/battle.js']) {
+for (const f of ['js/data/elements.js', 'js/data/factions.js', 'js/data/heroes.js', 'js/data/enemies.js', 'js/data/gear.js', 'js/data/campaign.js', 'js/core/battle.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, {filename: f});
 }
 ctx.Save = {START_STAR: {R: 1, SR: 2, SSR: 3, UR: 4}};
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core/growth.js'), 'utf8'), ctx, {filename: 'growth.js'});
-const {RES, Battle, Campaign, Growth} = ctx;
+vm.runInContext(fs.readFileSync(path.join(root, 'js/core/gear.js'), 'utf8'), ctx, {filename: 'gear.js'});
+const {RES, Battle, Campaign, Growth, Gear} = ctx;
 
 const SEEDS = 24;
 const TARGET = {normal: 0.9, elite: 0.8, boss: 0.65};   // 預期養成下的勝率
@@ -25,11 +26,12 @@ const MAX_LEN = {normal: 10, elite: 12, boss: 20};   // 平均回合超過就壓
 const BOSS_HP_REF = 8000;   // 首領基礎生命越高，倍率壓越低，讓每章首領戰長度差不多
 const TEAM = ['arthur', 'reina', 'zeke', 'elara', 'faye'];
 // 預期養成：打第 i 關時的等級、多出的星數、技能等級
-const expected = i => ({lv: Math.min(100, Math.round(1 + i * 0.62)), star: Math.floor(i / 60), sk: Math.min(5, 1 + Math.floor(i / 40))});
+const expected = i => Campaign.expected(i);
 
 function growthFor(i) {
     const e = expected(i), g = {};
-    for (const id of TEAM) g[id] = Growth.multipliers(id, {lv: e.lv, star: ctx.Save.START_STAR[RES.HEROES[id].rarity] + e.star, sk: e.sk, ul: e.sk});
+    const gear = Gear.expectedBonus(i);   // 預期裝備（第 2 章起）
+    for (const id of TEAM) g[id] = {...Growth.multipliers(id, {lv: e.lv, star: ctx.Save.START_STAR[RES.HEROES[id].rarity] + e.star, sk: e.sk, ul: e.sk}), gear};
     return g;
 }
 function trial(s, power, growth, hpPower) {
@@ -55,7 +57,8 @@ for (const ch of chapters) {
         const growth = growthFor(s.idx);
         const target = TARGET[s.kind];
         const e = expected(s.idx);
-        const hpBase = +((1 + 0.04 * (e.lv - 1)) * (1 + 0.15 * e.star) * HP_K[s.kind] * (s.kind === 'boss' ? BOSS_HP_REF / RES.ENEMIES[RES.CAMPAIGN.chapters[ch - 1].boss].stats.hp : 1)).toFixed(3);
+        const gb = Gear.expectedBonus(s.idx);   // 玩家攻擊力也含裝備
+        const hpBase = +((1 + 0.04 * (e.lv - 1)) * (1 + 0.15 * e.star) * (1 + (gb?.atkPct || 0)) * HP_K[s.kind] * (s.kind === 'boss' ? BOSS_HP_REF / RES.ENEMIES[RES.CAMPAIGN.chapters[ch - 1].boss].stats.hp : 1)).toFixed(3);
         // 找攻擊倍率；如果那個強度下戰鬥太長（補師、高血量組合），把生命倍率壓低再找一次
         let hpPower = hpBase, p, r;
         for (let pass = 0; pass < 3; pass++) {

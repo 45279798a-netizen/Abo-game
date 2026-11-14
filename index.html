@@ -21,6 +21,7 @@
 
     <nav class="lb-menu">
         <button class="lb-btn main" data-open="battle"><span class="i">⚔️</span><span class="t">出征</span><span class="s" id="battle-sub">主線</span></button>
+        <button class="lb-btn" data-open="trial"><span class="i">🏛️</span><span class="t">試煉</span><span class="s" id="trial-sub">副本・素材</span></button>
         <button class="lb-btn" data-open="hero"><span class="i">🛡️</span><span class="t">英雄</span><span class="s">編隊・養成</span></button>
         <button class="lb-btn" data-open="gacha"><span class="i">✨</span><span class="t">招募</span><span class="s" id="gacha-sub">S1 限定・烏瑟</span><i id="gacha-dot" class="dot"></i></button>
         <button class="lb-btn" data-open="bag"><span class="i">🎒</span><span class="t">背包</span><span class="s">道具</span></button>
@@ -35,6 +36,7 @@
 
     <!-- 子畫面 -->
     <section id="panel-battle" class="panel"></section>
+    <section id="panel-trial" class="panel"></section>
     <section id="panel-hero" class="panel"></section>
     <section id="panel-gacha" class="panel"></section>
     <section id="panel-bag" class="panel"></section>
@@ -50,10 +52,14 @@
 <script src="js/data/heroes.js"></script>
 <script src="js/data/enemies.js"></script>
 <script src="js/data/vfxcolors.js"></script>
+<script src="js/data/gear.js"></script>
 <script src="js/data/campaign.js"></script>
 <script src="js/data/campaign_table.js"></script>
+<script src="js/data/dungeons.js"></script>
+<script src="js/data/dungeon_table.js"></script>
 <script src="js/core/save.js"></script>
 <script src="js/core/growth.js"></script>
+<script src="js/core/gear.js"></script>
 <script src="js/core/gacha.js"></script>
 <script src="js/lobby/main.js"></script>
 </body>

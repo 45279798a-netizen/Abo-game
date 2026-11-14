@@ -434,3 +434,5 @@ a.icon-btn { text-decoration: none; color: inherit; }
     .res-sheet .res-r { border-left: 1px solid rgba(255,255,255,.08); padding-left: 18px; }
     .res-sheet .res-stats { margin-top: 0; }
 }
+.res-gear { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 9px; border: 1px solid var(--qc); background: rgba(0,0,0,.3); font-size: 15px; }
+.res-gear small { font-size: 11px; color: var(--qc); }

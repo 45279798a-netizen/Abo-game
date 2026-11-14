@@ -394,10 +394,11 @@ async function startBattle() {
     slotsUsed.clear();
     $('#result').classList.remove('show');
     // 主線關卡（cfg.stage）用 Campaign 產生關卡；growth：從大廳帶來的養成倍率
-    const stageEnc = cfg.stage ? Campaign.stage(cfg.stage.ch, cfg.stage.st) : null;
+    const stageEnc = cfg.stage ? Campaign.stage(cfg.stage.ch, cfg.stage.st)
+        : cfg.dungeon ? Dungeon.encounter(cfg.dungeon.kind, cfg.dungeon.id, cfg.dungeon.floor) : null;
     const b = Battle.create({team: cfg.team, encounterId: cfg.encounter, encounter: stageEnc, auto: state.auto, growth: cfg.growth});
     state.battle = b;
-    $('#b-enc').textContent = stageEnc ? `${stageEnc.key}　${stageEnc.kind === 'boss' ? stageEnc.name : R.CAMPAIGN.chapters[stageEnc.ch - 1].name}・${stageEnc.difficulty}` : `${b.encounter.name}・${b.encounter.difficulty}`;
+    $('#b-enc').textContent = cfg.dungeon ? `${stageEnc.name}・${stageEnc.difficulty}` : stageEnc ? `${stageEnc.key}　${stageEnc.kind === 'boss' ? stageEnc.name : R.CAMPAIGN.chapters[stageEnc.ch - 1].name}・${stageEnc.difficulty}` : `${b.encounter.name}・${b.encounter.difficulty}`;
     await Promise.all(b.units.map(u => addUnit(u)));
     const d = defaultPose();
     cam.pos.copy(d.pos).add(new THREE.Vector3(0, 1.5, 6));
@@ -973,7 +974,19 @@ function settleStage(win, round) {
     res.S = S;
     return res;
 }
-const CUR_ICON = {gold: '🪙', gem: '💎', ticket: '🎫', ltdTicket: '🌟', exp: '🧪', brk: '💠', book: '📘', dust: '✴️'};
+const CUR_ICON = {gold: '🪙', gem: '💎', ticket: '🎫', ltdTicket: '🌟', exp: '🧪', brk: '💠', book: '📘', stone: '🔨', dust: '✴️'};
+// 副本結算
+function settleDungeon(win, round) {
+    const b = state.battle, dg = cfg.dungeon;
+    const S = Save.load();
+    const noDeath = b.units.filter(u => u.side === 'ally').every(u => u.alive);
+    const res = Dungeon.settle(S, dg.kind, dg.id, dg.floor, win, {noDeath, rounds: round});
+    Save.save(S);
+    res.noDeath = noDeath;
+    return res;
+}
+const GQ = () => R.GEAR.QUALITY;
+const gearChip = it => `<span class="res-gear" style="--qc:${GQ()[it.q].color}">${R.GEAR.SLOTS[it.slot].icon}${it.set ? R.GEAR.SETS[it.set].icon : ''}<small>${GQ()[it.q].name}${it.set ? R.GEAR.SETS[it.set].name : ''}${R.GEAR.SLOTS[it.slot].name}</small></span>`;
 
 function showResult(e) {
     const b = state.battle;
@@ -986,7 +999,18 @@ function showResult(e) {
     const max = Math.max(1, ...rows.map(r => r.v));
     const st = settleStage(win, round);
     let stageHtml = '', btns = `<a class="btn-secondary" href="index.html" style="display:grid;place-items:center;text-decoration:none;color:inherit">回大廳</a><button class="btn-primary" id="res-again">再打一次</button>`;
-    if (cfg.stage) {
+    if (cfg.dungeon) {
+        const dg = cfg.dungeon, s = Dungeon.encounter(dg.kind, dg.id, dg.floor);
+        const st2 = settleDungeon(win, round);
+        const conds = [['通關', win], ['沒有英雄陣亡', win && st2.noDeath], [`${s.rounds} 回合內通關`, win && round <= s.rounds]];
+        stageHtml = `<div class="res-stars">${conds.map(([t, ok], i) => `<div class="${ok ? 'on' : ''}" style="animation-delay:${0.25 + i * 0.25}s"><i>★</i><span>${t}</span></div>`).join('')}</div>`;
+        if (win) stageHtml += `<div class="res-rw"><span>${st2.first ? '首通獎勵' : '獎勵'}</span>${Object.entries(st2.reward).filter(([, v]) => v > 0).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('')}</div>`
+            + (st2.gear.length ? `<div class="res-rw">${st2.gear.map(gearChip).join('')}</div>` : '');
+        else stageHtml += `<div class="res-tip">提示：回大廳養成英雄、強化裝備，或先打低一層</div>`;
+        const nx = win && dg.floor < R.DUNGEONS.floors;
+        btns = `<a class="btn-secondary" href="index.html#trial" style="display:grid;place-items:center;text-decoration:none;color:inherit">回試煉</a><button class="btn-secondary" id="res-again">再打一次</button>${nx ? '<button class="btn-primary" id="res-next">下一層 ▶</button>' : ''}`;
+        if (nx) setTimeout(() => { $('#res-next').onclick = () => { cfg.dungeon = {...dg, floor: dg.floor + 1}; try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ } location.reload(); }; });
+    } else if (cfg.stage) {
         const s = Campaign.stage(cfg.stage.ch, cfg.stage.st);
         const conds = [['通關', win], ['沒有英雄陣亡', win && st.noDeath], [`${s.rounds} 回合內通關`, win && round <= s.rounds]];
         stageHtml = `<div class="res-stars">${conds.map(([t, ok], i) => `<div class="${ok ? 'on' : ''}" style="animation-delay:${0.25 + i * 0.25}s"><i>★</i><span>${t}</span></div>`).join('')}</div>`;
@@ -1072,8 +1096,8 @@ function frame(now) {
 
 // ───────── 開始 ─────────
 (async function init() {
-    const enc = cfg.stage ? Campaign.stage(cfg.stage.ch, cfg.stage.st) : (R.ENCOUNTERS.find(e => e.id === cfg.encounter) || R.ENCOUNTERS[0]);
-    if (!cfg.stage) cfg.encounter = enc.id;
+    const enc = cfg.stage ? Campaign.stage(cfg.stage.ch, cfg.stage.st) : cfg.dungeon ? Dungeon.encounter(cfg.dungeon.kind, cfg.dungeon.id, cfg.dungeon.floor) : (R.ENCOUNTERS.find(e => e.id === cfg.encounter) || R.ENCOUNTERS[0]);
+    if (!cfg.stage && !cfg.dungeon) cfg.encounter = enc.id;
     resize();
     setupPost();
     const d = defaultPose();

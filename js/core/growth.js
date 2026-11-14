@@ -41,15 +41,22 @@
             ult: 1 + SKILL_PCT * (((o && o.ul) || 1) - 1),
         };
     }
-    function stats(id, o) {
+    // e：裝備加成（Gear.bonus），可省略
+    function stats(id, o, e) {
         const d = R.HEROES[id], role = R.ROLES[d.role], m = R.RARITY[d.rarity].mult * mult(id, o);
-        let hp = role.hp * m, atk = role.atk * m, def = role.def * m;
+        e = e || {};
+        let hp = role.hp * m * (1 + (e.hpPct || 0)), atk = role.atk * m * (1 + (e.atkPct || 0)), def = role.def * m * (1 + (e.defPct || 0));
         const p = d.passive;
         if (p?.type === 'statUp' && p.pct) { if (p.stat === 'hp') hp *= 1 + p.pct; if (p.stat === 'atk') atk *= 1 + p.pct; if (p.stat === 'def') def *= 1 + p.pct; }
-        return {hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), spd: role.spd + (d.spdBonus || 0)};
+        return {hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), spd: Math.round((role.spd + (d.spdBonus || 0) + (e.spd || 0)) * (1 + (e.spdPct || 0))),
+            crit: 0.15 + (e.crit || 0), critDmg: 0.5 + (e.critDmg || 0), hit: e.hit || 0, res: e.res || 0};
     }
-    // 戰力：給玩家比較用的單一數字
-    const power = (id, o) => { const s = stats(id, o); const m = multipliers(id, o); return Math.round((s.hp * 0.2 + s.atk * 2.2 + s.def * 1.5 + s.spd * 3) * (1 + (m.skill - 1) * 0.3 + (m.ult - 1) * 0.3)); };
+    // 戰力：給玩家比較用的單一數字（暴擊換算成期望傷害）
+    const power = (id, o, e) => {
+        const s = stats(id, o, e), m = multipliers(id, o);
+        const atk = s.atk * (1 + Math.min(1, s.crit) * s.critDmg) / (1 + 0.15 * 0.5);
+        return Math.round((s.hp * 0.2 + atk * 2.2 + s.def * 1.5 + s.spd * 3 + (s.hit + s.res) * 300) * (1 + (m.skill - 1) * 0.3 + (m.ult - 1) * 0.3));
+    };
 
     const has = (S, cost) => Object.entries(cost).every(([k, v]) => (S.currency[k] || 0) >= v);
     const pay = (S, cost) => { for (const [k, v] of Object.entries(cost)) S.currency[k] -= v; };

@@ -3,7 +3,7 @@
 (function () {
     const R = window.RES;
     const KEY = 'abo_s1_save';
-    const VERSION = 2;
+    const VERSION = 3;
 
     // 開局：送 4 位英雄＋起始資源（新手 10 連抽另外給，見 gacha.js）
     const START = {
@@ -11,7 +11,7 @@
         team: ['arthur', 'faye', 'elara', 'dart', null],
         leader: 'arthur',
         // 之後的資源主要從主線首通、章節寶箱與掛機取得
-        currency: {gold: 20000, gem: 1500, ticket: 3, ltdTicket: 1, exp: 120, brk: 0, book: 1, dust: 0},
+        currency: {gold: 20000, gem: 1500, ticket: 3, ltdTicket: 1, exp: 120, brk: 0, book: 1, stone: 0, dust: 0},
     };
     // 初始星級：R 1★、SR 2★、SSR 3★、UR 4★
     const START_STAR = {R: 1, SR: 2, SSR: 3, UR: 4};
@@ -25,6 +25,8 @@
             newbieDone: false, pulls: 0,
             campaign: {stars: {}, chests: {}, story: {}},   // 主線：每關最高星數、已領寶箱、看過的劇情
             idle: {last: Date.now(), quickDay: '', quickUsed: 0},
+            gear: [], gearSeq: 0,                            // 裝備（js/core/gear.js）
+            dungeons: {stars: {}, sweepDay: '', sweepUsed: 0},   // 套裝副本、素材試煉
         };
         START.heroes.forEach(id => addHero(s, id));
         return s;
@@ -41,6 +43,10 @@
         s.v = VERSION;
         s.campaign = s.campaign || {stars: {}, chests: {}, story: {}};
         s.idle = s.idle || {last: Date.now(), quickDay: '', quickUsed: 0};
+        // 第 3 版：裝備、副本
+        s.gear = s.gear || []; s.gearSeq = s.gearSeq || 0;
+        s.dungeons = s.dungeons || {stars: {}, sweepDay: '', sweepUsed: 0};
+        for (const it of s.gear) if (it.hero && !s.heroes[it.hero]) it.hero = null;
         s.pity = s.pity || {std: {sr: 0, ssr: 0}, ltd: {sr: 0, ur: 0}};
         // 養成欄位（養成功能加入前的存檔沒有）
         for (const [k, v] of Object.entries(START.currency)) if (s.currency[k] == null) s.currency[k] = v;

@@ -52,19 +52,24 @@
     }
 
     // g：養成倍率 {stat, skill, ult}（由大廳依等級、星級、技能等級算好傳進來；沒有就是 1）
+    // g.gear：裝備加成（Gear.bonus 算好的 {atkPct, hpPct, …, four}）
     function makeHero(id, uid, g) {
         const d = R.HEROES[id];
         const role = R.ROLES[d.role];
         const m = R.RARITY[d.rarity].mult * (g?.stat || 1);
+        const e = g?.gear || {};
         return buildUnit({
             uid, id, side: 'ally', name: d.name, faction: d.faction, element: d.element, role: d.role,
             img: d.img, faceY: d.faceY || 0, rarity: d.rarity, boss: false,
             base: {
-                hp: Math.round(role.hp * m), atk: Math.round(role.atk * m), def: Math.round(role.def * m),
-                spd: role.spd + (d.spdBonus || 0), crit: 0.15, critDmg: 0.5, hit: 0, res: 0,
+                hp: Math.round(role.hp * m * (1 + (e.hpPct || 0))), atk: Math.round(role.atk * m * (1 + (e.atkPct || 0))),
+                def: Math.round(role.def * m * (1 + (e.defPct || 0))),
+                spd: Math.round((role.spd + (d.spdBonus || 0) + (e.spd || 0)) * (1 + (e.spdPct || 0))),
+                crit: 0.15 + (e.crit || 0), critDmg: 0.5 + (e.critDmg || 0), hit: e.hit || 0, res: e.res || 0,
             },
             skills: d.skill ? [d.skill] : [], passives: d.passive ? [d.passive] : [], ult: d.ult || null,
-            mul: {skill: g?.skill || 1, ult: g?.ult || 1},
+            mul: {skill: g?.skill || 1, ult: (g?.ult || 1) * (1 + (e.four?.ultDmg || 0))},
+            gear4: e.four || {},
         });
     }
 
@@ -129,6 +134,9 @@
                 if (fb.critDmg) u.base.critDmg += fb.critDmg;
                 if (fb.startShield) u.shield = Math.round(u.maxHp * fb.startShield);
                 u.energy = R.ENERGY.start;
+                // 裝備 4 件套：開場護盾、開場能量
+                if (u.gear4.startShield) u.shield += Math.round(u.maxHp * u.gear4.startShield);
+                if (u.gear4.startEnergy) u.energy = Math.min(R.ENERGY.max, u.energy + u.gear4.startEnergy);
             }
 
             // 光環類被動
@@ -140,6 +148,7 @@
             // 開場行動條隨機分散，避免整隊擠在一起連續出手
             for (const u of this.units) u.atb = Math.floor(this.rand() * R.START_ATB_SPREAD);
             if (fb.startPush) for (const u of this.allies()) u.atb = Math.min(ATB_MAX, u.atb + fb.startPush * ATB_MAX);
+            for (const u of this.allies()) if (u.gear4.startPush) u.atb = Math.min(ATB_MAX, u.atb + u.gear4.startPush * ATB_MAX);
             for (const u of this.allies()) {
                 for (const p of u.passives) {
                     if (p.type === 'startPushAllies') this.allies().forEach(a => { a.atb = Math.min(ATB_MAX, a.atb + p.pct * ATB_MAX); });
@@ -267,6 +276,7 @@
             // 回合開始：再生、持續傷害、冷卻
             for (const p of u.passives) if (p.type === 'regenOnTurn') this.heal(u, u, u.maxHp * p.pct);
             if (u.fac?.regen) this.heal(u, u, u.maxHp * u.fac.regen);
+            if (u.gear4?.regen) this.heal(u, u, u.maxHp * u.gear4.regen);
             for (const s of u.statuses.filter(s => s.key === 'burn' || s.key === 'poison')) {
                 this.applyDamage(u, Math.round(s.value), {kind: 'dot', status: s.key, srcUid: s.src});
                 if (!u.alive) break;
@@ -569,6 +579,8 @@
                 t.statuses.push({key: e.status, turns: e.turns, value, src: src.uid, appliedAt: this.actionId});
             }
             this.emit({type: 'status', uid: t.uid, key: e.status});
+            // 封印 4 件：控制成功時再拉條
+            if (src.gear4?.sealPull && src.side !== t.side && ['freeze', 'slow', 'silence'].includes(e.status)) this.pull(t, src.gear4.sealPull);
         }
 
         cleanse(t, count) {
