@@ -236,7 +236,6 @@
         const rec = Campaign.recommend(ch, st), tp = teamPower();
         const foes = [...s.front, ...s.back];
         const uniq = [...new Set(foes)];
-        const left = Campaign.sweepLeft(S);
         const m = modal(`<div class="st-head"><span class="kind ${s.kind}">${s.difficulty}</span><h3>${ch}-${st}　${s.kind === 'boss' ? s.name : CH[ch - 1].name}</h3><div class="st-stars">${starsHtml(got)}</div></div>
             <div class="foes">${uniq.map(id => `<div class="face ${R.ENEMIES[id].boss ? 'boss' : ''}" title="${R.ENEMIES[id].name}"><img src="${face(R.ENEMIES[id].img)}" alt=""><span>${foes.filter(x => x === id).length > 1 ? '×' + foes.filter(x => x === id).length : ''}</span></div>`).join('')}</div>
             <div class="pow">推薦戰力 <b>${rec.toLocaleString()}</b>　隊伍戰力 <b class="${tp >= rec ? 'ok' : 'low'}">${tp.toLocaleString()}</b></div>
@@ -247,17 +246,8 @@
             </ul>
             <div class="rws"><span class="muted">${got ? '重打獎勵' : '首通獎勵'}</span>${rewardHtml(got ? Campaign.repeatReward(ch, st) : Campaign.firstReward(ch, st))}</div>
             <div class="row">
-                ${got >= 3 ? `<button class="btn" data-sweep="1" ${left ? '' : 'disabled'}>掃蕩 ×1</button><button class="btn" data-sweep="10" ${left ? '' : 'disabled'}>掃蕩 ×${Math.min(10, left) || 10}</button><span class="muted" style="font-size:11px">今日剩 ${left}</span>` : '<span class="muted" style="font-size:11px">3 星通關後可以掃蕩</span>'}
                 <div class="sp"></div><button class="btn primary" id="st-go">出戰</button>
             </div>`, 'stage');
-        m.querySelectorAll('[data-sweep]').forEach(b => {
-            b.onclick = () => {
-                const r = Campaign.sweep(S, ch, st, Number(b.dataset.sweep));
-                if (!r.ok) { toast(r.reason); return; }
-                save(); renderCurrency(); m.remove(); showStage(ch, st);
-                toast(`掃蕩 ${r.times} 次：${rewardText(r.reward)}`);
-            };
-        });
         m.querySelector('#st-go').onclick = () => { m.remove(); launchStage(ch, st); };
     }
 
@@ -582,7 +572,7 @@
             <div class="tbody">
                 <h4>套裝副本 <small>掉落套裝裝備與強化石</small></h4><div class="trow">${DG.sets.map(d => card('set', d)).join('')}</div>
                 <h4>素材試煉 <small>金幣、經驗藥水、突破石、技能書</small></h4><div class="trow">${DG.trials.map(d => card('trial', d)).join('')}</div>
-                <p class="muted" style="text-shadow:0 1px 3px #000">套裝副本不限次數。素材試煉每天補 ${DG.trialPerDay} 次（手動和掃蕩都算，最多存 ${DG.trialMax} 次），用完還能挑戰但不給素材。3 星的層數可以掃蕩。</p>
+                <p class="muted" style="text-shadow:0 1px 3px #000">套裝副本不限次數。素材試煉每天補 ${DG.trialPerDay} 次獎勵次數（最多存 ${DG.trialMax} 次），用完還能挑戰但不給素材。</p>
             </div></div>`;
         p.querySelectorAll('[data-dg]').forEach(b => { b.onclick = () => {
             const [kind, id] = b.dataset.dg.split(':');
@@ -601,19 +591,11 @@
             const st = Dungeon.starsOf(S, kind, id, f), open = Dungeon.unlockedFloor(S, kind, id, f);
             return `<div class="frow ${open ? '' : 'lock'} ${f === best + 1 ? 'next' : ''}"><b>第 ${f} 層</b><span class="st-stars">${starsHtml(st)}</span>
                 <span class="rws">${floorReward(kind, id, f)}</span><div class="sp"></div>
-                ${st >= 3 ? `<button class="btn" data-fs="${f}:1" ${left ? '' : 'disabled'}>掃蕩</button><button class="btn" data-fs="${f}:${lim ? 5 : 10}" ${left ? '' : 'disabled'}>×${lim ? 5 : 10}</button>` : ''}
                 ${open ? `<button class="btn primary" data-fgo="${f}">出戰</button>` : '<span class="muted">🔒</span>'}</div>`;
         }).join('');
         const m = modal(`<h3>${d.name}</h3><p class="muted">首領：${R.ENEMIES[d.boss].name}　${kind === 'set' ? '掉落 ' + d.sets.map(k => GR.SETS[k].name).join('、') + ' 套裝，層數越高品質越好' : d.desc}。星數越高獎勵越多（1★ 60%、2★ 80%、3★ 全額）。${lim ? `素材試煉次數剩 ${left} 次（每天補 ${DG.trialPerDay}，最多存 ${DG.trialMax}）。` : '套裝副本不限次數。'}</p>
             <div class="flist">${rows}</div>`, 'floors');
         m.querySelectorAll('[data-fgo]').forEach(b => { b.onclick = () => { m.remove(); launchDungeon(kind, id, +b.dataset.fgo); }; });
-        m.querySelectorAll('[data-fs]').forEach(b => { b.onclick = () => {
-            const [f, n] = b.dataset.fs.split(':').map(Number);
-            const r = Dungeon.sweep(S, kind, id, f, n);
-            if (!r.ok) { toast(r.reason); return; }
-            save(); renderCurrency(); m.remove(); renderTrial(); showFloors(kind, id);
-            toast(`掃蕩 ${r.times} 次：${rewardText(r.reward)}${r.gear.length ? `、裝備 ${r.gear.length} 件` : ''}`);
-        }; });
     }
     function launchDungeon(kind, id, floor) {
         const team = S.team.filter(Boolean);

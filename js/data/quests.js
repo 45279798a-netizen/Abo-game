@@ -10,14 +10,14 @@ RES.QUESTS = {
         {id: 'battle', name: '戰鬥 3 次（主線或試煉）', ev: 'battle', n: 3, medal: 35},
         {id: 'gacha', name: '招募 1 次', ev: 'gacha', n: 1, medal: 25},
         {id: 'enhance', name: '強化裝備 1 次', ev: 'enhance', n: 1, medal: 25},
-        {id: 'trial', name: '挑戰或掃蕩試煉 2 次', ev: 'trial', n: 2, medal: 35},
+        {id: 'trial', name: '挑戰試煉 2 次', ev: 'trial', n: 2, medal: 35},
         {id: 'levelup', name: '英雄升級 1 次', ev: 'levelup', n: 1, medal: 25},
     ],
     dailyBonus: {medal: 70, gem: 50},   // 每日任務全部完成
     weekly: [
         {id: 'w_stage', name: '主線首次通關 15 關', ev: 'firstClear', n: 15, medal: 120, reward: {gem: 100}},
         {id: 'w_gacha', name: '招募 10 次', ev: 'gacha', n: 10, medal: 100, reward: {ticket: 1}},
-        {id: 'w_trial', name: '挑戰或掃蕩試煉 20 次', ev: 'trial', n: 20, medal: 100, reward: {stone: 60}},
+        {id: 'w_trial', name: '挑戰試煉 15 次', ev: 'trial', n: 15, medal: 100, reward: {stone: 60}},
         {id: 'w_enh9', name: '把一件裝備強化到 +9', ev: 'enhance9', n: 1, medal: 80, reward: {brk: 10}},
         {id: 'w_daily', name: '完成每日任務 5 天', ev: 'dailyDone', n: 5, medal: 100, reward: {ltdTicket: 1}},
     ],
