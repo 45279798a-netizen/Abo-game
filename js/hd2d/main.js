@@ -1129,11 +1129,44 @@ function showResult(e) {
         const nx = hard ? (win && cfg.stage.st < Campaign.N ? {ch: cfg.stage.ch, st: cfg.stage.st + 1, hard: true} : null)
             : win && idx < last ? {ch: Math.ceil((idx + 1) / Campaign.N), st: idx % Campaign.N + 1} : null;
         btns = `<a class="btn-secondary" href="index.html#${hard ? 'hmap' : 'map'}=${cfg.stage.ch}-1" style="display:grid;place-items:center;text-decoration:none;color:inherit">回地圖</a><button class="btn-secondary" id="res-again">再打一次</button>${nx ? '<button class="btn-primary" id="res-next">下一關 ▶</button>' : ''}`;
-        if (nx) setTimeout(() => {
+        // 下一關有劇情（新章節開頭或首領戰）就要回大廳播；換章節也回大廳（背景不同）
+        const S2 = st.S || Save.load();
+        const needStory = n => !hard && ((n.st === 1 && !S2.campaign.story[`${n.ch}:start`]) || (n.st === Campaign.N && !S2.campaign.story[`${n.ch}:boss`]));
+        // 主線連續挑戰：repeat.mode = 'same' 重複這一關、'next' 一路往下打
+        const rp = cfg.repeat;
+        let repeating = false;
+        if (rp) {
+            rp.done++;
+            if (win) rp.wins++;
+            for (const [k, v] of Object.entries(st.reward || {})) if (v > 0) rp.sum[k] = (rp.sum[k] || 0) + v;
+            const nextStage = rp.mode === 'next' ? nx : {...cfg.stage};
+            const block = rp.mode === 'next' && nx && (needStory(nx) || nx.ch !== cfg.stage.ch);
+            repeating = win && rp.done < rp.total && !!nextStage && !block;
+            const why = !win ? '這場輸了，連續挑戰停止' : block ? '下一關要換章節或有劇情，回地圖繼續' : (rp.mode === 'next' && !nx) ? '已經是最後一關' : '';
+            stageHtml += `<div class="rep-sum"><b>連續挑戰 ${rp.done}${rp.mode === 'next' ? '' : ' / ' + rp.total} 場</b>　勝 ${rp.wins}${why ? `<div class="res-tip">${why}</div>` : ''}
+                <div class="res-rw"><span>累計</span>${Object.entries(rp.sum).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('')}</div></div>`;
+            if (repeating) {
+                btns = `<a class="btn-secondary" href="index.html#${hard ? 'hmap' : 'map'}=${cfg.stage.ch}-1" style="display:grid;place-items:center;text-decoration:none;color:inherit">停止並返回</a><button class="btn-primary" id="rep-next">${rp.mode === 'next' ? '下一關' : '下一場'}（<span id="rep-cd">3</span>）</button>`;
+                setTimeout(() => {
+                    let n = 3;
+                    const go = () => {
+                        clearInterval(t);
+                        state.auto = true;
+                        if (rp.mode === 'next') { cfg.stage = nextStage; cfg.auto = true; try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ } location.reload(); }
+                        else startBattle();
+                    };
+                    const t = setInterval(() => { n--; const el = $('#rep-cd'); if (el) el.textContent = n; if (n <= 0) go(); }, 1000);
+                    $('#rep-next').onclick = go;
+                });
+            } else {
+                cfg.repeat = null;
+                try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ }
+            }
+        }
+        if (nx && !repeating) setTimeout(() => {
+            if (!$('#res-next')) return;
             $('#res-next').onclick = () => {
-                // 下一關有劇情（新章節開頭或首領戰）就回大廳播劇情再出戰；沒有就直接重新載入戰場
-                const needStory = !hard && (nx.st === 1 && !st.S.campaign.story[`${nx.ch}:start`]) || (nx.st === Campaign.N && !st.S.campaign.story[`${nx.ch}:boss`]);
-                if (needStory || nx.ch !== cfg.stage.ch) { location.href = `index.html#go=${nx.ch}-${nx.st}`; return; }
+                if (needStory(nx) || nx.ch !== cfg.stage.ch) { location.href = `index.html#go=${nx.ch}-${nx.st}`; return; }
                 cfg.stage = nx;
                 try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ }
                 location.reload();

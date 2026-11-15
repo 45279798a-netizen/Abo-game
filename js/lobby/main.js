@@ -101,7 +101,9 @@
         el.innerHTML = t;   // 可能帶圖示
         el.classList.add('show');
         clearTimeout(toast.t);
-        toast.t = setTimeout(() => el.classList.remove('show'), 1800);
+        // 顯示時間依字數：短的 1.8 秒，長的最多 6 秒
+        const len = el.textContent.length;
+        toast.t = setTimeout(() => el.classList.remove('show'), Math.min(6000, Math.max(1800, len * 110)));
     }
 
     // ───────── 出征：主線章節地圖 ─────────
@@ -280,20 +282,29 @@
                 <li>★ ${s.rounds} 回合內通關</li>
             </ul>
             <div class="rws"><span class="muted">${got ? '重打獎勵' : '首通獎勵'}</span>${rewardHtml(hard ? (got ? Season.hardRepeatReward(ch, st) : Season.hardFirstReward(ch, st)) : (got ? Campaign.repeatReward(ch, st) : Campaign.firstReward(ch, st)))}</div>
+            <div class="rep-row"><span>連續挑戰</span>${(got ? [['1', '單場'], ['3', '重複 3 次'], ['5', '重複 5 次'], ['10', '重複 10 次']] : [['1', '單場']]).concat([['next', '一路往下打']]).map(([v, t]) => `<button class="${String(stRep) === v || (!got && stRep !== 'next' && v === '1') ? 'on' : ''}" data-srep="${v}">${t}</button>`).join('')}</div>
             <div class="row">
-                <div class="sp"></div><button class="btn primary" id="st-go">出戰</button>
+                <small class="muted">${got ? '自動戰鬥、打完自動開下一場，輸了就停' : '「一路往下打」會自動接下一關，輸了、換章節或遇到劇情就停'}</small><div class="sp"></div><button class="btn primary" id="st-go">出戰</button>
             </div>`, 'stage');
-        m.querySelector('#st-go').onclick = () => { m.remove(); launchStage(ch, st, hard); };
+        m.querySelectorAll('[data-srep]').forEach(b => { b.onclick = () => { stRep = b.dataset.srep === 'next' ? 'next' : +b.dataset.srep; m.querySelectorAll('[data-srep]').forEach(x => x.classList.toggle('on', x === b)); }; });
+        m.querySelector('#st-go').onclick = () => {
+            m.remove();
+            const rep = stRep === 'next' ? {mode: 'next', total: 60} : (got && stRep > 1 ? {mode: 'same', total: stRep} : null);
+            launchStage(ch, st, hard, rep);
+        };
     }
 
-    async function launchStage(ch, st, hard) {
+    let stRep = 1;   // 主線連續挑戰：1／3／5／10 場或 'next'（一路往下打）
+    async function launchStage(ch, st, hard, rep) {
         const team = S.team.filter(Boolean);
         if (!team.length) { toast('隊伍裡至少要有 1 位英雄'); return; }
         if (!hard && st === 1 && !S.campaign.story[`${ch}:start`]) await playStory(ch, 'start');
         if (!hard && st === NST && !S.campaign.story[`${ch}:boss`]) await playStory(ch, 'boss');
         let auto = true;
         try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
-        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), stage: hard ? {ch, st, hard: true} : {ch, st}, auto, growth: battleGrowth(team), from: 'lobby'}));
+        const repeat = rep ? {...rep, done: 0, wins: 0, sum: {}} : null;
+        if (repeat) auto = true;   // 連續挑戰一律自動戰鬥
+        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), stage: hard ? {ch, st, hard: true} : {ch, st}, repeat, auto, growth: battleGrowth(team), from: 'lobby'}));
         location.href = 'hd2d.html';
     }
 
@@ -1114,7 +1125,7 @@
             <div class="set-row"><b>旅團長名稱</b><span class="sp">${S.name}</span><button class="btn" id="set-name">修改</button></div>
             <div class="set-row"><b>賽季</b><span class="sp">S${Season.state(S).n}・第 ${Season.weekNo(S)} 週，還有 ${Season.daysLeft(S)} 天結算。${Season.state(S).titles.length ? '稱號：' + Season.state(S).titles.join('、') : '還沒有稱號'}</span></div>
             <div class="set-row"><b>特效圖鑑</b><span class="sp">預覽所有技能特效</span><a class="btn" href="gallery.html">開啟</a></div>
-            <div class="set-row"><b>戰鬥測試頁</b><span class="sp">舊的編隊畫面，可以任選 22 位英雄測試戰鬥（不影響存檔）</span><a class="btn" href="dev.html">開啟</a></div>
+            ${OL.admin ? `<div class="set-row"><b>戰鬥測試頁</b><span class="sp">舊的編隊畫面，可以任選 22 位英雄測試戰鬥（不影響存檔）</span><a class="btn" href="dev.html">開啟</a></div>` : ''}
             <div class="set-row"><b>重置存檔</b><span class="sp">刪除所有進度、重新開始（無法復原）</span><button class="btn" id="set-reset">重置</button></div>
 
         </div>`;
