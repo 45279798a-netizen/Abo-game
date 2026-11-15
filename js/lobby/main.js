@@ -37,13 +37,23 @@
         wild:    ['哈！終於有架可以打了！', '荒原的人不怕冷，也不怕死。', '準備好了就走吧，別讓我等。'],
         night:   ['夜色是最好的掩護。', '只要價錢對，什麼都好談。', '巫妖王的人頭，值多少？'],
     };
+    // 主畫面角色：玩家可以另外挑（S.lobbyHero），沒挑就用隊長
+    const lobbyHero = () => (S.lobbyHero && S.heroes[S.lobbyHero]) ? S.lobbyHero : S.leader;
     function renderLeader() {
-        const d = R.HEROES[S.leader];
+        const d = R.HEROES[lobbyHero()];
         if (!d) return;
         $('#leader img').src = sprite(d.img);
     }
+    function pickLobbyHero() {
+        const order = {UR: 0, SSR: 1, SR: 2, R: 3};
+        const ids = Object.keys(S.heroes).sort((a, b) => order[R.HEROES[a].rarity] - order[R.HEROES[b].rarity]);
+        const cur = lobbyHero();
+        const m = modal(`<h3>主畫面角色</h3><p class="muted">選一位英雄站在主畫面（不會改變隊伍和隊長）。</p>
+            <div class="lh-grid">${ids.map(id => `<button class="lh ${id === cur ? 'on' : ''}" data-lh="${id}" style="--rc:${rc(R.HEROES[id].rarity)}"><img src="${face(R.HEROES[id].img)}" alt=""><span>${short(R.HEROES[id].name)}</span></button>`).join('')}</div>`, 'floors');
+        m.querySelectorAll('[data-lh]').forEach(b => { b.onclick = () => { S.lobbyHero = b.dataset.lh; save(); renderLeader(); m.remove(); say(); }; });
+    }
     function say() {
-        const d = R.HEROES[S.leader];
+        const d = R.HEROES[lobbyHero()];
         const lines = LINES[d.faction] || LINES.kingdom;
         const el = $('#leader-say');
         el.innerHTML = `<b>${short(d.name)}</b>：${lines[Math.floor(Math.random() * lines.length)]}`;
@@ -1133,6 +1143,7 @@
         if (e.target.closest('[data-close]')) closePanels();
     });
     $('#leader').onclick = say;
+    $('#leader-swap').onclick = pickLobbyHero;
     $('#team-strip').onclick = () => openPanel('hero');
     // 直向遮罩、全螢幕、安裝：js/ui/shell.js
     addEventListener('shell-install', () => { if ($('#panel-settings').classList.contains('show')) renderSettings(); });
