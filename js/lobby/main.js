@@ -24,6 +24,8 @@
         brk:       {icon: ICON('brk'), name: '突破石', desc: '每 20 級突破一次，提高等級上限'},
         book:      {icon: ICON('book'), name: '技能書', desc: '小技能、大招升級'},
         stone:     {icon: ICON('stone'), name: '強化石', desc: '裝備強化；套裝副本、掛機、分解裝備取得'},
+        awk:       {icon: ICON('awk'), name: '覺醒石', desc: '英雄 60 級、5 星後覺醒用；困難主線、巫妖王試煉、亡靈之塔、賽季商店取得'},
+        badge:     {icon: ICON('badge'), name: '賽季徽章', desc: '賽季商店的貨幣；巫妖王試煉、亡靈之塔取得'},
         dust:      {icon: ICON('dust'), name: '星塵', desc: '滿星英雄的重複碎片轉成；到星塵商店換碎片與道具'},
     };
 
@@ -61,6 +63,7 @@
         }).join('');
     }
     function renderMain() {
+        $('.lb-season').innerHTML = `<b>S${Season.state(S).n}</b> 亡靈的甦醒`;
         renderLeader(); renderCurrency(); renderTeam(); refreshIdle(); refreshPass();
         const best = Campaign.progress(S);
         const nx = Math.min(best + 1, R.CAMPAIGN.chapters.length * Campaign.N);
@@ -95,7 +98,7 @@
     const CH = R.CAMPAIGN.chapters;
     const NST = Campaign.N;
     const curChapter = () => Math.min(CH.length, Math.floor(Campaign.progress(S) / NST) + 1);
-    let mapCh = null;
+    let mapCh = null, mapHard = false;
     // 15 個關卡點沿著蜿蜒的路排列（百分比座標）
     const NODE_POS = Array.from({length: NST}, (_, i) => {
         const t = i / (NST - 1);
@@ -110,29 +113,37 @@
         const p = $('#panel-battle');
         if (mapCh == null) mapCh = curChapter();
         const ch = mapCh, c = CH[ch - 1];
-        const stars = Campaign.chapterStars(S, ch);
-        const open = Campaign.unlocked(S, ch, 1);
-        const chestHtml = R.CAMPAIGN.chests.map((x, i) => {
+        const hardOk = Season.hardChapterOpen(S, 1);
+        if (!hardOk) mapHard = false;
+        const hard = mapHard;
+        const starOf = st => hard ? Season.hardStars(S, ch, st) : (S.campaign.stars[Campaign.key(ch, st)] || 0);
+        const unOf = st => hard ? Season.hardUnlocked(S, ch, st) : Campaign.unlocked(S, ch, st);
+        const stars = hard ? Season.hardChapterStars(S, ch) : Campaign.chapterStars(S, ch);
+        const open = hard ? Season.hardChapterOpen(S, ch) : Campaign.unlocked(S, ch, 1);
+        const rule = R.MODS[R.SEASON.hard.rules[ch - 1]];
+        const chestHtml = hard ? '' : R.CAMPAIGN.chests.map((x, i) => {
             const got = S.campaign.chests[`${ch}:${i}`], ready = !got && stars >= x.stars;
             return `<button class="chest ${got ? 'got' : ''} ${ready ? 'ready' : ''}" data-chest="${i}" title="${x.stars} 星寶箱">${got ? ICON('chest_open') : ICON('chest')}<b>${x.stars}</b></button>`;
         }).join('');
         const path = NODE_POS.map((q, i) => `${i ? 'L' : 'M'}${q.x} ${q.y}`).join(' ');
         const nodes = NODE_POS.map((q, i) => {
             const st = i + 1, kind = Campaign.kindOf(st), k = Campaign.key(ch, st);
-            const got = S.campaign.stars[k] || 0, un = Campaign.unlocked(S, ch, st), next = un && !got;
+            const got = starOf(st), un = unOf(st), next = un && !got;
             const inner = kind === 'boss' ? `<img src="${face(R.ENEMIES[c.boss].img)}" alt="">` : `<span>${st}</span>`;
             return `<button class="node ${kind} ${un ? '' : 'lock'} ${got ? 'done' : ''} ${next ? 'next' : ''}" style="left:${q.x}%;top:${q.y}%" data-st="${st}">
                 ${inner}${got ? `<div class="nstars">${starsHtml(got)}</div>` : ''}${!un ? '<em>🔒</em>' : ''}</button>`;
         }).join('');
         const idle = Campaign.idlePending(S);
-        p.innerHTML = `<div class="map" style="background-image:url(assets/hd/land_${c.bgHD}.webp)">
+        p.innerHTML = `<div class="map ${hard ? 'hard' : ''}" style="background-image:url(assets/hd/land_${c.bgHD}.webp)">
             <div class="map-shade"></div>
             <svg class="map-path" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="${path}"/></svg>
             ${nodes}
             <div class="map-top">
                 <button class="chv" data-chv="-1" ${ch <= 1 ? 'disabled' : ''}>◀</button>
-                <div class="ch-title"><small>第 ${ch} 章</small><b>${c.name}</b></div>
-                <button class="chv" data-chv="1" ${ch >= CH.length || !Campaign.unlocked(S, ch + 1, 1) ? 'disabled' : ''}>▶</button>
+                <div class="ch-title"><small>第 ${ch} 章${hard ? '・困難' : ''}</small><b>${c.name}</b></div>
+                <button class="chv" data-chv="1" ${ch >= CH.length || !(hard ? Season.hardChapterOpen(S, ch + 1) : Campaign.unlocked(S, ch + 1, 1)) ? 'disabled' : ''}>▶</button>
+                <div class="mode-tg"><button class="${hard ? '' : 'on'}" data-hard="0">普通</button><button class="${hard ? 'on' : ''}" data-hard="1" ${hardOk ? '' : 'disabled title="打完第 1 章開放"'}>困難${hardOk ? '' : ' 🔒'}</button></div>
+                ${hard ? `<span class="mod" title="這一章的規則"><b>${rule.name}</b>${rule.desc}</span>` : ''}
                 <div class="sp"></div>
                 <div class="ch-stars">★ ${stars}<small>/${NST * 3}</small></div>
                 <div class="chests">${chestHtml}</div>
@@ -146,10 +157,16 @@
                 <button class="btn" id="map-story" ${open ? '' : 'disabled'}>${ICON('m_story')} 劇情</button>
                 <button class="btn idle-btn" id="map-idle">${ICON('idle')} 掛機 <small>${idle.hours.toFixed(1)}h</small></button>
             </div>
-            ${open ? '' : '<div class="ch-lock">先打倒上一章的首領才能進入</div>'}
+            ${open ? '' : `<div class="ch-lock">${hard ? '先打完普通模式的這一章，才能挑戰困難' : '先打倒上一章的首領才能進入'}</div>`}
         </div>`;
         p.querySelectorAll('[data-chv]').forEach(b => { b.onclick = () => { mapCh = Math.max(1, Math.min(CH.length, ch + Number(b.dataset.chv))); renderBattle(); maybeChapterStory(); }; });
-        p.querySelectorAll('[data-st]').forEach(b => { b.onclick = () => { const st = Number(b.dataset.st); if (!Campaign.unlocked(S, ch, st)) { toast('先通過前一關'); return; } showStage(ch, st); }; });
+        p.querySelectorAll('[data-hard]').forEach(b => { b.onclick = () => {
+            mapHard = b.dataset.hard === '1';
+            // 切到困難時，如果這一章還沒開放，就跳到已開放的最後一章
+            if (mapHard) while (mapCh > 1 && !Season.hardChapterOpen(S, mapCh)) mapCh--;
+            renderBattle();
+        }; });
+        p.querySelectorAll('[data-st]').forEach(b => { b.onclick = () => { const st = Number(b.dataset.st); if (!unOf(st)) { toast(hard && !open ? '先打完普通模式的這一章' : '先通過前一關'); return; } showStage(ch, st, hard); }; });
         p.querySelectorAll('[data-chest]').forEach(b => {
             b.onclick = () => {
                 const i = Number(b.dataset.chest), x = R.CAMPAIGN.chests[i];
@@ -230,35 +247,43 @@
     }
 
     // 關卡資訊
-    function showStage(ch, st) {
-        const s = Campaign.stage(ch, st), k = s.key;
-        const got = S.campaign.stars[k] || 0;
-        const rec = Campaign.recommend(ch, st), tp = teamPower();
+    // 困難關卡的推薦戰力：參考隊伍在那一關預期養成下的戰力
+    function hardRecommend(ch, st) {
+        const g = Season.hardGrowthSpec(Campaign.idxOf(ch, st)), gb = Gear.expectedBonus(g.i);
+        const sum = Campaign.REF_TEAM.reduce((a, id) => { const star = Math.min(Growth.MAX_STAR, Save.START_STAR[R.HEROES[id].rarity] + g.star); return a + Growth.power(id, {lv: g.lv, star, sk: g.sk, ul: g.sk, awk: g.awk && star >= R.AWAKEN.star}, gb); }, 0);
+        return Math.round(sum / 100) * 100;
+    }
+    const modHtml = list => list.filter(m => typeof m === 'string').map(m => `<span class="mod"><b>${R.MODS[m].name}</b>${R.MODS[m].desc}</span>`).join('');
+    function showStage(ch, st, hard) {
+        const s = hard ? Season.hardStage(ch, st) : Campaign.stage(ch, st), k = s.key;
+        const got = hard ? Season.hardStars(S, ch, st) : (S.campaign.stars[k] || 0);
+        const rec = hard ? hardRecommend(ch, st) : Campaign.recommend(ch, st), tp = teamPower();
         const foes = [...s.front, ...s.back];
         const uniq = [...new Set(foes)];
         const m = modal(`<div class="st-head"><span class="kind ${s.kind}">${s.difficulty}</span><h3>${ch}-${st}　${s.kind === 'boss' ? s.name : CH[ch - 1].name}</h3><div class="st-stars">${starsHtml(got)}</div></div>
             <div class="foes">${uniq.map(id => `<div class="face ${R.ENEMIES[id].boss ? 'boss' : ''}" title="${R.ENEMIES[id].name}"><img src="${face(R.ENEMIES[id].img)}" alt=""><span>${foes.filter(x => x === id).length > 1 ? '×' + foes.filter(x => x === id).length : ''}</span></div>`).join('')}</div>
             <div class="pow">推薦戰力 <b>${rec.toLocaleString()}</b>　隊伍戰力 <b class="${tp >= rec ? 'ok' : 'low'}">${tp.toLocaleString()}</b></div>
+            ${hard ? `<div class="mods">${modHtml(s.mods)}</div>` : ''}
             <ul class="conds">
                 <li class="${got >= 1 ? 'ok' : ''}">★ 通關</li>
                 <li>★ 沒有英雄陣亡</li>
                 <li>★ ${s.rounds} 回合內通關</li>
             </ul>
-            <div class="rws"><span class="muted">${got ? '重打獎勵' : '首通獎勵'}</span>${rewardHtml(got ? Campaign.repeatReward(ch, st) : Campaign.firstReward(ch, st))}</div>
+            <div class="rws"><span class="muted">${got ? '重打獎勵' : '首通獎勵'}</span>${rewardHtml(hard ? (got ? Season.hardRepeatReward(ch, st) : Season.hardFirstReward(ch, st)) : (got ? Campaign.repeatReward(ch, st) : Campaign.firstReward(ch, st)))}</div>
             <div class="row">
                 <div class="sp"></div><button class="btn primary" id="st-go">出戰</button>
             </div>`, 'stage');
-        m.querySelector('#st-go').onclick = () => { m.remove(); launchStage(ch, st); };
+        m.querySelector('#st-go').onclick = () => { m.remove(); launchStage(ch, st, hard); };
     }
 
-    async function launchStage(ch, st) {
+    async function launchStage(ch, st, hard) {
         const team = S.team.filter(Boolean);
         if (!team.length) { toast('隊伍裡至少要有 1 位英雄'); return; }
-        if (st === 1 && !S.campaign.story[`${ch}:start`]) await playStory(ch, 'start');
-        if (st === NST && !S.campaign.story[`${ch}:boss`]) await playStory(ch, 'boss');
+        if (!hard && st === 1 && !S.campaign.story[`${ch}:start`]) await playStory(ch, 'start');
+        if (!hard && st === NST && !S.campaign.story[`${ch}:boss`]) await playStory(ch, 'boss');
         let auto = true;
         try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
-        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), stage: {ch, st}, auto, growth: battleGrowth(team), from: 'lobby'}));
+        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), stage: hard ? {ch, st, hard: true} : {ch, st}, auto, growth: battleGrowth(team), from: 'lobby'}));
         location.href = 'hd2d.html';
     }
 
@@ -347,7 +372,7 @@
         const box = $('#hero-detail');
         const tags = `<span class="tag" style="color:${rc(d.rarity)};border-color:${rc(d.rarity)}">${d.rarity}</span>
             <span class="tag" style="color:${fac.color}">${fac.emblem || ''}${fac.name}</span><span class="tag">${el.icon} ${el.name}屬性</span><span class="tag">${R.ROLES[d.role].name}</span>
-            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span><span class="tag">戰力 ${heroPower(id).toLocaleString()}</span>` : '<span class="tag" style="color:var(--muted)">未擁有：可從招募取得</span>'}`;
+            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span>${o.awk ? '<span class="tag awk-tag">已覺醒</span>' : ''}<span class="tag">戰力 ${heroPower(id).toLocaleString()}</span>` : '<span class="tag" style="color:var(--muted)">未擁有：可從招募取得</span>'}`;
         if (detailTab === 'gear' && !gearOpen()) detailTab = 'info';
         const tabs = o ? `<div class="dt-tabs"><button class="${detailTab === 'info' ? 'on' : ''}" data-tab="info">資料</button><button class="${detailTab === 'grow' ? 'on' : ''}" data-tab="grow">養成</button>${gearOpen() ? `<button class="${detailTab === 'gear' ? 'on' : ''}" data-tab="gear">裝備</button>` : '<button disabled title="打完第 1 章開放">裝備 🔒</button>'}</div>` : '';
         let body = '';
@@ -357,6 +382,7 @@
                 <div class="sk"><span class="k">小技能・Lv.${o?.sk || 1}・冷卻 ${d.skill.cd}</span><b>${d.skill.name}</b><br>${d.skill.desc}</div>
                 ${d.ult ? `<div class="sk"><span class="k">大招・Lv.${o?.ul || 1}・能量 ${R.ENERGY.max}</span><b style="color:${fac.color}">${d.ult.name}</b><br>${d.ult.desc}</div>` : ''}
                 <div class="sk"><span class="k">被動</span><b>${d.passive.name}</b><br>${d.passive.desc}</div>
+                <div class="sk awk ${o?.awk ? 'on' : ''}"><span class="k">覺醒・${o?.awk ? '已開啟' : `Lv.${R.AWAKEN.lv}、${R.AWAKEN.star}★ 後可開啟`}</span><b>${d.awaken.name}</b><br>全能力 +${Math.round(R.AWAKEN.stat[d.rarity] * 100)}%；${d.awaken.desc}</div>
                 ${o ? `<div class="dt-btns">
                     ${inTeam ? '<button class="btn" data-act="out">下陣</button>' : '<button class="btn primary" data-act="in">上陣</button>'}
                     ${S.leader === id ? '<button class="btn" disabled>目前隊長</button>' : '<button class="btn" data-act="lead">設為隊長</button>'}
@@ -398,16 +424,25 @@
             if (act === 'lv') r = Growth.levelUp(S, id, +arg);
             else if (act === 'brk') r = Growth.breakThrough(S, id);
             else if (act === 'star') r = Growth.starUp(S, id);
+            else if (act === 'awk') r = Growth.awaken(S, id);
             else r = Growth.skillUp(S, id, act);
             if (!r.ok) { toast(r.reason); return; }
             save();
             const after = heroPower(id);
-            toast(act === 'star' ? `升到 ${o.star}★！戰力 +${after - before}` : act === 'brk' ? `突破成功！等級上限 ${Growth.lvCap(o)}` : act === 'lv' ? `升到 Lv.${o.lv}　戰力 +${after - before}` : `技能升級！戰力 +${after - before}`);
+            toast(act === 'awk' ? `覺醒成功！${d.awaken.name}　戰力 +${after - before}` : act === 'star' ? `升到 ${o.star}★！戰力 +${after - before}` : act === 'brk' ? `突破成功！等級上限 ${Growth.lvCap(o)}` : act === 'lv' ? `升到 Lv.${o.lv}　戰力 +${after - before}` : `技能升級！戰力 +${after - before}`);
             showDetail(id); renderHero(); renderCurrency();
         }; });
     }
     // 養成分頁：升級／突破、升星、技能
     function costTxt(c) { return Object.entries(c).map(([k, v]) => `<span class="${(S.currency[k] || 0) >= v ? '' : 'lack'}">${CUR[k].icon}${fmt(v)}</span>`).join(' '); }
+    function awkRow(id, o) {
+        const d = R.HEROES[id], A = R.AWAKEN, aw = d.awaken, pct = Math.round(A.stat[d.rarity] * 100);
+        const ready = o.lv >= A.lv && o.star >= A.star;
+        const right = o.awk ? '<span class="gr-max">已覺醒</span>'
+            : ready ? `<span class="gr-cost">${costTxt(Growth.awakenCost(id))}</span><button class="btn primary" data-grow="awk">覺醒</button>`
+            : `<span class="gr-cost"><span class="${o.lv >= A.lv ? '' : 'lack'}">Lv.${A.lv}</span>、<span class="${o.star >= A.star ? '' : 'lack'}">${A.star}★</span> 後可覺醒　${costTxt(Growth.awakenCost(id))}</span>`;
+        return `<div class="gr awk ${o.awk ? 'on' : ''}"><div class="gr-h"><b>覺醒</b>${aw.name}　<small>全能力 +${pct}%；${aw.desc}</small></div><div class="gr-r">${right}</div></div>`;
+    }
     function growHtml(id, o) {
         const now = Growth.stats(id, o);
         const cap = Growth.lvCap(o);
@@ -440,7 +475,8 @@
             <div class="gr"><div class="gr-h"><b>星級</b><span style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span></div><div class="gr-r">${starRow}</div></div>
             ${skRow('sk', '小技能', R.HEROES[id].skill.name)}
             ${R.HEROES[id].ult ? skRow('ul', '大招', R.HEROES[id].ult.name) : ''}
-            <div class="fac-note" style="margin-top:6px">碎片來自重複招募，也可以用星塵在背包的「星塵商店」換。經驗藥水、突破石、技能書主要從「試煉」取得，主線首通與掛機也會給一些。</div>`;
+            ${awkRow(id, o)}
+            <div class="fac-note" style="margin-top:6px">碎片來自重複招募，也可以用星塵在背包的「星塵商店」換。經驗藥水、突破石、技能書主要從「試煉」取得，主線首通與掛機也會給一些。覺醒石來自困難主線、巫妖王試煉、亡靈之塔與賽季商店。</div>`;
     }
 
 
@@ -569,15 +605,101 @@
             <div class="map-top"><div class="ch-title"><small>TRIALS</small><b>試煉</b></div><div class="sp"></div>
 <button class="close" data-close>✕</button></div>
             <div class="tbody">
+                ${seasonRowHtml()}
                 <h4>套裝副本 <small>掉落套裝裝備與強化石</small></h4><div class="trow">${DG.sets.map(d => card('set', d)).join('')}</div>
                 <h4>素材試煉 <small>金幣、經驗藥水、突破石、技能書</small></h4><div class="trow">${DG.trials.map(d => card('trial', d)).join('')}</div>
                 <p class="muted" style="text-shadow:0 1px 3px #000">套裝副本不限次數。每個素材試煉每天各有 ${DG.trialPerDay} 次獎勵次數（沒用完的保留，最多存 ${DG.trialMax} 次），用完還能挑戰但不給素材。</p>
             </div></div>`;
+        p.querySelectorAll('[data-season]').forEach(b => { b.onclick = () => {
+            const k = b.dataset.season;
+            if (k === 'shop') return showSeasonShop();
+            if (!Season.unlocked(S)) { toast('打完第 3 章開放'); return; }
+            (k === 'lich' ? showLich : showTower)();
+        }; });
         p.querySelectorAll('[data-dg]').forEach(b => { b.onclick = () => {
             const [kind, id] = b.dataset.dg.split(':');
             if (!Dungeon.unlockedDungeon(S, kind, id)) { toast('還沒開放'); return; }
             showFloors(kind, id);
         }; });
+    }
+    // ───────── 賽季：巫妖王試煉、亡靈之塔、賽季商店 ─────────
+    const SE = R.SEASON;
+    const anyReward = r => Object.entries(r).filter(([, v]) => v).map(([k, v]) => k === 'gear' ? `<span class="rw">${ICON('chest')}${R.GEAR.QUALITY[v.q].name}裝備</span>` : `<span class="rw" title="${CUR[k].name}">${CUR[k].icon}${fmt(v)}</span>`).join('');
+    function seasonRowHtml() {
+        const st = Season.state(S), open = Season.unlocked(S);
+        const afx = Season.affixes();
+        const lich = `<button class="tcard season ${open ? '' : 'lock'}" data-season="lich"><img class="tboss" src="${sprite(R.ENEMIES.lichKing.img)}" alt="">
+            <div class="tinfo"><b>${ICON('m_boss')} 巫妖王試煉</b><small>本週詞綴：${afx.map(a => R.MODS[a].name).join('、')}</small>
+            <span class="tbest">${open ? `本週最高 第 ${st.lich.best || 0} / ${SE.lich.tiers} 階<br>今日次數 <em>${Season.lichLeft(S)}</em> / ${SE.lich.perDay}` : '🔒 打完第 3 章開放'}</span></div></button>`;
+        const tower = `<button class="tcard season ${open ? '' : 'lock'}" data-season="tower"><img class="tboss" src="${sprite(R.ENEMIES.boneDragon.img)}" alt="">
+            <div class="tinfo"><b>${ICON('m_tower')} 亡靈之塔</b><small>每層一條規則，30 層後是無盡層</small>
+            <span class="tbest">${open ? `本季最高 第 ${Season.towerBest(S)} 層<br>不限次數` : '🔒 打完第 3 章開放'}</span></div></button>`;
+        const shop = `<button class="tcard season shop" data-season="shop"><div class="tinfo"><b>${ICON('badge')} 賽季商店</b><small>覺醒石、烏瑟碎片、限定券、傳說裝備</small>
+            <span class="tbest">賽季徽章 <em>${fmt(S.currency.badge || 0)}</em></span></div></button>`;
+        return `<h4>賽季挑戰 <small>S${st.n}・第 ${Season.weekNo(S)} 週・還有 ${Season.daysLeft(S)} 天結算</small></h4><div class="trow">${lich}${tower}${shop}</div>`;
+    }
+    function launchSeason(extra) {
+        const team = S.team.filter(Boolean);
+        if (!team.length) { toast('隊伍裡至少要有 1 位英雄'); return; }
+        let auto = true;
+        try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
+        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), ...extra, auto, growth: battleGrowth(team), from: 'lobby'}));
+        location.href = 'hd2d.html';
+    }
+    function showLich() {
+        const st = Season.state(S).lich, tiers = Season.tierList(), left = Season.lichLeft(S), afx = Season.affixes();
+        const rows = tiers.map((v, i) => {
+            const t = i + 1, got = st.claimed[t];
+            return `<div class="frow ${got ? 'done' : ''} ${t === (st.best || 0) + 1 ? 'next' : ''}"><b>第 ${t} 階</b><span class="muted">傷害 ${fmt(v)}</span>
+                <span class="rws"><small class="muted">每次</small>${anyReward(SE.lich.attempt(t))}<small class="muted">本週首次</small>${anyReward(SE.lich.weekly(t))}</span><div class="sp"></div>${got ? '<span class="q-ok">✓</span>' : ''}</div>`;
+        }).join('');
+        const m = modal(`<h3>${ICON('m_boss')} 巫妖王試煉</h3>
+            <p class="muted">打 ${SE.lich.rounds} 回合（或全隊倒下為止），看對巫妖王造成多少傷害，傷害越高階數越高。巫妖王每過 1 回合傷害 +${Math.round(SE.lich.ramp * 100)}%，撐得越久分數越高。每天 ${SE.lich.perDay} 次；每週一換詞綴，「本週首次」獎勵也會重置。</p>
+            <div class="mods"><span class="muted">本週詞綴</span>${modHtml(afx)}</div>
+            <div class="flist">${rows}</div>
+            <div class="row"><span>本週最高：第 <b>${st.best || 0}</b> 階${st.bestDmg ? `（傷害 ${fmt(st.bestDmg)}）` : ''}　今天還有 <b>${left}</b> 次</span><div class="sp"></div><button class="btn primary" id="lich-go" ${left > 0 ? '' : 'disabled'}>出戰</button></div>`, 'floors');
+        m.querySelector('#lich-go').onclick = () => { m.remove(); launchSeason({lich: {}}); };
+    }
+    function showTower() {
+        const best = Season.towerBest(S), next = best + 1;
+        const from = Math.max(1, next - 2), rows = [];
+        for (let f = from; f < from + 8; f++) {
+            const e = Season.towerEncounter(f), boss = e.back.find(id => R.ENEMIES[id].boss);
+            rows.push(`<div class="frow ${f > next ? 'lock' : ''} ${f === next ? 'next' : ''} ${f <= best ? 'done' : ''}"><b>第 ${f} 層</b>${boss ? `<img class="fboss" src="${face(R.ENEMIES[boss].img)}" alt="" title="${R.ENEMIES[boss].name}">` : ''}
+                <span class="mods">${modHtml(e.mods)}</span><span class="rws">${anyReward(SE.tower.reward(f))}</span><div class="sp"></div>
+                ${f === next ? `<button class="btn primary" data-tgo="${f}">出戰</button>` : f <= best ? '<span class="q-ok">✓</span>' : '<span class="muted">🔒</span>'}</div>`);
+        }
+        const m = modal(`<h3>${ICON('m_tower')} 亡靈之塔</h3>
+            <p class="muted">一層一層往上打，每層有一條規則（21 層起兩條），每 5 層是守層首領，獎勵比較多。打過 ${SE.tower.floors} 層後是無盡層，每層敵人再強 ${Math.round((SE.tower.endless - 1) * 100)}%。不限次數，輸了沒有損失；每季重置。本季最高：第 ${best} 層。</p>
+            <div class="flist">${rows.join('')}</div>`, 'floors');
+        m.querySelectorAll('[data-tgo]').forEach(b => { b.onclick = () => { m.remove(); launchSeason({tower: {floor: +b.dataset.tgo}}); }; });
+    }
+    function showSeasonShop() {
+        Season.state(S);
+        const items = SE.shop.map(it => {
+            const left = Season.shopLeft(S, it.id), can = left > 0 && (S.currency.badge || 0) >= it.price;
+            const icon = it.shards ? `<img class="ico" src="${face(R.HEROES[it.shards.id].img)}" alt="" style="border-radius:50%">` : it.give.gear ? ICON('chest') : CUR[Object.keys(it.give)[0]].icon;
+            return `<div class="bag-item"><span class="bi">${icon}</span><div><b>${it.name}</b><small>${ICON('badge')}${it.price}　本週剩 ${left} / ${it.limit}</small></div><button class="btn ${can ? 'primary' : ''}" data-sbuy="${it.id}" style="margin-left:auto" ${left > 0 ? '' : 'disabled'}>兌換</button></div>`;
+        }).join('');
+        const m = modal(`<h3>${ICON('badge')} 賽季商店</h3><p class="muted">賽季徽章從巫妖王試煉、亡靈之塔取得，每週一重置購買次數。你有 ${ICON('badge')} <b>${fmt(S.currency.badge || 0)}</b>。</p><div class="bag-grid">${items}</div>`, 'floors');
+        m.querySelectorAll('[data-sbuy]').forEach(b => { b.onclick = () => {
+            const r = Season.buy(S, b.dataset.sbuy);
+            if (!r.ok) return toast(r.reason);
+            save(); renderCurrency(); m.remove(); showSeasonShop(); if ($('#panel-trial').classList.contains('show')) renderTrial();
+            toast(r.got.gear ? `獲得 ${R.GEAR.QUALITY[r.got.gear.q].name}${r.got.gear.set ? GR.SETS[r.got.gear.set].name : ''}${GR.SLOTS[r.got.gear.slot].name}` : r.got.shards ? (r.got.shards.dust ? `已滿星，轉成星塵 ${r.got.shards.dust}` : '獲得碎片') : '兌換成功');
+        }; });
+    }
+    // 賽季結算（滿 28 天後第一次進大廳）
+    function checkSeasonEnd() {
+        const ro = Season.rollover(S);
+        if (!ro) return;
+        save();
+        modal(`<h3>S${ro.season} 賽季結算</h3>
+            <p>巫妖王試煉最高 <b>第 ${ro.tier} 階</b>　亡靈之塔最高 <b>第 ${ro.floor} 層</b></p>
+            <div class="rws" style="margin:8px 0"><span class="muted">結算獎勵</span>${anyReward(ro.reward)}</div>
+            ${ro.title ? `<p>獲得稱號：<b style="color:var(--gold-hi)">S${ro.season} ${ro.title}</b></p>` : ''}
+            <p class="muted">${ro.pass ? `通行證還沒領的 ${ro.pass} 份獎勵已經自動領取。` : ''}新的賽季開始：通行證、巫妖王階數、亡靈之塔與賽季商店都重新計算；英雄、裝備、賽季徽章與主線進度都保留。</p>`, 'stage');
+        renderCurrency();
     }
     function floorReward(kind, id, f) {
         const r = Dungeon.baseReward(kind, id, f);
@@ -642,12 +764,12 @@
         let body = '';
         if (questTab === 'daily') {
             const all = Quests.dailyAllDone(S);
-            body = QD.daily.map(t => qRow(t, q.daily[t.id] || 0, q.dClaim[t.id], 'd')).join('')
+            body = Quests.dailyList(S).map(t => qRow(t, q.daily[t.id] || 0, q.dClaim[t.id], 'd')).join('')
                 + `<div class="qrow bonus ${q.dBonus ? 'claimed' : all ? 'done' : ''}"><div class="q-main"><b>每日任務全部完成</b><div class="muted">每天凌晨 4 點重置</div></div>
                     <div class="q-rw"><span class="rw">${ICON('medal')}${QD.dailyBonus.medal}</span><span class="rw">${ICON('gem')}${QD.dailyBonus.gem}</span></div>
                     ${q.dBonus ? '<span class="q-ok">已領取</span>' : `<button class="btn ${all ? 'primary' : ''}" data-qc="b:bonus" ${all ? '' : 'disabled'}>領取</button>`}</div>`;
         } else if (questTab === 'weekly') {
-            body = QD.weekly.map(t => qRow(t, q.weekly[t.id] || 0, q.wClaim[t.id], 'w')).join('') + '<p class="muted">每週一凌晨 4 點重置。</p>';
+            body = Quests.weeklyList(S).map(t => qRow(t, q.weekly[t.id] || 0, q.wClaim[t.id], 'w')).join('') + '<p class="muted">每週一凌晨 4 點重置。</p>';
         } else {
             const cells = QP.rewards.map((r, i) => {
                 const l = i + 1, got = q.pClaim[l], open = l <= lv, big = l % 5 === 0;
@@ -823,6 +945,7 @@
         const p = $('#panel-settings');
         p.innerHTML = head('設定') + `<div class="pbody">
             <div class="set-row"><b>旅團長名稱</b><span class="sp">${S.name}</span><button class="btn" id="set-name">修改</button></div>
+            <div class="set-row"><b>賽季</b><span class="sp">S${Season.state(S).n}・第 ${Season.weekNo(S)} 週，還有 ${Season.daysLeft(S)} 天結算。${Season.state(S).titles.length ? '稱號：' + Season.state(S).titles.join('、') : '還沒有稱號'}</span></div>
             <div class="set-row"><b>戰鬥測試頁</b><span class="sp">舊的編隊畫面，可以任選 22 位英雄測試戰鬥（不影響存檔）</span><a class="btn" href="dev.html">開啟</a></div>
             <div class="set-row"><b>重置存檔</b><span class="sp">刪除所有進度、重新開始（無法復原）</span><button class="btn" id="set-reset">重置</button></div>
             <div class="set-row"><b>存檔</b><span class="sp">目前存在這台裝置的瀏覽器裡；雲端存檔會在多人功能的階段加入。已招募 ${S.pulls} 次。</span></div>
@@ -859,13 +982,18 @@
     renderMain();
     setTimeout(say, 800);
     // 從戰鬥回來：#map 打開地圖；#go=章-關 直接出戰下一關（會先播該播的劇情）
-    const hm = location.hash.match(/^#(map|go|trial)(?:=(\d+)-(\d+))?/);
+    checkSeasonEnd();
+    const hm = location.hash.match(/^#(map|hmap|go|trial|lich|tower)(?:=(\d+)-(\d+))?/);
     if (hm) {
         history.replaceState(null, '', location.pathname);
         if (hm[2]) mapCh = Number(hm[2]);
-        openPanel(hm[1] === 'trial' ? 'trial' : 'battle');
-        if (hm[1] === 'go' && hm[2]) launchStage(Number(hm[2]), Number(hm[3]));
-        else if (hm[1] !== 'trial') maybeChapterStory();
+        if (hm[1] === 'hmap') mapHard = true;
+        const tr = ['trial', 'lich', 'tower'].includes(hm[1]);
+        openPanel(tr ? 'trial' : 'battle');
+        if (hm[1] === 'lich') showLich();
+        else if (hm[1] === 'tower') showTower();
+        else if (hm[1] === 'go' && hm[2]) launchStage(Number(hm[2]), Number(hm[3]));
+        else if (!tr && hm[1] !== 'hmap') maybeChapterStory();
     } else if (!S.newbieDone) setTimeout(() => { if (!document.querySelector('.story')) toast('新手招募：免費 10 連抽，去「招募」看看！'); }, 1600);
     window.__lobby = {get save() { return S; }, openPanel, playStory, showStage, showIdle, reload: () => { S = Save.load(); renderMain(); }};   // 測試用
 })();

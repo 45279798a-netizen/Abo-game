@@ -16,6 +16,7 @@
         atkUp:   {name: '攻擊提升', icon: '⚔️', debuff: false},
         taunt:   {name: '嘲諷', icon: '🛡️', debuff: false},
         guard:   {name: '聖域', icon: '✨', debuff: false},   // 受到的傷害 -30%
+        stun:    {name: '暈眩', icon: '💫', debuff: true},    // 跳過下一次行動（跟凍結一樣）
     };
 
     const ATB_MAX = 1000;
@@ -58,7 +59,12 @@
         const role = R.ROLES[d.role];
         const m = R.RARITY[d.rarity].mult * (g?.stat || 1);
         const e = g?.gear || {};
-        return buildUnit({
+        // 覺醒（g.awk）：專屬效果當成第二個被動；passiveMod 改原本的被動、ultAdd／skillAdd 在技能後面加效果、stat 直接加能力
+        const aw = g?.awk ? d.awaken : null;
+        const passives = d.passive ? [aw?.passiveMod ? {...d.passive, ...aw.passiveMod} : d.passive] : [];
+        if (aw?.type) passives.push(aw);
+        const withAdd = (sk, add) => sk && add ? {...sk, effects: [...sk.effects, ...add]} : sk;
+        const u = buildUnit({
             uid, id, side: 'ally', name: d.name, faction: d.faction, element: d.element, role: d.role,
             img: d.img, faceY: d.faceY || 0, rarity: d.rarity, boss: false,
             base: {
@@ -67,10 +73,28 @@
                 spd: Math.round((role.spd + (d.spdBonus || 0) + (e.spd || 0)) * (1 + (e.spdPct || 0))),
                 crit: 0.15 + (e.crit || 0), critDmg: 0.5 + (e.critDmg || 0), hit: e.hit || 0, res: e.res || 0,
             },
-            skills: d.skill ? [d.skill] : [], passives: d.passive ? [d.passive] : [], ult: d.ult || null,
+            skills: d.skill ? [withAdd(d.skill, aw?.skillAdd)] : [], passives, ult: withAdd(d.ult, aw?.ultAdd) || null,
             mul: {skill: g?.skill || 1, ult: (g?.ult || 1) * (1 + (e.four?.ultDmg || 0))},
-            gear4: e.four || {},
+            gear4: e.four || {}, awk: !!aw,
         });
+        if (aw?.stat) for (const [k, v] of Object.entries(aw.stat)) u.base[k] += v;
+        return u;
+    }
+
+    // 關卡規則（巫妖王詞綴、亡靈之塔每層規則、困難主線）：encounter.mods 是一串規則（R.MODS 的 id 或物件），合併成一份
+    const MOD_MUL = ['enemyAtk', 'enemyHp', 'enemyDef', 'enemySpd', 'healMult', 'shieldMult', 'energyMult', 'dotTaken'];
+    const MOD_ADD = ['enemyRes', 'allyCrit', 'roundDmg', 'enemyRegen', 'enemyShield'];
+    function mergeMods(list) {
+        const M = {};
+        for (const k of MOD_MUL) M[k] = 1;
+        for (const k of MOD_ADD) M[k] = 0;
+        for (const x of list || []) {
+            const m = typeof x === 'string' ? R.MODS?.[x] : x;
+            if (!m) continue;
+            for (const k of MOD_MUL) if (m[k] != null) M[k] *= m[k];
+            for (const k of MOD_ADD) if (m[k] != null) M[k] += m[k];
+        }
+        return M;
     }
 
     // power：攻擊倍率；hpPower：生命與防禦倍率（主線關卡分開調，讓難度高時戰鬥不會拖太長；沒給就跟 power 一樣）
@@ -93,6 +117,9 @@
         constructor({team, encounterId, encounter, seed, auto, growth}) {
             this.encounter = encounter || R.ENCOUNTERS.find(e => e.id === encounterId);   // encounter：主線關卡直接傳整個關卡物件
             this.rand = makeRng(seed ?? (Date.now() & 0xffffffff));
+            this.M = mergeMods(this.encounter.mods);
+            this.maxRounds = this.encounter.maxRounds || MAX_ROUNDS;
+            this.stepId = 0;
             this.auto = auto !== false;
             this.units = [];
             this.time = 0;
@@ -131,6 +158,7 @@
                 if (fb.defUp) u.base.def = Math.round(u.base.def * (1 + fb.defUp));
                 if (fb.spdUp) u.base.spd = Math.round(u.base.spd * (1 + fb.spdUp));
                 if (fb.crit) u.base.crit += fb.crit;
+                u.base.crit += this.M.allyCrit;
                 if (fb.critDmg) u.base.critDmg += fb.critDmg;
                 if (fb.startShield) u.shield = Math.round(u.maxHp * fb.startShield);
                 u.energy = R.ENERGY.start;
@@ -143,6 +171,12 @@
             for (const u of this.allies()) {
                 for (const p of u.passives) {
                     if (p.type === 'auraRes') this.allies().forEach(a => { a.base.res += p.pct; });
+                    if (p.startEnergyAllies) this.allies().forEach(a => { a.energy = Math.min(R.ENERGY.max, a.energy + p.startEnergyAllies); });
+                    if (p.type === 'factionAllies') {   // 每有一位同陣營隊友，攻擊與防禦提升
+                        const n = this.allies().filter(a => a !== u && a.faction === p.faction).length;
+                        u.base.atk = Math.round(u.base.atk * (1 + n * p.pct));
+                        u.base.def = Math.round(u.base.def * (1 + n * p.pct));
+                    }
                 }
             }
             // 開場行動條隨機分散，避免整隊擠在一起連續出手
@@ -159,6 +193,12 @@
         // ───────── 查詢 ─────────
         addEnemy(id, row, atb) {
             const u = makeEnemy(id, 'e' + (this.seq++), this.encounter.power, this.encounter.hpPower);
+            const M = this.M, B = u.base;
+            B.atk = Math.round(B.atk * M.enemyAtk); B.def = Math.round(B.def * M.enemyDef); B.spd = Math.round(B.spd * M.enemySpd); B.res += M.enemyRes;
+            B.hp = Math.round(B.hp * M.enemyHp);
+            if (u.boss && this.encounter.bossHp) B.hp = this.encounter.bossHp;   // 巫妖王試煉：首領生命固定（＝最高階的傷害門檻）
+            u.maxHp = u.hp = B.hp;
+            if (M.enemyShield) u.shield = Math.round(u.maxHp * M.enemyShield);
             u.row = row;
             if (atb != null) u.atb = atb;
             this.units.push(u);
@@ -180,7 +220,9 @@
             return s;
         }
         atkOf(u) {
-            let a = u.base.atk * (this.has(u, 'atkUp') ? 1.2 : 1);
+            const up = u.statuses.find(s => s.key === 'atkUp');
+            let a = u.base.atk * (up ? 1 + (up.amp || 0.2) : 1);
+            if (u.killStacks) a *= 1 + u.killStacks * u.killStackPct;
             if (u.fac?.lowHpAtk && u.hp < u.maxHp * 0.5) a *= 1 + u.fac.lowHpAtk;
             return a;
         }
@@ -211,7 +253,7 @@
         // ───────── 能量與個人大招 ─────────
         ultReady(uid) {
             const u = this.get(uid);
-            return !this.over && !!u && u.alive && u.side === 'ally' && !!u.ult && u.energy >= R.ENERGY.max && !this.has(u, 'freeze');
+            return !this.over && !!u && u.alive && u.side === 'ally' && !!u.ult && u.energy >= R.ENERGY.max && !this.has(u, 'freeze') && !this.has(u, 'stun');
         }
         // 玩家點頭像放大招：下一手立刻插隊放出
         useUltimate(uid) {
@@ -222,7 +264,7 @@
         gainEnergy(u, amt) {
             if (u.side !== 'ally' || !u.ult || !u.alive) return;
             const before = u.energy;
-            u.energy = Math.min(R.ENERGY.max, before + amt);
+            u.energy = Math.min(R.ENERGY.max, before + amt * this.M.energyMult);
             if (u.energy !== before) this.emit({type: 'energy', uid: u.uid, value: u.energy, ready: u.energy >= R.ENERGY.max});
         }
         ultimate(uid) {
@@ -255,6 +297,7 @@
         step() {
             this.events = [];
             if (this.over) return this.events;
+            this.stepId++;
 
             // 大招插隊：玩家點的，或自動模式下能量滿的
             if (!this.pendingUlt && this.auto) {
@@ -268,7 +311,7 @@
             }
 
             const u = this.nextActor();
-            if (this.round() > MAX_ROUNDS) { this.finish('lose', 'timeout'); return this.events; }
+            if (this.round() > this.maxRounds) { this.finish('lose', 'timeout'); return this.events; }
             this.actionId++;
             u.atb = 0;
             this.emit({type: 'turn', uid: u.uid, round: this.round()});
@@ -277,16 +320,24 @@
             for (const p of u.passives) if (p.type === 'regenOnTurn') this.heal(u, u, u.maxHp * p.pct);
             if (u.fac?.regen) this.heal(u, u, u.maxHp * u.fac.regen);
             if (u.gear4?.regen) this.heal(u, u, u.maxHp * u.gear4.regen);
+            if (u.side === 'enemy' && this.M.enemyRegen) this.heal(u, u, u.maxHp * this.M.enemyRegen);
+            for (const p of u.passives) {
+                if (p.type === 'regenAllyOnTurn') {   // 蓋亞覺醒：也幫生命比例最低的隊友回血
+                    const low = this.friendsOf(u).filter(a => a !== u && a.hp < a.maxHp).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+                    if (low) this.heal(u, low, low.maxHp * p.pct);
+                }
+            }
             for (const s of u.statuses.filter(s => s.key === 'burn' || s.key === 'poison')) {
-                this.applyDamage(u, Math.round(s.value), {kind: 'dot', status: s.key, srcUid: s.src});
+                this.applyDamage(u, Math.round(s.value * (s.stacks || 1) * (u.side === 'ally' ? this.M.dotTaken : 1)), {kind: 'dot', status: s.key, srcUid: s.src});
                 if (!u.alive) break;
             }
             u.cds = u.cds.map(c => Math.max(0, c - 1));
 
             if (!u.alive) return this.endStep();
-            if (this.has(u, 'freeze')) {
-                u.statuses = u.statuses.filter(s => s.key !== 'freeze');
-                this.emit({type: 'skip', uid: u.uid, reason: '凍結'});
+            if (this.has(u, 'freeze') || this.has(u, 'stun')) {
+                const why = this.has(u, 'freeze') ? '凍結' : '暈眩';
+                u.statuses = u.statuses.filter(s => s.key !== 'freeze' && s.key !== 'stun');
+                this.emit({type: 'skip', uid: u.uid, reason: why});
                 this.endTurn(u);
                 return this.endStep();
             }
@@ -320,7 +371,11 @@
                     const others = this.friendsOf(u).filter(a => a !== u);
                     const same = others.filter(a => a.faction === u.faction);
                     const pool = same.length ? same : others;
-                    if (pool.length) this.push(pool[Math.floor(this.rand() * pool.length)], p.pct);
+                    if (pool.length) {
+                        const a = pool[Math.floor(this.rand() * pool.length)];
+                        this.push(a, p.pct);
+                        if (p.energy) this.gainEnergy(a, p.energy);
+                    }
                 }
             }
 
@@ -345,7 +400,7 @@
         finish(result, reason) {
             this.over = true;
             this.result = result;
-            this.emit({type: 'end', result, reason, round: Math.min(this.round(), MAX_ROUNDS)});
+            this.emit({type: 'end', result, reason, round: Math.min(this.round(), this.maxRounds)});
         }
 
         pickSkill(u) {
@@ -432,7 +487,7 @@
                         break;
                     case 'shield':
                         for (const t of targets) {
-                            const amt = e.pctMaxHp * (ctx.power || 1) * (e.ofCaster ? src.maxHp : t.maxHp);
+                            const amt = e.pctMaxHp * (ctx.power || 1) * (e.ofCaster ? src.maxHp : t.maxHp) * (t.side === 'ally' ? this.M.shieldMult : 1);
                             t.shield = Math.round(Math.min(t.shield + amt, t.maxHp * 0.5));
                             this.emit({type: 'shield', uid: t.uid, amount: Math.round(amt)});
                         }
@@ -470,12 +525,21 @@
             if (rel === 'dis') dmg *= R.ELEMENT_DIS;
             dmg *= 1 + (o.bonus || 0);
             if (src.fac?.vsUndead && tgt.faction === 'undead') dmg *= 1 + src.fac.vsUndead;
-            for (const p of src.passives) if (p.type === 'dmgVsFaction' && tgt.faction === p.faction) dmg *= 1 + p.pct;
+            for (const p of src.passives) {
+                if (p.type === 'dmgVsFaction' && tgt.faction === p.faction) dmg *= 1 + p.pct;
+                if (p.type === 'dmgVsStatus' && p.statuses.some(k => this.has(tgt, k))) dmg *= 1 + p.pct;
+                if (p.type === 'dmgVsLowHp' && tgt.hp / tgt.maxHp < p.below) dmg *= 1 + p.pct;
+            }
             if (this.has(tgt, 'guard')) dmg *= 0.7;
+            for (const p of tgt.passives) if (p.type === 'tauntGuard' && this.has(tgt, 'taunt')) dmg *= 1 - p.pct;
+            if (src.side === 'enemy' && this.M.roundDmg) dmg *= 1 + this.M.roundDmg * (this.round() - 1);
             let crit = false;
             if (!o.noCrit) {
                 let rate = src.base.crit;
-                for (const p of src.passives) if (p.type === 'critVsFullHp' && tgt.hp >= tgt.maxHp) rate += p.pct;
+                for (const p of src.passives) {
+                    if (p.type === 'critVsFullHp' && tgt.hp >= tgt.maxHp) rate += p.pct;
+                    if (p.type === 'critVsStatus' && p.statuses.some(k => this.has(tgt, k))) rate += p.pct;
+                }
                 if (this.rand() < rate) { crit = true; dmg *= 1 + src.base.critDmg; }
             }
             dmg *= 0.95 + this.rand() * 0.1;
@@ -485,7 +549,12 @@
             src.stats.dmg += dealt;
             if (o.ult) this.ultDamage += dealt;
             for (const p of src.passives) if (p.type === 'lifesteal' && src.alive) this.heal(src, src, dealt * p.pct);
-            if (o.teamHealPct) this.friendsOf(src).forEach(a => this.heal(src, a, dealt * o.teamHealPct));
+            if (o.teamHealPct) {
+                const low = src.passives.find(p => p.type === 'teamHealLow');   // 莉莉絲覺醒：生命低於一半的隊友回更多
+                this.friendsOf(src).forEach(a => this.heal(src, a, dealt * o.teamHealPct * (low && a.hp / a.maxHp < 0.5 ? 1 + low.pct : 1)));
+            }
+            // 菲覺醒：暴擊時再拉條（同一次出手每個目標 1 次）
+            if (crit && tgt.alive) for (const p of src.passives) if (p.type === 'critPull' && tgt._cp !== this.stepId) { tgt._cp = this.stepId; this.pull(tgt, p.pct); }
             if (o.execute && tgt.alive && !tgt.boss && tgt.hp / tgt.maxHp < o.execute) {
                 this.emit({type: 'execute', uid: tgt.uid});
                 tgt.hp = 0;
@@ -493,7 +562,12 @@
             }
             if (!tgt.alive) {
                 src.stats.kills++;
-                for (const p of src.passives) if (p.type === 'onKillPush' && src.alive) this.push(src, p.pct);
+                for (const p of src.passives) {
+                    if (!src.alive) break;
+                    if (p.type === 'onKillPush') this.push(src, p.pct);
+                    if (p.type === 'killStack') { src.killStackPct = p.pct; src.killStacks = Math.min(p.max, (src.killStacks || 0) + 1); }
+                    if (p.type === 'killEnergy') this.gainEnergy(src, p.n);
+                }
             }
             return dealt;
         }
@@ -509,6 +583,18 @@
             }
             tgt.hp = Math.max(0, tgt.hp - rest);
             tgt.stats.taken += dmg;
+            // 免死（覺醒）：苦行僧自己 1 次；瓦爾基里在場時全隊共用 1 次
+            if (tgt.hp <= 0 && tgt.side === 'ally') {
+                const self = tgt.passives.find(p => p.type === 'cheatDeathSelf');
+                const saver = !tgt.cheated && self ? tgt : this.allies().find(a => !a.teamSaved && a.passives.some(p => p.type === 'teamCheatDeath'));
+                if (saver) {
+                    if (saver === tgt && self && !tgt.cheated) tgt.cheated = true; else saver.teamSaved = true;
+                    const sp = saver.passives.find(p => p.type === 'cheatDeathSelf' || p.type === 'teamCheatDeath');
+                    tgt.hp = 1;
+                    tgt.shield = Math.round(tgt.maxHp * (sp.shield || 0));
+                    this.emit({type: 'shield', uid: tgt.uid, amount: tgt.shield});
+                }
+            }
             this.emit(Object.assign({type: 'damage', uid: tgt.uid, amount: dmg, absorbed}, info));
             if (info.kind !== 'dot') this.gainEnergy(tgt, R.ENERGY.perHit);
             if (tgt.hp <= 0) this.onDeath(tgt, info.srcUid ? this.get(info.srcUid) : null);
@@ -540,7 +626,14 @@
 
         heal(src, tgt, amount) {
             if (!tgt.alive) return;
+            if (tgt.side === 'ally') amount *= this.M.healMult;
             const amt = Math.round(Math.min(amount, tgt.maxHp - tgt.hp));
+            // 艾拉覺醒：補過頭的部分轉成護盾（最多到目標最大生命 15%）
+            const os = src.passives.find(p => p.type === 'overhealShield');
+            if (os && amount > amt + 1) {
+                const cap = tgt.maxHp * os.cap;
+                if (tgt.shield < cap) { tgt.shield = Math.round(Math.min(cap, tgt.shield + (amount - Math.max(0, amt)) * os.pct)); this.emit({type: 'shield', uid: tgt.uid, amount: tgt.shield}); }
+            }
             if (amt <= 0) return;
             tgt.hp += amt;
             src.stats.heal += amt;
@@ -571,16 +664,26 @@
             }
             const value = e.dotMult ? e.dotMult * this.atkOf(src) : 0;
             const ex = t.statuses.find(s => s.key === e.status);
+            const stack = e.status === 'poison' ? src.passives.find(p => p.type === 'poisonStack') : null;   // 毒鏢客覺醒：中毒可以疊層
+            const amp = e.status === 'atkUp' ? src.passives.find(p => p.atkUpAmp)?.atkUpAmp : 0;             // 熾覺醒：攻擊提升變強
             if (ex) {
                 ex.turns = Math.max(ex.turns, e.turns);
                 ex.value = Math.max(ex.value, value);
                 ex.appliedAt = this.actionId;
+                if (stack) ex.stacks = Math.min(stack.max, (ex.stacks || 1) + 1);
+                if (amp) ex.amp = Math.max(ex.amp || 0, amp);
             } else {
-                t.statuses.push({key: e.status, turns: e.turns, value, src: src.uid, appliedAt: this.actionId});
+                t.statuses.push({key: e.status, turns: e.turns, value, src: src.uid, appliedAt: this.actionId, stacks: 1, amp: amp || 0});
             }
             this.emit({type: 'status', uid: t.uid, key: e.status});
             // 封印 4 件：控制成功時再拉條
             if (src.gear4?.sealPull && src.side !== t.side && ['freeze', 'slow', 'silence'].includes(e.status)) this.pull(t, src.gear4.sealPull);
+        }
+
+        // 對首領造成的傷害（巫妖王試煉的分數）
+        bossDamage() {
+            const boss = this.units.find(u => u.side === 'enemy' && u.boss);
+            return boss ? boss.maxHp - boss.hp : 0;
         }
 
         cleanse(t, count) {

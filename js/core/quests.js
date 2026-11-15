@@ -26,6 +26,10 @@
         return q;
     }
 
+    // 目前開放的任務（有 need 的要主線進度到了才出現）
+    const open = (S, list) => list.filter(t => !t.need || (window.Campaign ? window.Campaign.progress(S) >= t.need : true));
+    const dailyList = S => open(S, Q.daily), weeklyList = S => open(S, Q.weekly);
+
     // 記錄進度（事件可能同時推進每日與每週任務）
     function track(S, ev, n = 1) {
         const q = state(S);
@@ -72,7 +76,7 @@
         q.dClaim[id] = true;
         return {ok: true, medal: addMedals(S, t.medal)};
     }
-    const dailyAllDone = S => Q.daily.every(t => state(S).dClaim[t.id]);
+    const dailyAllDone = S => dailyList(S).every(t => state(S).dClaim[t.id]);
     function claimDailyBonus(S) {
         const q = state(S);
         if (q.dBonus || !dailyAllDone(S)) return {ok: false};
@@ -108,13 +112,13 @@
     // 有東西可以領（紅點）
     function hasClaimable(S) {
         const q = state(S);
-        if (Q.daily.some(t => !q.dClaim[t.id] && (q.daily[t.id] || 0) >= t.n)) return true;
+        if (dailyList(S).some(t => !q.dClaim[t.id] && (q.daily[t.id] || 0) >= t.n)) return true;
         if (dailyAllDone(S) && !q.dBonus) return true;
-        if (Q.weekly.some(t => !q.wClaim[t.id] && (q.weekly[t.id] || 0) >= t.n)) return true;
+        if (weeklyList(S).some(t => !q.wClaim[t.id] && (q.weekly[t.id] || 0) >= t.n)) return true;
         for (let lv = 1; lv <= level(S); lv++) if (!q.pClaim[lv]) return true;
         return chestsReady(S) > 0;
     }
 
-    window.Quests = {state, track, claimDaily, claimDailyBonus, claimWeekly, claimPass, claimAllPass, openChest, dailyAllDone,
+    window.Quests = {state, track, claimDaily, claimDailyBonus, claimWeekly, claimPass, claimAllPass, openChest, dailyAllDone, dailyList, weeklyList,
         level, chestsReady, hasClaimable, boosted, expectedMedals, dayKey, weekKey};
 })();

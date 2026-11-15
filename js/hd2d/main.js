@@ -396,11 +396,12 @@ async function startBattle() {
     slotsUsed.clear();
     $('#result').classList.remove('show');
     // 主線關卡（cfg.stage）用 Campaign 產生關卡；growth：從大廳帶來的養成倍率
-    const stageEnc = cfg.stage ? Campaign.stage(cfg.stage.ch, cfg.stage.st)
-        : cfg.dungeon ? Dungeon.encounter(cfg.dungeon.kind, cfg.dungeon.id, cfg.dungeon.floor) : null;
+    const stageEnc = encFor();
     const b = Battle.create({team: cfg.team, encounterId: cfg.encounter, encounter: stageEnc, auto: state.auto, growth: cfg.growth});
     state.battle = b;
-    $('#b-enc').textContent = cfg.dungeon ? `${stageEnc.name}・${stageEnc.difficulty}` : stageEnc ? `${stageEnc.key}　${stageEnc.kind === 'boss' ? stageEnc.name : R.CAMPAIGN.chapters[stageEnc.ch - 1].name}・${stageEnc.difficulty}` : `${b.encounter.name}・${b.encounter.difficulty}`;
+    const ruleTxt = (stageEnc?.mods || []).filter(m => typeof m === 'string').map(m => R.MODS[m].name).join('、');
+    $('#b-enc').title = (stageEnc?.mods || []).filter(m => typeof m === 'string').map(m => `${R.MODS[m].name}：${R.MODS[m].desc}`).join('\n');
+    $('#b-enc').textContent = (cfg.lich || cfg.tower) ? `${stageEnc.name}・${ruleTxt}` : cfg.stage?.hard ? `困難 ${stageEnc.key}　${stageEnc.kind === 'boss' ? stageEnc.name : R.CAMPAIGN.chapters[stageEnc.ch - 1].name}・${ruleTxt}` : cfg.dungeon ? `${stageEnc.name}・${stageEnc.difficulty}` : stageEnc ? `${stageEnc.key}　${stageEnc.kind === 'boss' ? stageEnc.name : R.CAMPAIGN.chapters[stageEnc.ch - 1].name}・${stageEnc.difficulty}` : `${b.encounter.name}・${b.encounter.difficulty}`;
     await Promise.all(b.units.map(u => addUnit(u)));
     const d = defaultPose();
     cam.pos.copy(d.pos).add(new THREE.Vector3(0, 1.5, 6));
@@ -436,7 +437,7 @@ function refreshAll() {
     for (const u of b.units) updateUnit(u);
     renderTimeline();
     renderHud();
-    $('#b-round').textContent = `第 ${Math.min(b.round(), Battle.MAX_ROUNDS)} / ${Battle.MAX_ROUNDS} 回合`;
+    $('#b-round').textContent = `第 ${Math.min(b.round(), b.maxRounds)} / ${b.maxRounds} 回合`;
 }
 
 function renderTimeline() {
@@ -514,7 +515,9 @@ function updateBossBar() {
     el.querySelector('.bb-hp').style.width = pct + '%';
     el.querySelector('.bb-lag').style.width = pct + '%';
     el.querySelector('b').style.width = Math.min(100, boss.shield / boss.maxHp * 100) + '%';
-    el.querySelector('.bb-pct').textContent = Math.ceil(pct) + '%';
+    // 巫妖王試煉：顯示目前打到第幾階與累計傷害
+    const dmg = cfg.lich ? state.battle.bossDamage() : 0;
+    el.querySelector('.bb-pct').textContent = cfg.lich ? `第 ${Season.tierOf(dmg)} 階・${dmg.toLocaleString()}` : Math.ceil(pct) + '%';
     el.querySelector('.bb-st').innerHTML = boss.statuses.map(s => Battle.STATUS[s.key].icon).join('');
     el.classList.add('show');
     el.classList.toggle('dead', !boss.alive);
@@ -908,7 +911,7 @@ async function playEvents(events, id) {
                 actor = u;
                 setActing(u.uid, true);
                 setPill(`${u.name} 行動`, u.side === 'enemy');
-                $('#b-round').textContent = `第 ${Math.min(e.round, Battle.MAX_ROUNDS)} / ${Battle.MAX_ROUNDS} 回合`;
+                $('#b-round').textContent = `第 ${Math.min(e.round, state.battle.maxRounds)} / ${state.battle.maxRounds} 回合`;
                 break;
             case 'skill': {
                 setPill(`${u.name}・<span class="sk">${e.name}</span>`, u.side === 'enemy');
@@ -1001,13 +1004,22 @@ async function playEvents(events, id) {
     if (usedSkill && !b.over) camHome(500);
 }
 
+// 這一場的關卡內容：巫妖王試煉、亡靈之塔、主線（普通／困難）、副本；都不是就回傳 null（測試用的固定關卡）
+function encFor() {
+    if (cfg.lich) return Season.lichEncounter();
+    if (cfg.tower) return Season.towerEncounter(cfg.tower.floor);
+    if (cfg.stage) return cfg.stage.hard ? Season.hardStage(cfg.stage.ch, cfg.stage.st) : Campaign.stage(cfg.stage.ch, cfg.stage.st);
+    if (cfg.dungeon) return Dungeon.encounter(cfg.dungeon.kind, cfg.dungeon.id, cfg.dungeon.floor);
+    return null;
+}
+const rwHtml = r => Object.entries(r || {}).filter(([, v]) => typeof v === 'number' && v > 0).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('');
 // 主線結算：寫進存檔（星數、首通／重打獎勵），回傳要顯示的內容
 function settleStage(win, round) {
     if (!cfg.stage) return null;
     const b = state.battle;
     const S = Save.load();
     const noDeath = b.units.filter(u => u.side === 'ally').every(u => u.alive);
-    const res = Campaign.settle(S, cfg.stage.ch, cfg.stage.st, win, {noDeath, rounds: round});
+    const res = (cfg.stage.hard ? Season.hardSettle : Campaign.settle)(S, cfg.stage.ch, cfg.stage.st, win, {noDeath, rounds: round});
     Save.save(S);
     res.noDeath = noDeath;
     res.S = S;
@@ -1030,15 +1042,40 @@ const gearChip = it => `<span class="res-gear" style="--qc:${GQ()[it.q].color}">
 function showResult(e) {
     const b = state.battle;
     const win = e.result === 'win';
-    const round = Math.min(e.round, Battle.MAX_ROUNDS);
-    const reason = win ? `${e.round} 回合內擊敗所有敵人` : (e.reason === 'timeout' ? `${Battle.MAX_ROUNDS} 回合內沒有打完` : '全隊倒下');
+    const round = Math.min(e.round, b.maxRounds);
+    let reason = win ? `${e.round} 回合內擊敗所有敵人` : (e.reason === 'timeout' ? `${b.maxRounds} 回合內沒有打完` : '全隊倒下');
+    let title = win ? '勝利' : '敗北', titleCls = win ? 'win' : 'lose';
     const allies = b.units.filter(u => u.side === 'ally');
     const rows = allies.map(u => ({name: shortName(u.name), v: u.stats.dmg, color: facColor(u.faction)}));
     rows.sort((a, c) => c.v - a.v);
     const max = Math.max(1, ...rows.map(r => r.v));
     const st = settleStage(win, round);
     let stageHtml = '', btns = `<a class="btn-secondary" href="index.html" style="display:grid;place-items:center;text-decoration:none;color:inherit">回大廳</a><button class="btn-primary" id="res-again">再打一次</button>`;
-    if (cfg.dungeon) {
+    const reload = () => { try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ } location.reload(); };
+    const back = (href, txt) => `<a class="btn-secondary" href="${href}" style="display:grid;place-items:center;text-decoration:none;color:inherit">${txt}</a>`;
+    if (cfg.lich) {
+        // 巫妖王試煉：不分輸贏，看對巫妖王造成的傷害
+        const S = Save.load();
+        const res = Season.lichSettle(S, b.bossDamage());
+        Save.save(S);
+        if (!res.ok) { stageHtml = `<div class="res-tip">今天的次數已經用完，這場不計分</div>`; title = '練習結束'; titleCls = 'win'; }
+        else {
+            title = `第 ${res.tier} 階`; titleCls = 'win';
+            reason = `對巫妖王造成 ${res.dmg.toLocaleString()} 傷害` + (res.next ? `　下一階還差 ${(res.next - res.dmg).toLocaleString()}` : '　已達最高階');
+            stageHtml = `<div class="res-rw"><span>獎勵</span>${rwHtml(res.reward)}</div>`
+                + (res.newTiers.length ? `<div class="res-tip">本週首次達到第 ${res.newTiers.join('、')} 階，覺醒石已經加進獎勵</div>` : '')
+                + `<div class="res-rw"><span>今天還有 ${res.left} 次</span></div>`;
+        }
+        btns = back('index.html#lich', '回試煉') + (res.ok && res.left > 0 ? '<button class="btn-primary" id="res-again">再打一次</button>' : '');
+    } else if (cfg.tower) {
+        const S = Save.load(), f = cfg.tower.floor;
+        const res = Season.towerSettle(S, f, win);
+        Save.save(S);
+        if (win) stageHtml = res.first ? `<div class="res-rw"><span>第 ${f} 層 首通獎勵</span>${rwHtml(res.reward)}</div>` : `<div class="res-tip">這一層已經打過了，沒有獎勵</div>`;
+        else stageHtml = `<div class="res-tip">提示：看這一層的規則調整隊伍（例如治療被削弱就改帶護盾），輸了沒有損失</div>`;
+        btns = back('index.html#tower', '回試煉') + (win ? '<button class="btn-primary" id="res-next">下一層 ▶</button>' : '<button class="btn-primary" id="res-again">再打一次</button>');
+        if (win) setTimeout(() => { $('#res-next').onclick = () => { cfg.tower = {floor: f + 1}; reload(); }; });
+    } else if (cfg.dungeon) {
         const dg = cfg.dungeon, s = Dungeon.encounter(dg.kind, dg.id, dg.floor);
         const st2 = settleDungeon(win, round);
         const conds = [['通關', win], ['沒有英雄陣亡', win && st2.noDeath], [`${s.rounds} 回合內通關`, win && round <= s.rounds]];
@@ -1077,19 +1114,21 @@ function showResult(e) {
         }
         if (nx) setTimeout(() => { if (!$('#res-next')) return; $('#res-next').onclick = () => { cfg.dungeon = {...dg, floor: dg.floor + 1}; try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ } location.reload(); }; });
     } else if (cfg.stage) {
-        const s = Campaign.stage(cfg.stage.ch, cfg.stage.st);
+        const s = encFor(), hard = !!cfg.stage.hard;
         const conds = [['通關', win], ['沒有英雄陣亡', win && st.noDeath], [`${s.rounds} 回合內通關`, win && round <= s.rounds]];
         stageHtml = `<div class="res-stars">${conds.map(([t, ok], i) => `<div class="${ok ? 'on' : ''}" style="animation-delay:${0.25 + i * 0.25}s"><i>★</i><span>${t}</span></div>`).join('')}</div>`;
         if (win) stageHtml += `<div class="res-rw"><span>${st.first ? '首通獎勵' : '獎勵'}</span>${Object.entries(st.reward).filter(([, v]) => v > 0).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('')}</div>`;
         else stageHtml += `<div class="res-tip">提示：回大廳幫英雄升級、突破，或調整隊伍再挑戰</div>`;
         const idx = Campaign.idxOf(cfg.stage.ch, cfg.stage.st);
         const last = R.CAMPAIGN.chapters.length * Campaign.N;
-        const nx = win && idx < last ? {ch: Math.ceil((idx + 1) / Campaign.N), st: idx % Campaign.N + 1} : null;
-        btns = `<a class="btn-secondary" href="index.html#map=${cfg.stage.ch}-1" style="display:grid;place-items:center;text-decoration:none;color:inherit">回地圖</a><button class="btn-secondary" id="res-again">再打一次</button>${nx ? '<button class="btn-primary" id="res-next">下一關 ▶</button>' : ''}`;
+        // 困難模式：只在同一章內接下一關（下一章要看普通模式打到哪）
+        const nx = hard ? (win && cfg.stage.st < Campaign.N ? {ch: cfg.stage.ch, st: cfg.stage.st + 1, hard: true} : null)
+            : win && idx < last ? {ch: Math.ceil((idx + 1) / Campaign.N), st: idx % Campaign.N + 1} : null;
+        btns = `<a class="btn-secondary" href="index.html#${hard ? 'hmap' : 'map'}=${cfg.stage.ch}-1" style="display:grid;place-items:center;text-decoration:none;color:inherit">回地圖</a><button class="btn-secondary" id="res-again">再打一次</button>${nx ? '<button class="btn-primary" id="res-next">下一關 ▶</button>' : ''}`;
         if (nx) setTimeout(() => {
             $('#res-next').onclick = () => {
                 // 下一關有劇情（新章節開頭或首領戰）就回大廳播劇情再出戰；沒有就直接重新載入戰場
-                const needStory = (nx.st === 1 && !st.S.campaign.story[`${nx.ch}:start`]) || (nx.st === Campaign.N && !st.S.campaign.story[`${nx.ch}:boss`]);
+                const needStory = !hard && (nx.st === 1 && !st.S.campaign.story[`${nx.ch}:start`]) || (nx.st === Campaign.N && !st.S.campaign.story[`${nx.ch}:boss`]);
                 if (needStory || nx.ch !== cfg.stage.ch) { location.href = `index.html#go=${nx.ch}-${nx.st}`; return; }
                 cfg.stage = nx;
                 try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ }
@@ -1101,7 +1140,7 @@ function showResult(e) {
     // 左：結果、星級、獎勵、按鈕；右：回合與輸出統計（橫向螢幕並排，直向上下排）
     r.innerHTML = `<div class="sheet res-sheet">
         <div class="res-l">
-            <div class="res-title ${win ? 'win' : 'lose'}">${win ? '勝利' : '敗北'}</div>
+            <div class="res-title ${titleCls}">${title}</div>
             <div class="res-sub">${reason}</div>
             ${stageHtml}
             <div class="row-btns">${btns}</div>
@@ -1182,8 +1221,8 @@ function frame(now) {
 
 // ───────── 開始 ─────────
 (async function init() {
-    const enc = cfg.stage ? Campaign.stage(cfg.stage.ch, cfg.stage.st) : cfg.dungeon ? Dungeon.encounter(cfg.dungeon.kind, cfg.dungeon.id, cfg.dungeon.floor) : (R.ENCOUNTERS.find(e => e.id === cfg.encounter) || R.ENCOUNTERS[0]);
-    if (!cfg.stage && !cfg.dungeon) cfg.encounter = enc.id;
+    const enc = encFor() || (R.ENCOUNTERS.find(e => e.id === cfg.encounter) || R.ENCOUNTERS[0]);
+    if (!cfg.stage && !cfg.dungeon && !cfg.lich && !cfg.tower) cfg.encounter = enc.id;
     resize();
     setupPost();
     const d = defaultPose();

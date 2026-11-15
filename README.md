@@ -17,13 +17,16 @@ js/data/      elements（屬性）factions（陣營被動、能量）heroes（22
               campaign（主線 10 章、劇情、獎勵、掛機）campaign_table（各關難度，校準工具產生）
               gear（裝備欄位、品質、屬性、套裝）dungeons（套裝副本、素材試煉）dungeon_table（各層難度）
 js/core/      battle.js（戰鬥引擎）save.js（本機存檔）gacha.js（招募機率與保底）growth.js（養成）gear.js（裝備）
+              quests.js（任務與通行證）season.js（賽季：巫妖王試煉、亡靈之塔、困難主線、賽季商店、結算；關卡規則 RES.MODS）
+              ※ js/data/season_table.js：賽季難度（tools/calibrate_season.js 產生）
 js/lobby/     main.js（大廳畫面）
 js/hd2d/      main.js（橫式戰場）
 js/vfx/       特效播放、特效庫、獨立特效、命中定格
 js/ui/        app.js（dev.html 用）
 assets/       sprites、sprites_hd、portraits、bg（直式）、hd（橫式背景與主城）
 images/       原始大圖
-tools/        cut_sheet.py 切圖示表、sim.js 平衡模擬、calibrate_campaign.js／sim_campaign.js 主線難度、calibrate_dungeons.js 副本難度、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
+tools/        hero_balance.js 英雄強度檢查、team_search.js 隊伍推薦、calibrate_season.js 賽季難度、
+              cut_sheet.py 切圖示表、sim.js 平衡模擬、calibrate_campaign.js／sim_campaign.js 主線難度、calibrate_dungeons.js 副本難度、build_vfx.py、make_sprites.py、clean_cutout.py、footprint.html
 ```
 
 ## 調數值
@@ -161,3 +164,26 @@ node tools/sim_campaign.js 30             # 用兩支隊伍檢查各章代表關
 - 通行證 50 級、每級 100 勳章，全部免費；每 5 級大獎，第 50 級 UR 莫瑟斯；50 級之後每 100 勳章開一個寶箱
 - 每天全做約 17 天練滿；勳章比「每天 280」的正常進度落後超過一天時，領到的勳章加倍
 - 進度由遊戲各處呼叫 `Quests.track(S, 事件, 次數)` 記錄（掛機、戰鬥結算、招募、升級、強化），勳章要在任務頁按「領取」
+- 巫妖王試煉、亡靈之塔開放（打完第 3 章）後，每日多一個「挑戰巫妖王 1 次」、每週多一個「亡靈之塔通關 3 層」；沒開放的任務不會出現，也不算在「全部完成」裡
+
+## 英雄平衡與覺醒
+
+- 檢查工具：`EF=0.93 node tools/hero_balance.js 4000`。隨機 1 坦克＋1 輔助＋3 輸出的隊伍打主線代表關卡，看每位英雄在隊上時的勝率，跟同職業比。
+  「只比技能」模式把稀有度能力拉平，目標是同職業差距 ±4% 以內；「實際」模式要照 UR > SSR > SR > R 排。加 `AWK=1` 是全員覺醒。
+- 覺醒（`RES.AWAKEN`、各英雄的 `awaken` 欄位）：Lv.60、5★ 後用覺醒石開啟。全能力 R +6%、SR +8%、SSR +10%、UR +12%，覺醒石 R／SR 20、SSR 30、UR 40。
+  每位英雄一個專屬效果，由戰鬥引擎當成第二個被動處理（`passiveMod` 改原被動、`ultAdd` 在大招後面加效果、`stat` 直接加能力）。
+- 新狀態：暈眩（跳過一次行動）；毒鏢客覺醒後中毒可以疊 3 層。
+- 隊伍推薦：`node tools/team_search.js campaign|speed|lich`，把所有 5 人組合跑一遍找出最好的隊伍（`POOL=free` 不含 UR、`POOL=low` 只用 R／SR、`AWK=1` 覺醒）。
+
+## 賽季（4 週一季）
+
+規則與資料都在 `js/core/season.js`，存檔在 `S.season`。入口在「試煉」最上面一排，困難主線在章節地圖上方切換。
+- **關卡規則**（`RES.MODS`）：嗜血、枯萎、碎盾、寒潮、瘟疫、靜默、堅骨、結界、狂亂、不死、迷霧、屍潮、骨甲。關卡的 `mods` 列出規則，戰鬥引擎開場合併套用。
+- **巫妖王試煉**：打完第 3 章開放，每天 3 次。打 15 回合，看對巫妖王造成多少傷害，分 10 階；巫妖王每回合傷害 +7%。每週一換 2 個詞綴（從 8 個裡抽，同一週大家一樣）。
+  每次依階數給賽季徽章與金幣；每週第一次打到某一階另外給覺醒石。
+- **亡靈之塔**：打完第 3 章開放，不限次數。30 層，每層一條規則（21 層起兩條），每 5 層守層首領；30 層後是無盡層，每層敵人 +5%。每層首通給賽季徽章，每 5 層給覺醒石。每季重置。
+- **困難主線**：普通模式打完哪一章，那一章的困難就開放（章內照順序）。每章一條規則，首通獎勵 2 倍再加覺醒石（一般 1、菁英 3、首領 8）。
+  難度大約是：困難第 h 關 ≈ 普通第 40＋0.75h 關的養成，最後 10 關要練滿加覺醒。星數存在 `S.campaign.hstars`。
+- **賽季商店**（賽季徽章）：烏瑟碎片、限定招募券、招募券、傳說套裝、覺醒石、技能書、突破石、強化石、金幣；每週限購。
+- **賽季結算**：滿 28 天後第一次進大廳時結算。依巫妖王最高階與塔的最高層給鑽石、招募券與稱號；通行證沒領的自動領；通行證、巫妖王、塔、商店重新計算，其他保留。
+- 改了英雄、敵人、覺醒或規則後重跑 `node tools/calibrate_season.js`（可以只跑 `tower`、`hard` 或 `lich`）。

@@ -1,6 +1,7 @@
 // 英雄強度檢查：node tools/hero_balance.js [每個關卡的場數]
 // 隨機 5 人隊伍（22 位英雄）在相同養成下，打主線幾個代表關卡，統計每位英雄「在隊上時的勝率」。
 // 兩種模式：實際（含稀有度能力差）＋技能（所有稀有度能力一樣，只比技能設計）。
+// 環境變數：EF 敵人攻擊倍率、AWK=1 全員覺醒、PATCH 試調整用的腳本。
 // 結果寫到 /tmp/hero_balance.json，給 tools/hero_balance_report 或人工看。
 const fs = require('fs');
 const path = require('path');
@@ -27,7 +28,7 @@ const rand = () => { seed = (seed * 16807) % 2147483647; return seed / 214748364
 
 function growthFor(team, i) {
     const e = Campaign.expected(i), gear = Gear.expectedBonus(i), g = {};
-    for (const id of team) g[id] = {...Growth.multipliers(id, {lv: e.lv, star: Save.START_STAR[RES.HEROES[id].rarity] + e.star, sk: e.sk, ul: e.sk}), gear};
+    for (const id of team) g[id] = {...Growth.multipliers(id, {lv: e.lv, star: Save.START_STAR[RES.HEROES[id].rarity] + e.star, sk: e.sk, ul: e.sk, awk: !!process.env.AWK}), gear};
     return g;
 }
 
@@ -72,7 +73,7 @@ function run(label) {
 const out = {};
 out.actual = run('實際（含稀有度能力差）');
 const keep = JSON.parse(JSON.stringify(RES.RARITY));
-for (const k of Object.keys(RES.RARITY)) RES.RARITY[k].mult = 1;
+for (const k of Object.keys(RES.RARITY)) { RES.RARITY[k].mult = 1; RES.AWAKEN.stat[k] = 0.08; }
 out.kit = run('只比技能（所有稀有度能力一樣）');
 Object.assign(RES.RARITY, keep);
 fs.writeFileSync('/tmp/hero_balance.json', JSON.stringify(out));

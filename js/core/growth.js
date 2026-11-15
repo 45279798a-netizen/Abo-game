@@ -31,7 +31,7 @@
 
     function mult(id, o) {
         if (!o) return 1;
-        return (1 + LV_PCT * (o.lv - 1)) * (1 + STAR_PCT * (o.star - startStar(id)));
+        return (1 + LV_PCT * (o.lv - 1)) * (1 + STAR_PCT * (o.star - startStar(id))) * (o.awk ? 1 + R.AWAKEN.stat[R.HEROES[id].rarity] : 1);
     }
     // 戰鬥用：全能力倍率、技能倍率、大招倍率
     function multipliers(id, o) {
@@ -39,6 +39,7 @@
             stat: mult(id, o),
             skill: 1 + SKILL_PCT * (((o && o.sk) || 1) - 1),
             ult: 1 + SKILL_PCT * (((o && o.ul) || 1) - 1),
+            awk: !!(o && o.awk),
         };
     }
     // e：裝備加成（Gear.bonus），可省略
@@ -55,7 +56,7 @@
     const power = (id, o, e) => {
         const s = stats(id, o, e), m = multipliers(id, o);
         const atk = s.atk * (1 + Math.min(1, s.crit) * s.critDmg) / (1 + 0.15 * 0.5);
-        return Math.round((s.hp * 0.2 + atk * 2.2 + s.def * 1.5 + s.spd * 3 + (s.hit + s.res) * 300) * (1 + (m.skill - 1) * 0.3 + (m.ult - 1) * 0.3));
+        return Math.round((s.hp * 0.2 + atk * 2.2 + s.def * 1.5 + s.spd * 3 + (s.hit + s.res) * 300) * (1 + (m.skill - 1) * 0.3 + (m.ult - 1) * 0.3) * (m.awk ? 1.05 : 1));
     };
 
     const has = (S, cost) => Object.entries(cost).every(([k, v]) => (S.currency[k] || 0) >= v);
@@ -103,6 +104,17 @@
         pay(S, c); o[which] = lv + 1;
         return {ok: true};
     }
+    // 覺醒：60 級、5 星，花覺醒石（依稀有度）與金幣
+    function awakenCost(id) { return {awk: R.AWAKEN.cost[R.HEROES[id].rarity], gold: R.AWAKEN.gold}; }
+    function awaken(S, id) {
+        const o = S.heroes[id], A = R.AWAKEN;
+        if (o.awk) return {ok: false, reason: '已經覺醒'};
+        if (o.lv < A.lv || o.star < A.star) return {ok: false, reason: `需要 Lv.${A.lv}、${A.star}★`};
+        const c = awakenCost(id);
+        if (!has(S, c)) return {ok: false, reason: '覺醒石或金幣不足'};
+        pay(S, c); o.awk = true;
+        return {ok: true};
+    }
     // 抽到重複英雄時呼叫：滿星的英雄碎片直接轉星塵。回傳實際給的 {shards, dust}
     function giveShards(S, id, n) {
         const o = S.heroes[id];
@@ -130,6 +142,6 @@
     window.Growth = {
         MAX_LV, MAX_STAR, MAX_SKILL, LV_PCT, STAR_PCT, SKILL_PCT, STAR_COST, BREAK_COST, SKILL_COST, DUST_PER_SHARD, DUST_SHOP,
         lvCap, lvCost, breakCost, starCost, skillCost, startStar, mult, multipliers, stats, power,
-        levelUp, breakThrough, starUp, skillUp, giveShards, buyShards, buyItem,
+        levelUp, breakThrough, starUp, skillUp, giveShards, buyShards, buyItem, awaken, awakenCost,
     };
 })();

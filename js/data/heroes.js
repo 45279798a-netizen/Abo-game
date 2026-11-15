@@ -22,6 +22,14 @@ RES.RARITY = {
     UR:  {name: 'UR',  mult: 1.12, color: '#ef4444'},
 };
 
+// 覺醒：60 級、5 星後用覺醒石開啟。全能力依稀有度加成，再加每位英雄的專屬效果（各英雄的 awaken 欄位）。
+// 稀有度越高加成越多，但 R、SR 的覺醒石比較便宜；覺醒後的 R 大約追上沒覺醒的 SSR。
+RES.AWAKEN = {
+    lv: 60, star: 5, gold: 50000,
+    cost: {R: 20, SR: 20, SSR: 30, UR: 40},
+    stat: {R: 0.06, SR: 0.08, SSR: 0.10, UR: 0.12},
+};
+
 // 職業基礎能力（SSR、原型等級）
 RES.ROLES = {
     tank:     {name: '坦克', hp: 3300, atk: 170, def: 200, spd: 92},
@@ -52,6 +60,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '鐵壁', desc: '防禦 +10%', type: 'statUp', stat: 'def', pct: 0.10},
+        awaken: {name: '不動如山', desc: '嘲諷期間受到的傷害 -25%', type: 'tauntGuard', pct: 0.25},
     },
     reina: {
         name: '烈焰騎士·蕾娜', rarity: 'SSR', faction: 'kingdom', element: 'fire', role: 'warrior', img: 'h_reina',
@@ -71,6 +80,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '乘勝追擊', desc: '擊倒敵人時，自己推條 30%', type: 'onKillPush', pct: 0.3},
+        awaken: {name: '餘燼追獵', desc: '對燃燒中的敵人傷害 +25%', type: 'dmgVsStatus', statuses: ['burn'], pct: 0.25},
     },
     valkyrie: {
         name: '聖殿衛士·瓦爾基里', rarity: 'SSR', faction: 'kingdom', element: 'light', role: 'tank', img: 'h_valkyrie', faceY: 14,
@@ -90,6 +100,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '衝鋒號角', desc: '戰鬥開始時，我方全體推條 10%', type: 'startPushAllies', pct: 0.10},
+        awaken: {name: '女武神的守望', desc: '每場戰鬥 1 次：隊友受到致命傷害時保留 1 點生命，並獲得最大生命 8% 的護盾', type: 'teamCheatDeath', shield: 0.08},
     },
 
     // ───────── 聖光教團 ─────────
@@ -108,6 +119,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '淨化之觸', desc: '普攻時，淨化一名隊友的 1 個減益', type: 'cleanseOnBasic'},
+        awaken: {name: '滿溢之泉', desc: '補過頭的治療量 25% 轉成護盾（最多到目標最大生命 12%）', type: 'overhealShield', pct: 0.25, cap: 0.12},
     },
     zeke: {
         name: '雷霆審判者·吉克', rarity: 'SSR', faction: 'church', element: 'wind', role: 'mage', img: 'h_zeke',
@@ -127,6 +139,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '驅魔', desc: '對亡靈天災傷害 +20%', type: 'dmgVsFaction', faction: 'undead', pct: 0.2},
+        awaken: {name: '雷罰', desc: '對減速中的敵人暴擊率 +30%', type: 'critVsStatus', statuses: ['slow'], pct: 0.3},
     },
     seraph: {
         name: '大天使·熾', rarity: 'SSR', faction: 'church', element: 'light', role: 'support', img: 'h_seraph', faceY: 12,
@@ -147,6 +160,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '光之加護', desc: '我方全體效果抵抗 +15%', type: 'auraRes', pct: 0.15},
+        awaken: {name: '熾天之翼', desc: '戰鬥開始時我方全體能量 +20；自己施加的攻擊提升從 +20% 變成 +30%', type: 'aura', startEnergyAllies: 20, atkUpAmp: 0.3},
     },
 
     // ───────── 翠林盟約 ─────────
@@ -165,6 +179,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '旅人之歌', desc: '行動後，隨機一名隊友推條 10%（優先同陣營）', type: 'pushAllyAfterTurn', pct: 0.10},
+        awaken: {name: '終曲', desc: '旅人之歌的推條提高到 30%，被推的隊友能量 +10', passiveMod: {pct: 0.3, energy: 10}},
     },
     faye: {
         name: '精靈射手·菲', rarity: 'SR', faction: 'forest', element: 'wind', role: 'archer', img: 'h_faye',
@@ -184,6 +199,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '鷹眼', desc: '暴擊率 +15%', type: 'statUp', stat: 'crit', flat: 0.15},
+        awaken: {name: '纏藤', desc: '暴擊時再拉條 10%（每次出手每個目標 1 次）', type: 'critPull', pct: 0.1},
     },
     gaia: {
         name: '大地之母·蓋亞', rarity: 'SSR', faction: 'forest', element: 'water', role: 'tank', img: 'h_gaia',
@@ -206,6 +222,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '生生不息', desc: '每次行動開始時，回復最大生命 8%', type: 'regenOnTurn', pct: 0.08},
+        awaken: {name: '萬物滋長', desc: '每次行動開始時，也為生命最低的隊友回復其最大生命 6%', type: 'regenAllyOnTurn', pct: 0.06},
     },
 
     // ───────── 暗夜結社 ─────────
@@ -227,6 +244,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '塗毒', desc: '普攻有 30% 機率使目標中毒 2 回合', type: 'poisonOnBasic', chance: 0.3, dotMult: 0.25},
+        awaken: {name: '劇毒疊加', desc: '自己施加的中毒可以疊加，最多 3 層（每層傷害相加）', type: 'poisonStack', max: 3},
     },
     shadow: {
         name: '無形者·影', rarity: 'SSR', faction: 'night', element: 'water', role: 'assassin', img: 'h_shadow',
@@ -242,6 +260,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '伺機而動', desc: '攻擊滿血的目標時，暴擊率 +30%', type: 'critVsFullHp', pct: 0.3},
+        awaken: {name: '影遁', desc: '擊倒敵人時，自己推條 60%', type: 'onKillPush', pct: 0.6},
     },
     lilith: {
         name: '暗影牧師·莉莉絲', rarity: 'SSR', faction: 'night', element: 'dark', role: 'support', img: 'h_lilith',
@@ -257,6 +276,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '暗之渴望', desc: '造成傷害的 20% 轉為自身生命', type: 'lifesteal', pct: 0.2},
+        awaken: {name: '血之恩賜', desc: '血契、血月契約對生命低於 50% 的隊友治療量 +80%', type: 'teamHealLow', pct: 0.8},
     },
     // ───────── 第 2 階段補齊的 10 位 ─────────
     militia: {
@@ -278,6 +298,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '同袍', desc: '生命 +15%', type: 'statUp', stat: 'hp', pct: 0.15},
+        awaken: {name: '同袍之誼', desc: '每有一位其他獅心王國隊友，攻擊與防禦 +5%', type: 'factionAllies', faction: 'kingdom', pct: 0.05},
     },
     monk: {
         name: '苦行僧', rarity: 'R', faction: 'church', element: 'fire', role: 'warrior', img: 'h_monk',
@@ -296,6 +317,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '苦修', desc: '每次輪到自己時回復 5% 生命', type: 'regenOnTurn', pct: 0.05},
+        awaken: {name: '不滅苦行', desc: '每場戰鬥 1 次：受到致命傷害時保留 1 點生命', type: 'cheatDeathSelf'},
     },
     uther: {
         name: '聖光使者·烏瑟', rarity: 'UR', faction: 'church', element: 'light', role: 'tank', img: 'h_uther',
@@ -317,6 +339,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '聖光庇護', desc: '我方全體效果抵抗 +20%', type: 'auraRes', pct: 0.2},
+        awaken: {name: '滅靈聖光', desc: '對亡靈天災傷害 +50%', type: 'dmgVsFaction', faction: 'undead', pct: 0.5},
     },
     mist: {
         name: '幻術師·迷霧', rarity: 'SSR', faction: 'forest', element: 'dark', role: 'mage', img: 'h_mist',
@@ -339,6 +362,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '幻術精通', desc: '攻擊 +15%', type: 'statUp', stat: 'atk', pct: 0.15},
+        awaken: {name: '心靈支配', desc: '效果命中 +15%，對沉默中的敵人傷害 +30%', type: 'dmgVsStatus', statuses: ['silence'], pct: 0.3, stat: {hit: 0.15}},
     },
     // ───────── 荒原部族 ─────────
     thorin: {
@@ -363,6 +387,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '鍛鐵之軀', desc: '防禦 +30%', type: 'statUp', stat: 'def', pct: 0.3},
+        awaken: {name: '震地重錘', desc: '熔爐爆裂有 80% 機率讓敵方前排暈眩 1 回合', ultAdd: [{type: 'status', target: 'enemyFront', status: 'stun', turns: 1, chance: 0.8}]},
     },
     fang: {
         name: '狼人·法恩', rarity: 'SR', faction: 'wild', element: 'wind', role: 'assassin', img: 'h_fang',
@@ -378,6 +403,7 @@ RES.HEROES = {
             effects: [{type: 'damage', target: 'enemyLowest2', mult: 2.6, hits: [0.2, 0.2, 0.25, 0.35]}],
         },
         passive: {name: '嗜血', desc: '造成傷害的 15% 轉為自己的生命', type: 'lifesteal', pct: 0.15},
+        awaken: {name: '血腥追獵', desc: '對生命低於 50% 的敵人傷害 +25%', type: 'dmgVsLowHp', below: 0.5, pct: 0.25},
     },
     noah: {
         name: '冰原薩滿·諾亞', rarity: 'SSR', faction: 'wild', element: 'water', role: 'mage', img: 'h_noah',
@@ -400,6 +426,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '寒冰洞察', desc: '攻擊滿血的目標時，暴擊率 +20%', type: 'critVsFullHp', pct: 0.2},
+        awaken: {name: '極寒', desc: '對凍結或減速中的敵人傷害 +25%', type: 'dmgVsStatus', statuses: ['freeze', 'slow'], pct: 0.25},
     },
     gideon: {
         name: '狂戰士·吉迪恩', rarity: 'SSR', faction: 'wild', element: 'dark', role: 'warrior', img: 'h_gideon',
@@ -418,6 +445,7 @@ RES.HEROES = {
             ],
         },
         passive: {name: '殺戮狂熱', desc: '擊倒敵人時，自己推條 50%', type: 'onKillPush', pct: 0.5},
+        awaken: {name: '越戰越勇', desc: '每擊倒 1 個敵人，攻擊 +10%（最多 3 層）', type: 'killStack', pct: 0.1, max: 3},
     },
     // ───────── 暗夜結社 ─────────
     draven: {
@@ -437,6 +465,7 @@ RES.HEROES = {
             effects: [{type: 'damage', target: 'enemyLowest', mult: 3.5, execute: 0.2, hits: [0.25, 0.3, 0.45]}],
         },
         passive: {name: '神射手', desc: '暴擊率 +15%', type: 'statUp', stat: 'crit', flat: 0.15},
+        awaken: {name: '火上加油', desc: '對燃燒中的敵人暴擊率 +25%', type: 'critVsStatus', statuses: ['burn'], pct: 0.25},
     },
     mortheus: {
         name: '夜魘收割者·莫瑟斯', rarity: 'UR', faction: 'night', element: 'dark', role: 'assassin', img: 'h_s1_lr',
@@ -455,6 +484,7 @@ RES.HEROES = {
             effects: [{type: 'damage', target: 'enemies', mult: 2.3, execute: 0.2, hits: [0.15, 0.15, 0.2, 0.2, 0.3]}],
         },
         passive: {name: '靈魂收割', desc: '造成傷害的 20% 轉為自己的生命', type: 'lifesteal', pct: 0.2},
+        awaken: {name: '噬魂', desc: '擊倒敵人時，自己的能量 +25', type: 'killEnergy', n: 25},
     },
 };
 
