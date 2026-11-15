@@ -389,7 +389,7 @@
         const box = $('#hero-detail');
         const tags = `<span class="tag" style="color:${rc(d.rarity)};border-color:${rc(d.rarity)}">${d.rarity}</span>
             <span class="tag" style="color:${fac.color}">${fac.emblem || ''}${fac.name}</span><span class="tag">${el.icon} ${el.name}屬性</span><span class="tag">${R.ROLES[d.role].name}</span>
-            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span>${o.awk ? '<span class="tag awk-tag">已覺醒</span>' : ''}<span class="tag">戰力 ${heroPower(id).toLocaleString()}</span>` : '<span class="tag" style="color:var(--muted)">未擁有：可從招募取得</span>'}`;
+            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span>${o.awk ? '<span class="tag awk-tag">已覺醒</span>' : ''}<span class="tag">戰力 ${heroPower(id).toLocaleString()}</span>` : `<span class="tag" style="color:var(--muted)">未擁有：${id === R.QUESTS.pass.finalHero ? '通行證第 50 級取得' : id === 'uther' ? 'S1 限定招募取得' : '招募取得'}</span>`}`;
         if (detailTab === 'gear' && !gearOpen()) detailTab = 'info';
         const tabs = o ? `<div class="dt-tabs"><button class="${detailTab === 'info' ? 'on' : ''}" data-tab="info">資料</button><button class="${detailTab === 'grow' ? 'on' : ''}" data-tab="grow">養成</button>${gearOpen() ? `<button class="${detailTab === 'gear' ? 'on' : ''}" data-tab="gear">裝備</button>` : '<button disabled title="打完第 1 章開放">裝備 🔒</button>'}</div>` : '';
         let body = '';
