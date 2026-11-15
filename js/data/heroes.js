@@ -37,21 +37,21 @@ RES.HEROES = {
     arthur: {
         name: '重裝鐵衛·亞瑟', rarity: 'SR', faction: 'kingdom', element: 'water', role: 'tank', img: 'h_arthur',
         skill: {
-            name: '堅盾號令', cd: 2, show: 2000, vfx: [{id: 'shockwave', at: 'self', color: '#93c5fd'}, {id: 'energy-vortex', at: 'self', color: '#60a5fa', size: 1.2, delay: 150, main: true}], desc: '嘲諷敵人 2 回合，並獲得最大生命 20% 的護盾',
+            name: '堅盾號令', cd: 2, show: 2000, vfx: [{id: 'shockwave', at: 'self', color: '#93c5fd'}, {id: 'energy-vortex', at: 'self', color: '#60a5fa', size: 1.2, delay: 150, main: true}], desc: '嘲諷敵人 2 回合，並獲得最大生命 15% 的護盾',
             effects: [
                 {type: 'status', target: 'self', status: 'taunt', turns: 2, chance: 1},
-                {type: 'shield', target: 'self', pctMaxHp: 0.20},
+                {type: 'shield', target: 'self', pctMaxHp: 0.15},
             ],
         },
         ult: {
-            name: '獅王壁壘', desc: '全隊獲得最大生命 20% 的護盾，自己嘲諷 2 回合',
+            name: '獅王壁壘', desc: '全隊獲得最大生命 12% 的護盾，自己嘲諷 2 回合',
             show: 3600, vfx: [{id: 'shockwave', at: 'self', color: '#93c5fd'}, {id: 'radiant-beam', at: 'friends', sky: true, color: '#93c5fd', size: 1.4, delay: 300}, {id: 'energy-vortex', at: 'friends', color: '#60a5fa', delay: 700, main: true}, {id: 'magic-barrier', at: 'friends', each: true, color: '#93c5fd', delay: 1000, stagger: 100}],
             effects: [
-                {type: 'shield', target: 'allies', pctMaxHp: 0.20},
+                {type: 'shield', target: 'allies', pctMaxHp: 0.12},
                 {type: 'status', target: 'self', status: 'taunt', turns: 2, chance: 1},
             ],
         },
-        passive: {name: '鐵壁', desc: '防禦 +25%', type: 'statUp', stat: 'def', pct: 0.25},
+        passive: {name: '鐵壁', desc: '防禦 +10%', type: 'statUp', stat: 'def', pct: 0.10},
     },
     reina: {
         name: '烈焰騎士·蕾娜', rarity: 'SSR', faction: 'kingdom', element: 'fire', role: 'warrior', img: 'h_reina',
@@ -75,17 +75,18 @@ RES.HEROES = {
     valkyrie: {
         name: '聖殿衛士·瓦爾基里', rarity: 'SSR', faction: 'kingdom', element: 'light', role: 'tank', img: 'h_valkyrie', faceY: 14,
         skill: {
-            name: '聖盾', cd: 3, show: 2600, vfx: [{id: 'radiant-beam', at: 'friends', sky: true, color: '#fde68a'}, {id: 'magic-barrier', at: 'friends', color: '#fde68a', delay: 300, main: true}], desc: '我方全體獲得自身最大生命 12% 的護盾，自己嘲諷 1 回合',
+            name: '聖盾', cd: 3, show: 2600, vfx: [{id: 'radiant-beam', at: 'friends', sky: true, color: '#fde68a'}, {id: 'magic-barrier', at: 'friends', color: '#fde68a', delay: 300, main: true}], desc: '我方全體獲得自身最大生命 11% 的護盾，自己嘲諷 1 回合',
             effects: [
-                {type: 'shield', target: 'allies', pctMaxHp: 0.12, ofCaster: true},
+                {type: 'shield', target: 'allies', pctMaxHp: 0.11, ofCaster: true},
                 {type: 'status', target: 'self', status: 'taunt', turns: 1, chance: 1},
             ],
         },
         ult: {
-            name: '天穹聖域', desc: '全隊受到的傷害 -30%（2 回合）',
+            name: '天穹聖域', desc: '全隊受到的傷害 -30%（2 回合），並獲得自身最大生命 8% 的護盾',
             show: 3600, vfx: [{id: 'radiant-beam', at: 'friends', sky: true, color: '#fde68a', size: 1.4}, {id: 'magic-barrier', at: 'friends', color: '#fde68a', delay: 500, main: true}, {id: 'energy-vortex', at: 'friends', color: '#fde68a', delay: 800}],
             effects: [
                 {type: 'status', target: 'allies', status: 'guard', turns: 2, chance: 1},
+                {type: 'shield', target: 'allies', pctMaxHp: 0.08, ofCaster: true},
             ],
         },
         passive: {name: '衝鋒號角', desc: '戰鬥開始時，我方全體推條 10%', type: 'startPushAllies', pct: 0.10},
@@ -95,14 +96,14 @@ RES.HEROES = {
     elara: {
         name: '祭司·艾拉', rarity: 'SR', faction: 'church', element: 'water', role: 'support', img: 'h_elara',
         skill: {
-            name: '治癒之泉', cd: 2, show: 2400, vfx: [{id: 'healing-field', at: 'friends', main: true}, {id: 'revival-bloom', at: 'friends', delay: 450}], desc: '回復我方全體 200% 攻擊力的生命', healOnly: true,
-            effects: [{type: 'heal', target: 'allies', mult: 2.0}],
+            name: '治癒之泉', cd: 2, show: 2400, vfx: [{id: 'healing-field', at: 'friends', main: true}, {id: 'revival-bloom', at: 'friends', delay: 450}], desc: '回復我方全體 115% 攻擊力的生命', healOnly: true,
+            effects: [{type: 'heal', target: 'allies', mult: 1.15}],
         },
         ult: {
-            name: '生命聖泉', desc: '回復我方全體 300% 攻擊力的生命，並淨化全部減益',
+            name: '生命聖泉', desc: '回復我方全體 220% 攻擊力的生命，並淨化全部減益',
             show: 3800, vfx: [{id: 'sacred-relic-descent', at: 'friends', main: true}, {id: 'revival-bloom', at: 'friends', each: true, delay: 1500, stagger: 100}],
             effects: [
-                {type: 'heal', target: 'allies', mult: 3.0},
+                {type: 'heal', target: 'allies', mult: 2.2},
                 {type: 'cleanse', target: 'allies', count: 9},
             ],
         },
@@ -111,17 +112,17 @@ RES.HEROES = {
     zeke: {
         name: '雷霆審判者·吉克', rarity: 'SSR', faction: 'church', element: 'wind', role: 'mage', img: 'h_zeke',
         skill: {
-            name: '雷霆審判', cd: 2, show: 2800, vfx: [{id: 'arc-ray', at: 'foes', speed: 0.8, hit: 0}, {id: 'thunder-strike', at: 'foes', each: true, delay: 300, stagger: 160, main: true, hit: 1}], desc: '對敵方全體造成 90% 傷害（2 段），30% 機率減速 2 回合',
+            name: '雷霆審判', cd: 2, show: 2800, vfx: [{id: 'arc-ray', at: 'foes', speed: 0.8, hit: 0}, {id: 'thunder-strike', at: 'foes', each: true, delay: 300, stagger: 160, main: true, hit: 1}], desc: '對敵方全體造成 100% 傷害（2 段），30% 機率減速 2 回合',
             effects: [
-                {type: 'damage', target: 'enemies', mult: 0.9, hits: [0.35, 0.65]},
+                {type: 'damage', target: 'enemies', mult: 1.0, hits: [0.35, 0.65]},
                 {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 0.3},
             ],
         },
         ult: {
-            name: '萬雷天罰', desc: '對敵方全體造成 180% 傷害（3 段），50% 機率減速 2 回合',
+            name: '萬雷天罰', desc: '對敵方全體造成 200% 傷害（3 段），50% 機率減速 2 回合',
             show: 3800, impactFrame: true, vfx: [{id: 'charged-beam', at: 'foes', color: '#93c5fd', hit: 0}, {id: 'thunder-strike', at: 'foes', each: true, delay: 600, stagger: 140, main: true, hit: 1}, {id: 'energy-burst', at: 'foes', delay: 1000, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.8, hits: [0.2, 0.5, 0.3]},
+                {type: 'damage', target: 'enemies', mult: 2.0, hits: [0.2, 0.5, 0.3]},
                 {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 0.5},
             ],
         },
@@ -130,17 +131,18 @@ RES.HEROES = {
     seraph: {
         name: '大天使·熾', rarity: 'SSR', faction: 'church', element: 'light', role: 'support', img: 'h_seraph', faceY: 12,
         skill: {
-            name: '聖光祝福', cd: 3, show: 2600, vfx: [{id: 'astral-gate', at: 'friends', color: '#ffd166'}, {id: 'energy-vortex', at: 'friends', color: '#ffd166', delay: 400, main: true}], desc: '我方全體推條 20%，攻擊 +20%（2 回合）',
+            name: '聖光祝福', cd: 3, show: 2600, vfx: [{id: 'astral-gate', at: 'friends', color: '#ffd166'}, {id: 'energy-vortex', at: 'friends', color: '#ffd166', delay: 400, main: true}], desc: '我方全體推條 20%，攻擊 +20%（2 回合），並回復 80% 攻擊力的生命',
             effects: [
                 {type: 'push', target: 'allies', pct: 0.2},
                 {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
+                {type: 'heal', target: 'allies', mult: 0.8},
             ],
         },
         ult: {
-            name: '熾天審判', desc: '對敵方全體造成 150% 傷害（2 段），我方全體攻擊 +20%（2 回合）',
+            name: '熾天審判', desc: '對敵方全體造成 200% 傷害（2 段），我方全體攻擊 +20%（2 回合）',
             show: 4600, impactFrame: true, vfx: [{id: 'starblade-cataclysm', at: 'foes', main: true, hit: 0}, {id: 'starblade-explosion', at: 'foes', delay: 2250, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.5, hits: [0.6, 0.4]},
+                {type: 'damage', target: 'enemies', mult: 2.0, hits: [0.6, 0.4]},
                 {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
             ],
         },
@@ -151,8 +153,8 @@ RES.HEROES = {
     lyra: {
         name: '吟遊詩人·萊拉', rarity: 'R', faction: 'forest', element: 'fire', role: 'support', img: 'h_lyra',
         skill: {
-            name: '疾風樂章', cd: 2, show: 2600, vfx: [{id: 'painterly-grass', at: 'friends'}, {id: 'wind-vortex', at: 'friends', delay: 250, main: true}], desc: '我方全體加速（速度 +30%）2 回合',
-            effects: [{type: 'status', target: 'allies', status: 'haste', turns: 2, chance: 1}],
+            name: '疾風樂章', cd: 2, show: 2600, vfx: [{id: 'painterly-grass', at: 'friends'}, {id: 'wind-vortex', at: 'friends', delay: 250, main: true}], desc: '我方全體加速（速度 +30%）2 回合，並回復 45% 攻擊力的生命',
+            effects: [{type: 'status', target: 'allies', status: 'haste', turns: 2, chance: 1}, {type: 'heal', target: 'allies', mult: 0.45}],
         },
         ult: {
             name: '風之狂想曲', desc: '其他隊友推條 30%，我方全體加速 2 回合',
@@ -167,17 +169,17 @@ RES.HEROES = {
     faye: {
         name: '精靈射手·菲', rarity: 'SR', faction: 'forest', element: 'wind', role: 'archer', img: 'h_faye',
         skill: {
-            name: '纏藤箭', cd: 2, show: 2200, vfx: [{id: 'spiral-gale', color: '#86efac', main: true, hit: 0}, {id: 'thorn-crown', delay: 380, hit: 1}], desc: '對單體造成 170% 傷害（2 段），並拉條 30%',
+            name: '纏藤箭', cd: 2, show: 2200, vfx: [{id: 'spiral-gale', color: '#86efac', main: true, hit: 0}, {id: 'thorn-crown', delay: 380, hit: 1}], desc: '對單體造成 200% 傷害（2 段），並拉條 30%',
             effects: [
-                {type: 'damage', target: 'enemy', mult: 1.7, hits: [0.6, 0.4]},
+                {type: 'damage', target: 'enemy', mult: 2.0, hits: [0.6, 0.4]},
                 {type: 'pull', target: 'same', pct: 0.3},
             ],
         },
         ult: {
-            name: '萬藤箭雨', desc: '對敵方全體造成 140% 傷害（3 段），並拉條 20%',
+            name: '萬藤箭雨', desc: '對敵方全體造成 160% 傷害（3 段），並拉條 20%',
             show: 3600, vfx: [{id: 'electric-magic-arrow-strike', at: 'foes', each: true, stagger: 120, color: '#86efac', hit: 0}, {id: 'thorn-crown', at: 'foes', each: true, delay: 700, stagger: 100, main: true, hit: 1}, {id: 'binding-curse', at: 'foes', color: '#34d399', delay: 900, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.4, hits: [0.3, 0.45, 0.25]},
+                {type: 'damage', target: 'enemies', mult: 1.6, hits: [0.3, 0.45, 0.25]},
                 {type: 'pull', target: 'same', pct: 0.2},
             ],
         },
@@ -186,39 +188,41 @@ RES.HEROES = {
     gaia: {
         name: '大地之母·蓋亞', rarity: 'SSR', faction: 'forest', element: 'water', role: 'tank', img: 'h_gaia',
         skill: {
-            name: '大地之握', cd: 3, show: 2600, vfx: [{id: 'quicksand-seal', at: 'foes', main: true, hit: 0}, {id: 'shockwave', at: 'foes', delay: 450, hit: 1}], desc: '對敵方全體造成 70% 傷害（2 段），並拉條 15%',
+            name: '大地之握', cd: 3, show: 2600, vfx: [{id: 'quicksand-seal', at: 'foes', main: true, hit: 0}, {id: 'shockwave', at: 'foes', delay: 450, hit: 1}], desc: '對敵方全體造成 85% 傷害（2 段），拉條 15%，自己嘲諷 1 回合',
             effects: [
-                {type: 'damage', target: 'enemies', mult: 0.7, hits: [0.5, 0.5]},
+                {type: 'damage', target: 'enemies', mult: 0.85, hits: [0.5, 0.5]},
                 {type: 'pull', target: 'same', pct: 0.15},
+                {type: 'status', target: 'self', status: 'taunt', turns: 1, chance: 1},
             ],
         },
         ult: {
-            name: '大地崩裂', desc: '對敵方全體造成 120% 傷害（2 段），拉條 20% 並減速 2 回合',
+            name: '大地崩裂', desc: '對敵方全體造成 140% 傷害（2 段），拉條 20% 並減速 2 回合，我方全體獲得自身最大生命 12% 的護盾',
             show: 3600, vfx: [{id: 'tidal-surge', at: 'foes', main: true, hit: 0}, {id: 'magma-fissure', at: 'foes', each: true, delay: 500, stagger: 120, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.2, hits: [0.55, 0.45]},
+                {type: 'damage', target: 'enemies', mult: 1.4, hits: [0.55, 0.45]},
                 {type: 'pull', target: 'same', pct: 0.2},
                 {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 1},
+                {type: 'shield', target: 'allies', pctMaxHp: 0.12, ofCaster: true},
             ],
         },
-        passive: {name: '生生不息', desc: '每次行動開始時，回復最大生命 6%', type: 'regenOnTurn', pct: 0.06},
+        passive: {name: '生生不息', desc: '每次行動開始時，回復最大生命 8%', type: 'regenOnTurn', pct: 0.08},
     },
 
     // ───────── 暗夜結社 ─────────
     dart: {
         name: '毒鏢客', rarity: 'R', faction: 'night', element: 'wind', role: 'assassin', img: 'h_dart',
         skill: {
-            name: '淬毒飛鏢', cd: 2, show: 2000, vfx: [{id: 'arcane-missile', color: '#a3e635', main: true, hit: 0}, {id: 'venom-pool', delay: 300, hit: 1}], desc: '對隨機 2 個敵人造成 100% 傷害（2 段），80% 機率中毒 2 回合',
+            name: '淬毒飛鏢', cd: 2, show: 2000, vfx: [{id: 'arcane-missile', color: '#a3e635', main: true, hit: 0}, {id: 'venom-pool', delay: 300, hit: 1}], desc: '對隨機 2 個敵人造成 120% 傷害（2 段），80% 機率中毒 2 回合',
             effects: [
-                {type: 'damage', target: 'enemyRandom2', mult: 1.0, hits: [0.7, 0.3]},
+                {type: 'damage', target: 'enemyRandom2', mult: 1.2, hits: [0.7, 0.3]},
                 {type: 'status', target: 'same', status: 'poison', turns: 2, chance: 0.8, dotMult: 0.3},
             ],
         },
         ult: {
-            name: '劇毒風暴', desc: '對敵方全體造成 100% 傷害（3 段），並中毒 3 回合',
+            name: '劇毒風暴', desc: '對敵方全體造成 120% 傷害（3 段），並中毒 3 回合',
             show: 3400, vfx: [{id: 'venom-stream', at: 'foes', hit: 0}, {id: 'ground-fog', at: 'foes', color: '#a3e635', delay: 300, hit: 1}, {id: 'venom-pool', at: 'foes', each: true, delay: 600, stagger: 100, main: true, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.0, hits: [0.3, 0.2, 0.5]},
+                {type: 'damage', target: 'enemies', mult: 1.2, hits: [0.3, 0.2, 0.5]},
                 {type: 'status', target: 'same', status: 'poison', turns: 3, chance: 1, dotMult: 0.3},
             ],
         },
@@ -227,14 +231,14 @@ RES.HEROES = {
     shadow: {
         name: '無形者·影', rarity: 'SSR', faction: 'night', element: 'water', role: 'assassin', img: 'h_shadow',
         skill: {
-            name: '影襲', cd: 2, show: 1800, vfx: [{id: 'smoke-puff', at: 'self'}, {id: 'dimensional-rend', delay: 200, main: true, hit: 0}, {id: 'spatial-smear', delay: 150, color: '#a78bfa', hit: 1}], desc: '對生命比例最低的敵人造成 260% 傷害（2 段）',
-            effects: [{type: 'damage', target: 'enemyLowest', mult: 2.6, hits: [0.6, 0.4]}],
+            name: '影襲', cd: 2, show: 1800, vfx: [{id: 'smoke-puff', at: 'self'}, {id: 'dimensional-rend', delay: 200, main: true, hit: 0}, {id: 'spatial-smear', delay: 150, color: '#a78bfa', hit: 1}], desc: '對生命比例最低的敵人造成 290% 傷害（2 段）',
+            effects: [{type: 'damage', target: 'enemyLowest', mult: 2.9, hits: [0.6, 0.4]}],
         },
         ult: {
-            name: '千刃影殺', desc: '對生命比例最低的敵人造成 400% 傷害（5 段），生命低於 25% 直接斬殺（首領除外）',
+            name: '千刃影殺', desc: '對生命比例最低的敵人造成 450% 傷害（5 段），生命低於 25% 直接斬殺（首領除外）',
             show: 4800, impactFrame: true, vfx: [{id: 'black-hole', size: 1.7, speed: 0.55, pull: 1400, dark: 1700, hit: 0}, {id: 'spatial-smear', color: '#a78bfa', delay: 1250, hit: 1}, {id: 'dimensional-rend', delay: 1550, size: 1.3, hit: 2}, {id: 'azure-sweep', color: '#a78bfa', delay: 1850, hit: 3}, {id: 'energy-burst', color: '#c084fc', delay: 2150, size: 1.5, main: true, hit: 4}],
             effects: [
-                {type: 'damage', target: 'enemyLowest', mult: 4.0, execute: 0.25, hits: [0.1, 0.15, 0.2, 0.2, 0.35]},
+                {type: 'damage', target: 'enemyLowest', mult: 4.5, execute: 0.25, hits: [0.1, 0.15, 0.2, 0.2, 0.35]},
             ],
         },
         passive: {name: '伺機而動', desc: '攻擊滿血的目標時，暴擊率 +30%', type: 'critVsFullHp', pct: 0.3},
@@ -242,14 +246,14 @@ RES.HEROES = {
     lilith: {
         name: '暗影牧師·莉莉絲', rarity: 'SSR', faction: 'night', element: 'dark', role: 'support', img: 'h_lilith',
         skill: {
-            name: '血契', cd: 2, show: 2800, vfx: [{id: 'soul-siphon', color: '#ff2d55', main: true, hit: 0, ticks: [1, 2, 3], tick: 260}, {id: 'soul-siphon', reverse: true, color: '#ff2d55', delay: 1150, hit: 4}], desc: '吸取單體生命，造成 150% 傷害（5 段），我方全體回復該傷害的 50%',
-            effects: [{type: 'damage', target: 'enemy', mult: 1.5, teamHealPct: 0.5, hits: [0.15, 0.15, 0.15, 0.15, 0.4]}],
+            name: '血契', cd: 2, show: 2800, vfx: [{id: 'soul-siphon', color: '#ff2d55', main: true, hit: 0, ticks: [1, 2, 3], tick: 260}, {id: 'soul-siphon', reverse: true, color: '#ff2d55', delay: 1150, hit: 4}], desc: '吸取單體生命，造成 190% 傷害（5 段），我方全體回復該傷害的 100%',
+            effects: [{type: 'damage', target: 'enemy', mult: 1.9, teamHealPct: 1.0, hits: [0.15, 0.15, 0.15, 0.15, 0.4]}],
         },
         ult: {
-            name: '血月契約', desc: '對敵方全體造成 130% 傷害（6 段），我方全體回復傷害的 30%',
+            name: '血月契約', desc: '對敵方全體造成 170% 傷害（6 段），我方全體回復傷害的 50%',
             show: 4400, impactFrame: true, vfx: [{id: 'soul-siphon', at: 'foes', color: '#ff2d55', hit: 0, ticks: [1, 2, 3], tick: 260}, {id: 'darkchain-detonation', at: 'foes', color: '#ff2d55', delay: 1250, main: true, hit: 4}, {id: 'energy-burst', at: 'foes', color: '#ff2d55', delay: 1700, hit: 5}, {id: 'revival-bloom', at: 'friends', color: '#ff2d55', delay: 1900}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.3, teamHealPct: 0.3, hits: [0.1, 0.1, 0.1, 0.1, 0.35, 0.25]},
+                {type: 'damage', target: 'enemies', mult: 1.7, teamHealPct: 0.5, hits: [0.1, 0.1, 0.1, 0.1, 0.35, 0.25]},
             ],
         },
         passive: {name: '暗之渴望', desc: '造成傷害的 20% 轉為自身生命', type: 'lifesteal', pct: 0.2},
@@ -258,18 +262,18 @@ RES.HEROES = {
     militia: {
         name: '王國步兵', rarity: 'R', faction: 'kingdom', element: 'wind', role: 'warrior', img: 'h_militia',
         skill: {
-            name: '盾牆突刺', cd: 2, show: 2000, desc: '對單體造成 140% 傷害（2 段），30% 機率破甲 2 回合',
+            name: '盾牆突刺', cd: 2, show: 2000, desc: '對單體造成 190% 傷害（2 段），60% 機率破甲 2 回合',
             vfx: [{id: 'weapon-smear', color: '#86efac', main: true, hit: 0}, {id: 'spatial-sweep', color: '#bbf7d0', delay: 380, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemy', mult: 1.4, hits: [0.45, 0.55]},
-                {type: 'status', target: 'same', status: 'defDown', turns: 2, chance: 0.3},
+                {type: 'damage', target: 'enemy', mult: 1.9, hits: [0.45, 0.55]},
+                {type: 'status', target: 'same', status: 'defDown', turns: 2, chance: 0.6},
             ],
         },
         ult: {
-            name: '王國衝鋒號', desc: '對敵方前排造成 200% 傷害（3 段），我方全體推條 15%',
+            name: '王國衝鋒號', desc: '對敵方前排造成 270% 傷害（3 段），我方全體推條 15%',
             show: 3600, vfx: [{id: 'azure-sweep', color: '#86efac', size: 1.3, hit: 0}, {id: 'astral-convergence', color: '#bbf7d0', delay: 450, hit: 1}, {id: 'shockwave', color: '#86efac', size: 1.2, delay: 850, main: true, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemyFront', mult: 2.0, hits: [0.3, 0.3, 0.4]},
+                {type: 'damage', target: 'enemyFront', mult: 2.7, hits: [0.3, 0.3, 0.4]},
                 {type: 'push', target: 'allies', pct: 0.15},
             ],
         },
@@ -278,16 +282,16 @@ RES.HEROES = {
     monk: {
         name: '苦行僧', rarity: 'R', faction: 'church', element: 'fire', role: 'warrior', img: 'h_monk',
         skill: {
-            name: '燃燭連拳', cd: 2, show: 2200, desc: '對單體造成 130% 傷害（3 段）',
+            name: '燃燭連拳', cd: 2, show: 2200, desc: '對單體造成 160% 傷害（3 段）',
             vfx: [{id: 'weapon-smear', color: '#fb923c', hit: 0, main: true}, {id: 'spatial-sweep', color: '#fdba74', delay: 330, hit: 1}, {id: 'fire-explosion', size: 0.7, delay: 660, hit: 2}],
-            effects: [{type: 'damage', target: 'enemy', mult: 1.3, hits: [0.3, 0.3, 0.4]}],
+            effects: [{type: 'damage', target: 'enemy', mult: 1.6, hits: [0.3, 0.3, 0.4]}],
         },
         ult: {
-            name: '焚身苦行', desc: '對單體造成 280% 傷害（4 段），自己攻擊提升 2 回合',
+            name: '焚身苦行', desc: '對單體造成 330% 傷害（4 段），自己攻擊提升 2 回合',
             show: 3800, impactFrame: true,
             vfx: [{id: 'fire-vortex', at: 'self', size: 0.9}, {id: 'weapon-smear', color: '#fb923c', delay: 600, hit: 0}, {id: 'azure-sweep', color: '#fdba74', delay: 900, hit: 1}, {id: 'spatial-sweep', color: '#fb923c', delay: 1200, hit: 2}, {id: 'fire-explosion', delay: 1550, size: 1.2, main: true, hit: 3}],
             effects: [
-                {type: 'damage', target: 'enemy', mult: 2.8, hits: [0.2, 0.2, 0.2, 0.4]},
+                {type: 'damage', target: 'enemy', mult: 3.3, hits: [0.2, 0.2, 0.2, 0.4]},
                 {type: 'status', target: 'self', status: 'atkUp', turns: 2, chance: 1},
             ],
         },
@@ -296,10 +300,10 @@ RES.HEROES = {
     uther: {
         name: '聖光使者·烏瑟', rarity: 'UR', faction: 'church', element: 'light', role: 'tank', img: 'h_uther',
         skill: {
-            name: '聖光之盾', cd: 3, show: 2400, desc: '我方全體獲得烏瑟最大生命 15% 的護盾，並淨化 1 個減益',
+            name: '聖光之盾', cd: 3, show: 2400, desc: '我方全體獲得烏瑟最大生命 11% 的護盾，並淨化 1 個減益',
             vfx: [{id: 'radiant-beam', at: 'friends', sky: true, color: '#fde68a', size: 1.3}, {id: 'healing-field', at: 'friends', color: '#fde68a', delay: 350, main: true}],
             effects: [
-                {type: 'shield', target: 'allies', pctMaxHp: 0.15, ofCaster: true},
+                {type: 'shield', target: 'allies', pctMaxHp: 0.11, ofCaster: true},
                 {type: 'cleanse', target: 'allies', count: 1},
             ],
         },
@@ -317,19 +321,19 @@ RES.HEROES = {
     mist: {
         name: '幻術師·迷霧', rarity: 'SSR', faction: 'forest', element: 'dark', role: 'mage', img: 'h_mist',
         skill: {
-            name: '幻影迷陣', cd: 3, show: 2400, desc: '對敵方全體造成 80% 傷害（2 段），40% 機率沉默 1 回合',
+            name: '幻影迷陣', cd: 3, show: 2400, desc: '對敵方全體造成 110% 傷害（2 段），50% 機率沉默 1 回合',
             vfx: [{id: 'ground-fog', at: 'foes', color: '#a78bfa', hit: 0}, {id: 'arcane-matrix', at: 'foes', color: '#c084fc', delay: 450, main: true, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 0.8, hits: [0.4, 0.6]},
-                {type: 'status', target: 'same', status: 'silence', turns: 1, chance: 0.4},
+                {type: 'damage', target: 'enemies', mult: 1.1, hits: [0.4, 0.6]},
+                {type: 'status', target: 'same', status: 'silence', turns: 1, chance: 0.5},
             ],
         },
         ult: {
-            name: '千面幻境', desc: '對敵方全體造成 130% 傷害（3 段），拉條 25%，50% 機率沉默 2 回合',
+            name: '千面幻境', desc: '對敵方全體造成 200% 傷害（3 段），拉條 25%，50% 機率沉默 2 回合',
             show: 4000, impactFrame: true,
             vfx: [{id: 'astral-gate', at: 'foes', color: '#a78bfa', size: 1.3, hit: 0}, {id: 'smoke-puff', at: 'foes', each: true, color: '#c084fc', delay: 600, stagger: 90, hit: 1}, {id: 'astral-convergence', at: 'foes', color: '#a78bfa', size: 1.3, delay: 1100, main: true, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.3, hits: [0.25, 0.3, 0.45]},
+                {type: 'damage', target: 'enemies', mult: 2.0, hits: [0.25, 0.3, 0.45]},
                 {type: 'pull', target: 'same', pct: 0.25},
                 {type: 'status', target: 'same', status: 'silence', turns: 2, chance: 0.5},
             ],
@@ -340,56 +344,57 @@ RES.HEROES = {
     thorin: {
         name: '矮人鐵匠·索林', rarity: 'R', faction: 'wild', element: 'fire', role: 'tank', img: 'h_thorin',
         skill: {
-            name: '熔鐵挑釁', cd: 2, show: 2000, desc: '對敵方前排造成 100% 傷害並 60% 機率燃燒 2 回合，自己嘲諷 1 回合',
+            name: '熔鐵挑釁', cd: 2, show: 2000, desc: '對敵方前排造成 100% 傷害並 60% 機率燃燒 2 回合，自己嘲諷 1 回合並獲得最大生命 16% 的護盾',
             vfx: [{id: 'shockwave', at: 'self', color: '#fb923c'}, {id: 'burning-ground', delay: 250, main: true, hit: 0}],
             effects: [
                 {type: 'damage', target: 'enemyFront', mult: 1.0},
                 {type: 'status', target: 'same', status: 'burn', turns: 2, chance: 0.6, dotMult: 0.25},
                 {type: 'status', target: 'self', status: 'taunt', turns: 1, chance: 1},
+                {type: 'shield', target: 'self', pctMaxHp: 0.16},
             ],
         },
         ult: {
-            name: '熔爐爆裂', desc: '對敵方前排造成 200% 傷害（3 段），自己獲得最大生命 25% 的護盾',
+            name: '熔爐爆裂', desc: '對敵方前排造成 200% 傷害（3 段），自己獲得最大生命 30% 的護盾',
             show: 3600, impactFrame: true,
             vfx: [{id: 'magma-fissure', hit: 0}, {id: 'steam-jet', color: '#fb923c', delay: 450, hit: 1}, {id: 'fire-explosion', size: 1.2, delay: 850, main: true, hit: 2}, {id: 'magic-barrier', at: 'self', color: '#fb923c', delay: 1100}],
             effects: [
                 {type: 'damage', target: 'enemyFront', mult: 2.0, hits: [0.3, 0.25, 0.45]},
-                {type: 'shield', target: 'self', pctMaxHp: 0.25},
+                {type: 'shield', target: 'self', pctMaxHp: 0.30},
             ],
         },
-        passive: {name: '鍛鐵之軀', desc: '防禦 +20%', type: 'statUp', stat: 'def', pct: 0.2},
+        passive: {name: '鍛鐵之軀', desc: '防禦 +30%', type: 'statUp', stat: 'def', pct: 0.3},
     },
     fang: {
         name: '狼人·法恩', rarity: 'SR', faction: 'wild', element: 'wind', role: 'assassin', img: 'h_fang',
         skill: {
-            name: '月夜撕咬', cd: 2, show: 2200, desc: '對生命比例最低的敵人造成 200% 傷害（3 段）',
+            name: '月夜撕咬', cd: 2, show: 2200, desc: '對生命比例最低的敵人造成 230% 傷害（3 段）',
             vfx: [{id: 'spatial-sweep', color: '#86efac', main: true, hit: 0}, {id: 'weapon-smear', color: '#bbf7d0', delay: 320, hit: 1}, {id: 'azure-sweep', color: '#86efac', delay: 640, hit: 2}],
-            effects: [{type: 'damage', target: 'enemyLowest', mult: 2.0, hits: [0.3, 0.3, 0.4]}],
+            effects: [{type: 'damage', target: 'enemyLowest', mult: 2.3, hits: [0.3, 0.3, 0.4]}],
         },
         ult: {
-            name: '狼群狂襲', desc: '對生命比例最低的 2 個敵人造成 220% 傷害（4 段）',
+            name: '狼群狂襲', desc: '對生命比例最低的 2 個敵人造成 260% 傷害（4 段）',
             show: 3800,
             vfx: [{id: 'dust-devil', at: 'self', color: '#86efac', size: 0.8}, {id: 'spatial-sweep', each: true, color: '#86efac', delay: 500, stagger: 80, hit: 0}, {id: 'weapon-smear', each: true, color: '#bbf7d0', delay: 820, stagger: 80, hit: 1}, {id: 'spatial-smear', each: true, color: '#86efac', delay: 1140, stagger: 80, hit: 2}, {id: 'azure-sweep', each: true, color: '#bbf7d0', delay: 1460, stagger: 80, main: true, hit: 3}],
-            effects: [{type: 'damage', target: 'enemyLowest2', mult: 2.2, hits: [0.2, 0.2, 0.25, 0.35]}],
+            effects: [{type: 'damage', target: 'enemyLowest2', mult: 2.6, hits: [0.2, 0.2, 0.25, 0.35]}],
         },
         passive: {name: '嗜血', desc: '造成傷害的 15% 轉為自己的生命', type: 'lifesteal', pct: 0.15},
     },
     noah: {
         name: '冰原薩滿·諾亞', rarity: 'SSR', faction: 'wild', element: 'water', role: 'mage', img: 'h_noah',
         skill: {
-            name: '冰霜新星', cd: 2, show: 2400, desc: '對敵方全體造成 85% 傷害（2 段），30% 機率凍結 1 回合',
+            name: '冰霜新星', cd: 2, show: 2400, desc: '對敵方全體造成 120% 傷害（2 段），30% 機率凍結 1 回合',
             vfx: [{id: 'frost-field', at: 'foes', hit: 0}, {id: 'ice-shatter', at: 'foes', delay: 450, main: true, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 0.85, hits: [0.4, 0.6]},
+                {type: 'damage', target: 'enemies', mult: 1.2, hits: [0.4, 0.6]},
                 {type: 'status', target: 'same', status: 'freeze', turns: 1, chance: 0.3},
             ],
         },
         ult: {
-            name: '永凍暴風雪', desc: '對敵方全體造成 150% 傷害（4 段），拉條 20%，35% 機率凍結 1 回合',
+            name: '永凍暴風雪', desc: '對敵方全體造成 200% 傷害（4 段），拉條 20%，35% 機率凍結 1 回合',
             show: 4200, impactFrame: true,
             vfx: [{id: 'frost-lance-rain', at: 'foes', hit: 0}, {id: 'frost-wheel', at: 'foes', each: true, size: 0.6, delay: 450, stagger: 90, hit: 1}, {id: 'ice-shatter', at: 'foes', each: true, delay: 850, stagger: 90, hit: 2}, {id: 'frost-field', at: 'foes', size: 1.3, delay: 1250, main: true, hit: 3}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 1.5, hits: [0.2, 0.25, 0.25, 0.3]},
+                {type: 'damage', target: 'enemies', mult: 2.0, hits: [0.2, 0.25, 0.25, 0.3]},
                 {type: 'pull', target: 'same', pct: 0.2},
                 {type: 'status', target: 'same', status: 'freeze', turns: 1, chance: 0.35},
             ],
@@ -399,16 +404,16 @@ RES.HEROES = {
     gideon: {
         name: '狂戰士·吉迪恩', rarity: 'SSR', faction: 'wild', element: 'dark', role: 'warrior', img: 'h_gideon',
         skill: {
-            name: '狂怒劈砍', cd: 2, show: 2000, desc: '對敵方前排造成 170% 傷害（2 段）',
+            name: '狂怒劈砍', cd: 2, show: 2000, desc: '對敵方前排造成 190% 傷害（2 段）',
             vfx: [{id: 'weapon-smear', color: '#a855f7', main: true, hit: 0}, {id: 'shockwave', color: '#a855f7', delay: 380, hit: 1}],
-            effects: [{type: 'damage', target: 'enemyFront', mult: 1.7, hits: [0.45, 0.55]}],
+            effects: [{type: 'damage', target: 'enemyFront', mult: 1.9, hits: [0.45, 0.55]}],
         },
         ult: {
-            name: '血怒狂斬', desc: '對單體造成 380% 傷害（5 段），自己攻擊提升 2 回合',
+            name: '血怒狂斬', desc: '對單體造成 420% 傷害（5 段），自己攻擊提升 2 回合',
             show: 4400, impactFrame: true,
             vfx: [{id: 'smoke-column', at: 'self', color: '#7f1d1d', size: 0.8}, {id: 'spatial-sweep', color: '#ef4444', delay: 550, hit: 0}, {id: 'weapon-smear', color: '#a855f7', delay: 850, hit: 1}, {id: 'azure-sweep', color: '#ef4444', delay: 1150, hit: 2}, {id: 'dimensional-rend', delay: 1450, hit: 3}, {id: 'energy-burst', color: '#ef4444', size: 1.3, delay: 1800, main: true, hit: 4}],
             effects: [
-                {type: 'damage', target: 'enemy', mult: 3.8, hits: [0.15, 0.15, 0.15, 0.2, 0.35]},
+                {type: 'damage', target: 'enemy', mult: 4.2, hits: [0.15, 0.15, 0.15, 0.2, 0.35]},
                 {type: 'status', target: 'self', status: 'atkUp', turns: 2, chance: 1},
             ],
         },
@@ -418,36 +423,36 @@ RES.HEROES = {
     draven: {
         name: '賞金獵人·達文', rarity: 'SR', faction: 'night', element: 'fire', role: 'archer', img: 'h_draven',
         skill: {
-            name: '爆裂箭', cd: 2, show: 2000, desc: '對單體造成 160% 傷害（2 段），60% 機率燃燒 2 回合',
+            name: '爆裂箭', cd: 2, show: 2000, desc: '對單體造成 200% 傷害（2 段），60% 機率燃燒 2 回合',
             vfx: [{id: 'fireball', main: true, hit: 0}, {id: 'fire-explosion', size: 0.7, delay: 380, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemy', mult: 1.6, hits: [0.5, 0.5]},
+                {type: 'damage', target: 'enemy', mult: 2.0, hits: [0.5, 0.5]},
                 {type: 'status', target: 'same', status: 'burn', turns: 2, chance: 0.6, dotMult: 0.3},
             ],
         },
         ult: {
-            name: '賞金獵殺', desc: '對生命比例最低的敵人造成 300% 傷害（3 段），生命低於 20% 直接斬殺（首領除外）',
+            name: '賞金獵殺', desc: '對生命比例最低的敵人造成 350% 傷害（3 段），生命低於 20% 直接斬殺（首領除外）',
             show: 3600, impactFrame: true,
             vfx: [{id: 'pulse-beam', color: '#fb923c', hit: 0}, {id: 'fireball', delay: 500, size: 1.3, hit: 1}, {id: 'fire-explosion', size: 1.3, delay: 900, main: true, hit: 2}],
-            effects: [{type: 'damage', target: 'enemyLowest', mult: 3.0, execute: 0.2, hits: [0.25, 0.3, 0.45]}],
+            effects: [{type: 'damage', target: 'enemyLowest', mult: 3.5, execute: 0.2, hits: [0.25, 0.3, 0.45]}],
         },
         passive: {name: '神射手', desc: '暴擊率 +15%', type: 'statUp', stat: 'crit', flat: 0.15},
     },
     mortheus: {
         name: '夜魘收割者·莫瑟斯', rarity: 'UR', faction: 'night', element: 'dark', role: 'assassin', img: 'h_s1_lr',
         skill: {
-            name: '夜魘之鐮', cd: 2, show: 2200, desc: '對敵方前排造成 180% 傷害（3 段），50% 機率破甲 2 回合',
+            name: '夜魘之鐮', cd: 2, show: 2200, desc: '對敵方前排造成 210% 傷害（3 段），50% 機率破甲 2 回合',
             vfx: [{id: 'shadow-glaive', color: '#a78bfa', main: true, hit: 0}, {id: 'spatial-sweep', color: '#7c3aed', delay: 350, hit: 1}, {id: 'energy-burst', color: '#a78bfa', delay: 700, hit: 2}],
             effects: [
-                {type: 'damage', target: 'enemyFront', mult: 1.8, hits: [0.3, 0.3, 0.4]},
+                {type: 'damage', target: 'enemyFront', mult: 2.1, hits: [0.3, 0.3, 0.4]},
                 {type: 'status', target: 'same', status: 'defDown', turns: 2, chance: 0.5},
             ],
         },
         ult: {
-            name: '收割之夜', desc: '對敵方全體造成 200% 傷害（5 段），生命低於 20% 直接斬殺（首領除外）',
+            name: '收割之夜', desc: '對敵方全體造成 230% 傷害（5 段），生命低於 20% 直接斬殺（首領除外）',
             show: 4600, impactFrame: true,
             vfx: [{id: 'black-hole', at: 'foes', size: 0.9, dark: 1800}, {id: 'shadow-glaive', at: 'foes', each: true, color: '#a78bfa', delay: 500, stagger: 80, hit: 0}, {id: 'spatial-sweep', at: 'foes', each: true, color: '#7c3aed', delay: 850, stagger: 80, hit: 1}, {id: 'dimensional-rend', at: 'foes', each: true, delay: 1200, stagger: 80, hit: 2}, {id: 'darkchain-detonation', at: 'foes', color: '#7c3aed', delay: 1550, hit: 3}, {id: 'energy-burst', at: 'foes', color: '#a78bfa', size: 1.4, delay: 1950, main: true, hit: 4}],
-            effects: [{type: 'damage', target: 'enemies', mult: 2.0, execute: 0.2, hits: [0.15, 0.15, 0.2, 0.2, 0.3]}],
+            effects: [{type: 'damage', target: 'enemies', mult: 2.3, execute: 0.2, hits: [0.15, 0.15, 0.2, 0.2, 0.3]}],
         },
         passive: {name: '靈魂收割', desc: '造成傷害的 20% 轉為自己的生命', type: 'lifesteal', pct: 0.2},
     },
