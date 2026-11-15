@@ -18,10 +18,11 @@ a { color: inherit; text-decoration: none; }
     background: radial-gradient(ellipse at 30% 70%, transparent 35%, rgba(0,0,0,.35) 100%), linear-gradient(90deg, transparent 55%, rgba(0,0,0,.45) 100%), linear-gradient(0deg, rgba(0,0,0,.45), transparent 30%); }
 
 /* 隊長立繪 */
-.lb-leader { position: absolute; left: 14%; bottom: -2%; height: 92%; width: 38%; display: flex; justify-content: center; align-items: flex-end; cursor: pointer; }
+/* 隊長立繪放在左側介面（通行證、隊伍）和右側選單中間的空位，不要被擋住 */
+.lb-leader { position: absolute; left: calc(26% + var(--safe-left)); right: calc(250px + var(--safe-right)); bottom: -2%; height: 90%; display: flex; justify-content: center; align-items: flex-end; cursor: pointer; }
 .lb-leader img { height: 100%; max-width: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(0 10px 24px rgba(0,0,0,.55)); transform-origin: 50% 100%; animation: breathe 4.2s ease-in-out infinite; }
 @keyframes breathe { 50% { transform: scale(1.012, 1.018) translateY(-.4%); } }
-.lb-say { position: absolute; left: 60%; top: 14%; width: max-content; max-width: 260px; padding: 8px 12px; border-radius: 12px 12px 12px 2px; background: rgba(255,250,235,.92); color: #2a1d10; font-size: 13px; line-height: 1.5; opacity: 0; transform: translateY(6px); transition: opacity .3s, transform .3s; pointer-events: none; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+.lb-say { position: absolute; left: 60%; top: 14%; width: max-content; max-width: 220px; padding: 8px 12px; border-radius: 12px 12px 12px 2px; background: rgba(255,250,235,.92); color: #2a1d10; font-size: 13px; line-height: 1.5; opacity: 0; transform: translateY(6px); transition: opacity .3s, transform .3s; pointer-events: none; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
 .lb-say.show { opacity: 1; transform: none; }
 
 /* 左上 */
