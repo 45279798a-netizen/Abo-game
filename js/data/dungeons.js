@@ -1,11 +1,12 @@
 // 套裝副本（掉套裝裝備）與素材試煉（金幣、經驗、突破石、技能書）。
-// 沒有入場券：手動打不限次數；掃蕩每天共用 SWEEP_PER_DAY 次（3 星才能掃）。
+// 沒有入場券。套裝副本：手動、掃蕩都不限次數。素材試煉：每天 20 次獎勵次數，用完還能打但沒有素材（只記星數）。3 星才能掃蕩。
 // 難度：第 f 層對應主線第 15(f+1)−5 關的預期養成，用 tools/calibrate_dungeons.js 校準（沒有校準表時用主線菁英關的強度）。
 window.RES = window.RES || {};
 
 RES.DUNGEONS = {
     floors: 10,
-    sweepPerDay: 20,
+    trialPerDay: 20,      // 素材試煉：每天 20 次獎勵次數（手動和掃蕩都算），沒用完的保留到隔天，最多 40
+    trialMax: 40,
     rounds: 18,   // 3 星：18 回合內通關
     // 解鎖：最高通關關卡序號（15＝打完第 1 章）
     sets: [
@@ -89,6 +90,19 @@ RES.DUNGEONS = {
     const unlockedFloor = (S, kind, id, f) => unlockedDungeon(S, kind, id) && f <= best(S, kind, id) + 1;
     const starsOf = (S, kind, id, f) => state(S).stars[key(kind, id, f)] || 0;
 
+    // 素材試煉的獎勵次數：每天（凌晨 4 點）加 20，最多存 40
+    function trialLeft(S, now = Date.now()) {
+        const st = state(S);
+        const day = window.Quests ? window.Quests.dayKey(now) : new Date(now).toDateString();
+        if (st.trialDay !== day) {
+            st.trialLeft = st.trialDay ? Math.min(D.trialMax, (st.trialLeft ?? D.trialPerDay) + D.trialPerDay) : D.trialPerDay;
+            st.trialDay = day;
+        }
+        return st.trialLeft;
+    }
+    // 舊名稱相容：套裝副本回傳 Infinity
+    const sweepLeft = (S, kind = 'trial') => kind === 'set' ? Infinity : trialLeft(S);
+
     function settle(S, kind, id, f, win, info, rand = Math.random) {
         window.Quests && window.Quests.track(S, 'battle'); window.Quests && window.Quests.track(S, 'trial');
         if (!win) return {stars: 0, reward: {}, gear: []};
@@ -97,20 +111,20 @@ RES.DUNGEONS = {
         if (info.rounds <= D.rounds) stars++;
         const k = key(kind, id, f), prev = state(S).stars[k] || 0;
         state(S).stars[k] = Math.max(prev, stars);
-        const g = grant(S, kind, id, f, stars, rand);
+        // 素材試煉沒有次數了：只記星數，不給素材
+        let g = {reward: {}, gear: []}, noCount = false;
+        if (kind === 'trial' && trialLeft(S) <= 0) noCount = true;
+        else { if (kind === 'trial') state(S).trialLeft--; g = grant(S, kind, id, f, stars, rand); }
         if (!prev) { g.reward.gem = (g.reward.gem || 0) + 30; S.currency.gem = (S.currency.gem || 0) + 30; }
-        return {stars, first: !prev, ...g};
-    }
-    function sweepLeft(S, now = Date.now()) {
-        const st = state(S), day = new Date(now).toDateString();
-        if (st.sweepDay !== day) { st.sweepDay = day; st.sweepUsed = 0; }
-        return D.sweepPerDay - st.sweepUsed;
+        return {stars, first: !prev, noCount, ...g};
     }
     function sweep(S, kind, id, f, times, rand = Math.random) {
         if (starsOf(S, kind, id, f) < 3) return {ok: false, reason: '3 星通關後才能掃蕩'};
-        times = Math.min(times, sweepLeft(S));
-        if (times <= 0) return {ok: false, reason: '今天的掃蕩次數用完了'};
-        state(S).sweepUsed += times;
+        if (kind === 'trial') {
+            times = Math.min(times, trialLeft(S));
+            if (times <= 0) return {ok: false, reason: '素材試煉的次數用完了，明天凌晨 4 點再補 20 次'};
+            state(S).trialLeft -= times;
+        }
         window.Quests && window.Quests.track(S, 'trial', times); window.Quests && window.Quests.track(S, 'battle', times);
         const total = {}, gear = [];
         for (let i = 0; i < times; i++) {
@@ -121,5 +135,5 @@ RES.DUNGEONS = {
         return {ok: true, times, reward: total, gear};
     }
 
-    window.Dungeon = {find, key, encounter, baseReward, dropCount, settle, sweep, sweepLeft, best, unlockedDungeon, unlockedFloor, starsOf, state};
+    window.Dungeon = {find, key, encounter, baseReward, dropCount, settle, sweep, sweepLeft, trialLeft, best, unlockedDungeon, unlockedFloor, starsOf, state};
 })();

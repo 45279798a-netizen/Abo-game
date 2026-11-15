@@ -1046,6 +1046,8 @@ function showResult(e) {
         if (win) stageHtml += `<div class="res-rw"><span>${st2.first ? '首通獎勵' : '獎勵'}</span>${Object.entries(st2.reward).filter(([, v]) => v > 0).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('')}</div>`
             + (st2.gear.length ? `<div class="res-rw">${st2.gear.map(gearChip).join('')}</div>` : '');
         else stageHtml += `<div class="res-tip">提示：回大廳養成英雄、強化裝備，或先打低一層</div>`;
+        if (win && st2.noCount) stageHtml += `<div class="res-tip">今天的素材試煉次數用完了，這場只記錄星數（每天凌晨 4 點補 ${R.DUNGEONS.trialPerDay} 次）</div>`;
+        else if (dg.kind === 'trial') stageHtml += `<div class="res-rw"><span>素材試煉次數剩 ${Dungeon.trialLeft(Save.load())} 次</span></div>`;
         const nx = win && dg.floor < R.DUNGEONS.floors;
         btns = `<a class="btn-secondary" href="index.html#trial" style="display:grid;place-items:center;text-decoration:none;color:inherit">回試煉</a><button class="btn-secondary" id="res-again">再打一次</button>${nx ? '<button class="btn-primary" id="res-next">下一層 ▶</button>' : ''}`;
         if (nx) setTimeout(() => { $('#res-next').onclick = () => { cfg.dungeon = {...dg, floor: dg.floor + 1}; try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ } location.reload(); }; });
