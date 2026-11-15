@@ -1,4 +1,5 @@
-// 重複使用的特效自動換色：同一個特效被不同招式使用時，每一招的顏色都不一樣。
+// 重複使用的特效自動換色。英雄的特效顏色固定用各自的代表色（heroes.js 的 vfxColor，22 位互不重複），這裡不改；
+// 只檢查敵人：敵人技能的特效顏色跟英雄或前面的敵人用過的太像時才換。
 // 規則：依英雄技能、英雄大招、敵人技能的順序檢查；顏色跟前面用過的太像（色相相差不到 20 度且明暗相近），
 // 就從該角色屬性的色票挑一個沒用過的顏色。資料表裡手動指定的顏色只要不撞色就保留。
 // 新增特效後若想讓它參與換色，把它的預設顏色加進 DEFAULT（tools/build_vfx.py 匯出的 preset.color）。
@@ -46,6 +47,10 @@
             mine[st.id] = st.color || c;
         }
     }
-    for (const h of Object.values(R.HEROES)) { fix(h, h.skill); fix(h, h.ult); }
+    // 英雄：只登記顏色，不換
+    for (const h of Object.values(R.HEROES)) for (const sk of [h.skill, h.ult]) for (const st of [].concat(sk?.vfx || [])) {
+        const c = st.color || DEFAULT[st.id];
+        if (c && !FIXED.has(st.id)) (used[st.id] = used[st.id] || []).push(c);
+    }
     for (const e of Object.values(R.ENEMIES)) (e.skills || []).forEach(s => fix(e, s));
 })();
