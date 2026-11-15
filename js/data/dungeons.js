@@ -1,12 +1,12 @@
 // 套裝副本（掉套裝裝備）與素材試煉（金幣、經驗、突破石、技能書）。
-// 沒有入場券。套裝副本：手動、掃蕩都不限次數。素材試煉：每天 20 次獎勵次數，用完還能打但沒有素材（只記星數）。3 星才能掃蕩。
+// 沒有入場券。套裝副本：手動、掃蕩都不限次數。素材試煉：每個試煉每天 4 次獎勵次數，用完還能打但沒有素材（只記星數）。3 星才能掃蕩。
 // 難度：第 f 層對應主線第 15(f+1)−5 關的預期養成，用 tools/calibrate_dungeons.js 校準（沒有校準表時用主線菁英關的強度）。
 window.RES = window.RES || {};
 
 RES.DUNGEONS = {
     floors: 10,
-    trialPerDay: 14,      // 素材試煉：每天 14 次獎勵次數，沒用完的保留到隔天，最多 28
-    trialMax: 28,
+    trialPerDay: 4,       // 素材試煉：每個試煉各自每天 4 次獎勵次數，沒用完的保留到隔天，最多 8
+    trialMax: 8,
     trialMult: 1.5,       // 素材試煉單場獎勵 ×1.5（沒有掃蕩，打的場數少、每場拿多一點）
     rounds: 18,   // 3 星：18 回合內通關
     // 解鎖：最高通關關卡序號（15＝打完第 1 章）
@@ -92,18 +92,18 @@ RES.DUNGEONS = {
     const unlockedFloor = (S, kind, id, f) => unlockedDungeon(S, kind, id) && f <= best(S, kind, id) + 1;
     const starsOf = (S, kind, id, f) => state(S).stars[key(kind, id, f)] || 0;
 
-    // 素材試煉的獎勵次數：每天（凌晨 4 點）加 20，最多存 40
-    function trialLeft(S, now = Date.now()) {
+    // 素材試煉的獎勵次數：每個試煉各自計算，每天（凌晨 4 點）加 4，最多存 8
+    function trialLeft(S, id, now = Date.now()) {
         const st = state(S);
         const day = window.Quests ? window.Quests.dayKey(now) : new Date(now).toDateString();
+        st.tl = st.tl || {};
         if (st.trialDay !== day) {
-            st.trialLeft = st.trialDay ? Math.min(D.trialMax, (st.trialLeft ?? D.trialPerDay) + D.trialPerDay) : D.trialPerDay;
+            for (const t of D.trials) st.tl[t.id] = st.trialDay && st.tl[t.id] != null ? Math.min(D.trialMax, st.tl[t.id] + D.trialPerDay) : D.trialPerDay;
             st.trialDay = day;
         }
-        return st.trialLeft;
+        return id ? st.tl[id] : 0;
     }
-    // 舊名稱相容：套裝副本回傳 Infinity
-    const sweepLeft = (S, kind = 'trial') => kind === 'set' ? Infinity : trialLeft(S);
+    const sweepLeft = (S, kind = 'trial', id) => kind === 'set' ? Infinity : trialLeft(S, id);
 
     function settle(S, kind, id, f, win, info, rand = Math.random) {
         window.Quests && window.Quests.track(S, 'battle'); window.Quests && window.Quests.track(S, 'trial');
@@ -115,17 +115,17 @@ RES.DUNGEONS = {
         state(S).stars[k] = Math.max(prev, stars);
         // 素材試煉沒有次數了：只記星數，不給素材
         let g = {reward: {}, gear: []}, noCount = false;
-        if (kind === 'trial' && trialLeft(S) <= 0) noCount = true;
-        else { if (kind === 'trial') state(S).trialLeft--; g = grant(S, kind, id, f, stars, rand); }
+        if (kind === 'trial' && trialLeft(S, id) <= 0) noCount = true;
+        else { if (kind === 'trial') state(S).tl[id]--; g = grant(S, kind, id, f, stars, rand); }
         if (!prev) { g.reward.gem = (g.reward.gem || 0) + 30; S.currency.gem = (S.currency.gem || 0) + 30; }
         return {stars, first: !prev, noCount, ...g};
     }
     function sweep(S, kind, id, f, times, rand = Math.random) {
         if (starsOf(S, kind, id, f) < 3) return {ok: false, reason: '3 星通關後才能掃蕩'};
         if (kind === 'trial') {
-            times = Math.min(times, trialLeft(S));
+            times = Math.min(times, trialLeft(S, id));
             if (times <= 0) return {ok: false, reason: '素材試煉的次數用完了，明天凌晨 4 點再補 20 次'};
-            state(S).trialLeft -= times;
+            state(S).tl[id] -= times;
         }
         window.Quests && window.Quests.track(S, 'trial', times); window.Quests && window.Quests.track(S, 'battle', times);
         const total = {}, gear = [];

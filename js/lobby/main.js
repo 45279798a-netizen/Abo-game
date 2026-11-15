@@ -65,7 +65,7 @@
         const best = Campaign.progress(S);
         const nx = Math.min(best + 1, R.CAMPAIGN.chapters.length * Campaign.N);
         $('#battle-sub').textContent = `主線 ${Math.ceil(nx / Campaign.N)}-${(nx - 1) % Campaign.N + 1}`;
-        $('#trial-sub').textContent = best >= 15 ? `副本・素材　次數 ${Dungeon.trialLeft(S)}` : '打完第 1 章開放';
+        $('#trial-sub').textContent = best >= 15 ? `套裝副本・素材試煉` : '打完第 1 章開放';
         // 第一次打完第 1 章：提示裝備與試煉開放
         S.flags = S.flags || {};
         if (best >= 15 && !S.flags.gearIntro) { S.flags.gearIntro = true; save(); setTimeout(() => toast('裝備與素材試煉開放了！到「試煉」刷素材，英雄詳情有「裝備」分頁'), 900); }
@@ -556,7 +556,6 @@
     const DG = R.DUNGEONS;
     function renderTrial() {
         const p = $('#panel-trial');
-        const left = Dungeon.trialLeft(S);
         const card = (kind, d) => {
             const open = Dungeon.unlockedDungeon(S, kind, d.id), best = Dungeon.best(S, kind, d.id);
             const boss = R.ENEMIES[d.boss];
@@ -564,15 +563,15 @@
             return `<button class="tcard ${open ? '' : 'lock'}" data-dg="${kind}:${d.id}">
                 <img class="tboss" src="${sprite(boss.img)}" alt="">
                 <div class="tinfo"><b>${kind === 'trial' ? d.icon + ' ' : ''}${d.name}</b><small>${kind === 'set' ? d.sets.map(k => `<span style="color:${GR.SETS[k].color}">${GR.SETS[k].icon}${GR.SETS[k].name}</span>`).join(' ') : d.desc}</small>
-                <span class="tbest">${open ? `最高 ${best} / ${DG.floors} 層` : '🔒 ' + lockTxt}</span></div></button>`;
+                <span class="tbest">${open ? `最高 ${best} / ${DG.floors} 層${kind === 'trial' ? `<br>今日次數 <em>${Dungeon.trialLeft(S, d.id)}</em> / ${DG.trialMax}` : ''}` : '🔒 ' + lockTxt}</span></div></button>`;
         };
         p.innerHTML = `<div class="trial" style="background-image:url(assets/hd/dungeon_bg.webp)"><div class="map-shade"></div>
             <div class="map-top"><div class="ch-title"><small>TRIALS</small><b>試煉</b></div><div class="sp"></div>
-                <div class="ch-stars">素材試煉次數 ${left}<small>/${DG.trialMax}</small></div><button class="close" data-close>✕</button></div>
+<button class="close" data-close>✕</button></div>
             <div class="tbody">
                 <h4>套裝副本 <small>掉落套裝裝備與強化石</small></h4><div class="trow">${DG.sets.map(d => card('set', d)).join('')}</div>
                 <h4>素材試煉 <small>金幣、經驗藥水、突破石、技能書</small></h4><div class="trow">${DG.trials.map(d => card('trial', d)).join('')}</div>
-                <p class="muted" style="text-shadow:0 1px 3px #000">套裝副本不限次數。素材試煉每天補 ${DG.trialPerDay} 次獎勵次數（最多存 ${DG.trialMax} 次），用完還能挑戰但不給素材。</p>
+                <p class="muted" style="text-shadow:0 1px 3px #000">套裝副本不限次數。每個素材試煉每天各有 ${DG.trialPerDay} 次獎勵次數（沒用完的保留，最多存 ${DG.trialMax} 次），用完還能挑戰但不給素材。</p>
             </div></div>`;
         p.querySelectorAll('[data-dg]').forEach(b => { b.onclick = () => {
             const [kind, id] = b.dataset.dg.split(':');
@@ -586,14 +585,14 @@
     }
     function showFloors(kind, id) {
         const d = Dungeon.find(kind, id);
-        const best = Dungeon.best(S, kind, id), left = Dungeon.sweepLeft(S, kind), lim = kind === 'trial';
+        const best = Dungeon.best(S, kind, id), left = Dungeon.sweepLeft(S, kind, id), lim = kind === 'trial';
         const rows = Array.from({length: DG.floors}, (_, i) => i + 1).map(f => {
             const st = Dungeon.starsOf(S, kind, id, f), open = Dungeon.unlockedFloor(S, kind, id, f);
             return `<div class="frow ${open ? '' : 'lock'} ${f === best + 1 ? 'next' : ''}"><b>第 ${f} 層</b><span class="st-stars">${starsHtml(st)}</span>
                 <span class="rws">${floorReward(kind, id, f)}</span><div class="sp"></div>
                 ${open ? `<button class="btn primary" data-fgo="${f}">出戰</button>` : '<span class="muted">🔒</span>'}</div>`;
         }).join('');
-        const m = modal(`<h3>${d.name}</h3><p class="muted">首領：${R.ENEMIES[d.boss].name}　${kind === 'set' ? '掉落 ' + d.sets.map(k => GR.SETS[k].name).join('、') + ' 套裝，層數越高品質越好' : d.desc}。星數越高獎勵越多（1★ 60%、2★ 80%、3★ 全額）。${lim ? `素材試煉次數剩 ${left} 次（每天補 ${DG.trialPerDay}，最多存 ${DG.trialMax}）。` : '套裝副本不限次數。'}</p>
+        const m = modal(`<h3>${d.name}</h3><p class="muted">首領：${R.ENEMIES[d.boss].name}　${kind === 'set' ? '掉落 ' + d.sets.map(k => GR.SETS[k].name).join('、') + ' 套裝，層數越高品質越好' : d.desc}。星數越高獎勵越多（1★ 60%、2★ 80%、3★ 全額）。${lim ? `今天還有 ${left} 次獎勵（每天補 ${DG.trialPerDay}，最多存 ${DG.trialMax}）。` : '套裝副本不限次數。'}</p>
             <div class="rep-row"><span>連續挑戰</span>${[1, 3, 5, 10].map(n => `<button class="${repSel === n ? 'on' : ''}" data-rep="${n}">${n === 1 ? '單場' : n + ' 場'}</button>`).join('')}${lim ? `<button class="${repSel === 'all' ? 'on' : ''}" data-rep="all">打到次數用完</button>` : ''}<small class="muted">自動戰鬥、打完自動開下一場，輸了就停</small></div>
             <div class="flist">${rows}</div>`, 'floors');
         m.querySelectorAll('[data-rep]').forEach(b => { b.onclick = () => { repSel = b.dataset.rep === 'all' ? 'all' : +b.dataset.rep; m.querySelectorAll('[data-rep]').forEach(x => x.classList.toggle('on', x === b)); }; });

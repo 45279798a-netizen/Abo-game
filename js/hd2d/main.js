@@ -1046,8 +1046,8 @@ function showResult(e) {
         if (win) stageHtml += `<div class="res-rw"><span>${st2.first ? '首通獎勵' : '獎勵'}</span>${Object.entries(st2.reward).filter(([, v]) => v > 0).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('')}</div>`
             + (st2.gear.length ? `<div class="res-rw">${st2.gear.map(gearChip).join('')}</div>` : '');
         else stageHtml += `<div class="res-tip">提示：回大廳養成英雄、強化裝備，或先打低一層</div>`;
-        if (win && st2.noCount) stageHtml += `<div class="res-tip">今天的素材試煉次數用完了，這場只記錄星數（每天凌晨 4 點補 ${R.DUNGEONS.trialPerDay} 次）</div>`;
-        else if (dg.kind === 'trial') stageHtml += `<div class="res-rw"><span>素材試煉次數剩 ${Dungeon.trialLeft(Save.load())} 次</span></div>`;
+        if (win && st2.noCount) stageHtml += `<div class="res-tip">今天這個試煉的次數用完了，這場只記錄星數（每天凌晨 4 點補 ${R.DUNGEONS.trialPerDay} 次）</div>`;
+        else if (dg.kind === 'trial') stageHtml += `<div class="res-rw"><span>這個試煉今天還有 ${Dungeon.trialLeft(Save.load(), dg.id)} 次</span></div>`;
         const nx = win && dg.floor < R.DUNGEONS.floors;
         btns = `<a class="btn-secondary" href="index.html#trial" style="display:grid;place-items:center;text-decoration:none;color:inherit">回試煉</a><button class="btn-secondary" id="res-again">再打一次</button>${nx ? '<button class="btn-primary" id="res-next">下一層 ▶</button>' : ''}`;
         // 連續挑戰：累計獎勵；贏了而且還有場數（素材試煉還有次數）就倒數開下一場
@@ -1057,9 +1057,9 @@ function showResult(e) {
             if (win) rp.wins++;
             for (const [k, v] of Object.entries(st2.reward || {})) if (v > 0) rp.sum[k] = (rp.sum[k] || 0) + v;
             rp.gear.push(...(st2.gear || []));
-            const outOfCount = dg.kind === 'trial' && (st2.noCount || Dungeon.trialLeft(Save.load()) <= 0);
+            const outOfCount = dg.kind === 'trial' && (st2.noCount || Dungeon.trialLeft(Save.load(), dg.id) <= 0);
             const more = win && rp.done < rp.total && !outOfCount;
-            const why = !win ? '這場輸了，連續挑戰停止' : (outOfCount && rp.done < rp.total) ? '素材試煉次數用完了' : '';
+            const why = !win ? '這場輸了，連續挑戰停止' : (outOfCount && rp.done < rp.total) ? '這個試煉今天的次數用完了' : '';
             stageHtml += `<div class="rep-sum"><b>連續挑戰 ${rp.done} / ${rp.total} 場</b>　勝 ${rp.wins}${why ? `<div class="res-tip">${why}</div>` : ''}
                 <div class="res-rw"><span>累計</span>${Object.entries(rp.sum).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('')}${rp.gear.length ? `<b>${ICON('chest')}裝備 ${rp.gear.length} 件</b>` : ''}</div></div>`;
             if (more) {
