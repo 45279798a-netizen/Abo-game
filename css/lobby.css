@@ -89,7 +89,6 @@ a { color: inherit; text-decoration: none; }
 
 /* 英雄 */
 .hero-wrap { display: flex; gap: 12px; height: 100%; }
-.hero-side { width: 250px; flex: none; display: flex; flex-direction: column; gap: 8px; }
 .slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
 .slot { position: relative; aspect-ratio: 3/4; border-radius: 9px; overflow: hidden; border: 2px dashed rgba(255,255,255,.18); background: #1a120c; display: grid; place-items: center; font-size: 10px; color: var(--muted); }
 .slot.filled { border-style: solid; border-color: var(--rc); }
@@ -100,15 +99,6 @@ a { color: inherit; text-decoration: none; }
 .filters { display: flex; gap: 5px; flex-wrap: wrap; }
 .filters button { font-size: 11.5px; padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.15); }
 .filters button.on { border-color: var(--gold); color: var(--gold-hi); }
-.hero-grid { flex: 1; min-width: 0; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; align-content: start; padding-bottom: 6px; }
-.hc { position: relative; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 2px solid var(--rc); background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--fc) 35%, #1a120c), #120c08); text-align: left; }
-.hc img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 4%; }
-.hc .nm { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 5px 3px; font-size: 11px; font-weight: 700; background: linear-gradient(0deg, rgba(0,0,0,.85), transparent); line-height: 1.25; }
-.hc .rt { position: absolute; left: 4px; top: 3px; font-size: 10px; font-weight: 900; font-family: Georgia, serif; color: var(--rc); text-shadow: 0 0 4px #000, 0 0 2px #000; }
-.hc .el { position: absolute; right: 4px; top: 3px; font-size: 12px; filter: drop-shadow(0 0 2px #000); }
-.hc .in-team { position: absolute; right: 4px; bottom: 22px; font-size: 9px; padding: 0 4px; border-radius: 5px; background: var(--gold); color: #1a1006; font-weight: 900; }
-.hc.locked img { filter: grayscale(1) brightness(.35); }
-.hc.locked .nm::after { content: '未擁有'; display: block; font-size: 9.5px; color: var(--muted); font-weight: 400; }
 
 /* 英雄詳情 */
 .detail { position: absolute; inset: 0; z-index: 30; display: none; background: rgba(0,0,0,.7); backdrop-filter: blur(3px); }
@@ -550,3 +540,86 @@ a { color: inherit; text-decoration: none; }
 .adm-f.row input[type=number] { width: 120px; }
 .adm-mail { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
 .adm-mail small { flex: 1; }
+
+/* ── 英雄頁（11/15 改版）：左邊隊伍，右邊固定大小的小卡 ── */
+.hero-side { width: 238px; flex: none; display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+.hs-title { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+.hs-title b { color: var(--gold-hi); letter-spacing: 2px; }
+.hs-title em { font-style: normal; font-weight: 800; color: var(--gold-hi); }
+.slot .lead { position: absolute; left: 0; top: 0; font-size: 8.5px; font-style: normal; padding: 0 3px; border-radius: 0 0 5px 0; background: var(--gold); color: #1a1006; font-weight: 900; }
+.slot .plus { font-size: 18px; color: rgba(255,255,255,.25); }
+.hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.fac-f button { display: inline-flex; align-items: center; gap: 3px; }
+.fac-f .ico { width: 16px; height: 16px; }
+.hero-grid { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, 104px); grid-auto-rows: max-content; justify-content: start; gap: 8px; padding: 2px 4px 8px 2px; }
+.hc { display: block; width: 104px; padding: 0; border-radius: 10px; overflow: hidden; border: 2px solid var(--rc); background: #120c08; text-align: left; transition: transform .12s; }
+.hc:active { transform: scale(.96); }
+.hc.inteam { box-shadow: 0 0 0 2px var(--gold), 0 0 10px rgba(240,180,60,.4); }
+.hc-art { position: relative; height: 104px; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--fc) 45%, #1a120c), #120c08); }
+.hc-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 6%; }
+.hc .rt { position: absolute; left: 4px; top: 2px; font-size: 11px; font-weight: 900; font-family: Georgia, serif; color: var(--rc); text-shadow: 0 0 4px #000, 0 0 2px #000; }
+.hc .el { position: absolute; right: 3px; top: 3px; }
+.hc .el .ico { width: 18px; height: 18px; filter: drop-shadow(0 0 2px #000); }
+.hc .in-team { position: absolute; left: 3px; bottom: 3px; font-size: 9px; padding: 0 4px; border-radius: 5px; background: var(--gold); color: #1a1006; font-weight: 900; }
+.hc .awk { position: absolute; right: 3px; bottom: 3px; font-size: 9px; padding: 0 4px; border-radius: 5px; background: #a21caf; color: #fff; font-weight: 900; }
+.hc .lv { position: absolute; right: 3px; bottom: 3px; font-size: 10px; font-weight: 800; padding: 0 4px; border-radius: 5px; background: rgba(0,0,0,.7); }
+.hc .awk + .lv { bottom: 18px; }
+.hc-info { padding: 4px 6px 5px; background: linear-gradient(180deg, #1d150e, #120c08); border-top: 1px solid color-mix(in srgb, var(--rc) 50%, transparent); }
+.hc-info b { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hc-info .st { font-size: 10px; color: var(--gold-hi); letter-spacing: -1px; }
+.hc-info .na { font-size: 10px; color: var(--muted); }
+.hc.locked { border-color: color-mix(in srgb, var(--rc) 45%, #333); }
+.hc.locked img { filter: grayscale(1) brightness(.35); }
+.hc.locked .hc-info b { color: var(--muted); }
+@media (max-height: 430px) { .hero-grid { grid-template-columns: repeat(auto-fill, 92px); } .hc { width: 92px; } .hc-art { height: 92px; } }
+
+/* 英雄詳情：從右邊滑出的抽屜，左邊還看得到卡片 */
+.detail { background: linear-gradient(90deg, rgba(0,0,0,.25), rgba(0,0,0,.6)); backdrop-filter: none; }
+.detail.show { animation: none; }
+.detail .dt { left: auto; width: min(700px, 62vw); animation: drawerIn .25s cubic-bezier(.2,.9,.3,1); box-shadow: -10px 0 40px rgba(0,0,0,.7); }
+.detail .dt-art { width: 34%; }
+@keyframes drawerIn { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ── 招募頁（11/15 改版）：整頁活動橫幅 ── */
+#panel-gacha { padding: 0; }
+.ga { position: absolute; inset: 0; overflow: hidden; }
+.ga-rays { position: absolute; inset: 0; background: conic-gradient(from 200deg at 66% 40%, transparent 0 10deg, color-mix(in srgb, var(--pc) 22%, transparent) 14deg, transparent 22deg 40deg, color-mix(in srgb, var(--pc) 16%, transparent) 46deg, transparent 56deg 360deg); mix-blend-mode: screen; animation: gaRays 14s linear infinite; opacity: .7; pointer-events: none; }
+@keyframes gaRays { 50% { opacity: .35; } }
+.ga-art { position: absolute; right: calc(4% + var(--safe-right)); bottom: -4%; height: 104%; width: 60%; pointer-events: none; }
+.ga-h { position: absolute; bottom: 0; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0,0,0,.7)) drop-shadow(0 0 30px color-mix(in srgb, var(--pc) 35%, transparent)); animation: gaIn .6s cubic-bezier(.2,.9,.3,1) both; }
+.ga-art.n1 .h0 { right: 8%; height: 108%; }
+.ga-art.n2 .h0 { right: 30%; } .ga-art.n2 .h1 { right: 0; height: 90%; animation-delay: .1s; }
+.ga-art.n3 .h0 { right: 30%; height: 100%; z-index: 2; } .ga-art.n3 .h1 { right: 0; height: 86%; animation-delay: .1s; } .ga-art.n3 .h2 { right: 56%; height: 82%; animation-delay: .2s; opacity: .9; }
+@keyframes gaIn { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+.ga-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(6,4,2,.92) 0%, rgba(6,4,2,.6) 34%, transparent 58%), linear-gradient(0deg, rgba(0,0,0,.75), transparent 30%); pointer-events: none; }
+.ga-top { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 12px; padding: calc(8px + var(--safe-top)) calc(12px + var(--safe-right)) 0 calc(14px + var(--safe-left)); z-index: 3; }
+.ga-pools { display: flex; gap: 6px; }
+.ga-pools button { position: relative; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.18); color: var(--text); }
+.ga-pools button.on { background: linear-gradient(180deg, #f0c869, #b8862b); color: #1a1006; border-color: #ffe7a8; }
+.ga-pools .new { position: absolute; right: -4px; top: -6px; font-size: 8.5px; font-style: normal; padding: 0 4px; border-radius: 5px; background: #ef4444; color: #fff; }
+.ga-cur { display: flex; gap: 6px; }
+.ga-cur span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: rgba(0,0,0,.55); border: 1px solid var(--line); font-size: 13px; font-weight: 700; }
+.ga-info { position: absolute; left: calc(18px + var(--safe-left)); top: calc(62px + var(--safe-top)); width: min(420px, 42%); z-index: 2; }
+.ga-tag { display: inline-block; padding: 2px 10px; border-radius: 5px; background: var(--pc); color: #fff; font-size: 11px; font-weight: 900; letter-spacing: 2px; }
+.ga-info h2 { margin: 6px 0 6px; font-size: 30px; line-height: 1.2; letter-spacing: 3px; color: #fff6d8; text-shadow: 0 2px 0 #3a2508, 0 0 22px color-mix(in srgb, var(--pc) 55%, transparent); }
+.ga-feat { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+.ga-feat small { display: block; font-size: 11.5px; font-weight: 400; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+.ga-sub { font-size: 12.5px; line-height: 1.7; color: #e7dcc8; margin: 6px 0 8px; }
+.ga-rate { font-size: 11.5px; color: var(--gold-hi); text-decoration: underline; padding: 0; }
+.ga-bottom { position: absolute; left: calc(18px + var(--safe-left)); right: calc(16px + var(--safe-right)); bottom: calc(12px + var(--safe-bottom)); display: flex; align-items: flex-end; gap: 10px; z-index: 3; }
+.ga-pity { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 6px 12px; border-radius: 10px; background: rgba(0,0,0,.6); border: 1px solid var(--line); }
+.ga-pity .bar { width: 160px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.ga-pity .bar i { display: block; height: 100%; background: linear-gradient(90deg, #b8862b, #ffe7a8); }
+.ga-pity b { color: var(--gold-hi); }
+.ga-buy { min-width: 150px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 18px; border-radius: 12px; background: linear-gradient(180deg, #3b3022, #1e1710); border: 1px solid #8b6f4e; color: var(--text); box-shadow: 0 4px 14px rgba(0,0,0,.5); }
+.ga-buy b { font-size: 16px; letter-spacing: 2px; }
+.ga-buy small { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; }
+.ga-buy.ten { background: linear-gradient(180deg, #f3cf72, #b07e25); color: #1a1006; border-color: #ffe7a8; }
+.ga-buy:disabled { filter: grayscale(.7) brightness(.7); }
+@media (max-height: 430px) { .ga-info h2 { font-size: 24px; } .ga-info { top: calc(52px + var(--safe-top)); } .ga-buy { min-width: 128px; padding: 7px 12px; } .ga-pity .bar { width: 110px; } }
+.ga .sp { flex: 1; }
+.detail .dt-art { overflow: hidden; width: 32%; }
+.detail .dt-art img { height: 100%; bottom: 0; max-width: none; }
+.ps-grid { grid-template-columns: repeat(5, clamp(96px, 21vh, 150px)); }
+.ps-grid.one { grid-template-columns: clamp(140px, 30vh, 200px); }
+.card .face-f .n { font-size: 12px; }

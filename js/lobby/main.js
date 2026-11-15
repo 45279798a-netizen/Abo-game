@@ -332,28 +332,35 @@
         const ids = Object.keys(R.HEROES);
         const order = {UR: 0, SSR: 1, SR: 2, R: 3};
         const list = ids.filter(id => heroFilter === 'all' || R.HEROES[id].faction === heroFilter)
-            .sort((a, b) => (!!S.heroes[b] - !!S.heroes[a]) || (order[R.HEROES[a].rarity] - order[R.HEROES[b].rarity]));
+            .sort((a, b) => (!!S.heroes[b] - !!S.heroes[a]) || (S.heroes[a] && S.heroes[b] ? heroPower(b) - heroPower(a) : 0) || (order[R.HEROES[a].rarity] - order[R.HEROES[b].rarity]));
         const owned = Object.keys(S.heroes).length;
-        p.innerHTML = head(`英雄　<small style="font-size:12px;color:var(--muted);letter-spacing:0">${owned} / ${ids.length}</small>`) + `<div class="pbody"><div class="hero-wrap">
+        const facBtns = [['all', '全部', ''], ...Object.entries(R.FACTIONS).filter(([, f]) => f.passive).map(([k, f]) => [k, f.short, f.emblem || ''])];
+        p.innerHTML = head(`英雄　<small style="font-size:12px;color:var(--muted);letter-spacing:0">擁有 ${owned} / ${ids.length}</small>`) + `<div class="pbody"><div class="hero-wrap">
             <div class="hero-side">
+                <div class="hs-title"><b>隊伍</b><span>戰力 <em>${teamPower().toLocaleString()}</em></span></div>
                 <div class="slots">${S.team.map((id, i) => id
-                    ? `<button class="slot filled" data-slot="${i}" style="--rc:${rc(R.HEROES[id].rarity)}"><img src="${face(R.HEROES[id].img)}" alt=""><span class="pos">${id === S.leader ? '★' : ''}${POS[i]}</span></button>`
-                    : `<button class="slot" data-slot="${i}">空<span class="pos">${POS[i]}</span></button>`).join('')}</div>
+                    ? `<button class="slot filled" data-slot="${i}" style="--rc:${rc(R.HEROES[id].rarity)}"><img src="${face(R.HEROES[id].img)}" alt="">${id === S.leader ? '<i class="lead">隊長</i>' : ''}<span class="pos">${POS[i]}</span></button>`
+                    : `<button class="slot" data-slot="${i}"><span class="plus">＋</span><span class="pos">${POS[i]}</span></button>`).join('')}</div>
                 <div class="fac-note">${factionBonusText()}</div>
-                <div class="fac-note">點英雄看詳情、上陣或設為隊長；點上方格子可以讓英雄下陣。前排 2 格、後排 3 格。</div>
-                <div class="filters">${[['all', '全部'], ...Object.entries(R.FACTIONS).filter(([, f]) => f.passive).map(([k, f]) => [k, f.short])].map(([k, n]) => `<button class="${heroFilter === k ? 'on' : ''}" data-filter="${k}">${n}</button>`).join('')}</div>
+                <div class="fac-note">點英雄看詳情、上陣、養成；點隊伍格子讓英雄下陣。前排 2 格、後排 3 格。</div>
             </div>
-            <div class="hero-grid">${list.map(id => {
-                const d = R.HEROES[id], o = S.heroes[id];
-                return `<button class="hc ${o ? '' : 'locked'}" data-hero="${id}" style="--rc:${rc(d.rarity)};--fc:${fc(d.faction)}">
-                    <img src="${face(d.img)}" alt="" loading="lazy"><span class="rt">${d.rarity}</span><span class="el">${R.ELEMENTS[d.element].icon}</span>
-                    ${S.team.includes(id) ? '<span class="in-team">隊伍</span>' : ''}<span class="nm">${short(d.name)}${o ? `<br><small style="font-weight:400;color:#e7dcc8">Lv.${o.lv}　<span style="color:var(--gold-hi)">${'★'.repeat(o.star)}</span></small>` : ''}</span></button>`;
-            }).join('')}</div></div></div>`;
+            <div class="hero-main">
+                <div class="filters fac-f">${facBtns.map(([k, n, em]) => `<button class="${heroFilter === k ? 'on' : ''}" data-filter="${k}">${em}${n}</button>`).join('')}</div>
+                <div class="hero-grid">${list.map(id => {
+                    const d = R.HEROES[id], o = S.heroes[id];
+                    return `<button class="hc ${o ? '' : 'locked'} ${S.team.includes(id) ? 'inteam' : ''}" data-hero="${id}" style="--rc:${rc(d.rarity)};--fc:${fc(d.faction)}">
+                        <div class="hc-art"><img src="${face(d.img)}" alt="" loading="lazy">
+                            <span class="rt">${d.rarity}</span><span class="el">${R.ELEMENTS[d.element].icon}</span>
+                            ${S.team.includes(id) ? `<span class="in-team">${id === S.leader ? '隊長' : '上陣'}</span>` : ''}${o?.awk ? '<span class="awk">覺醒</span>' : ''}
+                            ${o ? `<span class="lv">Lv.${o.lv}</span>` : ''}</div>
+                        <div class="hc-info"><b>${short(d.name)}</b>${o ? `<span class="st">${'★'.repeat(o.star)}</span>` : '<span class="na">未擁有</span>'}</div></button>`;
+                }).join('')}</div>
+            </div></div></div>`;
         p.querySelectorAll('[data-filter]').forEach(b => { b.onclick = () => { heroFilter = b.dataset.filter; renderHero(); }; });
         p.querySelectorAll('[data-hero]').forEach(b => { b.onclick = () => showDetail(b.dataset.hero); });
         p.querySelectorAll('[data-slot]').forEach(b => { b.onclick = () => {
             const i = +b.dataset.slot;
-            if (!S.team[i]) return;
+            if (!S.team[i]) { toast('點右邊的英雄、按「上陣」加入隊伍'); return; }
             if (S.team.filter(Boolean).length <= 1) { toast('隊伍至少要留 1 位'); return; }
             const id = S.team[i];
             S.team[i] = null;
@@ -944,48 +951,57 @@
 
     // ───────── 招募 ─────────
     let poolSel = null;
+    // 招募背景圖（Gemini 生成，放在 assets/hd/；還沒有的卡池用漸層）
+    const GA_BG = {};
+    const GA = {
+        newbie: {title: '新手招募', tag: 'NEW', heroes: ['reina', 'zeke'], color: '#f59e0b',
+            sub: '新旅團長專屬：免費 10 連抽一次，保證至少 1 位 SSR。', bg: 'radial-gradient(ellipse at 68% 55%, #5b4312, #1a1108 55%, #070402)'},
+        ltd: {title: 'S1 限定招募', tag: 'UR 限定', heroes: ['uther'], color: '#ef4444',
+            sub: '聖光使者·烏瑟登場！UR 機率 2%，第 80 抽必定取得烏瑟，保底次數整個賽季延續。', bg: 'radial-gradient(ellipse at 66% 45%, #8a6a1e, #2a1f0c 45%, #070402 80%)'},
+        std: {title: '常駐招募', tag: '常駐', heroes: ['seraph', 'gaia', 'shadow'], color: '#60a5fa',
+            sub: '所有常駐英雄（不含 UR）。每 10 抽必出 SR 以上，第 50 抽內必出 SSR。', bg: 'radial-gradient(ellipse at 68% 50%, #1f3550, #0b1220 55%, #030507)'},
+    };
     function renderGacha() {
         if (!poolSel || (poolSel === 'newbie' && S.newbieDone)) poolSel = S.newbieDone ? 'ltd' : 'newbie';
         const p = $('#panel-gacha');
-        const tabs = [];
-        if (!S.newbieDone) tabs.push(['newbie', '新手招募', '免費 10 連・必出 SSR', true]);
-        tabs.push(['ltd', 'S1 限定', 'UR 聖光使者·烏瑟']);
-        tabs.push(['std', '常駐招募', '全部常駐英雄']);
-        const P = Gacha.POOLS[poolSel];
-        const ratesTxt = Object.entries(P.rates).sort((a, b) => a[1] - b[1]).map(([k, v]) => `<span style="color:${rc(k)}">${k}</span> ${(v * 100).toFixed(0)}%`).join('　');
-        let pityTxt = '', art = '', sub = '', bbg = '';
-        if (poolSel === 'newbie') {
-            sub = '新旅團長專屬：免費 10 連抽一次，保證至少 1 位 SSR。';
-            art = ['zeke', 'reina'].map(id => `<img src="${sprite(R.HEROES[id].img)}" alt="">`).join('');
-            bbg = 'radial-gradient(ellipse at 75% 50%, #3b2f12, #120c06 70%)';
-        } else if (poolSel === 'ltd') {
-            sub = '聖光使者·烏瑟登場！UR 機率 2%，80 抽必定取得烏瑟，保底次數整個賽季延續。';
-            pityTxt = `距離保底還有 <b>${Gacha.POOLS.ltd.urPity - S.pity.ltd.ur}</b> 抽`;
-            art = `<img src="${sprite(R.HEROES.uther.img)}" alt="">`;
-            bbg = 'radial-gradient(ellipse at 75% 45%, #5a4416, #120c06 70%)';
-        } else {
-            sub = '所有常駐英雄（不含 UR）。每 10 抽必出 SR 以上，50 抽內必出 SSR。';
-            pityTxt = `距離 SSR 保底還有 <b>${Gacha.POOLS.std.ssrPity - S.pity.std.ssr}</b> 抽`;
-            art = ['seraph', 'gaia'].map(id => `<img src="${sprite(R.HEROES[id].img)}" alt="">`).join('');
-            bbg = 'radial-gradient(ellipse at 75% 50%, #1e2b3b, #0a0d12 70%)';
-        }
+        const pools = [...(S.newbieDone ? [] : ['newbie']), 'ltd', 'std'];
+        const P = Gacha.POOLS[poolSel], G = GA[poolSel];
+        const main = R.HEROES[G.heroes[0]];
+        let pity = '';
+        if (poolSel === 'ltd') { const n = S.pity.ltd.ur, m = Gacha.POOLS.ltd.urPity; pity = `<div class="ga-pity"><span>烏瑟保底</span><div class="bar"><i style="width:${n / m * 100}%"></i></div><b>${n} / ${m}</b></div>`; }
+        if (poolSel === 'std') { const n = S.pity.std.ssr, m = Gacha.POOLS.std.ssrPity; pity = `<div class="ga-pity"><span>SSR 保底</span><div class="bar"><i style="width:${n / m * 100}%"></i></div><b>${n} / ${m}</b></div>`; }
         const btn = n => {
-            if (poolSel === 'newbie') return `<button class="btn primary" data-pull="10">免費招募 10 次<small>只有一次</small></button>`;
+            if (poolSel === 'newbie') return `<button class="ga-buy ten" data-pull="10"><b>免費招募 10 次</b><small>只有一次</small></button>`;
             const pr = Gacha.price(S, poolSel, n);
             const parts = [];
             for (const [k, v] of Object.entries(pr.use)) if (v) parts.push(`${CUR[k].icon}${v}`);
-            return `<button class="btn ${n === 10 ? 'primary' : ''}" data-pull="${n}" ${pr.ok ? '' : 'disabled'}>招募 ${n} 次<small>${parts.join(' + ') || '—'}${pr.ok ? '' : '（不足）'}</small></button>`;
+            return `<button class="ga-buy ${n === 10 ? 'ten' : ''}" data-pull="${n}" ${pr.ok ? '' : 'disabled'}><b>招募 ${n} 次</b><small>${parts.join(' + ') || '—'}${pr.ok ? '' : '　不足'}</small></button>`;
         };
-        p.innerHTML = head('招募') + `<div class="pbody" style="overflow:hidden"><div class="ga-wrap">
-            <div class="ga-tabs">${tabs.map(([k, n, s, isNew]) => `<button class="ga-tab ${k === poolSel ? 'on' : ''}" data-pool="${k}"><b>${n}</b><span>${s}</span>${isNew ? '<i class="new">NEW</i>' : ''}</button>`).join('')}
-                <div class="fac-note" style="margin-top:auto">重複取得的英雄轉成碎片：R 10、SR 20、SSR 40、UR 80。碎片之後用來升星。</div></div>
-            <div class="ga-banner" style="--bbg:${bbg}"><div class="art">${art}</div>
-                <div class="info"><h3>${P.name}</h3><div class="sub">${sub}</div><div class="rates">${ratesTxt}</div>
-                ${pityTxt ? `<div class="pity">${pityTxt}</div>` : ''}
-                <div class="buy">${poolSel === 'newbie' ? btn(10) : btn(1) + btn(10)}</div></div></div>
-        </div></div>`;
+        const ticket = poolSel === 'ltd' ? 'ltdTicket' : 'ticket';
+        const art = G.heroes.map((id, k) => `<img class="ga-h h${k}" src="${sprite(R.HEROES[id].img)}" alt="">`).join('');
+        p.innerHTML = `<div class="ga" style="--pc:${G.color};background:${GA_BG[poolSel] ? `url(assets/hd/${GA_BG[poolSel]}) center / cover` : G.bg}">
+            <div class="ga-rays"></div><div class="ga-art n${G.heroes.length}">${art}</div><div class="ga-shade"></div>
+            <div class="ga-top"><div class="ch-title"><small>RECRUIT</small><b>招募</b></div>
+                <div class="ga-pools">${pools.map(k => `<button class="${k === poolSel ? 'on' : ''}" data-pool="${k}">${GA[k].title}${k === 'newbie' ? '<i class="new">NEW</i>' : ''}</button>`).join('')}</div>
+                <div class="sp"></div>
+                <div class="ga-cur"><span>${CUR.gem.icon}${fmt(S.currency.gem || 0)}</span><span>${CUR[ticket].icon}${fmt(S.currency[ticket] || 0)}</span></div>
+                <button class="close" data-close>✕</button></div>
+            <div class="ga-info">
+                <span class="ga-tag">${G.tag}</span>
+                <h2>${P.name}</h2>
+                ${poolSel === 'ltd' ? `<div class="ga-feat"><b style="color:${rc(main.rarity)}">${main.rarity}</b> ${main.name}<small>${R.FACTIONS[main.faction].name}・${R.ELEMENTS[main.element].name}・${R.ROLES[main.role].name}</small><small>大招「${main.ult.name}」：${main.ult.desc}</small></div>` : ''}
+                <p class="ga-sub">${G.sub}</p>
+                <button class="ga-rate" id="ga-rate">機率與保底說明</button>
+            </div>
+            <div class="ga-bottom">${pity}<div class="sp"></div>${poolSel === 'newbie' ? btn(10) : btn(1) + btn(10)}</div>
+        </div>`;
         p.querySelectorAll('[data-pool]').forEach(b => { b.onclick = () => { poolSel = b.dataset.pool; renderGacha(); }; });
         p.querySelectorAll('[data-pull]').forEach(b => { b.onclick = () => doPull(+b.dataset.pull); });
+        p.querySelector('#ga-rate').onclick = () => {
+            const rows = Object.entries(P.rates).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="frow"><b style="color:${rc(k)}">${k}</b><span>${(v * 100).toFixed(0)}%</span><span class="muted">${k === 'UR' ? '聖光使者·烏瑟' : Object.values(R.HEROES).filter(h => h.rarity === k && !['uther', 'mortheus'].includes(Object.keys(R.HEROES).find(x => R.HEROES[x] === h))).map(h => short(h.name)).join('、')}</span></div>`).join('');
+            modal(`<h3>${P.name}・機率</h3><div class="flist">${rows}</div>
+                <p class="muted">每 10 抽必出 SR 以上。${poolSel === 'ltd' ? '第 80 抽必定取得烏瑟（抽到就重新計算），保底次數整個賽季延續。' : poolSel === 'std' ? '第 50 抽內必出 SSR。' : '保證至少 1 位 SSR。'}重複取得的英雄轉成碎片：R 10、SR 20、SSR 40、UR 80；已經滿星的轉成星塵。單抽用 1 張${poolSel === 'ltd' ? '限定' : ''}招募券，沒有券時用 150 鑽石。</p>`, 'floors');
+        };
     }
     async function doPull(n) {
         if (poolSel !== 'newbie' && !Gacha.pay(S, poolSel, n)) { toast('招募券和鑽石都不夠'); return; }
@@ -993,7 +1009,7 @@
         const res = Gacha.pull(S, poolSel, n);
         save();
         await showPulls(res);
-        renderGacha(); renderMain();
+        renderGacha(); renderMain(); renderCurrency();
     }
 
     // 抽卡演出：卡背依最高稀有度發光 → 逐張翻開；SSR／UR 先播立繪登場
@@ -1001,6 +1017,7 @@
         return new Promise(done => {
             const box = $('#pull-show');
             const best = ['UR', 'SSR', 'SR', 'R'].find(r => res.some(x => x.rarity === r));
+            box.style.backgroundImage = GA_BG.summon ? `radial-gradient(ellipse at 50% 45%, transparent, rgba(0,0,0,.7) 80%), url(assets/hd/${GA_BG.summon})` : '';
             box.innerHTML = `<div class="ps-hint">點卡片翻開・點空白處全部翻開</div>
                 <div class="ps-grid ${res.length === 1 ? 'one' : ''}">${res.map((x, i) => {
                     const d = R.HEROES[x.id];
