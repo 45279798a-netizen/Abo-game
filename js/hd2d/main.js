@@ -437,7 +437,7 @@ function refreshAll() {
     for (const u of b.units) updateUnit(u);
     renderTimeline();
     renderHud();
-    $('#b-round').textContent = `第 ${Math.min(b.round(), b.maxRounds)} / ${b.maxRounds} 回合`;
+    setRound(b.round());
 }
 
 function renderTimeline() {
@@ -503,6 +503,11 @@ function updateCard(u, el) {
     el.title = u.ult ? `${u.ult.name}：${u.ult.desc}` : '';
 }
 // 上方中央：首領血條
+// 回合數；亡靈侵蝕開始後顯示敵人傷害加成
+function setRound(n) {
+    const b = state.battle, ramp = b.enemyRamp();
+    $('#b-round').innerHTML = `第 ${Math.min(n, b.maxRounds)} / ${b.maxRounds} 回合${ramp > 1.001 && !cfg.lich ? `　<span class="erode" title="從第 ${R.FATIGUE.from} 回合起，敵人傷害每回合 +${Math.round(R.FATIGUE.pct * 100)}%">亡靈侵蝕 +${Math.round((ramp - 1) * 100)}%</span>` : ''}`;
+}
 function updateBossBar() {
     const boss = state.battle?.units.find(u => u.side === 'enemy' && u.boss);
     const el = $('#boss-bar');
@@ -911,7 +916,7 @@ async function playEvents(events, id) {
                 actor = u;
                 setActing(u.uid, true);
                 setPill(`${u.name} 行動`, u.side === 'enemy');
-                $('#b-round').textContent = `第 ${Math.min(e.round, state.battle.maxRounds)} / ${state.battle.maxRounds} 回合`;
+                setRound(e.round);
                 break;
             case 'skill': {
                 setPill(`${u.name}・<span class="sk">${e.name}</span>`, u.side === 'enemy');

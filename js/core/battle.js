@@ -532,7 +532,7 @@
             }
             if (this.has(tgt, 'guard')) dmg *= 0.7;
             for (const p of tgt.passives) if (p.type === 'tauntGuard' && this.has(tgt, 'taunt')) dmg *= 1 - p.pct;
-            if (src.side === 'enemy' && this.M.roundDmg) dmg *= 1 + this.M.roundDmg * (this.round() - 1);
+            if (src.side === 'enemy') dmg *= this.enemyRamp();
             let crit = false;
             if (!o.noCrit) {
                 let rate = src.base.crit;
@@ -680,6 +680,12 @@
             if (src.gear4?.sealPull && src.side !== t.side && ['freeze', 'slow', 'silence'].includes(e.status)) this.pull(t, src.gear4.sealPull);
         }
 
+        // 亡靈侵蝕：戰鬥拖久了敵人越打越痛（全部戰鬥都有，避免全坦克＋補師慢慢磨也能贏）；關卡規則的「狂亂」再另外加
+        enemyRamp() {
+            const F = R.FATIGUE, n = this.round();
+            const fat = this.encounter.fatigue === false ? 0 : Math.max(0, n - F.from + 1) * F.pct;
+            return 1 + fat + this.M.roundDmg * (n - 1);
+        }
         // 對首領造成的傷害（巫妖王試煉的分數）
         bossDamage() {
             const boss = this.units.find(u => u.side === 'enemy' && u.boss);

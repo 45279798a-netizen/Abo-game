@@ -129,7 +129,8 @@ RES.SEASON = {
         return {
             id: 'lich', kind: 'lich', name: '巫妖王試煉', difficulty: '賽季首領', power: t.power || 6, hpPower: t.hpPower || 3,
             bossHp: tiers[tiers.length - 1], maxRounds: L.rounds, rounds: L.rounds,
-            mods: [...afx, {roundDmg: L.ramp}], affixes: afx, front: [], back: ['lichKing'], bgHD: 'throne',
+            mods: [...afx, {roundDmg: L.ramp}], fatigue: false, affixes: afx,   // 巫妖王有自己的越打越痛，不另外疊亡靈侵蝕
+ front: [], back: ['lichKing'], bgHD: 'throne',
         };
     }
     const lichLeft = S => L.perDay - (state(S).lich.used || 0);

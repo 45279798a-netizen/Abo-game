@@ -72,5 +72,8 @@ RES.ENERGY = {
     max: 100,
 };
 
+// 亡靈侵蝕：第 from 回合起，敵人傷害每回合 +pct（第 from 回合 +pct、下一回合 +2×pct…）
+RES.FATIGUE = {from: 6, pct: 0.15};
+
 // 開場行動條隨機範圍（0～此值），越大出手順序越分散
 RES.START_ATB_SPREAD = 500;

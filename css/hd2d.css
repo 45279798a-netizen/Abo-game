@@ -239,3 +239,4 @@ html, body { background: #000; overflow: hidden; }
 .hcd.dead .hc-en { color: #999; }
 @media (max-height: 360px) { .hcd { width: 124px; } .hcd .hc-face { width: 38px; height: 38px; } }
 @media (max-width: 760px) { .hcd { width: 118px; } }
+#b-round .erode { color: #a3e635; font-weight: 800; text-shadow: 0 0 6px rgba(132,204,22,.6); }

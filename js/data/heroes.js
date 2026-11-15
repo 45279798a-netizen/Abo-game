@@ -30,13 +30,13 @@ RES.AWAKEN = {
     stat: {R: 0.06, SR: 0.08, SSR: 0.10, UR: 0.12},
 };
 
-// 職業基礎能力（SSR、原型等級）
+// 職業基礎能力（SSR、原型等級）。輸出職業（戰士、法師、射手、刺客）攻擊在 11/15 調高 15%，讓標準的 1 坦 1 輔 3 輸出不輸給全坦克＋補師
 RES.ROLES = {
     tank:     {name: '坦克', hp: 3300, atk: 170, def: 200, spd: 92},
-    warrior:  {name: '戰士', hp: 2400, atk: 250, def: 140, spd: 102},
-    mage:     {name: '法師', hp: 1800, atk: 280, def: 95,  spd: 104},
-    archer:   {name: '射手', hp: 1850, atk: 270, def: 95,  spd: 108},
-    assassin: {name: '刺客', hp: 1750, atk: 265, def: 90,  spd: 118},
+    warrior:  {name: '戰士', hp: 2400, atk: 288, def: 140, spd: 102},
+    mage:     {name: '法師', hp: 1800, atk: 322, def: 95,  spd: 104},
+    archer:   {name: '射手', hp: 1850, atk: 310, def: 95,  spd: 108},
+    assassin: {name: '刺客', hp: 1750, atk: 305, def: 90,  spd: 118},
     support:  {name: '輔助', hp: 2000, atk: 200, def: 115, spd: 112},
 };
 
@@ -152,10 +152,10 @@ RES.HEROES = {
             ],
         },
         ult: {
-            name: '熾天審判', desc: '對敵方全體造成 200% 傷害（2 段），我方全體攻擊 +20%（2 回合）',
+            name: '熾天審判', desc: '對敵方全體造成 170% 傷害（2 段），我方全體攻擊 +20%（2 回合）',
             show: 4600, impactFrame: true, vfx: [{id: 'starblade-cataclysm', at: 'foes', main: true, hit: 0}, {id: 'starblade-explosion', at: 'foes', delay: 2250, hit: 1}],
             effects: [
-                {type: 'damage', target: 'enemies', mult: 2.0, hits: [0.6, 0.4]},
+                {type: 'damage', target: 'enemies', mult: 1.7, hits: [0.6, 0.4]},
                 {type: 'status', target: 'allies', status: 'atkUp', turns: 2, chance: 1},
             ],
         },
@@ -167,8 +167,8 @@ RES.HEROES = {
     lyra: {
         name: '吟遊詩人·萊拉', rarity: 'R', faction: 'forest', element: 'fire', role: 'support', img: 'h_lyra',
         skill: {
-            name: '疾風樂章', cd: 2, show: 2600, vfx: [{id: 'painterly-grass', at: 'friends'}, {id: 'wind-vortex', at: 'friends', delay: 250, main: true}], desc: '我方全體加速（速度 +30%）2 回合，並回復 45% 攻擊力的生命',
-            effects: [{type: 'status', target: 'allies', status: 'haste', turns: 2, chance: 1}, {type: 'heal', target: 'allies', mult: 0.45}],
+            name: '疾風樂章', cd: 3, show: 2600, vfx: [{id: 'painterly-grass', at: 'friends'}, {id: 'wind-vortex', at: 'friends', delay: 250, main: true}], desc: '我方全體加速（速度 +30%）2 回合，並回復 70% 攻擊力的生命',
+            effects: [{type: 'status', target: 'allies', status: 'haste', turns: 2, chance: 1}, {type: 'heal', target: 'allies', mult: 0.7}],
         },
         ult: {
             name: '風之狂想曲', desc: '其他隊友推條 30%，我方全體加速 2 回合',
@@ -212,16 +212,16 @@ RES.HEROES = {
             ],
         },
         ult: {
-            name: '大地崩裂', desc: '對敵方全體造成 140% 傷害（2 段），拉條 20% 並減速 2 回合，我方全體獲得自身最大生命 12% 的護盾',
+            name: '大地崩裂', desc: '對敵方全體造成 140% 傷害（2 段），拉條 20% 並減速 2 回合，我方全體獲得自身最大生命 8% 的護盾',
             show: 3600, vfx: [{id: 'tidal-surge', at: 'foes', main: true, hit: 0}, {id: 'magma-fissure', at: 'foes', each: true, delay: 500, stagger: 120, hit: 1}],
             effects: [
                 {type: 'damage', target: 'enemies', mult: 1.4, hits: [0.55, 0.45]},
                 {type: 'pull', target: 'same', pct: 0.2},
                 {type: 'status', target: 'same', status: 'slow', turns: 2, chance: 1},
-                {type: 'shield', target: 'allies', pctMaxHp: 0.12, ofCaster: true},
+                {type: 'shield', target: 'allies', pctMaxHp: 0.08, ofCaster: true},
             ],
         },
-        passive: {name: '生生不息', desc: '每次行動開始時，回復最大生命 8%', type: 'regenOnTurn', pct: 0.08},
+        passive: {name: '生生不息', desc: '每次行動開始時，回復最大生命 6%', type: 'regenOnTurn', pct: 0.06},
         awaken: {name: '萬物滋長', desc: '每次行動開始時，也為生命最低的隊友回復其最大生命 6%', type: 'regenAllyOnTurn', pct: 0.06},
     },
 

@@ -173,6 +173,8 @@ node tools/sim_campaign.js 30             # 用兩支隊伍檢查各章代表關
 - 覺醒（`RES.AWAKEN`、各英雄的 `awaken` 欄位）：Lv.60、5★ 後用覺醒石開啟。全能力 R +6%、SR +8%、SSR +10%、UR +12%，覺醒石 R／SR 20、SSR 30、UR 40。
   每位英雄一個專屬效果，由戰鬥引擎當成第二個被動處理（`passiveMod` 改原被動、`ultAdd` 在大招後面加效果、`stat` 直接加能力）。
 - 新狀態：暈眩（跳過一次行動）；毒鏢客覺醒後中毒可以疊 3 層。
+- **亡靈侵蝕**（`RES.FATIGUE`，js/data/factions.js）：每場戰鬥從第 6 回合起，敵人傷害每回合 +15%（巫妖王試煉不疊，牠有自己的越打越痛）。戰鬥畫面回合數旁邊會顯示。
+  目的是不讓「全坦克＋補師慢慢磨」贏過正常隊伍；輸出職業攻擊同時 +15%。改完用 `SHAPE=1 node tools/team_search.js campaign` 看各種隊伍組成（幾坦幾輔幾輸出）的表現，目標是彼此差不多。
 - 隊伍推薦：`node tools/team_search.js campaign|speed|lich`，把所有 5 人組合跑一遍找出最好的隊伍（`POOL=free` 不含 UR、`POOL=low` 只用 R／SR、`AWK=1` 覺醒）。
 
 ## 賽季（4 週一季）

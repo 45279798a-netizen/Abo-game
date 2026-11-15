@@ -13,6 +13,7 @@ for (const f of ['js/data/elements.js', 'js/data/factions.js', 'js/data/heroes.j
     'js/core/save.js', 'js/core/growth.js', 'js/core/gear.js', 'js/data/season_table.js', 'js/core/season.js', 'js/core/battle.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, {filename: f});
 }
+if (process.env.PATCH) vm.runInContext(fs.readFileSync(process.env.PATCH, 'utf8'), ctx, {filename: 'patch'});   // 試調整用
 const {RES, Battle, Campaign, Growth, Gear, Save, Season} = ctx;
 const H = RES.HEROES;
 let ids = Object.keys(H);
@@ -49,6 +50,14 @@ rows = rows.slice(0, 250).map(r => ({t: r.t, s: evalTeam(r.t, 16, 100)}));
 rows.sort((a, b) => b.s - a.s);
 console.log(`${process.argv[2] || 'campaign'}　${combos.length} 隊　${((Date.now() - t0) / 1000).toFixed(0)} 秒　平均養成：主線第 ${IDX} 關${AWK ? '＋覺醒' : ''}`);
 for (const r of rows.slice(0, Number(process.env.TOP || 12))) console.log((mode === MODES.lich ? Math.round(r.s).toLocaleString().padStart(9) : mode === MODES.speed ? ('平均 ' + (30 - r.s).toFixed(1) + ' 回合') : (r.s * 100).toFixed(0).padStart(4) + '%'), r.t.map(id => `${H[id].rarity}${H[id].name.split('·').pop()}(${RES.FACTIONS[H[id].faction].short})`).join(' '));
+// 依隊伍組成（坦克／輔助／輸出人數）分組：每組前 10 名的平均分數
+const shape = t => { const tk = t.filter(id => H[id].role === 'tank').length, sp = t.filter(id => H[id].role === 'support').length; return `${tk}坦${sp}輔${5 - tk - sp}輸出`; };
+if (process.env.SHAPE) {
+    const all = combos.map(t => ({t, s: evalTeam(t, Number(process.env.SEEDS || 2), 300)})), by = {};
+    for (const r of all) (by[shape(r.t)] = by[shape(r.t)] || []).push(r.s);
+    const fmt = v => mode === MODES.lich ? Math.round(v).toLocaleString() : mode === MODES.speed ? (30 - v).toFixed(1) + ' 回合' : (v * 100).toFixed(0) + '%';
+    console.log('組成（前 10 名平均）：', Object.entries(by).map(([k, v]) => [k, v.sort((a, b) => b - a).slice(0, 10).reduce((a, b) => a + b, 0) / Math.min(10, v.length)]).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `${k} ${fmt(v)}`).join('、'));
+}
 // 每位英雄出現在前 250 名的次數
 const cnt = {}; for (const r of rows.slice(0, 100)) for (const id of r.t) cnt[id] = (cnt[id] || 0) + 1;
 console.log('前 100 名出現次數：', Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(([id, n]) => `${H[id].name.split('·').pop()} ${n}`).join('、'));
