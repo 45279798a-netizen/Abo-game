@@ -389,7 +389,7 @@
         const box = $('#hero-detail');
         const tags = `<span class="tag" style="color:${rc(d.rarity)};border-color:${rc(d.rarity)}">${d.rarity}</span>
             <span class="tag" style="color:${fac.color}">${fac.emblem || ''}${fac.name}</span><span class="tag">${el.icon} ${el.name}屬性</span><span class="tag">${R.ROLES[d.role].name}</span>
-            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span>${o.awk ? '<span class="tag awk-tag">已覺醒</span>' : ''}<span class="tag">戰力 ${heroPower(id).toLocaleString()}</span>` : `<span class="tag" style="color:var(--muted)">未擁有：${id === R.QUESTS.pass.finalHero ? '通行證第 50 級取得' : id === 'uther' ? 'S1 限定招募取得' : '招募取得'}</span>`}`;
+            ${o ? `<span class="tag">Lv.${o.lv}</span><span class="tag" style="color:var(--gold-hi)">${'★'.repeat(o.star)}${'☆'.repeat(Growth.MAX_STAR - o.star)}</span>${o.awk ? '<span class="tag awk-tag">已覺醒</span>' : ''}<span class="tag">戰力 ${heroPower(id).toLocaleString()}</span>` : `<span class="tag" style="color:var(--muted)">未擁有：${id === R.QUESTS.pass.finalHero ? `通行證第 ${R.QUESTS.pass.heroLevel} 級取得` : id === 'uther' ? 'S1 限定招募取得' : '招募取得'}</span>`}`;
         if (detailTab === 'gear' && !gearOpen()) detailTab = 'info';
         const tabs = o ? `<div class="dt-tabs"><button class="${detailTab === 'info' ? 'on' : ''}" data-tab="info">資料</button><button class="${detailTab === 'grow' ? 'on' : ''}" data-tab="grow">養成</button>${gearOpen() ? `<button class="${detailTab === 'gear' ? 'on' : ''}" data-tab="gear">裝備</button>` : '<button disabled title="打完第 1 章開放">裝備 🔒</button>'}</div>` : '';
         let body = '';
@@ -899,7 +899,7 @@
         $('#pass-chip').innerHTML = `${ICON('m_pass')}<span class="pc-t">通行證 <b>Lv ${lv}</b></span><span class="pc-bar"><i style="width:${into}%"></i></span><span class="pc-q">${ICON('m_quest')}任務</span>${Quests.hasClaimable(S) ? '<i class="dot"></i>' : ''}`;
     }
     let questTab = 'daily';
-    const qReward = r => Object.entries(r || {}).map(([k, v]) => k === 'hero' ? `<span class="rw">UR ${short(R.HEROES[v].name)}</span>` : k === 'gear' ? `<span class="rw">${ICON('chest')}${R.GEAR.QUALITY[v.q].name}套裝 ×1</span>` : `<span class="rw">${CUR[k].icon}${fmt(v)}</span>`).join('');
+    const qReward = r => Object.entries(r || {}).map(([k, v]) => k === 'shards' ? `<span class="rw"><img class="ico" src="${face(R.HEROES[QP.finalHero].img)}" alt="" style="border-radius:50%">碎片 ×${v}</span>` : k === 'hero' ? `<span class="rw">UR ${short(R.HEROES[v].name)}</span>` : k === 'gear' ? `<span class="rw">${ICON('chest')}${R.GEAR.QUALITY[v.q].name}套裝 ×1</span>` : `<span class="rw">${CUR[k].icon}${fmt(v)}</span>`).join('');
     function qRow(t, prog, claimed, kind) {
         const done = prog >= t.n;
         return `<div class="qrow ${claimed ? 'claimed' : done ? 'done' : ''}">
@@ -928,10 +928,10 @@
         } else {
             const cells = QP.rewards.map((r, i) => {
                 const l = i + 1, got = q.pClaim[l], open = l <= lv, big = l % 5 === 0;
-                return `<button class="pcell ${big ? 'big' : ''} ${got ? 'got' : open ? 'ready' : ''} ${l === 50 ? 'final' : ''}" data-pl="${l}">
-                    <span class="pl">${l}</span>${l === 50 ? `<img class="pf" src="${face(R.HEROES[QP.finalHero].img)}" alt="">` : ''}<div class="prw">${qReward(r)}</div>${got ? '<span class="pg">✓</span>' : ''}</button>`;
+                return `<button class="pcell ${big ? 'big' : ''} ${got ? 'got' : open ? 'ready' : ''} ${l === QP.heroLevel ? 'final' : ''}" data-pl="${l}">
+                    <span class="pl">${l}</span>${l === QP.heroLevel ? `<img class="pf" src="${face(R.HEROES[QP.finalHero].img)}" alt="">` : ''}<div class="prw">${qReward(r)}</div>${got ? '<span class="pg">✓</span>' : ''}</button>`;
             }).join('');
-            body = `<div class="row" style="margin:0 0 8px"><span class="muted">第 50 級得到 UR 莫瑟斯；50 級之後每 ${QP.chestPer} 勳章開一個寶箱。偶爾沒上線，落後時勳章會加倍。</span><div class="sp"></div>
+            body = `<div class="row" style="margin:0 0 8px"><span class="muted">第 ${QP.heroLevel} 級得到 UR 莫瑟斯，第 20、30、40、50 級再給他的碎片（共 300，可以升到 5★ 覺醒）；50 級之後每 ${QP.chestPer} 勳章開一個寶箱。偶爾沒上線，落後時勳章會加倍。</span><div class="sp"></div>
                 ${Quests.chestsReady(S) ? `<button class="btn" data-qc="c:chest">開寶箱（${Quests.chestsReady(S)}）</button>` : ''}<button class="btn primary" data-qc="p:all">全部領取</button></div>
                 <div class="pgrid">${cells}</div>`;
         }

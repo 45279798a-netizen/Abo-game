@@ -23,6 +23,8 @@
         const dk = dayKey(now), wk = weekKey(now);
         if (q.day !== dk) { q.day = dk; q.daily = {}; q.dClaim = {}; q.dBonus = false; }
         if (q.week !== wk) { q.week = wk; q.weekly = {}; q.wClaim = {}; }
+        // 11/15 通行證改版：莫瑟斯從第 50 級移到第 10 級。已經領過第 10 級的人補發
+        if (q.pClaim[P.heroLevel] && S.heroes && !S.heroes[P.finalHero] && !q.heroFix && window.Save) { window.Save.addHero(S, P.finalHero); q.heroFix = true; }
         return q;
     }
 
@@ -59,6 +61,12 @@
         const out = {};
         for (const [k, v] of Object.entries(r)) {
             if (k === 'gear') { out.gear = window.Gear.make(S, rand, {q: v.q, slot: undefined, set: Object.keys(R.GEAR.SETS)[Math.floor(rand() * 6)]}); continue; }
+            if (k === 'shards') {   // 通行證英雄的碎片（還沒有他就先給英雄）
+                const id = P.finalHero;
+                if (!S.heroes[id]) window.Save.addHero(S, id);
+                out.shards = {id, n: v, ...window.Growth.giveShards(S, id, v)};
+                continue;
+            }
             if (k === 'hero') {
                 if (S.heroes[v]) { window.Growth.giveShards(S, v, 80); out.shards = {id: v, n: 80}; }
                 else { window.Save.addHero(S, v); out.hero = v; }

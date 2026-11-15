@@ -28,20 +28,21 @@ RES.QUESTS = {
         levels: 50,
         perLevel: 100,              // 每級 100 勳章
         pacePerDay: 280,            // 正常進度：每天 280 勳章；落後超過一天就加倍追趕
-        finalHero: 'mortheus',
+        finalHero: 'mortheus',      // 通行證英雄：第 heroLevel 級取得，之後幾級給他的碎片（shards）
+        heroLevel: 10,
         chestPer: 100,              // 50 級之後，每 100 勳章開一個寶箱
         chest: {gold: 8000, exp: 30, stone: 25, dust: 20},
     },
 };
 
-// 通行證每一級的獎勵：每 5 級大獎，第 50 級莫瑟斯，其他輪流給素材
+// 通行證每一級的獎勵：每 5 級大獎；第 10 級莫瑟斯，第 20、30、40、50 級給莫瑟斯碎片（共 300，剛好 4★ 升 5★ 可以覺醒）；其他輪流給素材
 RES.QUESTS.pass.rewards = (function () {
     const out = [];
     const small = [{gold: 6000}, {exp: 40}, {stone: 40}, {brk: 5}, {book: 1}];
     const big = {
-        5: {gem: 300, ticket: 2}, 10: {ltdTicket: 2, gem: 200}, 15: {gear: {q: 3}, gem: 200}, 20: {ltdTicket: 3, book: 3},
-        25: {gem: 500, ticket: 3}, 30: {gear: {q: 4}, ltdTicket: 2}, 35: {gem: 500, book: 4}, 40: {ltdTicket: 5, dust: 200},
-        45: {gear: {q: 4}, gem: 500}, 50: {hero: 'mortheus'},
+        5: {gem: 300, ticket: 2}, 10: {hero: 'mortheus', ltdTicket: 2, gem: 200}, 15: {gear: {q: 3}, gem: 200}, 20: {ltdTicket: 3, book: 3, shards: 50},
+        25: {gem: 500, ticket: 3}, 30: {gear: {q: 4}, ltdTicket: 2, shards: 50}, 35: {gem: 500, book: 4}, 40: {ltdTicket: 5, dust: 200, shards: 100},
+        45: {gear: {q: 4}, gem: 500}, 50: {shards: 100, gem: 500},
     };
     for (let lv = 1; lv <= 50; lv++) out.push(big[lv] || small[(lv - 1) % small.length]);
     return out;
