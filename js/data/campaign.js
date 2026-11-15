@@ -282,7 +282,7 @@ RES.CAMPAIGN = {
         if (info.rounds <= s.rounds) stars++;
         const prev = S.campaign.stars[k] || 0;
         const first = !prev;
-        const reward = first ? firstReward(ch, st) : repeatReward(ch, st);
+        const reward = R.applyDrop ? R.applyDrop(first ? firstReward(ch, st) : repeatReward(ch, st)) : (first ? firstReward(ch, st) : repeatReward(ch, st));
         S.campaign.stars[k] = Math.max(prev, stars);
         window.Quests && window.Quests.track(S, 'battle'); if (first) window.Quests && window.Quests.track(S, 'firstClear');
         for (const [c, v] of Object.entries(reward)) S.currency[c] = (S.currency[c] || 0) + v;

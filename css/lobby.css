@@ -497,3 +497,55 @@ a { color: inherit; text-decoration: none; }
 .sk.awk .k { color: #f0abfc; }
 .tag.awk-tag { color: #f0abfc; border-color: #f0abfc; }
 @media (max-height: 430px) { .tcard { height: 82px; } }
+
+/* ── 多人：登入門檻、排行榜、信箱、全服巫妖王、管理員 ── */
+.login-gate { position: fixed; inset: 0; z-index: 200; display: none; place-items: center; background: radial-gradient(ellipse at 50% 40%, rgba(40,60,20,.55), rgba(0,0,0,.92)), url(../assets/hd/lobby_capital.webp) center / cover; }
+.login-gate.show { display: grid; }
+.lg-box { width: min(420px, 90vw); padding: 22px 22px 18px; border-radius: 16px; background: rgba(14,10,6,.86); border: 1px solid var(--gold); text-align: center; box-shadow: 0 10px 40px #000; }
+.lg-brand { font-size: 11px; letter-spacing: 4px; color: var(--muted); }
+.lg-title { font-size: 24px; font-weight: 900; letter-spacing: 3px; margin: 4px 0 12px; }
+.lg-title b { color: #84cc16; font-family: Georgia, serif; margin-right: 4px; }
+.lg-p { font-size: 13px; color: var(--text); margin: 8px 0 14px; line-height: 1.6; }
+.lg-google { display: inline-flex; align-items: center; gap: 10px; padding: 10px 22px; border-radius: 999px; background: #fff; color: #222; font-weight: 800; font-size: 15px; }
+.lg-google .g { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; color: #fff; background: conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0); }
+.lg-err { color: #fca5a5; font-size: 12.5px; margin: 12px 0 0; }
+.lg-off { display: block; margin: 12px auto 0; font-size: 12px; color: var(--muted); text-decoration: underline; }
+.lg-pick { display: flex; gap: 8px; }
+.lg-pick button { flex: 1; padding: 10px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 12px; line-height: 1.6; color: var(--text); }
+.lg-pick button b { display: block; font-size: 14px; color: var(--gold-hi); margin-bottom: 4px; }
+.lg-pick button:hover { border-color: var(--gold); }
+.lb-mini-btn { position: relative; }
+.lb-mini-btn .dot { position: absolute; top: 3px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px #ef4444; display: none; }
+.lb-mini-btn .dot.on { display: block; }
+.rk-list { display: flex; flex-direction: column; gap: 4px; }
+.rk-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,.05); font-size: 13px; }
+.rk-row b { width: 28px; text-align: center; color: var(--muted); }
+.rk-row span { flex: 1; }
+.rk-row em { font-style: normal; font-weight: 800; color: var(--gold-hi); }
+.rk-row.top1 b { color: #fbbf24; } .rk-row.top2 b { color: #e5e7eb; } .rk-row.top3 b { color: #d97706; }
+.rk-row.me { border: 1px solid var(--gold); background: rgba(240,180,60,.12); }
+.mail { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 10px; background: rgba(255,255,255,.05); margin-bottom: 6px; }
+.mail.claimed { opacity: .55; }
+.mail .m-main { flex: 1; min-width: 0; }
+.mail .m-main b { font-size: 14px; margin-right: 8px; }
+.mail p { margin: 4px 0; font-size: 12.5px; color: var(--text); white-space: pre-wrap; }
+.wb-box { padding: 8px 10px; border-radius: 10px; background: rgba(132,204,22,.08); border: 1px solid rgba(132,204,22,.35); margin: 6px 0; font-size: 12.5px; }
+.wb-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wb-bar { height: 9px; border-radius: 5px; background: rgba(0,0,0,.5); overflow: hidden; margin: 6px 0; }
+.wb-bar i { display: block; height: 100%; background: linear-gradient(90deg, #4d7c0f, #a3e635); }
+.wb-sub { color: var(--muted); font-size: 11.5px; }
+.wb-top { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }
+.wb-top li b { color: var(--gold-hi); margin-right: 4px; }
+.wb-top li span { margin-left: 4px; color: var(--muted); }
+.adm h4 { margin: 12px 0 6px; color: var(--gold-hi); }
+.adm-f { display: flex; flex-direction: column; gap: 6px; }
+.adm-f.row { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.adm input, .adm textarea { background: rgba(0,0,0,.4); border: 1px solid var(--line); border-radius: 8px; color: var(--text); padding: 6px 8px; font: inherit; font-size: 13px; }
+.adm textarea { min-height: 54px; resize: vertical; }
+.adm-cur { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px; }
+.adm-cur label { display: flex; align-items: center; gap: 4px; }
+.adm-cur input { width: 100%; min-width: 0; }
+.adm .chk { display: flex; align-items: center; gap: 4px; }
+.adm-f.row input[type=number] { width: 120px; }
+.adm-mail { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+.adm-mail small { flex: 1; }

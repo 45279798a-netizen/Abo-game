@@ -71,14 +71,22 @@
         return s;
     }
 
+    // savedAt：最後存檔時間（登入時跟雲端存檔比新舊用）；有登入時通知 Online 排程上傳
     function save(s) {
+        s.savedAt = Date.now();
         try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { console.warn('存檔寫入失敗', e); }
+        if (window.Online) window.Online.onSave(s);
     }
 
     function reset() {
         try { localStorage.removeItem(KEY); } catch (e) { /* 無法存取 */ }
         return load();
     }
+
+    // 管理員設定的掉落倍率（大廳登入時從雲端讀，存在 localStorage，戰鬥頁也讀得到）
+    R.dropMult = () => { try { return Number(JSON.parse(localStorage.getItem('abo_s1_cfg') || '{}').dropMult) || 1; } catch (e) { return 1; } };
+    // 套用掉落倍率：鑽石、招募券不受影響
+    R.applyDrop = r => { const m = R.dropMult(); if (m === 1) return r; const o = {}; for (const [k, v] of Object.entries(r)) o[k] = ['gem', 'ticket', 'ltdTicket'].includes(k) ? v : Math.round(v * m); return o; };
 
     window.Save = {load, save, reset, addHero, fresh, START_STAR, KEY};
 })();

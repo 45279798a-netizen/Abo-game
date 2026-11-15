@@ -19,6 +19,7 @@ js/data/      elements（屬性）factions（陣營被動、能量）heroes（22
 js/core/      battle.js（戰鬥引擎）save.js（本機存檔）gacha.js（招募機率與保底）growth.js（養成）gear.js（裝備）
               quests.js（任務與通行證）season.js（賽季：巫妖王試煉、亡靈之塔、困難主線、賽季商店、結算；關卡規則 RES.MODS）
               ※ js/data/season_table.js：賽季難度（tools/calibrate_season.js 產生）
+js/online/    online.js（Google 登入、雲端存檔、排行榜、全服巫妖王、信箱、管理員）config.js（Firebase 網頁設定）
 js/lobby/     main.js（大廳畫面）
 js/hd2d/      main.js（橫式戰場）
 js/vfx/       特效播放、特效庫、獨立特效、命中定格
@@ -189,3 +190,21 @@ node tools/sim_campaign.js 30             # 用兩支隊伍檢查各章代表關
 - **賽季商店**（賽季徽章）：烏瑟碎片、限定招募券、招募券、傳說套裝、覺醒石、技能書、突破石、強化石、金幣；每週限購。
 - **賽季結算**：滿 28 天後第一次進大廳時結算。依巫妖王最高階與塔的最高層給鑽石、招募券與稱號；通行證沒領的自動領；通行證、巫妖王、塔、商店重新計算，其他保留。
 - 改了英雄、敵人、覺醒或規則後重跑 `node tools/calibrate_season.js`（可以只跑 `tower`、`hard` 或 `lich`）。
+
+## 多人功能（Firebase 專案 abogames）
+
+程式在 `js/online/online.js`，安全規則在 `firestore.rules`，Firebase SDK 放在 `vendor/firebase/`（不靠外部 CDN）。
+- **一定要登入**：大廳先顯示登入門檻（Google 登入），登入、處理完存檔後才載入 `js/lobby/main.js`。這個網址登入不了時（網域沒授權、試玩頁）門檻會多一個「離線遊玩」。
+- **雲端存檔** `s1_saves/{uid}`：存檔改變後最多每 60 秒上傳一次，切到背景或離開頁面時立刻上傳。登入時比較「這台裝置」和「雲端」哪一份比較新（存檔的 `savedAt`）；這台裝置有登入前的進度、雲端也有時，讓玩家選。
+- **排行榜** `s1_players/{uid}`：主線進度、隊伍戰力、亡靈之塔（本季）、巫妖王（本週）前 100 名。
+- **全服巫妖王** `s1_boss/{週}`：巫妖王試煉的傷害先記在存檔 `S.online.hits`，回大廳時送上去扣全服血量（不另外花次數）。打倒的人會建立那一週的獎勵信 `s1_mail/wb_{週}`，依傷害排名，參加的人都有基本獎勵、前 3 名加碼。
+- **信箱** `s1_mail`：全服信件，保留 30 天，領過的記在存檔 `S.mail`。
+- **管理員後台**（設定 → 後台，只有 `s1_admins/{你的 uid}` 存在時看得到）：寄信給所有人、開關全服首領、設定血量、重置本週、掉落倍率（`s1_config/current`，主線／副本／試煉的金幣與素材，鑽石與招募券不變）。
+- **測試**：`tools/fake_firebase.js` 是假的 Firebase（資料存在 localStorage），瀏覽器測試時把 `vendor/firebase/firebase-app-compat.js` 換成它。
+
+### 第一次設定（Firebase 主控台）
+1. Authentication → 登入方式 → 啟用 **Google**
+2. Authentication → 設定 → 已授權網域 → 加上 GitHub Pages 的網域（例如 `你的帳號.github.io`）
+3. Firestore Database → 規則 → 貼上 `firestore.rules` 的內容（舊版用的 players、saves、gameConfig 那幾段原本的規則要留著的話，貼在檔案最下面標示的位置）→ 發布
+4. 用 Google 登入遊戲一次，到 Authentication → Users 複製自己的 **使用者 UID**
+5. Firestore Database → 資料 → 新增集合 `s1_admins` → 文件 ID 貼上那個 UID（欄位隨便加一個，例如 `name`）→ 重新整理遊戲，設定頁會出現「後台」

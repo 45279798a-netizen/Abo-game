@@ -72,7 +72,8 @@ RES.DUNGEONS = {
 
     function grant(S, kind, id, f, stars, rand) {
         const r = {};
-        for (const [k, v] of Object.entries(baseReward(kind, id, f))) r[k] = Math.round(v * STAR_K[stars]);
+        const base = R.applyDrop ? R.applyDrop(baseReward(kind, id, f)) : baseReward(kind, id, f);   // 管理員的掉落倍率
+        for (const [k, v] of Object.entries(base)) r[k] = Math.round(v * STAR_K[stars]);
         for (const [k, v] of Object.entries(r)) S.currency[k] = (S.currency[k] || 0) + v;
         const gear = [];
         if (kind === 'set') {

@@ -1,0 +1,53 @@
+rules_version = '2';
+// Project Resonance S1 的 Firestore 安全規則。
+// 貼到 Firebase 主控台 → Firestore Database → 規則。S1 的資料都在 s1_ 開頭的集合。
+// 舊版（legacy 分支）用的 players、saves、gameConfig 規則不在這裡：如果還要讓舊版能用，把原本規則裡那幾段 match 貼到最下面。
+// 管理員：在 s1_admins 集合新增一筆文件，文件 ID 填你的 uid（登入一次後到 Authentication → Users 看）。
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/s1_admins/$(request.auth.uid)); }
+
+    // 雲端存檔：只有自己能讀寫
+    match /s1_saves/{uid} {
+      allow read, write: if isMe(uid);
+    }
+    // 排行榜：登入的人都能看，只能改自己的
+    match /s1_players/{uid} {
+      allow read: if signedIn();
+      allow write: if isMe(uid);
+    }
+    // 管理員名單：只能看自己是不是管理員，不能自己加
+    match /s1_admins/{uid} {
+      allow read: if isMe(uid);
+      allow write: if false;
+    }
+    // 管理員設定（掉落倍率、全服首領開關與血量）
+    match /s1_config/{doc} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    // 全服巫妖王：血量只能往下扣（管理員可以重置）
+    match /s1_boss/{week} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if isAdmin() || (signedIn() && request.resource.data.hp <= resource.data.hp && request.resource.data.max == resource.data.max);
+      allow delete: if isAdmin();
+      // 每個人的傷害：只能改自己的那筆
+      match /hits/{uid} {
+        allow read: if signedIn();
+        allow write: if isMe(uid);
+        allow delete: if isAdmin();
+      }
+    }
+    // 全服信件：管理員寄；全服首領被打倒時，打倒的人可以建立那一週的獎勵信（只能建立、不能改）
+    match /s1_mail/{id} {
+      allow read: if signedIn();
+      allow create: if isAdmin() || (signedIn() && id.matches('wb_.*') && request.resource.data.kind == 'worldboss');
+      allow update, delete: if isAdmin();
+    }
+
+    // ── 舊版（legacy 分支）用的 players、saves、gameConfig：把你原本規則裡那幾段 match 貼在這裡 ──
+  }
+}

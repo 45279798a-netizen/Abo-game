@@ -81,7 +81,7 @@
     function openPanel(name) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
         const p = $('#panel-' + name);
-        ({battle: renderBattle, trial: renderTrial, quest: renderQuest, hero: renderHero, gacha: renderGacha, bag: renderBag, settings: renderSettings})[name]?.();
+        ({battle: renderBattle, trial: renderTrial, quest: renderQuest, hero: renderHero, gacha: renderGacha, bag: renderBag, settings: renderSettings, rank: renderRank, mail: renderMail, admin: renderAdmin})[name]?.();
         p.classList.add('show');
     }
     function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('show')); renderMain(); }
@@ -656,9 +656,14 @@
         const m = modal(`<h3>${ICON('m_boss')} 巫妖王試煉</h3>
             <p class="muted">打 ${SE.lich.rounds} 回合（或全隊倒下為止），看對巫妖王造成多少傷害，傷害越高階數越高。巫妖王每過 1 回合傷害 +${Math.round(SE.lich.ramp * 100)}%，撐得越久分數越高。每天 ${SE.lich.perDay} 次；每週一換詞綴，「本週首次」獎勵也會重置。</p>
             <div class="mods"><span class="muted">本週詞綴</span>${modHtml(afx)}</div>
+            <div id="wb-box" class="wb-box"><span class="muted">讀取全服巫妖王…</span></div>
             <div class="flist">${rows}</div>
             <div class="row"><span>本週最高：第 <b>${st.best || 0}</b> 階${st.bestDmg ? `（傷害 ${fmt(st.bestDmg)}）` : ''}　今天還有 <b>${left}</b> 次</span><div class="sp"></div><button class="btn primary" id="lich-go" ${left > 0 ? '' : 'disabled'}>出戰</button></div>`, 'floors');
         m.querySelector('#lich-go').onclick = () => { m.remove(); launchSeason({lich: {}}); };
+        // 全服巫妖王（有登入才有）
+        const wbBox = m.querySelector('#wb-box');
+        if (OL.user && OL.bossOn()) OL.boss().then(b => { wbBox.innerHTML = worldBossHtml(b); }).catch(() => { wbBox.innerHTML = '<span class="muted">全服巫妖王讀取失敗</span>'; });
+        else wbBox.remove();
     }
     function showTower() {
         const best = Season.towerBest(S), next = best + 1;
@@ -689,6 +694,129 @@
             toast(r.got.gear ? `獲得 ${R.GEAR.QUALITY[r.got.gear.q].name}${r.got.gear.set ? GR.SETS[r.got.gear.set].name : ''}${GR.SLOTS[r.got.gear.slot].name}` : r.got.shards ? (r.got.shards.dust ? `已滿星，轉成星塵 ${r.got.shards.dust}` : '獲得碎片') : '兌換成功');
         }; });
     }
+    // ───────── 多人：帳號、排行榜、全服巫妖王、信箱、管理員 ─────────
+    const OL = window.Online || {user: null, offline: true, bossOn: () => false};
+    const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
+    function accountRow() {
+        if (!OL.user) return `<div class="set-row"><b>帳號</b><span class="sp">離線遊玩中，進度只存在這台裝置。重新整理頁面可以再試著登入。</span></div>`;
+        const t = OL.lastSync ? new Date(OL.lastSync).toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'}) : '—';
+        return `<div class="set-row"><b>帳號</b><span class="sp">${esc(OL.user.displayName || 'Google 帳號')}（${esc(OL.user.email || '')}）<br><small>雲端存檔：最後同步 ${t}${OL.syncState ? '・' + OL.syncState : ''}</small></span>
+            <button class="btn" id="set-sync">立即同步</button><button class="btn" id="set-out">登出</button></div>
+            ${OL.admin ? '<div class="set-row"><b>管理員</b><span class="sp">寄信、全服首領、掉落倍率</span><button class="btn primary" data-open="admin">後台</button></div>' : ''}`;
+    }
+    function bindAccount(p) {
+        const sy = p.querySelector('#set-sync'), out = p.querySelector('#set-out');
+        if (sy) sy.onclick = async () => { sy.disabled = true; await OL.syncNow(true); OL.pushStats().catch(() => {}); toast(OL.syncState || '已同步到雲端'); renderSettings(); };
+        if (out) out.onclick = () => { if (confirm('要登出嗎？登出後要再登入才能玩。')) OL.signOut(); };
+    }
+    function worldBossHtml(b) {
+        const pct = Math.max(0, b.hp / b.max * 100);
+        const top = b.top.slice(0, 5).map((x, i) => `<li><b>${i + 1}</b>${esc(x.name)}<span>${fmt(x.dmg)}</span></li>`).join('') || '<li class="muted">還沒有人挑戰</li>';
+        return `<div class="wb-h"><b>${ICON('m_boss')} 全服巫妖王</b><span class="muted">${b.dead ? `已被 ${esc(b.killer)} 擊倒！獎勵寄到信箱了` : `剩 ${fmt(b.hp)} / ${fmt(b.max)}`}</span></div>
+            <div class="wb-bar"><i style="width:${pct}%"></i></div>
+            <div class="wb-sub">巫妖王試煉造成的傷害會自動算進全服血量（不另外花次數）。打倒後，參加的人都會收到獎勵信，傷害前 3 名另外加碼。我這週累計 <b>${fmt(b.mine)}</b>。</div>
+            <ol class="wb-top">${top}</ol>`;
+    }
+    // 排行榜
+    let rankTab = 'progress';
+    async function renderRank() {
+        const p = $('#panel-rank');
+        const tabs = `<div class="filters" style="margin-bottom:8px">${Object.entries(OL.BOARDS || {}).map(([k, b]) => `<button class="${rankTab === k ? 'on' : ''}" data-rk="${k}">${b.name}</button>`).join('')}</div>`;
+        p.innerHTML = head('排行榜') + `<div class="pbody">${OL.user ? tabs + '<div id="rk-list" class="rk-list"><p class="muted">讀取中…</p></div>' : '<p class="muted">離線遊玩中，看不到排行榜。</p>'}</div>`;
+        p.querySelectorAll('[data-rk]').forEach(b => { b.onclick = () => { rankTab = b.dataset.rk; renderRank(); }; });
+        if (!OL.user) return;
+        const tab = rankTab;
+        try {
+            await OL.pushStats();
+            const rows = await OL.board(tab);
+            if (tab !== rankTab) return;
+            const B = OL.BOARDS[tab];
+            const me = rows.findIndex(x => x.uid === OL.user.uid);
+            $('#rk-list').innerHTML = (rows.length ? rows.map((x, i) => `<div class="rk-row ${x.uid === OL.user.uid ? 'me' : ''} ${i < 3 ? 'top' + (i + 1) : ''}"><b>${i + 1}</b><span>${esc(x.name)}</span><em>${B.fmt(x.v)}</em></div>`).join('') : '<p class="muted">還沒有資料</p>')
+                + `<p class="muted" style="margin-top:6px">${me >= 0 ? `你是第 ${me + 1} 名。` : ''}前 100 名；排名在你打開排行榜或同步存檔時更新。${tab === 'lich' ? '巫妖王每週一重置。' : tab === 'tower' ? '亡靈之塔每季重置。' : ''}</p>`;
+        } catch (e) { $('#rk-list').innerHTML = `<p class="muted">讀取失敗：${esc(e.message)}</p>`; }
+    }
+    // 信箱
+    async function refreshMailDot() {
+        if (!OL.user) return;
+        const n = await OL.unreadMail(S);
+        const d = $('#mail-dot');
+        if (d) d.classList.toggle('on', n > 0);
+    }
+    async function renderMail() {
+        const p = $('#panel-mail');
+        p.innerHTML = head('信箱') + `<div class="pbody">${OL.user ? '<div id="mail-list"><p class="muted">讀取中…</p></div>' : '<p class="muted">離線遊玩中，收不到信。</p>'}</div>`;
+        if (!OL.user) return;
+        let list;
+        try { list = await OL.mails(); } catch (e) { $('#mail-list').innerHTML = `<p class="muted">讀取失敗：${esc(e.message)}</p>`; return; }
+        const got = S.mail || {};
+        const rows = list.map(m => {
+            const rw = OL.mailReward(m), claimed = got[m.id];
+            return `<div class="mail ${claimed ? 'claimed' : ''}"><div class="m-main"><b>${m.kind === 'worldboss' ? ICON('m_boss') : ICON('m_quest')} ${esc(m.title)}</b><small class="muted">${new Date(m.createdAt).toLocaleDateString('zh-TW')}</small>
+                <p>${esc(m.body)}</p><div class="rws">${anyReward(rw)}${m.kind === 'worldboss' && m.ranks?.[OL.user.uid] <= 3 ? `<span class="rw">傷害第 ${m.ranks[OL.user.uid]} 名加碼</span>` : ''}</div></div>
+                ${claimed ? '<span class="q-ok">已領取</span>' : Object.keys(rw).length ? `<button class="btn primary" data-mc="${m.id}">領取</button>` : '<span class="muted">公告</span>'}</div>`;
+        }).join('');
+        const can = list.filter(m => !got[m.id] && Object.keys(OL.mailReward(m)).length);
+        $('#mail-list').innerHTML = (list.length ? `<div class="row" style="margin:0 0 8px"><span class="muted">保留 30 天內的信</span><div class="sp"></div>${can.length ? `<button class="btn primary" data-mc="all">全部領取（${can.length}）</button>` : ''}</div>` + rows : '<p class="muted">沒有信件</p>');
+        $('#mail-list').querySelectorAll('[data-mc]').forEach(b => { b.onclick = () => {
+            const ids = b.dataset.mc === 'all' ? can.map(m => m.id) : [b.dataset.mc];
+            const sum = {};
+            for (const id of ids) { const r = OL.claimMail(S, list.find(m => m.id === id)); if (r.ok) for (const [k, v] of Object.entries(r.reward)) sum[k] = (sum[k] || 0) + v; }
+            save(); OL.syncNow(true); renderCurrency(); renderMail(); refreshMailDot();
+            toast('領取 ' + rewardText(sum));
+        }; });
+    }
+    // 管理員後台
+    async function renderAdmin() {
+        const p = $('#panel-admin');
+        if (!OL.admin) { p.innerHTML = head('管理員後台') + '<div class="pbody"><p class="muted">你不是管理員。</p></div>'; return; }
+        await OL.loadCfg();
+        const c = OL.cfg;
+        const cur = ['gem', 'ltdTicket', 'ticket', 'gold', 'exp', 'brk', 'book', 'stone', 'awk', 'badge'];
+        p.innerHTML = head('管理員後台') + `<div class="pbody adm">
+            <h4>寄信給所有人</h4>
+            <div class="adm-f"><input id="am-title" placeholder="標題" maxlength="30"><textarea id="am-body" placeholder="內容" maxlength="300"></textarea>
+                <div class="adm-cur">${cur.map(k => `<label>${CUR[k].icon}<input type="number" min="0" data-ck="${k}" placeholder="${CUR[k].name}"></label>`).join('')}</div>
+                <button class="btn primary" id="am-send">寄出</button></div>
+            <h4>全服巫妖王</h4>
+            <div class="adm-f row"><label class="chk"><input type="checkbox" id="ab-on" ${OL.bossOn() ? 'checked' : ''}> 開啟</label>
+                <label>血量 <input type="number" id="ab-max" value="${OL.bossMax()}" step="100000" min="10000"></label>
+                <button class="btn" id="ab-save">儲存</button><button class="btn" id="ab-reset">重置本週血量</button></div>
+            <div id="ab-now" class="muted">讀取中…</div>
+            <h4>掉落倍率</h4>
+            <div class="adm-f row"><label>主線、副本、試煉的金幣與素材 × <input type="number" id="ad-mult" value="${c.dropMult || 1}" step="0.5" min="0.5" max="5"></label><button class="btn" id="ad-save">儲存</button>
+                <span class="muted">鑽石、招募券不受影響；玩家下次進大廳時生效</span></div>
+            <h4>已寄出的信</h4><div id="am-list" class="muted">讀取中…</div>
+        </div>`;
+        const reload = () => renderAdmin();
+        p.querySelector('#am-send').onclick = async () => {
+            const title = p.querySelector('#am-title').value.trim(), body = p.querySelector('#am-body').value.trim();
+            const reward = {};
+            p.querySelectorAll('[data-ck]').forEach(i => { const v = Math.floor(+i.value || 0); if (v > 0) reward[i.dataset.ck] = v; });
+            if (!title) return toast('要有標題');
+            if (!confirm(`要把「${title}」寄給所有玩家嗎？${Object.keys(reward).length ? '\n附件：' + Object.entries(reward).map(([k, v]) => CUR[k].name + ' ' + v).join('、') : ''}`)) return;
+            try { await OL.sendMail({title, body, reward}); toast('已寄出'); reload(); refreshMailDot(); } catch (e) { toast('寄送失敗：' + e.message); }
+        };
+        p.querySelector('#ab-save').onclick = async () => {
+            try { await OL.setCfg({bossActive: p.querySelector('#ab-on').checked, bossMax: Math.max(10000, Math.floor(+p.querySelector('#ab-max').value))}); toast('已儲存（血量從下次重置或下週起生效）'); reload(); } catch (e) { toast('儲存失敗：' + e.message); }
+        };
+        p.querySelector('#ab-reset').onclick = async () => {
+            if (!confirm('要把本週全服巫妖王的血量回滿、清掉所有人的傷害紀錄嗎？已經寄出的獎勵信不受影響。')) return;
+            try { await OL.resetBoss(Math.max(10000, Math.floor(+p.querySelector('#ab-max').value))); toast('已重置'); reload(); } catch (e) { toast('重置失敗：' + e.message); }
+        };
+        p.querySelector('#ad-save').onclick = async () => {
+            const m = Math.min(5, Math.max(0.5, +p.querySelector('#ad-mult').value || 1));
+            try { await OL.setCfg({dropMult: m}); toast(`掉落倍率 ×${m}`); } catch (e) { toast('儲存失敗：' + e.message); }
+        };
+        OL.boss().then(b => { const el = p.querySelector('#ab-now'); if (el) el.innerHTML = worldBossHtml(b); }).catch(e => { const el = p.querySelector('#ab-now'); if (el) el.textContent = '讀取失敗：' + e.message; });
+        OL.mails().then(list => {
+            const el = p.querySelector('#am-list');
+            if (!el) return;
+            el.innerHTML = list.map(m => `<div class="adm-mail"><b>${esc(m.title)}</b><small>${new Date(m.createdAt).toLocaleString('zh-TW')}</small><button class="btn" data-del="${m.id}">刪除</button></div>`).join('') || '沒有信';
+            el.querySelectorAll('[data-del]').forEach(b => { b.onclick = async () => { if (!confirm('刪除這封信？還沒領的人就領不到了。')) return; await OL.deleteMail(b.dataset.del); reload(); }; });
+        }).catch(e => { const el = p.querySelector('#am-list'); if (el) el.textContent = '讀取失敗：' + e.message; });
+    }
+
     // 賽季結算（滿 28 天後第一次進大廳）
     function checkSeasonEnd() {
         const ro = Season.rollover(S);
@@ -944,19 +1072,23 @@
     function renderSettings() {
         const p = $('#panel-settings');
         p.innerHTML = head('設定') + `<div class="pbody">
+            ${accountRow()}
             <div class="set-row"><b>旅團長名稱</b><span class="sp">${S.name}</span><button class="btn" id="set-name">修改</button></div>
             <div class="set-row"><b>賽季</b><span class="sp">S${Season.state(S).n}・第 ${Season.weekNo(S)} 週，還有 ${Season.daysLeft(S)} 天結算。${Season.state(S).titles.length ? '稱號：' + Season.state(S).titles.join('、') : '還沒有稱號'}</span></div>
+            <div class="set-row"><b>特效圖鑑</b><span class="sp">預覽所有技能特效</span><a class="btn" href="gallery.html">開啟</a></div>
             <div class="set-row"><b>戰鬥測試頁</b><span class="sp">舊的編隊畫面，可以任選 22 位英雄測試戰鬥（不影響存檔）</span><a class="btn" href="dev.html">開啟</a></div>
             <div class="set-row"><b>重置存檔</b><span class="sp">刪除所有進度、重新開始（無法復原）</span><button class="btn" id="set-reset">重置</button></div>
-            <div class="set-row"><b>存檔</b><span class="sp">目前存在這台裝置的瀏覽器裡；雲端存檔會在多人功能的階段加入。已招募 ${S.pulls} 次。</span></div>
+
         </div>`;
         p.querySelector('#set-name').onclick = () => {
             const n = prompt('旅團長名稱（最多 10 個字）', S.name);
             if (n && n.trim()) { S.name = n.trim().slice(0, 10); save(); renderSettings(); }
         };
+        bindAccount(p);
         p.querySelector('#set-reset').onclick = () => {
-            if (!confirm('確定要刪除所有進度、重新開始嗎？這個動作無法復原。')) return;
+            if (!confirm(OL.user ? '確定要刪除所有進度、重新開始嗎？雲端存檔也會一起被覆蓋，這個動作無法復原。' : '確定要刪除所有進度、重新開始嗎？這個動作無法復原。')) return;
             S = Save.reset();
+            if (OL.user) { S.owner = OL.user.uid; save(); OL.syncNow(true); }
             closePanels();
             toast('存檔已重置');
         };
@@ -983,6 +1115,9 @@
     setTimeout(say, 800);
     // 從戰鬥回來：#map 打開地圖；#go=章-關 直接出戰下一關（會先播該播的劇情）
     checkSeasonEnd();
+    refreshMailDot();
+    // 從巫妖王試煉回來：把傷害送上全服血量
+    if (OL.user) OL.flushHits().then(killed => { if (killed) { toast('你打出了全服巫妖王的最後一擊！獎勵已經寄到信箱'); refreshMailDot(); } }).catch(() => {});
     const hm = location.hash.match(/^#(map|hmap|go|trial|lich|tower)(?:=(\d+)-(\d+))?/);
     if (hm) {
         history.replaceState(null, '', location.pathname);

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/lobby.css">
 </head>
 <body>
+<div id="login-gate" class="login-gate"></div>
 <div id="lobby">
     <div class="lb-bg"></div>
     <div class="lb-light"></div>
@@ -27,7 +28,8 @@
         <button class="lb-btn" data-open="gacha"><span class="i"><img src="assets/icons/m_gacha.webp" alt=""></span><span class="t">招募</span><span class="s" id="gacha-sub">S1 限定・烏瑟</span><i id="gacha-dot" class="dot"></i></button>
         <button class="lb-btn" data-open="bag"><span class="i"><img src="assets/icons/m_bag.webp" alt=""></span><span class="t">背包</span><span class="s">道具</span></button>
         <div class="lb-mini">
-            <a class="lb-mini-btn" href="gallery.html">特效圖鑑</a>
+            <button class="lb-mini-btn" data-open="rank">排行榜</button>
+            <button class="lb-mini-btn" data-open="mail">信箱<i id="mail-dot" class="dot"></i></button>
             <button class="lb-mini-btn" data-open="settings">設定</button>
         </div>
     </nav>
@@ -46,6 +48,9 @@
     <div id="hero-detail" class="detail"></div>
     <div id="pull-show" class="pull-show"></div>
     <div id="toast" class="toast"></div>
+    <section id="panel-rank" class="panel"></section>
+    <section id="panel-mail" class="panel"></section>
+    <section id="panel-admin" class="panel"></section>
     <div id="rotate-hint" class="rotate-hint">📱↻ 橫放手機效果最好 <button id="rotate-ok">知道了</button></div>
 </div>
 
@@ -68,6 +73,11 @@
 <script src="js/data/season_table.js"></script>
 <script src="js/core/season.js"></script>
 <script src="js/core/gacha.js"></script>
-<script src="js/lobby/main.js"></script>
+<!-- 多人功能：登入後才載入 js/lobby/main.js（由 online.js 載入） -->
+<script src="vendor/firebase/firebase-app-compat.js"></script>
+<script src="vendor/firebase/firebase-auth-compat.js"></script>
+<script src="vendor/firebase/firebase-firestore-compat.js"></script>
+<script src="js/online/config.js"></script>
+<script src="js/online/online.js"></script>
 </body>
 </html>

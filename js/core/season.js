@@ -146,6 +146,9 @@ RES.SEASON = {
         s.best = Math.max(s.best || 0, tier);
         s.top = Math.max(s.top || 0, tier);
         s.bestDmg = Math.max(s.bestDmg || 0, dmg);
+        // 全服巫妖王：傷害先記在存檔，回大廳時由 js/online/online.js 送上雲端
+        S.online = S.online || {};
+        (S.online.hits = S.online.hits || []).push({week: s.week, dmg});
         give(S, reward);
         const Q = window.Quests;
         if (Q) { Q.track(S, 'battle'); Q.track(S, 'lich'); }
