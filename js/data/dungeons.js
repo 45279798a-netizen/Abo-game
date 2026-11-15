@@ -90,6 +90,7 @@ RES.DUNGEONS = {
     const starsOf = (S, kind, id, f) => state(S).stars[key(kind, id, f)] || 0;
 
     function settle(S, kind, id, f, win, info, rand = Math.random) {
+        window.Quests && window.Quests.track(S, 'battle'); window.Quests && window.Quests.track(S, 'trial');
         if (!win) return {stars: 0, reward: {}, gear: []};
         let stars = 1;
         if (info.noDeath) stars++;
@@ -110,6 +111,7 @@ RES.DUNGEONS = {
         times = Math.min(times, sweepLeft(S));
         if (times <= 0) return {ok: false, reason: '今天的掃蕩次數用完了'};
         state(S).sweepUsed += times;
+        window.Quests && window.Quests.track(S, 'trial', times); window.Quests && window.Quests.track(S, 'battle', times);
         const total = {}, gear = [];
         for (let i = 0; i < times; i++) {
             const g = grant(S, kind, id, f, 3, rand);

@@ -41,6 +41,7 @@
         const key = pool === 'ltd' ? 'ltd' : 'std';
         const pity = s.pity[key];
         const out = [];
+        window.Quests && window.Quests.track(s, 'gacha', n);
         for (let i = 0; i < n; i++) {
             let rarity = rollRarity(pool, pity, rand);
             // 新手招募：最後一抽還沒出 SSR 就保證 SSR

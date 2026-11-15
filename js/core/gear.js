@@ -59,6 +59,7 @@
             if (it.subs.length < 4) { newSub(rand, it); note = 'new'; }
             else { const s = pick(rand, it.subs); s.v = round(s.k, s.v + rollSub(rand, s.k)); s.n++; note = s.k; }
         }
+        window.Quests && window.Quests.track(S, 'enhance'); if (it.lvl === 9) window.Quests && window.Quests.track(S, 'enhance9');
         return {ok: true, note};
     }
     const salvageValue = it => G.QUALITY[it.q].salvage + Math.floor((it.spent || 0) * 0.6);

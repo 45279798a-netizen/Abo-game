@@ -70,7 +70,7 @@
             if (!has(S, c)) break;
             pay(S, c); o.lv++; n++;
         }
-        if (n) return {ok: true, n};
+        if (n) { window.Quests && window.Quests.track(S, 'levelup', n); return {ok: true, n}; }
         if (o.lv >= MAX_LV) return {ok: false, reason: '已經是最高等級'};
         if (o.lv >= lvCap(o)) return {ok: false, reason: '需要先突破'};
         return {ok: false, reason: '經驗藥水或金幣不足'};

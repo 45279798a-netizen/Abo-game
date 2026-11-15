@@ -276,7 +276,7 @@ RES.CAMPAIGN = {
     function settle(S, ch, st, win, info) {
         S.campaign = S.campaign || {stars: {}, chests: {}, story: {}};
         const k = key(ch, st), s = stage(ch, st);
-        if (!win) return {stars: 0, first: false, reward: {}};
+        if (!win) { window.Quests && window.Quests.track(S, 'battle'); return {stars: 0, first: false, reward: {}}; }
         let stars = 1;
         if (info.noDeath) stars++;
         if (info.rounds <= s.rounds) stars++;
@@ -284,6 +284,7 @@ RES.CAMPAIGN = {
         const first = !prev;
         const reward = first ? firstReward(ch, st) : repeatReward(ch, st);
         S.campaign.stars[k] = Math.max(prev, stars);
+        window.Quests && window.Quests.track(S, 'battle'); if (first) window.Quests && window.Quests.track(S, 'firstClear');
         for (const [c, v] of Object.entries(reward)) S.currency[c] = (S.currency[c] || 0) + v;
         return {stars, newStars: Math.max(0, stars - prev), first, reward};
     }
@@ -301,6 +302,7 @@ RES.CAMPAIGN = {
         times = Math.min(times, sweepLeft(S));
         if (times <= 0) return {ok: false, reason: '今天的掃蕩次數用完了'};
         S.campaign.sweepUsed = (S.campaign.sweepUsed || 0) + times;
+        window.Quests && window.Quests.track(S, 'battle', times);
         const total = {};
         for (let n = 0; n < times; n++) for (const [c, v] of Object.entries(repeatReward(ch, st))) total[c] = (total[c] || 0) + v;
         for (const [c, v] of Object.entries(total)) S.currency[c] = (S.currency[c] || 0) + v;
@@ -354,6 +356,7 @@ RES.CAMPAIGN = {
         const p = idlePending(S, now);
         for (const [k, v] of Object.entries(p.reward)) S.currency[k] = (S.currency[k] || 0) + v;
         S.idle.last = now;
+        window.Quests && window.Quests.track(S, 'idle');
         p.gear = idleGear(S, p.hours);
         return p;
     }
@@ -372,6 +375,7 @@ RES.CAMPAIGN = {
         if ((S.currency.gem || 0) < q.cost) return {ok: false, reason: '鑽石不足'};
         S.currency.gem -= q.cost;
         S.idle.quickUsed++;
+        window.Quests && window.Quests.track(S, 'idle');
         const r = idleRate(S);
         const reward = idleReward(r, 2);
         for (const [k, v] of Object.entries(reward)) S.currency[k] = (S.currency[k] || 0) + v;

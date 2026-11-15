@@ -61,7 +61,7 @@
         }).join('');
     }
     function renderMain() {
-        renderLeader(); renderCurrency(); renderTeam(); refreshIdle();
+        renderLeader(); renderCurrency(); renderTeam(); refreshIdle(); refreshPass();
         const best = Campaign.progress(S);
         const nx = Math.min(best + 1, R.CAMPAIGN.chapters.length * Campaign.N);
         $('#battle-sub').textContent = `主線 ${Math.ceil(nx / Campaign.N)}-${(nx - 1) % Campaign.N + 1}`;
@@ -78,7 +78,7 @@
     function openPanel(name) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
         const p = $('#panel-' + name);
-        ({battle: renderBattle, trial: renderTrial, hero: renderHero, gacha: renderGacha, bag: renderBag, settings: renderSettings})[name]?.();
+        ({battle: renderBattle, trial: renderTrial, quest: renderQuest, hero: renderHero, gacha: renderGacha, bag: renderBag, settings: renderSettings})[name]?.();
         p.classList.add('show');
     }
     function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('show')); renderMain(); }
@@ -622,6 +622,75 @@
         try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
         localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), dungeon: {kind, id, floor}, auto, growth: battleGrowth(team), from: 'lobby'}));
         location.href = 'hd2d.html';
+    }
+
+
+    // ───────── 任務與通行證 ─────────
+    const QD = R.QUESTS, QP = QD.pass;
+    function refreshPass() {
+        const q = Quests.state(S), lv = Quests.level(S);
+        const into = lv >= QP.levels ? 100 : (q.medals % QP.perLevel) / QP.perLevel * 100;
+        $('#pass-chip').innerHTML = `${ICON('m_pass')}<span class="pc-t">通行證 <b>Lv ${lv}</b></span><span class="pc-bar"><i style="width:${into}%"></i></span><span class="pc-q">${ICON('m_quest')}任務</span>${Quests.hasClaimable(S) ? '<i class="dot"></i>' : ''}`;
+    }
+    let questTab = 'daily';
+    const qReward = r => Object.entries(r || {}).map(([k, v]) => k === 'hero' ? `<span class="rw">UR ${short(R.HEROES[v].name)}</span>` : k === 'gear' ? `<span class="rw">${ICON('chest')}${R.GEAR.QUALITY[v.q].name}套裝 ×1</span>` : `<span class="rw">${CUR[k].icon}${fmt(v)}</span>`).join('');
+    function qRow(t, prog, claimed, kind) {
+        const done = prog >= t.n;
+        return `<div class="qrow ${claimed ? 'claimed' : done ? 'done' : ''}">
+            <div class="q-main"><b>${t.name}</b><div class="q-bar"><i style="width:${Math.min(100, prog / t.n * 100)}%"></i><span>${Math.min(prog, t.n)} / ${t.n}</span></div></div>
+            <div class="q-rw"><span class="rw">${ICON('medal')}${t.medal}</span>${kind === 'w' ? qReward(t.reward) : ''}</div>
+            ${claimed ? '<span class="q-ok">已領取</span>' : `<button class="btn ${done ? 'primary' : ''}" data-qc="${kind}:${t.id}" ${done ? '' : 'disabled'}>領取</button>`}</div>`;
+    }
+    function renderQuest() {
+        const p = $('#panel-quest');
+        const q = Quests.state(S), lv = Quests.level(S), boost = Quests.boosted(S);
+        const into = lv >= QP.levels ? QP.perLevel : q.medals % QP.perLevel;
+        const head = `<div class="ph"><h2>${ICON('m_quest')} 任務與通行證</h2><div class="sp"></div>
+            <div class="q-pass"><span>通行證 <b>Lv ${lv}</b> / ${QP.levels}</span><span class="pc-bar big"><i style="width:${into / QP.perLevel * 100}%"></i></span><span class="muted">${lv >= QP.levels ? `寶箱 ${Quests.chestsReady(S)} 個可開` : `${into} / ${QP.perLevel}`}</span></div>
+            <button class="close" data-close>✕</button></div>
+            <div class="filters" style="margin-bottom:8px">${[['daily', '每日'], ['weekly', '每週'], ['pass', '通行證']].map(([k, n]) => `<button class="${questTab === k ? 'on' : ''}" data-qt="${k}">${n}</button>`).join('')}
+            ${boost ? `<span class="q-boost">${ICON('medal')} 追趕中：勳章 ×2</span>` : ''}</div>`;
+        let body = '';
+        if (questTab === 'daily') {
+            const all = Quests.dailyAllDone(S);
+            body = QD.daily.map(t => qRow(t, q.daily[t.id] || 0, q.dClaim[t.id], 'd')).join('')
+                + `<div class="qrow bonus ${q.dBonus ? 'claimed' : all ? 'done' : ''}"><div class="q-main"><b>每日任務全部完成</b><div class="muted">每天凌晨 4 點重置</div></div>
+                    <div class="q-rw"><span class="rw">${ICON('medal')}${QD.dailyBonus.medal}</span><span class="rw">${ICON('gem')}${QD.dailyBonus.gem}</span></div>
+                    ${q.dBonus ? '<span class="q-ok">已領取</span>' : `<button class="btn ${all ? 'primary' : ''}" data-qc="b:bonus" ${all ? '' : 'disabled'}>領取</button>`}</div>`;
+        } else if (questTab === 'weekly') {
+            body = QD.weekly.map(t => qRow(t, q.weekly[t.id] || 0, q.wClaim[t.id], 'w')).join('') + '<p class="muted">每週一凌晨 4 點重置。</p>';
+        } else {
+            const cells = QP.rewards.map((r, i) => {
+                const l = i + 1, got = q.pClaim[l], open = l <= lv, big = l % 5 === 0;
+                return `<button class="pcell ${big ? 'big' : ''} ${got ? 'got' : open ? 'ready' : ''} ${l === 50 ? 'final' : ''}" data-pl="${l}">
+                    <span class="pl">${l}</span>${l === 50 ? `<img class="pf" src="${face(R.HEROES[QP.finalHero].img)}" alt="">` : ''}<div class="prw">${qReward(r)}</div>${got ? '<span class="pg">✓</span>' : ''}</button>`;
+            }).join('');
+            body = `<div class="row" style="margin:0 0 8px"><span class="muted">第 50 級得到 UR 莫瑟斯；50 級之後每 ${QP.chestPer} 勳章開一個寶箱。偶爾沒上線，落後時勳章會加倍。</span><div class="sp"></div>
+                ${Quests.chestsReady(S) ? `<button class="btn" data-qc="c:chest">開寶箱（${Quests.chestsReady(S)}）</button>` : ''}<button class="btn primary" data-qc="p:all">全部領取</button></div>
+                <div class="pgrid">${cells}</div>`;
+        }
+        p.innerHTML = head + `<div class="pbody">${body}</div>`;
+        p.querySelectorAll('[data-qt]').forEach(b => { b.onclick = () => { questTab = b.dataset.qt; renderQuest(); }; });
+        const after = msg => { save(); renderCurrency(); refreshPass(); renderQuest(); if (msg) toast(msg); };
+        p.querySelectorAll('[data-qc]').forEach(b => { b.onclick = () => {
+            const [k, id] = b.dataset.qc.split(':');
+            if (k === 'd') { const r = Quests.claimDaily(S, id); if (r.ok) after(`${ICON('medal')} 勳章 +${r.medal}`); }
+            else if (k === 'b') { const r = Quests.claimDailyBonus(S); if (r.ok) after(`${ICON('medal')} 勳章 +${r.medal}、${ICON('gem')}${r.gem}`); }
+            else if (k === 'w') { const r = Quests.claimWeekly(S, id); if (r.ok) after(`${ICON('medal')} 勳章 +${r.medal}`); }
+            else if (k === 'c') { const r = Quests.openChest(S); if (r.ok) after('寶箱：' + rewardText(r.reward)); }
+            else {
+                const before = Object.keys(S.heroes).length;
+                const r = Quests.claimAllPass(S);
+                if (!r.length) { toast('目前沒有可以領的等級'); return; }
+                after(`領取 ${r.length} 個等級的獎勵`);
+                if (Object.keys(S.heroes).length > before) setTimeout(() => toast(`獲得 UR ${R.HEROES[QP.finalHero].name}！`), 1200);
+            }
+        }; });
+        p.querySelectorAll('[data-pl]').forEach(b => { b.onclick = () => {
+            const l = +b.dataset.pl, r = Quests.claimPass(S, l);
+            if (r.ok) { after(`第 ${l} 級獎勵已領取`); if (r.reward.hero) setTimeout(() => toast(`獲得 UR ${R.HEROES[QP.finalHero].name}！`), 900); }
+            else toast(l > Quests.level(S) ? `需要通行證 Lv ${l}` : '已經領過了');
+        }; });
     }
 
     // ───────── 招募 ─────────
