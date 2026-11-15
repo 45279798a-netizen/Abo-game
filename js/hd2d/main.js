@@ -107,7 +107,6 @@ function resize() {
     camera.updateProjectionMatrix();
     composer?.setSize(w, h);
     composer?.setPixelRatio(renderer.getPixelRatio());
-    $('#rotate-hint').classList.toggle('show', h > w && !state.rotateOk);
     updateProjector();
 }
 window.addEventListener('resize', resize);
@@ -1194,7 +1193,6 @@ $('#ult').addEventListener('click', () => state.skip?.fire());
 $('#hd').addEventListener('click', e => {
     if (state.skip && $('#skill-cut').classList.contains('hold') && !e.target.closest('button')) { state.skip.fire(); e.stopPropagation(); }
 }, true);
-$('#rotate-ok').onclick = () => { state.rotateOk = true; $('#rotate-hint').classList.remove('show'); };
 
 // ───────── 每幀繪製 ─────────
 let last = performance.now(), frameCount = 0;

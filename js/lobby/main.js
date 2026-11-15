@@ -704,6 +704,16 @@
             <button class="btn" id="set-sync">立即同步</button><button class="btn" id="set-out">登出</button></div>
             ${OL.admin ? '<div class="set-row"><b>管理員</b><span class="sp">寄信、全服首領、掉落倍率</span><button class="btn primary" data-open="admin">後台</button></div>' : ''}`;
     }
+    // 安裝到主畫面：Android 用瀏覽器的安裝提示；iPhone 只能手動加入主畫面
+    function installRow() {
+        const A = window.AppShell;
+        if (!A) return '';
+        const ver = `<div class="set-row"><b>版本</b><span class="sp">${A.VERSION}</span></div>`;
+        if (A.standalone) return ver + '<div class="set-row"><b>安裝</b><span class="sp">已經從主畫面開啟（全螢幕）</span></div>';
+        if (A.canInstall()) return ver + '<div class="set-row"><b>安裝到主畫面</b><span class="sp">像 App 一樣從主畫面開啟，全螢幕、固定橫向</span><button class="btn primary" id="set-install">安裝</button></div>';
+        if (A.isIOS) return ver + '<div class="set-row"><b>安裝到主畫面</b><span class="sp">iPhone／iPad：用 Safari 開啟，點下方「分享」→「加入主畫面」，之後從主畫面的圖示開啟就是全螢幕</span></div>';
+        return ver + `<div class="set-row"><b>安裝到主畫面</b><span class="sp">瀏覽器選單裡的「安裝應用程式」或「加到主畫面」</span>${A.touch ? '<button class="btn" id="set-full">全螢幕</button>' : ''}</div>`;
+    }
     function bindAccount(p) {
         const sy = p.querySelector('#set-sync'), out = p.querySelector('#set-out');
         if (sy) sy.onclick = async () => { sy.disabled = true; await OL.syncNow(true); OL.pushStats().catch(() => {}); toast(OL.syncState || '已同步到雲端'); renderSettings(); };
@@ -1073,6 +1083,7 @@
         const p = $('#panel-settings');
         p.innerHTML = head('設定') + `<div class="pbody">
             ${accountRow()}
+            ${installRow()}
             <div class="set-row"><b>旅團長名稱</b><span class="sp">${S.name}</span><button class="btn" id="set-name">修改</button></div>
             <div class="set-row"><b>賽季</b><span class="sp">S${Season.state(S).n}・第 ${Season.weekNo(S)} 週，還有 ${Season.daysLeft(S)} 天結算。${Season.state(S).titles.length ? '稱號：' + Season.state(S).titles.join('、') : '還沒有稱號'}</span></div>
             <div class="set-row"><b>特效圖鑑</b><span class="sp">預覽所有技能特效</span><a class="btn" href="gallery.html">開啟</a></div>
@@ -1085,6 +1096,10 @@
             if (n && n.trim()) { S.name = n.trim().slice(0, 10); save(); renderSettings(); }
         };
         bindAccount(p);
+        const ib = p.querySelector('#set-install');
+        if (ib) ib.onclick = async () => { if (await AppShell.install()) toast('安裝好了！之後從主畫面的圖示開啟'); renderSettings(); };
+        const fb = p.querySelector('#set-full');
+        if (fb) fb.onclick = () => AppShell.fullscreen();
         p.querySelector('#set-reset').onclick = () => {
             if (!confirm(OL.user ? '確定要刪除所有進度、重新開始嗎？雲端存檔也會一起被覆蓋，這個動作無法復原。' : '確定要刪除所有進度、重新開始嗎？這個動作無法復原。')) return;
             S = Save.reset();
@@ -1102,13 +1117,8 @@
     });
     $('#leader').onclick = say;
     $('#team-strip').onclick = () => openPanel('hero');
-    function orient() {
-        const portrait = innerHeight > innerWidth;
-        $('#rotate-hint').classList.toggle('show', portrait && !orient.ok);
-    }
-    $('#rotate-ok').onclick = () => { orient.ok = true; orient(); };
-    addEventListener('resize', orient);
-    orient();
+    // 直向遮罩、全螢幕、安裝：js/ui/shell.js
+    addEventListener('shell-install', () => { if ($('#panel-settings').classList.contains('show')) renderSettings(); });
     $('#idle-chip').onclick = showIdle;
     setInterval(refreshIdle, 30000);
     renderMain();

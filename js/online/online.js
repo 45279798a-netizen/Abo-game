@@ -55,11 +55,23 @@
         const el = gate(`<p class="lg-p">用 Google 帳號登入，進度會存在雲端，換手機也能接著玩。</p>
             <button class="lg-google" id="lg-go"><span class="g">G</span>用 Google 登入</button>
             ${msg ? `<p class="lg-err">${msg}</p>` : ''}
+            ${installHint()}
             ${err && !RETRY_ONLY.includes(code) ? '<button class="lg-off" id="lg-off">離線遊玩（進度只存在這台裝置，不會同步）</button>' : ''}`);
         el.querySelector('#lg-go').onclick = signIn;
+        const ins = el.querySelector('#lg-install');
+        if (ins) ins.onclick = async () => { await window.AppShell.install(); showLogin(err); };
         const off = el.querySelector('#lg-off');
         if (off) off.onclick = () => { offline = true; hideGate(); startLobby(); };
     }
+    // 還沒安裝時提示安裝到主畫面（全螢幕、固定橫向）
+    function installHint() {
+        const A = window.AppShell;
+        if (!A || A.standalone) return '';
+        if (A.canInstall()) return '<button class="lg-off" id="lg-install">把遊戲安裝到主畫面（全螢幕、固定橫向）</button>';
+        if (A.isIOS) return '<p class="lg-p" style="font-size:11.5px;color:var(--muted);margin:12px 0 0">iPhone：Safari 下方「分享」→「加入主畫面」，從主畫面開啟就是全螢幕</p>';
+        return '';
+    }
+    addEventListener('shell-install', () => { if (!user && !offline && document.querySelector('#lg-go')) showLogin(); });
     function hideGate() { $('#login-gate').classList.remove('show'); }
     function startLobby() {
         if (started) return;

@@ -191,6 +191,15 @@ node tools/sim_campaign.js 30             # 用兩支隊伍檢查各章代表關
 - **賽季結算**：滿 28 天後第一次進大廳時結算。依巫妖王最高階與塔的最高層給鑽石、招募券與稱號；通行證沒領的自動領；通行證、巫妖王、塔、商店重新計算，其他保留。
 - 改了英雄、敵人、覺醒或規則後重跑 `node tools/calibrate_season.js`（可以只跑 `tower`、`hard` 或 `lich`）。
 
+## 正式版 1.0.0：安裝、全螢幕、強制橫向
+
+- 網址：https://45279798a-netizen.github.io/abo-game/ （`main` 分支，GitHub Pages）
+- `manifest.webmanifest`：可以安裝到主畫面，全螢幕、固定橫向；圖示在 `assets/app/`（巫妖王）
+- `sw.js`：離線快取。程式與網頁先連網路拿最新版，圖片先用快取再背景更新，所以改版推上去就會生效，不用改 sw.js
+- `js/ui/shell.js`（大廳與戰鬥頁共用）：版本號；手機、平板直向時蓋一層「請把手機橫過來」不能關；觸控裝置第一次點畫面時進全螢幕並鎖橫向（Android）；安裝按鈕在登入畫面與設定頁
+- iPhone 不支援網頁鎖方向和全螢幕：用 Safari「分享 → 加入主畫面」，從主畫面開啟就是全螢幕，直向時同樣會擋住
+- 改版時把 `js/ui/shell.js` 的 `VERSION` 加一，設定頁會顯示
+
 ## 多人功能（Firebase 專案 abogames）
 
 程式在 `js/online/online.js`，安全規則在 `firestore.rules`，Firebase SDK 放在 `vendor/firebase/`（不靠外部 CDN）。
