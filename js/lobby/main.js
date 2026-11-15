@@ -348,7 +348,7 @@
                 <div class="filters fac-f">${facBtns.map(([k, n, em]) => `<button class="${heroFilter === k ? 'on' : ''}" data-filter="${k}">${em}${n}</button>`).join('')}</div>
                 <div class="hero-grid">${list.map(id => {
                     const d = R.HEROES[id], o = S.heroes[id];
-                    return `<button class="hc ${o ? '' : 'locked'} ${S.team.includes(id) ? 'inteam' : ''}" data-hero="${id}" style="--rc:${rc(d.rarity)};--fc:${fc(d.faction)}">
+                    return `<button class="hc r-${d.rarity} ${o ? '' : 'locked'} ${S.team.includes(id) ? 'inteam' : ''}" data-hero="${id}" style="--rc:${rc(d.rarity)};--fc:${fc(d.faction)}">
                         <div class="hc-art"><img src="${face(d.img)}" alt="" loading="lazy">
                             <span class="rt">${d.rarity}</span><span class="el">${R.ELEMENTS[d.element].icon}</span>
                             ${S.team.includes(id) ? `<span class="in-team">${id === S.leader ? '隊長' : '上陣'}</span>` : ''}${o?.awk ? '<span class="awk">覺醒</span>' : ''}
@@ -952,7 +952,7 @@
     // ───────── 招募 ─────────
     let poolSel = null;
     // 招募背景圖（Gemini 生成，放在 assets/hd/；還沒有的卡池用漸層）
-    const GA_BG = {};
+    const GA_BG = {ltd: 'gacha_ltd.webp', std: 'gacha_std.webp', newbie: 'gacha_std.webp', summon: 'gacha_summon.webp'};
     const GA = {
         newbie: {title: '新手招募', tag: 'NEW', heroes: ['reina', 'zeke'], color: '#f59e0b',
             sub: '新旅團長專屬：免費 10 連抽一次，保證至少 1 位 SSR。', bg: 'radial-gradient(ellipse at 68% 55%, #5b4312, #1a1108 55%, #070402)'},
@@ -1022,7 +1022,7 @@
                 <div class="ps-grid ${res.length === 1 ? 'one' : ''}">${res.map((x, i) => {
                     const d = R.HEROES[x.id];
                     const hi = x.rarity === 'SSR' || x.rarity === 'UR';
-                    return `<div class="card ${hi ? 'hi' : ''}" data-i="${i}" style="--rc:${rc(x.rarity)};--gl:${hi ? '14px' : '0'}"><div class="in">
+                    return `<div class="card r-${x.rarity} ${hi ? 'hi' : ''}" data-i="${i}" style="--rc:${rc(x.rarity)};--gl:${hi ? '14px' : '0'}"><div class="in">
                         <div class="face-b">✦</div>
                         <div class="face-f"><img src="${face(d.img)}" alt=""><span class="r">${x.rarity}</span>
                         ${x.isNew ? '<span class="badge">NEW</span>' : x.dust ? `<span class="badge sh">星塵+${x.dust}</span>` : `<span class="badge sh">碎片+${x.shards}</span>`}<span class="n">${short(d.name)}</span></div></div></div>`;
