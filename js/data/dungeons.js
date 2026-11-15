@@ -5,8 +5,9 @@ window.RES = window.RES || {};
 
 RES.DUNGEONS = {
     floors: 10,
-    trialPerDay: 20,      // 素材試煉：每天 20 次獎勵次數（手動和掃蕩都算），沒用完的保留到隔天，最多 40
-    trialMax: 40,
+    trialPerDay: 14,      // 素材試煉：每天 14 次獎勵次數，沒用完的保留到隔天，最多 28
+    trialMax: 28,
+    trialMult: 1.5,       // 素材試煉單場獎勵 ×1.5（沒有掃蕩，打的場數少、每場拿多一點）
     rounds: 18,   // 3 星：18 回合內通關
     // 解鎖：最高通關關卡序號（15＝打完第 1 章）
     sets: [
@@ -58,12 +59,13 @@ RES.DUNGEONS = {
     const STAR_K = [0, 0.6, 0.8, 1];
     function baseReward(kind, id, f) {
         if (kind === 'set') return {gold: 1000 + f * 400, stone: 10 + f * 4};
-        return {
+        const r = {
             gold: {gold: 4000 + f * 3000},
             exp: {exp: 25 + f * 14},
             brk: {brk: 1 + Math.round(f * 0.6)},
             book: {book: 1 + Math.floor(f / 3)},
         }[id];
+        return Object.fromEntries(Object.entries(r).map(([k, v]) => [k, Math.round(v * D.trialMult)]));
     }
     // 套裝副本掉落：1～3 層 1 件、4～7 層 2 件、8 層以上 3 件；品質依層數
     const dropCount = f => 1 + (f >= 4) + (f >= 8);

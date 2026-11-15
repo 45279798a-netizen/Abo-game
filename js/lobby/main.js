@@ -594,15 +594,23 @@
                 ${open ? `<button class="btn primary" data-fgo="${f}">出戰</button>` : '<span class="muted">🔒</span>'}</div>`;
         }).join('');
         const m = modal(`<h3>${d.name}</h3><p class="muted">首領：${R.ENEMIES[d.boss].name}　${kind === 'set' ? '掉落 ' + d.sets.map(k => GR.SETS[k].name).join('、') + ' 套裝，層數越高品質越好' : d.desc}。星數越高獎勵越多（1★ 60%、2★ 80%、3★ 全額）。${lim ? `素材試煉次數剩 ${left} 次（每天補 ${DG.trialPerDay}，最多存 ${DG.trialMax}）。` : '套裝副本不限次數。'}</p>
+            <div class="rep-row"><span>連續挑戰</span>${[1, 3, 5, 10].map(n => `<button class="${repSel === n ? 'on' : ''}" data-rep="${n}">${n === 1 ? '單場' : n + ' 場'}</button>`).join('')}${lim ? `<button class="${repSel === 'all' ? 'on' : ''}" data-rep="all">打到次數用完</button>` : ''}<small class="muted">自動戰鬥、打完自動開下一場，輸了就停</small></div>
             <div class="flist">${rows}</div>`, 'floors');
-        m.querySelectorAll('[data-fgo]').forEach(b => { b.onclick = () => { m.remove(); launchDungeon(kind, id, +b.dataset.fgo); }; });
+        m.querySelectorAll('[data-rep]').forEach(b => { b.onclick = () => { repSel = b.dataset.rep === 'all' ? 'all' : +b.dataset.rep; m.querySelectorAll('[data-rep]').forEach(x => x.classList.toggle('on', x === b)); }; });
+        m.querySelectorAll('[data-fgo]').forEach(b => { b.onclick = () => {
+            const n = repSel === 'all' ? (lim ? left : 1) : (lim ? Math.min(repSel, Math.max(1, left)) : repSel);
+            m.remove(); launchDungeon(kind, id, +b.dataset.fgo, n);
+        }; });
     }
-    function launchDungeon(kind, id, floor) {
+    let repSel = 1;   // 連續挑戰場數
+    function launchDungeon(kind, id, floor, times = 1) {
         const team = S.team.filter(Boolean);
         if (!team.length) { toast('隊伍裡至少要有 1 位英雄'); return; }
         let auto = true;
         try { auto = (JSON.parse(localStorage.getItem('pr_hd2dBattle') || '{}').auto) !== false; } catch (e) { /* 預設自動 */ }
-        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), dungeon: {kind, id, floor}, auto, growth: battleGrowth(team), from: 'lobby'}));
+        const repeat = times > 1 ? {total: times, done: 0, wins: 0, sum: {}, gear: []} : null;
+        if (repeat) auto = true;   // 連續挑戰一律自動戰鬥
+        localStorage.setItem('pr_hd2dBattle', JSON.stringify({team: S.team.map(x => x || null), dungeon: {kind, id, floor}, repeat, auto, growth: battleGrowth(team), from: 'lobby'}));
         location.href = 'hd2d.html';
     }
 

@@ -1050,7 +1050,32 @@ function showResult(e) {
         else if (dg.kind === 'trial') stageHtml += `<div class="res-rw"><span>素材試煉次數剩 ${Dungeon.trialLeft(Save.load())} 次</span></div>`;
         const nx = win && dg.floor < R.DUNGEONS.floors;
         btns = `<a class="btn-secondary" href="index.html#trial" style="display:grid;place-items:center;text-decoration:none;color:inherit">回試煉</a><button class="btn-secondary" id="res-again">再打一次</button>${nx ? '<button class="btn-primary" id="res-next">下一層 ▶</button>' : ''}`;
-        if (nx) setTimeout(() => { $('#res-next').onclick = () => { cfg.dungeon = {...dg, floor: dg.floor + 1}; try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ } location.reload(); }; });
+        // 連續挑戰：累計獎勵；贏了而且還有場數（素材試煉還有次數）就倒數開下一場
+        const rp = cfg.repeat;
+        if (rp) {
+            rp.done++;
+            if (win) rp.wins++;
+            for (const [k, v] of Object.entries(st2.reward || {})) if (v > 0) rp.sum[k] = (rp.sum[k] || 0) + v;
+            rp.gear.push(...(st2.gear || []));
+            const outOfCount = dg.kind === 'trial' && (st2.noCount || Dungeon.trialLeft(Save.load()) <= 0);
+            const more = win && rp.done < rp.total && !outOfCount;
+            const why = !win ? '這場輸了，連續挑戰停止' : (outOfCount && rp.done < rp.total) ? '素材試煉次數用完了' : '';
+            stageHtml += `<div class="rep-sum"><b>連續挑戰 ${rp.done} / ${rp.total} 場</b>　勝 ${rp.wins}${why ? `<div class="res-tip">${why}</div>` : ''}
+                <div class="res-rw"><span>累計</span>${Object.entries(rp.sum).map(([k, v]) => `<b>${CUR_ICON[k] || ''}${v.toLocaleString()}</b>`).join('')}${rp.gear.length ? `<b>${ICON('chest')}裝備 ${rp.gear.length} 件</b>` : ''}</div></div>`;
+            if (more) {
+                btns = `<a class="btn-secondary" href="index.html#trial" style="display:grid;place-items:center;text-decoration:none;color:inherit">停止並返回</a><button class="btn-primary" id="rep-next">下一場（<span id="rep-cd">3</span>）</button>`;
+                setTimeout(() => {
+                    let n = 3;
+                    const go = () => { clearInterval(t); state.auto = true; startBattle(); };
+                    const t = setInterval(() => { n--; const el = $('#rep-cd'); if (el) el.textContent = n; if (n <= 0) go(); }, 1000);
+                    $('#rep-next').onclick = go;
+                });
+            } else {
+                setTimeout(() => { const a = $('#res-again'); if (a) a.textContent = `再連續 ${rp.total} 場`; });
+                Object.assign(rp, {done: 0, wins: 0, sum: {}, gear: []});   // 再按一次就從頭計算
+            }
+        }
+        if (nx) setTimeout(() => { if (!$('#res-next')) return; $('#res-next').onclick = () => { cfg.dungeon = {...dg, floor: dg.floor + 1}; try { localStorage.setItem('pr_hd2dBattle', JSON.stringify(cfg)); } catch (err) { /* 無法儲存 */ } location.reload(); }; });
     } else if (cfg.stage) {
         const s = Campaign.stage(cfg.stage.ch, cfg.stage.st);
         const conds = [['通關', win], ['沒有英雄陣亡', win && st.noDeath], [`${s.rounds} 回合內通關`, win && round <= s.rounds]];
@@ -1086,7 +1111,7 @@ function showResult(e) {
             ${rows.map(x => `<div class="dmg-row"><span>${x.name}</span><span class="dmg-bar"><i style="width:${x.v / max * 100}%;background:${x.color}"></i></span><span class="dmg-n">${Math.round(x.v)}</span></div>`).join('')}
         </div></div>`;
     r.classList.add('show');
-    $('#res-again').onclick = startBattle;
+    if ($('#res-again')) $('#res-again').onclick = startBattle;
 }
 
 function syncControls() {
