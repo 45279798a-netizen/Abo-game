@@ -32,7 +32,7 @@ RES.SEASON = {
         // 每次挑戰依這次打到的階數給獎勵
         attempt: t => ({badge: 30 + 12 * t, gold: 2000 + 1500 * t}),
         // 每週第一次打到某一階的獎勵
-        weekly: t => ({awk: t <= 5 ? 2 : 3, badge: 30}),
+        weekly: t => ({awk: t <= 5 ? 2 : 3, badge: 30, gem: 40}),
     },
     tower: {
         floors: 30,
@@ -40,7 +40,7 @@ RES.SEASON = {
         pool: ['skeleton', 'frostLich', 'cryptBat', 'gargoyle', 'corpseBomber', 'cultist', 'plagueBringer', 'warlord'],
         bosses: {5: 'boneKnight', 10: 'plagueBoss', 15: 'frostLichLord', 20: 'fallenLord', 25: 'boneDragon', 30: 'lichKing'},
         rules: ['bloodlust', 'wither', 'chill', 'hush', 'bone', 'plague', 'shatter', 'fog', 'regen', 'horde', 'barrier', 'ward', 'frenzy'],
-        reward: f => f % 5 === 0 ? (f <= 30 ? {badge: 150, awk: 6, gem: 100} : {badge: 60, awk: 2}) : (f <= 30 ? {badge: 40, gold: 3000 + f * 300} : {badge: 20, gold: 8000}),
+        reward: f => f % 5 === 0 ? (f <= 30 ? {badge: 150, awk: 6, gem: 150} : {badge: 60, awk: 2}) : (f <= 30 ? {badge: 40, gold: 3000 + f * 300, gem: 30} : {badge: 20, gold: 8000}),
     },
     hard: {
         // 每章一條規則

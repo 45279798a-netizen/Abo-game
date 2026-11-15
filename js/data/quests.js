@@ -14,11 +14,11 @@ RES.QUESTS = {
         {id: 'levelup', name: '英雄升級 1 次', ev: 'levelup', n: 1, medal: 25},
         {id: 'lich', name: '挑戰巫妖王試煉 1 次', ev: 'lich', n: 1, medal: 20, need: 45},   // need：主線進度到這裡才出現（沒開放的任務不算在「全部完成」裡）
     ],
-    dailyBonus: {medal: 70, gem: 50},   // 每日任務全部完成
+    dailyBonus: {medal: 70, gem: 150},   // 每日任務全部完成
     weekly: [
         {id: 'w_stage', name: '主線首次通關 15 關', ev: 'firstClear', n: 15, medal: 120, reward: {gem: 100}},
-        {id: 'w_gacha', name: '招募 10 次', ev: 'gacha', n: 10, medal: 100, reward: {ticket: 1}},
-        {id: 'w_trial', name: '挑戰試煉 15 次', ev: 'trial', n: 15, medal: 100, reward: {stone: 60}},
+        {id: 'w_gacha', name: '招募 10 次', ev: 'gacha', n: 10, medal: 100, reward: {ticket: 1, gem: 150}},
+        {id: 'w_trial', name: '挑戰試煉 15 次', ev: 'trial', n: 15, medal: 100, reward: {stone: 60, gem: 150}},
         {id: 'w_enh9', name: '把一件裝備強化到 +9', ev: 'enhance9', n: 1, medal: 80, reward: {brk: 10}},
         {id: 'w_tower', name: '亡靈之塔通關 3 層', ev: 'tower', n: 3, medal: 60, reward: {badge: 150}, need: 45},
         {id: 'w_daily', name: '完成每日任務 5 天', ev: 'dailyDone', n: 5, medal: 100, reward: {ltdTicket: 1}},
@@ -38,7 +38,7 @@ RES.QUESTS = {
 // 通行證每一級的獎勵：每 5 級大獎；第 10 級莫瑟斯，第 20、30、40、50 級給莫瑟斯碎片（共 300，剛好 4★ 升 5★ 可以覺醒）；其他輪流給素材
 RES.QUESTS.pass.rewards = (function () {
     const out = [];
-    const small = [{gold: 6000}, {exp: 40}, {stone: 40}, {brk: 5}, {book: 1}];
+    const small = [{gold: 6000, gem: 50}, {exp: 40, gem: 50}, {stone: 40, gem: 50}, {brk: 5, gem: 50}, {book: 1, gem: 50}];
     const big = {
         5: {gem: 300, ticket: 2}, 10: {hero: 'mortheus', ltdTicket: 2, gem: 200}, 15: {gear: {q: 3}, gem: 200}, 20: {ltdTicket: 3, book: 3, shards: 50},
         25: {gem: 500, ticket: 3}, 30: {gear: {q: 4}, ltdTicket: 2, shards: 50}, 35: {gem: 500, book: 4}, 40: {ltdTicket: 5, dust: 200, shards: 100},

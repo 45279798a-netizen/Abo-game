@@ -24,7 +24,7 @@
         brk:       {icon: ICON('brk'), name: '突破石', desc: '每 20 級突破一次，提高等級上限'},
         book:      {icon: ICON('book'), name: '技能書', desc: '小技能、大招升級'},
         stone:     {icon: ICON('stone'), name: '強化石', desc: '裝備強化；套裝副本、掛機、分解裝備取得'},
-        awk:       {icon: ICON('awk'), name: '覺醒石', desc: '英雄 60 級、5 星後覺醒用；困難主線、巫妖王試煉、亡靈之塔、賽季商店取得'},
+        awk:       {icon: ICON('awk'), name: '覺醒石', desc: '英雄 60 級、比起始星級多 1 星後覺醒用；困難主線、巫妖王試煉、亡靈之塔、賽季商店取得'},
         badge:     {icon: ICON('badge'), name: '賽季徽章', desc: '賽季商店的貨幣；巫妖王試煉、亡靈之塔取得'},
         dust:      {icon: ICON('dust'), name: '星塵', desc: '滿星英雄的重複碎片轉成；到星塵商店換碎片與道具'},
     };
@@ -262,7 +262,7 @@
     // 困難關卡的推薦戰力：參考隊伍在那一關預期養成下的戰力
     function hardRecommend(ch, st) {
         const g = Season.hardGrowthSpec(Campaign.idxOf(ch, st)), gb = Gear.expectedBonus(g.i);
-        const sum = Campaign.REF_TEAM.reduce((a, id) => { const star = Math.min(Growth.MAX_STAR, Save.START_STAR[R.HEROES[id].rarity] + g.star); return a + Growth.power(id, {lv: g.lv, star, sk: g.sk, ul: g.sk, awk: g.awk && star >= R.AWAKEN.star}, gb); }, 0);
+        const sum = Campaign.REF_TEAM.reduce((a, id) => { const star = Math.min(Growth.MAX_STAR, Save.START_STAR[R.HEROES[id].rarity] + g.star); return a + Growth.power(id, {lv: g.lv, star, sk: g.sk, ul: g.sk, awk: g.awk && star >= Growth.awakenStar(id)}, gb); }, 0);
         return Math.round(sum / 100) * 100;
     }
     const modHtml = list => list.filter(m => typeof m === 'string').map(m => `<span class="mod"><b>${R.MODS[m].name}</b>${R.MODS[m].desc}</span>`).join('');
@@ -410,7 +410,7 @@
                 <div class="sk"><span class="k">小技能・Lv.${o?.sk || 1}・冷卻 ${d.skill.cd}</span><b>${d.skill.name}</b><br>${d.skill.desc}</div>
                 ${d.ult ? `<div class="sk"><span class="k">大招・Lv.${o?.ul || 1}・能量 ${R.ENERGY.max}</span><b style="color:${fac.color}">${d.ult.name}</b><br>${d.ult.desc}</div>` : ''}
                 <div class="sk"><span class="k">被動</span><b>${d.passive.name}</b><br>${d.passive.desc}</div>
-                <div class="sk awk ${o?.awk ? 'on' : ''}"><span class="k">覺醒・${o?.awk ? '已開啟' : `Lv.${R.AWAKEN.lv}、${R.AWAKEN.star}★ 後可開啟`}</span><b>${d.awaken.name}</b><br>全能力 +${Math.round(R.AWAKEN.stat[d.rarity] * 100)}%；${d.awaken.desc}</div>
+                <div class="sk awk ${o?.awk ? 'on' : ''}"><span class="k">覺醒・${o?.awk ? '已開啟' : `Lv.${R.AWAKEN.lv}、${Growth.awakenStar(id)}★ 後可開啟`}</span><b>${d.awaken.name}</b><br>全能力 +${Math.round(R.AWAKEN.stat[d.rarity] * 100)}%；${d.awaken.desc}</div>
                 ${o ? `<div class="dt-btns">
                     ${inTeam ? '<button class="btn" data-act="out">下陣</button>' : '<button class="btn primary" data-act="in">上陣</button>'}
                     ${S.leader === id ? '<button class="btn" disabled>目前隊長</button>' : '<button class="btn" data-act="lead">設為隊長</button>'}
@@ -465,10 +465,10 @@
     function costTxt(c) { return Object.entries(c).map(([k, v]) => `<span class="${(S.currency[k] || 0) >= v ? '' : 'lack'}">${CUR[k].icon}${fmt(v)}</span>`).join(' '); }
     function awkRow(id, o) {
         const d = R.HEROES[id], A = R.AWAKEN, aw = d.awaken, pct = Math.round(A.stat[d.rarity] * 100);
-        const ready = o.lv >= A.lv && o.star >= A.star;
+        const ready = o.lv >= A.lv && o.star >= Growth.awakenStar(id);
         const right = o.awk ? '<span class="gr-max">已覺醒</span>'
             : ready ? `<span class="gr-cost">${costTxt(Growth.awakenCost(id))}</span><button class="btn primary" data-grow="awk">覺醒</button>`
-            : `<span class="gr-cost"><span class="${o.lv >= A.lv ? '' : 'lack'}">Lv.${A.lv}</span>、<span class="${o.star >= A.star ? '' : 'lack'}">${A.star}★</span> 後可覺醒　${costTxt(Growth.awakenCost(id))}</span>`;
+            : `<span class="gr-cost"><span class="${o.lv >= A.lv ? '' : 'lack'}">Lv.${A.lv}</span>、<span class="${o.star >= Growth.awakenStar(id) ? '' : 'lack'}">${Growth.awakenStar(id)}★</span> 後可覺醒　${costTxt(Growth.awakenCost(id))}</span>`;
         return `<div class="gr awk ${o.awk ? 'on' : ''}"><div class="gr-h"><b>覺醒</b>${aw.name}　<small>全能力 +${pct}%；${aw.desc}</small></div><div class="gr-r">${right}</div></div>`;
     }
     function growHtml(id, o) {
@@ -492,7 +492,7 @@
         else {
             const next = Growth.stats(id, {...o, star: o.star + 1});
             const pct = Math.min(100, o.shards / sc * 100);
-            starRow = `<span class="gr-cost"><span class="gr-bar"><i style="width:${pct}%"></i></span>碎片 ${o.shards} / ${sc}　<small>攻擊 ${now.atk}→${next.atk}（+${Math.round(Growth.STAR_PCT * 100)}% 全能力）</small></span><button class="btn ${o.shards >= sc ? 'primary' : ''}" data-grow="star" ${o.shards >= sc ? '' : 'disabled'}>升到 ${o.star + 1}★</button>`;
+            starRow = `<span class="gr-cost"><span class="gr-bar"><i style="width:${pct}%"></i></span>碎片 ${o.shards} / ${sc}　<small>攻擊 ${now.atk}→${next.atk}（+${Math.round(Growth.starPct(id) * 100)}% 全能力）</small></span><button class="btn ${o.shards >= sc ? 'primary' : ''}" data-grow="star" ${o.shards >= sc ? '' : 'disabled'}>升到 ${o.star + 1}★</button>`;
         }
         const skRow = (key, label, name) => {
             const lv = o[key] || 1, c = Growth.skillCost(lv);

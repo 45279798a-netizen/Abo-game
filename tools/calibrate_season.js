@@ -27,7 +27,7 @@ function growth(spec) {
     const g = {}, gear = Gear.expectedBonus(spec.i);
     for (const id of TEAM) {
         const star = Math.min(Growth.MAX_STAR, Save.START_STAR[RES.HEROES[id].rarity] + spec.star);
-        g[id] = {...Growth.multipliers(id, {lv: spec.lv, star, sk: spec.sk, ul: spec.sk, awk: spec.awk && star >= RES.AWAKEN.star}), gear};
+        g[id] = {...Growth.multipliers(id, {lv: spec.lv, star, sk: spec.sk, ul: spec.sk, awk: spec.awk && star >= Growth.awakenStar(id)}), gear};
     }
     return g;
 }

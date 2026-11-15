@@ -7,7 +7,9 @@
     const MAX_STAR = 6;
     const MAX_SKILL = 5;
     const LV_PCT = 0.04;      // 每級全能力 +4%
-    const STAR_PCT = 0.15;    // 每升 1★ 全能力 +15%（以初始星級為基準）
+    // 每升 1★ 全能力加成（以初始星級為基準），稀有度越高每星越多：滿星時 UR > SSR > SR > R，4★ 的 R 大約等於剛抽到的 SSR
+    const STAR_PCT = {R: 0.08, SR: 0.10, SSR: 0.13, UR: 0.15};
+    const starPct = id => STAR_PCT[R.HEROES[id].rarity];
     const SKILL_PCT = 0.08;   // 小技能／大招每級效果 +8%
 
     // 升到第 n★ 需要的碎片（n＝2～6）
@@ -31,7 +33,7 @@
 
     function mult(id, o) {
         if (!o) return 1;
-        return (1 + LV_PCT * (o.lv - 1)) * (1 + STAR_PCT * (o.star - startStar(id))) * (o.awk ? 1 + R.AWAKEN.stat[R.HEROES[id].rarity] : 1);
+        return (1 + LV_PCT * (o.lv - 1)) * (1 + starPct(id) * (o.star - startStar(id))) * (o.awk ? 1 + R.AWAKEN.stat[R.HEROES[id].rarity] : 1);
     }
     // 戰鬥用：全能力倍率、技能倍率、大招倍率
     function multipliers(id, o) {
@@ -104,12 +106,14 @@
         pay(S, c); o[which] = lv + 1;
         return {ok: true};
     }
-    // 覺醒：60 級、5 星，花覺醒石（依稀有度）與金幣
+    // 覺醒：60 級、比起始星級多 1★，花覺醒石（依稀有度）與金幣
+    // 覺醒要的星級：起始星級 +1（R 2★、SR 3★、SSR 4★、UR 5★）
+    const awakenStar = id => startStar(id) + R.AWAKEN.starUp;
     function awakenCost(id) { return {awk: R.AWAKEN.cost[R.HEROES[id].rarity], gold: R.AWAKEN.gold}; }
     function awaken(S, id) {
         const o = S.heroes[id], A = R.AWAKEN;
         if (o.awk) return {ok: false, reason: '已經覺醒'};
-        if (o.lv < A.lv || o.star < A.star) return {ok: false, reason: `需要 Lv.${A.lv}、${A.star}★`};
+        if (o.lv < A.lv || o.star < awakenStar(id)) return {ok: false, reason: `需要 Lv.${A.lv}、${awakenStar(id)}★`};
         const c = awakenCost(id);
         if (!has(S, c)) return {ok: false, reason: '覺醒石或金幣不足'};
         pay(S, c); o.awk = true;
@@ -140,7 +144,7 @@
     }
 
     window.Growth = {
-        MAX_LV, MAX_STAR, MAX_SKILL, LV_PCT, STAR_PCT, SKILL_PCT, STAR_COST, BREAK_COST, SKILL_COST, DUST_PER_SHARD, DUST_SHOP,
+        MAX_LV, MAX_STAR, MAX_SKILL, LV_PCT, STAR_PCT, starPct, awakenStar, SKILL_PCT, STAR_COST, BREAK_COST, SKILL_COST, DUST_PER_SHARD, DUST_SHOP,
         lvCap, lvCost, breakCost, starCost, skillCost, startStar, mult, multipliers, stats, power,
         levelUp, breakThrough, starUp, skillUp, giveShards, buyShards, buyItem, awaken, awakenCost,
     };
